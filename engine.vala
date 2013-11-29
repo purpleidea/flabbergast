@@ -95,12 +95,17 @@ namespace Flabbergast {
 		}
 
 		public Gee.List<Expression> lookup(uint context, string name) {
+			if (known_names.has_key(name)) {
+				var map = known_names[name];
+				if (map.has_key(context)) {
+					return map[context];
+				}
+			}
 			return known_names[name][context];
 		}
 
 		public void set(uint context, string name, Expression @value) {
 			defined_names[name][context] = @value;
-			known_names[name][context].insert(0, @value);
 		}
 	}
 
@@ -134,14 +139,24 @@ namespace Flabbergast {
 			return result != null;
 		}
 
+		private Expression? lookup_contextal_helper(Expression start_context, string[] names) throws EvaluationError {
+			if (names.length == 1) {
+				return start_context;
+			}
+			call(start_context);
+			return lookup_direct_internal(names, 1);
+		}
+
 		private Expression? lookup_contextual_internal(string[] names) throws EvaluationError {
-			var tail_names = names[1 : names.length - 1];
-			foreach (var start_context in environment.lookup(state.context, names[0])) {
-				call(start_context);
-				if (tail_names.length == 0) {
-					return null;
+			var child = environment.get(state.context, names[0]);
+			if (child != null) {
+				var result = lookup_contextal_helper(child, names);
+				if (result != null) {
+					return result;
 				}
-				var result = lookup_direct_internal(tail_names);
+			}
+			foreach (var start_context in environment.lookup(state.context, names[0])) {
+				var result = lookup_contextal_helper(child, names);
 				if (result != null) {
 					return result;
 				}
@@ -156,9 +171,9 @@ namespace Flabbergast {
 			}
 			return (!)result;
 		}
-		public Expression? lookup_direct_internal(string[] names) throws EvaluationError {
+		public Expression? lookup_direct_internal(string[] names, int start_index = 0) throws EvaluationError {
 			var start = operands.pop();
-			for (var it = 0; it < names.length - 1; it++) {
+			for (var it = start_index; it < names.length - 1; it++) {
 				if (start is Tuple) {
 					var promise = ((Tuple) start)[names[it]];
 					call(promise);
