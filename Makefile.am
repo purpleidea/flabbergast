@@ -32,6 +32,7 @@ dist_gir_DATA = $(PACKAGE_NAME)-$(PACKAGE_MAJOR).gir
 
 libflabbergast_glib_la_COMMONVALAFLAGS =\
 	--pkg gee-0.8 \
+	--pkg util \
 	--vapidir=$(top_srcdir) \
 	$(NULL)
 
@@ -53,9 +54,14 @@ libflabbergast_glib_la_LIBADD = \
 	$(NULL)
 
 libflabbergast_glib_la_SOURCES = \
+	data.vala \
 	engine.vala \
 	expr.vala \
-	data.vala \
+	expr_arith.vala \
+	expr_fricassee.vala \
+	expr_misc.vala \
+	expr_tuple.vala \
+	expr_type.vala \
 	utils.vala \
 	$(NULL)
 

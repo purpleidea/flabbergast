@@ -1,12 +1,16 @@
 namespace Flabbergast {
 	public errordomain EvaluationError {
 		CIRCULAR,
+		DUPLICATE_NAME,
+		EXTERNAL_REMAINING,
+		INTERNAL,
+		OVERRIDE,
 		RESOLUTION,
 		TYPE_MISMATCH,
-		INTERNAL
+		USER_DEFINED
 	}
 
-	internal class Promise : Expression, Object {
+	internal class Promise : Expression {
 		WeakRef owner;
 		Expression expression;
 		bool is_running = false;
@@ -19,7 +23,7 @@ namespace Flabbergast {
 			this.state = state;
 		}
 
-		public void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
 			if (owner.get() != engine) {
 				throw new EvaluationError.INTERNAL("Tried to execute a promise on a different evaluation enginge.");
 			}
@@ -38,8 +42,19 @@ namespace Flabbergast {
 		}
 	}
 
+	public class ContainerReference {
+		public ContainerReference? parent;
+		public uint context;
+		public ContainerReference(uint context, ContainerReference? parent) {
+			this.parent = parent;
+			this.context = context;
+		}
+	}
+
 	internal struct MachineState {
 		internal uint context;
+		internal ContainerReference? containers;
+		internal unowned Tuple? this_tuple;
 	}
 
 	public class DataStack {
@@ -65,22 +80,19 @@ namespace Flabbergast {
 
 		public NameEnvironment() {}
 
-		public uint create(uint current_context, uint[]? inherited_contexts = null) {
-			var context = ++next_context;
+		public uint create() {
+			return ++next_context;
+		}
+		public void append(uint target_context, uint source_context) {
 			foreach (var entry in defined_names.entries) {
-				var list = known_names[entry.key][context];
-				if (current_context != 0) {
-					list.add(entry.value[current_context]);
-				}
-				if (inherited_contexts != null) {
-					foreach (var inherited_context in inherited_contexts) {
-						if (entry.value.has_key(inherited_context)) {
-							list.add(entry.value[inherited_context]);
-						}
-					}
-				}
+				var list = known_names[entry.key][target_context];
+				list.add(entry.value[source_context]);
 			}
-			return context;
+		}
+		public void append_containers(uint target_context, ContainerReference inherited_contexts) {
+			for (; inherited_contexts != null; inherited_contexts = inherited_contexts.parent) {
+				append(target_context, inherited_contexts.context);
+			}
 		}
 
 		public Expression? get(uint context, string name) {
@@ -156,7 +168,7 @@ namespace Flabbergast {
 				}
 			}
 			foreach (var start_context in environment.lookup(state.context, names[0])) {
-				var result = lookup_contextal_helper(child, names);
+				var result = lookup_contextal_helper(start_context, names);
 				if (result != null) {
 					return result;
 				}
