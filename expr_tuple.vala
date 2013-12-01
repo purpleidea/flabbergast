@@ -200,10 +200,73 @@ namespace Flabbergast.Expressions {
 			engine.operands.push (tuple);
 		}
 	}
-/*
-   fn:expr "("(arg0:expr ("," argn:expr)*) (name0 "=" kwarg0:expr ("," namen "=" kwargn:expr)*)")"
+	internal class FunctionCall : Expression {
+		internal class FunctionArg : Object {
+			public Name? name {
+				get;
+				set;
+			}
+			public Expression parameter {
+				get;
+				set;
+			}
+		}
+		public Expression function {
+			get;
+			set;
+		}
+		public Gee.List<FunctionArg> args {
+			get;
+			set;
+		}
+		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+			var context = engine.environment.create ();
+			var args_tuple = new Tuple (context);
+			var overrides = new Gee.ArrayList<TuplePart> ();
+			var it = 0;
+			var has_args = false;
+			var passed_args = false;
+			foreach (var arg in args) {
+				if (arg.name == null) {
+					has_args = true;
+					var id = make_id (it++);
+					var @value = engine.create_closure (arg.parameter);
+					args_tuple.attributes[id] = @value;
+					engine.environment[context, id] = @value;
+				} else {
+					if (arg.name.name == "value") {
+						throw new EvaluationError.OVERRIDE ("Function call has an argument named “value”, which break the function.");
+					}
+					if (arg.name.name == "args") {
+						passed_args = true;
+					}
+					var attr = new Attribute ();
+					attr.name = arg.name;
+					attr.expression = engine.create_closure (arg.parameter);
+					overrides.add (attr);
+				}
+			}
+			if (passed_args && has_args) {
+				throw new EvaluationError.OVERRIDE ("Function call has both unnamed arguments and a named argument “args”.");
+			}
+			if (!passed_args) {
+				var attr = new Attribute ();
+				attr.name = new Name ("args");
+				attr.expression = new ReturnLiteral (args_tuple);
+				overrides.add (attr);
+			}
 
- */
+			var instantiation = new Instantiate ();
+			instantiation.attributes = overrides;
+			instantiation.source = function;
+			var lookup = new DirectLookup ();
+			lookup.expression = instantiation;
+			var names = new Gee.ArrayList<Nameish> ();
+			names.add (new Name ("value"));
+			lookup.names = names;
+			engine.call (lookup);
+		}
+	}
 	public string make_id(int id) {
 		var len = (int) (sizeof (int) * 8 * Math.log (2) / Math.log (62)) + 1;
 		var id_str = new uint8[len + 2];

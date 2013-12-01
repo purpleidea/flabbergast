@@ -16,6 +16,10 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<ContainerName> ("container reference", 0, "Container");
 		register_custom<Name> ("identifier", () =>  new IdentifierParser (), (identifier) => identifier.name);
 
+		/* Function call arguments */
+		register<FunctionCall.FunctionArg> ("named argument", 0, "%P{name}% :%-%P{parameter}");
+		register<FunctionCall.FunctionArg> ("argument", 0, "%P{parameter}");
+
 		/* Expressions */
 		var precedence = 0;
 		register<LogicalOr> ("logical disjunction", precedence, "%P{+left}%-||%-%P{right}");
@@ -64,6 +68,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<TupleLiteral> ("tuple literal", precedence, "{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (Attribute) });
 		register<TemplateLiteral> ("template", precedence, "Template %p{+source}%_{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });
 		register<Instantiate> ("template instantiation", precedence, "%P{+source}%-{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TuplePart) });
+		register<FunctionCall> ("function call", precedence, "%P{+function}%-(%-%l{args}{% ,%-}% )", new Type[] { typeof (FunctionCall.FunctionArg) });
 
 		precedence++;
 		register<Not> ("logical not", precedence, "!%-%P{expression}");
