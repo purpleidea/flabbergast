@@ -2,72 +2,136 @@ namespace Flabbergast {
 	public abstract class Expression : Object {
 		public abstract void evaluate(ExecutionEngine engine) throws EvaluationError;
 	}
-	public class SubExpression : Expression {
-		public Expression expression { get; private set; }
+}
+namespace Flabbergast.Expressions {
+	public class ReturnLiteral : Expression {
+		private unowned Datum datum;
+		public ReturnLiteral (Datum datum) {
+			this.datum = datum;
+		}
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
-			engine.call(expression);
+			engine.operands.push (datum);
 		}
 	}
-	public class TrueLiteral : Expression {
+	internal class SubExpression : Expression {
+		public Expression expression {
+			get;
+			set;
+		}
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
-			engine.operands.push(new Boolean(true));
+			engine.call (expression);
 		}
 	}
-	public class FalseLiteral : Expression {
+	internal class TrueLiteral : Expression {
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
-			engine.operands.push(new Boolean(false));
+			engine.operands.push (new Boolean (true));
 		}
 	}
-	public class IntegerLiteral : Expression {
-		public int @value { get; set; }
+	internal class FalseLiteral : Expression {
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
-			engine.operands.push(new Integer(@value));
+			engine.operands.push (new Boolean (false));
 		}
 	}
-	public class FloatLiteral : Expression {
-		public double @value { get; set; }
+	internal class IntegerLiteral : Expression {
+		public int @value {
+			get;
+			set;
+		}
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
-			engine.operands.push(new Float(@value));
+			engine.operands.push (new Integer (@value));
 		}
 	}
-	public class StringLiteral : Expression {
-		public string @value { get; set; }
+	internal class FloatLiteral : Expression {
+		public double @value {
+			get;
+			set;
+		}
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
-			engine.operands.push(new String(@value));
+			engine.operands.push (new Float (@value));
 		}
 	}
-	public class NullLiteral : Expression {
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
-			engine.operands.push(new Null());
+	internal class StringPiece : Object {
+		public Expression? expression {
+			get;
+			set;
 		}
-	}
-	public class NullCoalesce : Expression {
-		public Expression expression { get; private set; }
-		public Expression alternate { get; private set; }
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
-			engine.call(expression);
-			if (engine.operands.peek() is Null) {
-				engine.operands.pop();
-				engine.call(alternate);
+		public GTeonoma.StringLiteral? literal {
+			get;
+			set;
+		}
+		public void render(ExecutionEngine engine, StringBuilder builder) throws EvaluationError {
+			var result = (String) convert (engine, expression, Ty.STR);
+			builder.append (result.@value);
+			if (literal != null) {
+				builder.append (literal.str);
 			}
 		}
 	}
-	public class IsNull : Expression {
-		public Expression expression { get; private set; }
+	internal class StringLiteral : Expression {
+		public Gee.List<StringPiece>? contents {
+			get;
+			set;
+		}
+		public GTeonoma.StringLiteral literal {
+			get;
+			set;
+		}
+
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
-			engine.call(expression);
-			engine.operands.push(new Boolean(engine.operands.pop() is Null));
+			var builder = new StringBuilder ();
+			builder.append (literal.str);
+			if (contents != null) {
+				foreach (var chunk in contents) {
+					chunk.render (engine, builder);
+				}
+			}
+			engine.operands.push (new String (builder.str));
 		}
 	}
-	public class Error : Expression {
-		public Expression expression { get; private set; }
+	internal class NullLiteral : Expression {
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
-			engine.call(expression);
-			var result = engine.operands.pop();
+			engine.operands.push (new Null ());
+		}
+	}
+	internal class NullCoalesce : Expression {
+		public Expression expression {
+			get;
+			set;
+		}
+		public Expression alternate {
+			get;
+			set;
+		}
+		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+			engine.call (expression);
+			if (engine.operands.peek () is Null) {
+				engine.operands.pop ();
+				engine.call (alternate);
+			}
+		}
+	}
+	internal class IsNull : Expression {
+		public Expression expression {
+			get;
+			set;
+		}
+		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+			engine.call (expression);
+			engine.operands.push (new Boolean (engine.operands.pop () is Null));
+		}
+	}
+	internal class RaiseError : Expression {
+		public Expression expression {
+			get;
+			set;
+		}
+		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+			engine.call (expression);
+			var result = engine.operands.pop ();
 			if (result is String) {
-				throw new EvaluationError.USER_DEFINED(((String) result).value);
+				throw new EvaluationError.USER_DEFINED (((String) result).value);
 			} else {
-				throw new EvaluationError.TYPE_MISMATCH("Expected string in error.");
+				throw new EvaluationError.TYPE_MISMATCH ("Expected string in error.");
 			}
 		}
 	}

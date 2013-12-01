@@ -1,47 +1,72 @@
 namespace Flabbergast.Expressions {
-	public class StringConcatenate : Expression {
-		public Expression left { get; private set; }
-		public Expression right { get; private set; }
+	internal class StringConcatenate : Expression {
+		public Expression left {
+			get;
+			set;
+		}
+		public Expression right {
+			get;
+			set;
+		}
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
-			Coerce.convert(engine, left, Ty.STR);
-			Coerce.convert(engine, right, Ty.STR);
-			var right_result = engine.operands.pop();
-			var left_result = engine.operands.pop();
-			engine.operands.push(new String(((String) left_result).value.concat(((String) right_result).value)));
+			var left_result = convert (engine, left, Ty.STR);
+			var right_result = convert (engine, right, Ty.STR);
+			engine.operands.push (new String (((String) left_result).value.concat (((String) right_result).value)));
 		}
 	}
-	public class Conditional : Expression {
-		public Expression condition { get; private set; }
-		public Expression truepart { get; private set; }
-		public Expression falsepart { get; private set; }
+	internal class Conditional : Expression {
+		public Expression condition {
+			get;
+			set;
+		}
+		public Expression truepart {
+			get;
+			set;
+		}
+		public Expression falsepart {
+			get;
+			set;
+		}
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
-			engine.call(condition);
-			var condition_result = engine.operands.pop();
+			engine.call (condition);
+			var condition_result = engine.operands.pop ();
 			if (condition_result is Boolean) {
-				engine.call(((Boolean) condition_result).value ? truepart : falsepart);
+				engine.call (((Boolean) condition_result).value ? truepart : falsepart);
 				return;
 			}
-			throw new EvaluationError.TYPE_MISMATCH("Expected boolean value for condition.");
+			throw new EvaluationError.TYPE_MISMATCH ("Expected boolean value for condition.");
 		}
 	}
-	public class ContextualLookup : Expression {
-		public string[] names;
+	internal class ContextualLookup : Expression {
+		public Gee.List<Nameish> names {
+			get;
+			set;
+		}
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
-			engine.lookup_contextual(names);
+			engine.call (engine.lookup_contextual (names));
 		}
 	}
-	public class IsDefined : Expression {
-		public string[] names;
+	internal class IsDefined : Expression {
+		public Gee.List<Nameish> names {
+			get;
+			set;
+		}
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
-			engine.operands.push(new Boolean(engine.is_defined(names)));
+			engine.operands.push (new Boolean (engine.is_defined (names)));
 		}
 	}
-	public class DirectLookup : Expression {
-		public Expression expression { get; private set; }
-		public string[] names;
+	internal class DirectLookup : Expression {
+		public Expression expression {
+			get;
+			set;
+		}
+		public Gee.List<Nameish> names {
+			get;
+			set;
+		}
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
-			engine.call(expression);
-			engine.lookup_direct(names);
+			engine.call (expression);
+			engine.call (engine.lookup_direct (names));
 		}
 	}
 }

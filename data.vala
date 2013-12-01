@@ -1,33 +1,56 @@
 namespace Flabbergast {
-	public abstract class Datum {}
+	public abstract class Datum {
+		public Type g_type {
+			get {
+				return get_datum_type (this);
+			}
+		}
+		public abstract string to_string();
+	}
 
 	public class Boolean : Datum {
 		public bool @value;
-		public Boolean(bool @value) {
+		public Boolean (bool @value) {
 			this.value = @value;
+		}
+		public override string to_string() {
+			return @value.to_string ();
 		}
 	}
 
 	public class Integer : Datum {
 		public int @value;
-		public Integer(int @value) {
+		public Integer (int @value) {
 			this.value = @value;
+		}
+		public override string to_string() {
+			return @value.to_string ();
 		}
 	}
 
 	public class Float : Datum {
 		public double @value;
-		public Float(double @value) {
+		public Float (double @value) {
 			this.value = @value;
+		}
+		public override string to_string() {
+			return @value.to_string ();
 		}
 	}
 
-	public class Null : Datum {}
+	public class Null : Datum {
+		public override string to_string() {
+			return "Null";
+		}
+	}
 
 	public class String : Datum {
 		public string @value;
-		public String(string @value) {
+		public String (string @value) {
 			this.value = @value;
+		}
+		public override string to_string() {
+			return @value;
 		}
 	}
 
@@ -35,16 +58,25 @@ namespace Flabbergast {
 		internal ContainerReference? containers;
 		internal Gee.SortedMap<string, Expression> attributes = new Gee.TreeMap<string, Expression> ();
 		internal Gee.SortedSet<string> externals = new Gee.TreeSet<string> ();
+		public override string to_string() {
+			return "template";
+		}
 	}
 
 	public class Tuple : Datum {
 		uint context;
 		internal Gee.SortedMap<string, Expression> attributes = new Gee.TreeMap<string, Expression> ();
-		public Tuple(uint context) {
+		public Tuple (uint context) {
 			this.context = context;
 		}
-		public Expression? get(string name) {
-			return attributes.has_key(name) ? attributes[name] : null;
+		public Gee.Iterator<Gee.Map.Entry<string, Expression> > iterator() {
+			return attributes.entries.iterator ();
+		}
+		public Expression? get (string name) {
+			return attributes.has_key (name) ? attributes[name] : null;
+		}
+		public override string to_string() {
+			return "tuple";
 		}
 	}
 
@@ -57,20 +89,26 @@ namespace Flabbergast {
 		TUPLE;
 		public Type get_real_type() {
 			switch (this) {
-			case BOOL :
-				return typeof(Boolean);
-			case FLOAT :
-				return typeof(Float);
-			case INT:
-				return typeof(Integer);
-			case STR:
-				return typeof(String);
-			case TEMPLATE:
-				return typeof(Template);
-			case TUPLE:
-				return typeof(Tuple);
-			default:
-				assert_not_reached();
+			 case BOOL :
+				 return typeof (Boolean);
+
+			 case FLOAT :
+				 return typeof (Float);
+
+			 case INT:
+				 return typeof (Integer);
+
+			 case STR:
+				 return typeof (String);
+
+			 case TEMPLATE:
+				 return typeof (Template);
+
+			 case TUPLE:
+				 return typeof (Tuple);
+
+			 default:
+				 assert_not_reached ();
 			}
 		}
 	}
