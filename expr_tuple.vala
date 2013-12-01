@@ -203,9 +203,53 @@ namespace Flabbergast.Expressions {
 /*
    fn:expr "("(arg0:expr ("," argn:expr)*) (name0 "=" kwarg0:expr ("," namen "=" kwargn:expr)*)")"
 
-   "[" (arg0:expr ("," argn:expr)*)? "]"
-
  */
+	public string make_id(int id) {
+		var len = (int) (sizeof (int) * 8 * Math.log (2) / Math.log (62)) + 1;
+		var id_str = new uint8[len + 2];
+		id_str[0] = 'f';
+		id_str[len + 1] = '\0';
+		for (var it = len; it > 0; it--) {
+			var digit = (uint8) (id % 62);
+			id = id / 62;
+			if (digit < 10) {
+				id_str[it] = '0' + digit;
+			} else if (digit < 36) {
+				id_str[it] = 'A' + (digit - 10);
+			} else {
+				id_str[it] = 'a' + (digit - 10);
+			}
+		}
+		return ((string) id_str).dup ();
+	}
+	internal class ListLiteral : Expression {
+		public Gee.List<Expression> elements {
+			get;
+			set;
+		}
+		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+			var context = engine.environment.create ();
+			var tuple = new Tuple (context);
+			for (var it = 0; it < elements.size; it++) {
+				tuple.attributes[make_id (it)] = engine.create_closure (elements[it]);
+			}
+
+			var state = engine.state;
+			if (state.this_tuple != null) {
+				var container_expr = new ReturnLiteral (tuple);
+				tuple.attributes["Container"] = container_expr;
+				engine.environment[context, "Container"] = container_expr;
+			}
+			state.containers = new ContainerReference (state.context, state.containers);
+			engine.environment.append_containers (context, state.containers);
+			state.context = context;
+			state.this_tuple = tuple;
+
+			engine.state = state;
+
+			engine.operands.push (tuple);
+		}
+	}
 	internal class This : Expression {
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
 			var this_tuple = engine.state.this_tuple;
