@@ -48,20 +48,26 @@ void print_expression(ExecutionEngine engine, Expression expression, uint depth 
 	}
 }
 
-public Expression? do_parsing<T> (Rules rules, GTeonoma.Parser parser) {
+public Expression? do_parsing (Rules rules, GTeonoma.Parser parser, bool can_try_more = false, out bool try_more = null) {
 	if (debug_parsing) {
 		GTeonoma.log_to_console (parser);
 	}
 	Value result;
-	if (parser.parse (typeof (T), out result) != GTeonoma.Result.OK) {
+	GTeonoma.Result r;
+	if ((r = parser.parse (typeof (Expression), out result)) != GTeonoma.Result.OK) {
 		parser.visit_errors ((source, error) => stderr.printf ("%s:%d:%d: %s\n", source.source, source.line, source.offset, error));
+		try_more = false;
 		return null;
 	}
 	if (!parser.is_finished ()) {
-		var end = parser.get_location ();
-		stderr.printf ("%s:%d:%d: Junk at end of file.\n", end.source, end.line, end.offset);
+		try_more = true;
+		if (!can_try_more) {
+			var end = parser.get_location ();
+			stderr.printf ("%s:%d:%d: Junk at end of input.\n", end.source, end.line, end.offset);
+		}
 		return null;
 	}
+	try_more = false;
 	return (Expression) result.get_object ();
 }
 
@@ -97,12 +103,21 @@ int main(string[] args) {
 			stderr.printf ("Failed to open input file.\n");
 			return 1;
 		}
-		var root = do_parsing<Expressions.File> (rules, parser);
-		if (root == null) {
-			return 1;
+		if (debug_parsing) {
+			GTeonoma.log_to_console (parser);
 		}
 		try {
-			root_tuple = engine.start_from (root);
+			Value result;
+			if ((parser.parse (typeof (File), out result)) != GTeonoma.Result.OK) {
+				parser.visit_errors ((source, error) => stderr.printf ("%s:%d:%d: %s\n", source.source, source.line, source.offset, error));
+				return 1;
+			}
+			if (!parser.is_finished ()) {
+				var end = parser.get_location ();
+				stderr.printf ("%s:%d:%d: Junk at end of input.\n", end.source, end.line, end.offset);
+				return 1;
+			}
+			root_tuple = engine.start_from ((File) result.get_object ());
 		} catch (EvaluationError e) {
 			stderr.printf ("%s: %s\n", filename ?? "stdin", e.message);
 			return 1;
@@ -113,7 +128,7 @@ int main(string[] args) {
 	} else {
 		for (var it = 1; it < args.length; it++) {
 			var arg_parser = new GTeonoma.StringParser (rules, args[it], "argument %d".printf (it));
-			var expression = do_parsing<Expression> (rules, arg_parser);
+			var expression = do_parsing (rules, arg_parser);
 			if (expression == null) {
 				return 1;
 			}
@@ -121,17 +136,52 @@ int main(string[] args) {
 		}
 	}
 	if (interactive) {
+		Readline.readline_name = "Flabbergast";
+		setup_signal ();
 		string line;
 		var it = 0;
-		while ((line = Readline.readline ("‽ >")) != null) {
-			Readline.History.add (line);
-			var arg_parser = new GTeonoma.StringParser (rules, line, "input %d".printf (it++));
-			var expression = do_parsing<Expression> (rules, arg_parser);
+		while ((line = Readline.readline ("%d‽ ".printf (++it))) != null) {
+			setup_signal ();
+			if (line.length == 0) {
+				continue;
+			}
+			bool try_more = false;
+			Expression? expression = null;
+			do {
+				var arg_parser = new GTeonoma.StringParser (rules, line, "input %d".printf (it));
+				expression = do_parsing (rules, arg_parser, true, out try_more);
+				stdout.printf ("Trymore: %s\n", try_more.to_string ());
+				if (expression == null && try_more) {
+					var next_line = Readline.readline ("> ");
+					if (next_line == null) {
+						return 0;
+					}
+					line = "%s\n%s".printf (line, next_line);
+				}
+			} while (try_more);
+
 			if (expression != null) {
 				print_expression (engine, expression);
 			}
+			Readline.History.add (line);
 		}
 		stderr.printf ("\nExiting.\n");
 	}
 	return 0;
+}
+
+private bool double_kill = false;
+
+private void sig_int(int sig) {
+	if (double_kill) {
+		Posix.exit (0);
+	}
+	Readline.initialize ();
+	Readline.reset_after_signal ();
+	double_kill = true;
+}
+
+private void setup_signal() {
+	double_kill = false;
+	Posix.signal (Posix.SIGINT, sig_int);
 }
