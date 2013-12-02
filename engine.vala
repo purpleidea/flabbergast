@@ -5,6 +5,7 @@ namespace Flabbergast {
 		EXTERNAL_REMAINING,
 		INTERNAL,
 		NAME,
+		NUMERIC,
 		OVERRIDE,
 		RESOLUTION,
 		TYPE_MISMATCH,

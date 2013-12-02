@@ -159,7 +159,7 @@ namespace Flabbergast.Expressions {
 		public abstract string name {
 			get;
 		}
-		protected abstract int compute_int(int left_value, int right_value);
+		protected abstract int compute_int(int left_value, int right_value) throws EvaluationError;
 		protected abstract double compute_double(double left_value, double right_value);
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
 			engine.call (left);
@@ -186,7 +186,7 @@ namespace Flabbergast.Expressions {
 				return "addition";
 			}
 		}
-		protected override int compute_int(int left_value, int right_value) {
+		protected override int compute_int(int left_value, int right_value) throws EvaluationError {
 			return left_value + right_value;
 		}
 		protected override double compute_double(double left_value, double right_value) {
@@ -199,7 +199,7 @@ namespace Flabbergast.Expressions {
 				return "subtraction";
 			}
 		}
-		protected override int compute_int(int left_value, int right_value) {
+		protected override int compute_int(int left_value, int right_value) throws EvaluationError {
 			return left_value - right_value;
 		}
 		protected override double compute_double(double left_value, double right_value) {
@@ -212,7 +212,7 @@ namespace Flabbergast.Expressions {
 				return "multiplication";
 			}
 		}
-		protected override int compute_int(int left_value, int right_value) {
+		protected override int compute_int(int left_value, int right_value) throws EvaluationError {
 			return left_value * right_value;
 		}
 		protected override double compute_double(double left_value, double right_value) {
@@ -225,7 +225,10 @@ namespace Flabbergast.Expressions {
 				return "division";
 			}
 		}
-		protected override int compute_int(int left_value, int right_value) {
+		protected override int compute_int(int left_value, int right_value) throws EvaluationError {
+			if (right_value == 0) {
+				throw new EvaluationError.NUMERIC ("Division by zero.");
+			}
 			return left_value / right_value;
 		}
 		protected override double compute_double(double left_value, double right_value) {
@@ -247,7 +250,12 @@ namespace Flabbergast.Expressions {
 			engine.call (right);
 			var right = engine.operands.pop ();
 			if (left is Integer && right is Integer) {
-				engine.operands.push (new Integer (((Integer) left).value % ((Integer) right).value));
+				var left_value = ((Integer) left).value;
+				var right_value = ((Integer) right).value;
+				if (right_value == 0) {
+					throw new EvaluationError.NUMERIC ("Modulus by zero.");
+				}
+				engine.operands.push (new Integer (left_value % right_value));
 				return;
 			}
 			throw new EvaluationError.TYPE_MISMATCH ("Invalid type to mathematical operator for modulus.");
