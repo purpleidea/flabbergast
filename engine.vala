@@ -171,9 +171,9 @@ namespace Flabbergast {
 		}
 
 		struct StackFrame {
-			internal Expression expression;
+			internal Expression? expression;
 			internal MachineState state;
-			internal StackFrame (MachineState state, Expression expression) {
+			internal StackFrame (MachineState state, Expression? expression) {
 				this.expression = expression;
 				this.state = state;
 			}
@@ -283,28 +283,32 @@ namespace Flabbergast {
 			return (!)result;
 		}
 
-		public Tuple start_from(Expression expression) throws EvaluationError {
+		public Tuple start_from(File file) throws EvaluationError {
 			if (call_stack.length != 0) {
 				call_stack.length = 0;
 			}
-			call (expression);
-			var result = operands.pop ();
-			if (result == null) {
-				throw new EvaluationError.INTERNAL ("Root expression did not return result.");
-			}
-			if (!(result is Tuple)) {
-				throw new EvaluationError.INTERNAL ("Root expression did not return a tuple.");
-			}
 			var state = MachineState ();
-			state.this_tuple = (Tuple) result;
+			call_stack += StackFrame (state, null);
+			var tuple = file.evaluate (this);
+			state.this_tuple = tuple;
 			state.context = state.this_tuple.context;
-			call_stack += StackFrame (state, expression);
-			return state.this_tuple;
+			this.state = state;
+			return tuple;
 		}
 
-		protected Null null_instance = new Null ();
-		public virtual Datum find_import(string uri) throws EvaluationError {
-			return null_instance;
+		private Gee.Map<string, Datum> imports = new Gee.HashMap<string, Datum> ();
+		internal Expression get_import(string uri) throws EvaluationError {
+			Datum import;
+			if (imports.has_key (uri)) {
+				import = imports[uri];
+			} else {
+				import = find_import (uri);
+				imports[uri] = import;
+			}
+			return new Expressions.ReturnLiteral (import);
+		}
+		protected virtual Datum find_import(string uri) throws EvaluationError {
+			return new Null ();
 		}
 	}
 }

@@ -1,15 +1,15 @@
-namespace Flabbergast.Expressions {
-	public class File : Expression {
+namespace Flabbergast {
+	public class File : Object {
 		public Gee.List<Import> imports {
 			get;
 			set;
 			default = Gee.List.empty<Import> ();
 		}
-		public Gee.List<Attribute> attributes {
+		public Gee.List<Expressions.Attribute> attributes {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public Tuple evaluate(ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
 			var tuple = new Tuple (context);
 
@@ -23,7 +23,7 @@ namespace Flabbergast.Expressions {
 				if (tuple.attributes.has_key (import.name.name)) {
 					throw new EvaluationError.NAME (@"Duplicate attribute name $(import.name.name).");
 				}
-				var attr_value = new ReturnLiteral (engine.find_import (import.uri.path));
+				var attr_value = engine.get_import (import.uri.path);
 				tuple.attributes[import.name.name] = attr_value;
 				engine.environment[context, import.name.name] = attr_value;
 			}
@@ -35,26 +35,26 @@ namespace Flabbergast.Expressions {
 				tuple.attributes[attribute.name.name] = attr_value;
 				engine.environment[context, attribute.name.name] = attr_value;
 			}
-			engine.operands.push (tuple);
+			return tuple;
 		}
-	}
-	public class Import : Object {
-		public Name name {
-			get;
-			set;
+		public class Import : Object {
+			public Name name {
+				get;
+				set;
+			}
+			public UriReference uri {
+				get;
+				set;
+			}
 		}
-		public UriReference uri {
-			get;
-			set;
-		}
-	}
-	public class UriReference : Object {
-		public string path {
-			get;
-			private set;
-		}
-		public UriReference (string path) {
-			this.path = path;
+		public class UriReference : Object {
+			public string path {
+				get;
+				private set;
+			}
+			public UriReference (string path) {
+				this.path = path;
+			}
 		}
 	}
 }

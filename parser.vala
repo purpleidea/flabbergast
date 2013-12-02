@@ -21,9 +21,9 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<FunctionCall.FunctionArg> ("argument", 0, "%P{parameter}");
 
 		/* Files */
-		register<Import> ("import", 0, "Import %P{uri} As %P{name}");
-		register<File> ("file", 0, "%l{imports}{%n}%n%L{attributes}{%n}%n", new Type[] { typeof (Import), typeof (Attribute) });
-		register_custom<UriReference> ("URI", () =>  new UriParser (), (uri) => uri.path);
+		register<File.Import> ("import", 0, "Import %P{uri} As %P{name}");
+		register<File> ("file", 0, "%l{imports}{%n}%n%L{attributes}{%n}%n", new Type[] { typeof (File.Import), typeof (Attribute) });
+		register_custom<File.UriReference> ("URI", () =>  new UriParser (), (uri) => uri.path);
 
 		/* Expressions */
 		var precedence = 0;
@@ -158,7 +158,7 @@ internal class Flabbergast.IdentifierParser : GTeonoma.CustomParser<Name> {
 		return new Name (str);
 	}
 }
-internal class Flabbergast.UriParser : GTeonoma.CustomParser<UriReference> {
+internal class Flabbergast.UriParser : GTeonoma.CustomParser<File.UriReference> {
 	internal enum UriState {
 		SCHEMA,
 		PATH,
@@ -195,7 +195,7 @@ internal class Flabbergast.UriParser : GTeonoma.CustomParser<UriReference> {
 			return (state = UriState.JUNK).get_state ();
 		}
 	}
-	public override UriReference build_object(string str) {
-		return new UriReference (str);
+	public override File.UriReference build_object(string str) {
+		return new File.UriReference (str);
 	}
 }
