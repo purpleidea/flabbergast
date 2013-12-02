@@ -20,6 +20,11 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<FunctionCall.FunctionArg> ("named argument", 0, "%P{name}% :%-%P{parameter}");
 		register<FunctionCall.FunctionArg> ("argument", 0, "%P{parameter}");
 
+		/* Files */
+		register<Import> ("import", 0, "Import %P{uri} As %P{name}");
+		register<File> ("file", 0, "%l{imports}{%n}%n%L{attributes}{%n}%n", new Type[] { typeof (Import), typeof (Attribute) });
+		register_custom<UriReference> ("URI", () =>  new UriParser (), (uri) => uri.path);
+
 		/* Expressions */
 		var precedence = 0;
 		register<LogicalOr> ("logical disjunction", precedence, "%P{+left}%-||%-%P{right}");
@@ -58,6 +63,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 
 		precedence++;
 		register<Coerce> ("type coercion", precedence, "%P{+expression} To %P{ty}");
+		register<IndirectLookup> ("indirect lookup", precedence, "%L{names}{%-.%-} From %P{expression}", new Type[] { typeof (Nameish) });
 		register<IsDefined> ("definition check", precedence, "%L{names}{%-.%-} Is defined", new Type[] { typeof (Nameish) });
 		register<IsFinite> ("finite check", precedence, "%P{+expression}%-Is finite");
 		register<IsNaN> ("not-a-number check", precedence, "%P{+expression}%-Is nan");
@@ -91,10 +97,6 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<TrueLiteral> ("true literal", precedence, "True");
 
 		register<StringPiece> ("string contents", 0, "\\(% %P{expression}% )%p{literal}");
-
-//"import" uri "as" name
-//[]
-//fn()
 
 //"for" ("ordinal"? attr:name "=")? value0:name ("," valuen:name)* "in" input0:expr ("," inputn:expr) ("where" where:expr)? ("order" "by" order:expr)? ("select" (select_attr:expr "=")? select_value:expr) | "reduce" reduce:expr "with" initial_name:name "=" initial_value:expr) â fricassee a tuple or template.
 	}
@@ -154,5 +156,46 @@ internal class Flabbergast.IdentifierParser : GTeonoma.CustomParser<Name> {
 	}
 	public override Name build_object(string str) {
 		return new Name (str);
+	}
+}
+internal class Flabbergast.UriParser : GTeonoma.CustomParser<UriReference> {
+	internal enum UriState {
+		SCHEMA,
+		PATH,
+		JUNK;
+		internal GTeonoma.CustomParser.StateType get_state() {
+			switch (this) {
+			 case UriState.SCHEMA:
+				 return StateType.INTERMEDIATE;
+
+			 case UriState.PATH:
+				 return StateType.ACCEPTING;
+
+			 default:
+				 return StateType.INVALID;
+			}
+		}
+	}
+
+	private UriState state = UriState.SCHEMA;
+
+	public UriParser () {}
+
+	public override GTeonoma.CustomParser.StateType next_state(unichar input) {
+		if (state == UriState.JUNK) {
+			return state.get_state ();
+		}
+		if (input == '.' || input == '+' || input == '-' || input >= '0' && input <= '9' || input >= 'A' && input <= 'Z' || input >= 'a' && input <= 'z') {
+			return state.get_state ();
+		} else if (input == ':') {
+			return (state = UriState.PATH).get_state ();
+		} else if (state == UriState.PATH && "~!*'();@&=+$,/?%#[]".index_of_char (input) != -1) {
+			return state.get_state ();
+		} else {
+			return (state = UriState.JUNK).get_state ();
+		}
+	}
+	public override UriReference build_object(string str) {
+		return new UriReference (str);
 	}
 }

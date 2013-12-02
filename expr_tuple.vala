@@ -1,12 +1,12 @@
 namespace Flabbergast.Expressions {
-	internal abstract class TemplatePart : Object {
+	public abstract class TemplatePart : Object {
 		public Name name {
 			get;
 			set;
 		}
 	}
-	internal abstract class TuplePart : TemplatePart {}
-	internal class Attribute : TuplePart {
+	public abstract class TuplePart : TemplatePart {}
+	public class Attribute : TuplePart {
 		public Expression expression {
 			get;
 			set;
@@ -46,7 +46,7 @@ namespace Flabbergast.Expressions {
 			var attr_names = new Gee.HashSet<string> ();
 			foreach (var attr in attributes) {
 				if (attr.name.name in attr_names) {
-					throw new EvaluationError.DUPLICATE_NAME (@"Duplicate attribute name $(attr.name.name).");
+					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr.name.name).");
 				}
 				var attr_value = engine.create_closure (attr.expression);
 				tuple.attributes[attr.name.name] = attr_value;
@@ -82,7 +82,7 @@ namespace Flabbergast.Expressions {
 			template.containers = engine.state.containers;
 			foreach (var attr in attributes) {
 				if (attr.name.name in attr_names) {
-					throw new EvaluationError.DUPLICATE_NAME (@"Duplicate attribute name $(attr.name.name).");
+					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr.name.name).");
 				}
 				attr_names.add (attr.name.name);
 				if (attr is External) {
@@ -159,7 +159,7 @@ namespace Flabbergast.Expressions {
 			var attr_names = new Gee.HashSet<string> ();
 			foreach (var attr in attributes) {
 				if (attr.name.name in attr_names) {
-					throw new EvaluationError.DUPLICATE_NAME (@"Duplicate attribute name $(attr.name.name).");
+					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr.name.name).");
 				}
 				attr_names.add (attr.name.name);
 				if (attr is Attribute) {
@@ -313,7 +313,7 @@ namespace Flabbergast.Expressions {
 			engine.operands.push (tuple);
 		}
 	}
-	internal class This : Expression {
+	public class This : Expression {
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
 			var this_tuple = engine.state.this_tuple;
 			if (this_tuple == null) {

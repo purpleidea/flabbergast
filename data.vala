@@ -54,18 +54,23 @@ namespace Flabbergast {
 		}
 	}
 
-	public class Template : Datum {
-		internal ContainerReference? containers;
+	public abstract class Tupleish : Datum {
 		internal Gee.SortedMap<string, Expression> attributes = new Gee.TreeMap<string, Expression> ();
+	}
+
+	public class Template : Tupleish {
+		internal ContainerReference? containers;
 		internal Gee.SortedSet<string> externals = new Gee.TreeSet<string> ();
 		public override string to_string() {
 			return "template";
 		}
 	}
 
-	public class Tuple : Datum {
-		uint context;
-		internal Gee.SortedMap<string, Expression> attributes = new Gee.TreeMap<string, Expression> ();
+	public class Tuple : Tupleish {
+		public uint context {
+			get;
+			private set;
+		}
 		public Tuple (uint context) {
 			this.context = context;
 		}

@@ -35,6 +35,8 @@ dist_gir_DATA = $(PACKAGE_NAME)-$(PACKAGE_MAJOR).gir
 flabbergast_VALAFLAGS = \
 	-g \
 	--pkg $(PACKAGE_NAME)-$(PACKAGE_MAJOR) \
+	--pkg config \
+	--pkg readline \
 	--vapidir=$(top_srcdir) \
 	$(NULL)
 
@@ -46,10 +48,11 @@ flabbergast_CPPFLAGS = -g \
 	$(NULL)
 	
 flabbergast_LDADD = \
-	libflabbergast-glib.la
+	libflabbergast-glib.la \
 	$(GLIB_LIBS) \
 	$(GEE_LIBS) \
 	$(GTEONOMA_LIBS) \
+	$(READLINE_LIBS) \
 	$(NULL)
 
 flabbergast_SOURCES = \
@@ -87,6 +90,7 @@ libflabbergast_glib_la_SOURCES = \
 	engine.vala \
 	expr.vala \
 	expr_arith.vala \
+	expr_file.vala \
 	expr_fricassee.vala \
 	expr_misc.vala \
 	expr_tuple.vala \

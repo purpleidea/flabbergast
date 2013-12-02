@@ -1,9 +1,10 @@
 namespace Flabbergast {
 	public errordomain EvaluationError {
+		BAD_MATCH,
 		CIRCULAR,
-		DUPLICATE_NAME,
 		EXTERNAL_REMAINING,
 		INTERNAL,
+		NAME,
 		OVERRIDE,
 		RESOLUTION,
 		TYPE_MISMATCH,
@@ -202,7 +203,8 @@ namespace Flabbergast {
 				return start_context;
 			}
 			call (start_context);
-			return lookup_direct_internal (names, 1);
+			var index = 1;
+			return lookup_direct_internal (names, ref index);
 		}
 
 		private Expression? lookup_contextual_internal (Gee.List<Nameish> names) throws EvaluationError {
@@ -214,6 +216,9 @@ namespace Flabbergast {
 				}
 			}
 			foreach (var start_context in environment.lookup (state.context, names[0].name)) {
+				if (start_context == null) {
+					continue;
+				}
 				var result = lookup_contextal_helper (start_context, names);
 				if (result != null) {
 					return result;
@@ -239,30 +244,67 @@ namespace Flabbergast {
 			}
 			return (!)result;
 		}
-		public Expression? lookup_direct_internal (Gee.List<Nameish> names, int start_index = 0) throws EvaluationError {
+		public Expression? lookup_direct_internal (Gee.List<Nameish> names, ref int it, out bool exists = null) throws EvaluationError {
 			var start = operands.pop ();
-			for (var it = start_index; it < names.size - 1; it++) {
+			for (; it < names.size - 1; it++) {
 				if (start is Tuple) {
 					var promise = ((Tuple) start)[names[it].name];
+					if (promise == null) {
+						exists = false;
+						return null;
+					}
 					call (promise);
 					start = operands.pop ();
 				} else {
+					exists = false;
 					return null;
 				}
 			}
 			if (start is Tuple) {
+				exists = false;
 				return ((Tuple) start)[names[names.size - 1].name];
 			} else {
+				exists = true;
 				return null;
 			}
 		}
 
 		public Expression lookup_direct(Gee.List<Nameish> names) throws EvaluationError requires(names.size > 0) {
-			var result = lookup_direct_internal (names);
+			var it = 0;
+			bool exists;
+			var result = lookup_direct_internal (names, ref it, out exists);
 			if (result == null) {
-				throw new EvaluationError.TYPE_MISMATCH ("Tried to do a direct lookup inside a non-tuple.");
+				if (exists) {
+					throw new EvaluationError.TYPE_MISMATCH (@"Tried to do a direct lookup inside a non-tuple $(names[it].name).");
+				} else {
+					throw new EvaluationError.RESOLUTION (@"Could not find matching element $(names[it].name).");
+				}
 			}
 			return (!)result;
+		}
+
+		public Tuple start_from(Expression expression) throws EvaluationError {
+			if (call_stack.length != 0) {
+				call_stack.length = 0;
+			}
+			call (expression);
+			var result = operands.pop ();
+			if (result == null) {
+				throw new EvaluationError.INTERNAL ("Root expression did not return result.");
+			}
+			if (!(result is Tuple)) {
+				throw new EvaluationError.INTERNAL ("Root expression did not return a tuple.");
+			}
+			var state = MachineState ();
+			state.this_tuple = (Tuple) result;
+			state.context = state.this_tuple.context;
+			call_stack += StackFrame (state, expression);
+			return state.this_tuple;
+		}
+
+		protected Null null_instance = new Null ();
+		public virtual Datum find_import(string uri) throws EvaluationError {
+			return null_instance;
 		}
 	}
 }

@@ -69,4 +69,25 @@ namespace Flabbergast.Expressions {
 			engine.call (engine.lookup_direct (names));
 		}
 	}
+	internal class IndirectLookup : Expression {
+		public Expression expression {
+			get;
+			set;
+		}
+		public Gee.List<Nameish> names {
+			get;
+			set;
+		}
+		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+			engine.call (expression);
+			var result = engine.operands.pop ();
+			if (!(result is Tuple)) {
+				throw new EvaluationError.TYPE_MISMATCH ("Can only do indirect look from the context of a tuple.");
+			}
+			var state = engine.state;
+			state.context = ((Tuple) result).context;
+			engine.state = state;
+			engine.call (engine.lookup_contextual (names));
+		}
+	}
 }
