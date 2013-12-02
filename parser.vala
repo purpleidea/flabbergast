@@ -63,7 +63,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 
 		precedence++;
 		register<Coerce> ("type coercion", precedence, "%P{+expression} To %P{ty}");
-		register<IndirectLookup> ("indirect lookup", precedence, "%L{names}{%-.%-} From %P{expression}", new Type[] { typeof (Nameish) });
+		register<IndirectLookup> ("indirect lookup", precedence, "%L{names}{% .% } From %P{expression}", new Type[] { typeof (Nameish) });
 		register<IsDefined> ("definition check", precedence, "%L{names}{%-.%-} Is defined", new Type[] { typeof (Nameish) });
 		register<IsFinite> ("finite check", precedence, "%P{+expression}%-Is finite");
 		register<IsNaN> ("not-a-number check", precedence, "%P{+expression}%-Is nan");
@@ -81,8 +81,8 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<Negation> ("negation", precedence, "-%-%P{expression}");
 
 		precedence++;
-		register<ContextualLookup> ("contextual lookup", precedence, "%L{names}{%-.%-}", new Type[] { typeof (Nameish) });
-		register<DirectLookup> ("direct lookup", precedence, "%P{+expression}%-.%-%L{names}{%-.%-}", new Type[] { typeof (Nameish) });
+		register<ContextualLookup> ("contextual lookup", precedence, "%L{names}{% .% }", new Type[] { typeof (Nameish) });
+		register<DirectLookup> ("direct lookup", precedence, "%P{+expression}%-.%-%L{names}{% .% }", new Type[] { typeof (Nameish) });
 
 		precedence++;
 		register<ListLiteral> ("list literal", precedence, "[%-%L{-elements}{% ,%-}%-]", new Type[] { typeof (Expression) });
