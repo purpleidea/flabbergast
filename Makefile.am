@@ -17,7 +17,7 @@ EXTRA_DIST = \
 	$(libflabbergast_glib_la_SOURCES) \
 	$(NULL)
 
-bin_PROGRAMS = flabbergast
+bin_PROGRAMS = flabbergast flabbergast-fmt
 
 lib_LTLIBRARIES = libflabbergast-glib.la
 
@@ -32,13 +32,17 @@ dist_vapi_DATA = $(PACKAGE_NAME)-$(PACKAGE_MAJOR).deps $(PACKAGE_NAME)-$(PACKAGE
 girdir = $(datadir)/gir-1.0
 dist_gir_DATA = $(PACKAGE_NAME)-$(PACKAGE_MAJOR).gir
 
-flabbergast_VALAFLAGS = \
-	-g \
-	--pkg $(PACKAGE_NAME)-$(PACKAGE_MAJOR) \
-	--pkg config \
-	--pkg readline \
+VALALOCAL = \
+	--pkg=config \
+	--pkg=$(PACKAGE_NAME)-$(PACKAGE_MAJOR) \
 	--vapidir=$(top_srcdir) \
 	$(NULL)
+
+
+flabbergast_VALAFLAGS = \
+	--pkg=readline \
+	--pkg=posix \
+	$(VALALOCAL)
 
 flabbergast_CPPFLAGS = -g \
 	-I. \
@@ -46,7 +50,7 @@ flabbergast_CPPFLAGS = -g \
 	$(GEE_CFLAGS) \
 	$(GTEONOMA_CFLAGS) \
 	$(NULL)
-	
+
 flabbergast_LDADD = \
 	libflabbergast-glib.la \
 	$(GLIB_LIBS) \
@@ -59,17 +63,39 @@ flabbergast_SOURCES = \
 	main.vala \
 	$(NULL)
 
+flabbergast_fmt_VALAFLAGS = \
+	--debug \
+	$(VALALOCAL)
+
+flabbergast_fmt_CPPFLAGS = -g \
+	-I. \
+	$(GLIB_CFLAGS) \
+	$(GEE_CFLAGS) \
+	$(GTEONOMA_CFLAGS) \
+	$(NULL)
+	
+flabbergast_fmt_LDADD = \
+	libflabbergast-glib.la \
+	$(GLIB_LIBS) \
+	$(GEE_LIBS) \
+	$(GTEONOMA_LIBS) \
+	$(NULL)
+
+flabbergast_fmt_SOURCES = \
+	formatter.vala \
+	$(NULL)
+
 libflabbergast_glib_la_COMMONVALAFLAGS =\
-	--pkg gee-0.8 \
-	--pkg libgteonoma-1 \
-	--pkg util \
+	--pkg=gee-0.8 \
+	--pkg=libgteonoma-1 \
+	--pkg=util \
 	--vapidir=$(top_srcdir) \
 	$(NULL)
 
 libflabbergast_glib_la_VALAFLAGS = \
-	-g \
-	--gir $(PACKAGE_NAME)-$(PACKAGE_MAJOR).gir \
+	--debug \
 	-H flabbergast.h \
+	--gir $(PACKAGE_NAME)-$(PACKAGE_MAJOR).gir \
 	--library=$(PACKAGE_NAME)-$(PACKAGE_MAJOR) \
 	$(libflabbergast_glib_la_COMMONVALAFLAGS)
 
