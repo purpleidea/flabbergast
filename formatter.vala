@@ -19,7 +19,6 @@ int main(string[] args) {
 	}
 	stderr.printf ("Flabbergast – %s %s\n", Package.STRING, Package.URL);
 	var rules = new Rules ();
-	var engine = new ExecutionEngine ();
 	foreach (var filename in filenames) {
 		stderr.printf ("Reformatting %s...\n", filename);
 		var parser = GTeonoma.FileParser.open (rules, filename);
