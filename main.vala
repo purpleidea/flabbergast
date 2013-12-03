@@ -129,7 +129,7 @@ int main(string[] args) {
 		print_expression (engine, new Expressions.This ());
 	} else {
 		for (var it = 1; it < args.length; it++) {
-			var arg_parser = new GTeonoma.StringParser (rules, args[it], "argument %d".printf (it));
+			var arg_parser = new GTeonoma.StringParser (rules, args[it].strip(), "argument %d".printf (it));
 			var expression = do_parsing (rules, arg_parser);
 			if (expression == null) {
 				return 1;
@@ -144,6 +144,7 @@ int main(string[] args) {
 		var it = 0;
 		while ((line = Readline.readline ("%d‽ ".printf (++it))) != null) {
 			setup_signal ();
+			line = line.strip();
 			if (line.length == 0) {
 				continue;
 			}
@@ -157,7 +158,7 @@ int main(string[] args) {
 					if (next_line == null) {
 						return 0;
 					}
-					line = "%s\n%s".printf (line, next_line);
+					line = "%s\n%s".printf (line, next_line.strip());
 				}
 			} while (try_more);
 
