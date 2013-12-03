@@ -55,8 +55,10 @@ public Expression? do_parsing (Rules rules, GTeonoma.Parser parser, bool can_try
 	Value result;
 	GTeonoma.Result r;
 	if ((r = parser.parse (typeof (Expression), out result)) != GTeonoma.Result.OK) {
-		parser.visit_errors ((source, error) => stderr.printf ("%s:%d:%d: %s\n", source.source, source.line, source.offset, error));
-		try_more = false;
+		try_more = r == GTeonoma.Result.EOI;
+		if (!try_more) {
+			parser.visit_errors ((source, error) => stderr.printf ("%s:%d:%d: %s\n", source.source, source.line, source.offset, error));
+		}
 		return null;
 	}
 	if (!parser.is_finished ()) {
@@ -150,7 +152,6 @@ int main(string[] args) {
 			do {
 				var arg_parser = new GTeonoma.StringParser (rules, line, "input %d".printf (it));
 				expression = do_parsing (rules, arg_parser, true, out try_more);
-				stdout.printf ("Trymore: %s\n", try_more.to_string ());
 				if (expression == null && try_more) {
 					var next_line = Readline.readline ("> ");
 					if (next_line == null) {

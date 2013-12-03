@@ -22,7 +22,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 
 		/* Files */
 		register<File.Import> ("import", 0, "Import %P{uri} As %P{name}");
-		register<File> ("file", 0, "%l{imports}{%n}%n%L{attributes}{%n}%n", new Type[] { typeof (File.Import), typeof (Attribute) });
+		register<File> ("file", 0, "% %l{imports}{%n}%n%L{attributes}{%n}", new Type[] { typeof (File.Import), typeof (Attribute) });
 		register_custom<File.UriReference> ("URI", () =>  new UriParser (), (uri) => uri.path);
 
 		/* Expressions */
