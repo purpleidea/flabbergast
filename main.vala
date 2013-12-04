@@ -73,6 +73,8 @@ public Expression? do_parsing (Rules rules, GTeonoma.Parser parser, bool can_try
 	return (Expression) result.get_object ();
 }
 
+private extern string? sane_readline (string prompt);
+
 bool interactive;
 bool debug_parsing;
 string? filename;
@@ -138,27 +140,26 @@ int main(string[] args) {
 		}
 	}
 	if (interactive) {
+		Readline.initialize ();
 		Readline.readline_name = "Flabbergast";
-		setup_signal ();
 		string line;
-		var it = 0;
-		while ((line = Readline.readline ("%d‽ ".printf (++it))) != null) {
-			setup_signal ();
+		var it = 1;
+		while ((line = sane_readline ("%d‽ ".printf (it))) != null) {
 			line = line.strip ();
 			if (line.length == 0) {
 				continue;
 			}
+			it++;
 			bool try_more = false;
 			Expression? expression = null;
 			do {
 				var arg_parser = new GTeonoma.StringParser (rules, line, "input %d".printf (it));
 				expression = do_parsing (rules, arg_parser, true, out try_more);
 				if (expression == null && try_more) {
-					var next_line = Readline.readline ("> ");
-					if (next_line == null) {
-						return 0;
+					var next_line = sane_readline ("> ");
+					if (next_line != null) {
+						line = "%s\n%s".printf (line, next_line.strip ());
 					}
-					line = "%s\n%s".printf (line, next_line.strip ());
 				}
 			} while (try_more);
 
@@ -167,23 +168,6 @@ int main(string[] args) {
 			}
 			Readline.History.add (line);
 		}
-		stderr.printf ("\nExiting.\n");
 	}
 	return 0;
-}
-
-private bool double_kill = false;
-
-private void sig_int(int sig) {
-	if (double_kill) {
-		Posix.exit (0);
-	}
-	Readline.initialize ();
-	Readline.reset_after_signal ();
-	double_kill = true;
-}
-
-private void setup_signal() {
-	double_kill = false;
-	Posix.signal (Posix.SIGINT, sig_int);
 }

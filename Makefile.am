@@ -38,7 +38,6 @@ VALALOCAL = \
 	--vapidir=$(top_srcdir) \
 	$(NULL)
 
-
 flabbergast_VALAFLAGS = \
 	--pkg=readline \
 	--pkg=posix \
@@ -61,6 +60,7 @@ flabbergast_LDADD = \
 
 flabbergast_SOURCES = \
 	main.vala \
+	readline.c \
 	$(NULL)
 
 flabbergast_fmt_VALAFLAGS = \

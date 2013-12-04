@@ -32,3 +32,4 @@ flabbergast-fmt
 libtool
 m4/
 stamp-h1
+!readline.c
