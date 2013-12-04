@@ -52,7 +52,7 @@ namespace Flabbergast {
 			this.state = state;
 		}
 
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			if (owner.get () != engine) {
 				throw new EvaluationError.INTERNAL ("Tried to execute a promise on a different evaluation enginge.");
 			}
@@ -96,7 +96,7 @@ namespace Flabbergast {
 		public Datum? pop () {
 			return (stack.size == 0) ? null : stack.poll_head ();
 		}
-		public void push(Datum datum) {
+		public void push (Datum datum) {
 			stack.offer_head (datum);
 		}
 	}
@@ -109,16 +109,16 @@ namespace Flabbergast {
 
 		public NameEnvironment () {}
 
-		public uint create() {
+		public uint create () {
 			return ++next_context;
 		}
-		public void append(uint target_context, uint source_context) {
+		public void append (uint target_context, uint source_context) {
 			foreach (var entry in defined_names.entries) {
 				var list = known_names[entry.key][target_context];
 				list.add (entry.value[source_context]);
 			}
 		}
-		public void append_containers(uint target_context, ContainerReference? inherited_contexts) {
+		public void append_containers (uint target_context, ContainerReference? inherited_contexts) {
 			for (; inherited_contexts != null; inherited_contexts = inherited_contexts.parent) {
 				append (target_context, inherited_contexts.context);
 			}
@@ -135,7 +135,7 @@ namespace Flabbergast {
 			return map[context];
 		}
 
-		public Gee.List<Expression> lookup(uint context, string name) {
+		public Gee.List<Expression> lookup (uint context, string name) {
 			if (known_names.has_key (name)) {
 				var map = known_names[name];
 				if (map.has_key (context)) {
@@ -145,7 +145,7 @@ namespace Flabbergast {
 			return known_names[name][context];
 		}
 
-		public void set(uint context, string name, Expression @value) {
+		public void set (uint context, string name, Expression @value) {
 			defined_names[name][context] = @value;
 		}
 	}
@@ -185,7 +185,7 @@ namespace Flabbergast {
 			}
 		}
 
-		public void call(Expression expression) throws EvaluationError {
+		public void call (Expression expression) throws EvaluationError {
 			if (call_stack.length == 0) {
 				call_stack += StackFrame (MachineState (), expression);
 			} else {
@@ -196,17 +196,17 @@ namespace Flabbergast {
 			call_stack.length--;
 		}
 
-		public void clear_call_stack() {
+		public void clear_call_stack () {
 			clear_stack_to (call_stack.length > 0 && call_stack[0].expression == null ? 1 : 0);
 		}
-		private void clear_stack_to(int target_length) {
+		private void clear_stack_to (int target_length) {
 			for (var it = target_length; it < call_stack.length; it++) {
 				call_stack[it] = { null };
 			}
 			call_stack.length  = target_length;
 		}
 
-		public Expression create_closure(Expression expression) {
+		public Expression create_closure (Expression expression) {
 			return new Promise (this, expression, state);
 		}
 
@@ -236,7 +236,7 @@ namespace Flabbergast {
 			}
 		}
 
-		public bool is_defined(Gee.List<Nameish> names) throws EvaluationError requires(names.size > 0) {
+		public bool is_defined (Gee.List<Nameish> names) throws EvaluationError requires (names.size > 0) {
 			var result = lookup_contextual_internal (names);
 			return result != null;
 		}
@@ -270,7 +270,7 @@ namespace Flabbergast {
 			return null;
 		}
 
-		public Expression lookup_contextual(Gee.List<Nameish> names) throws EvaluationError requires(names.size > 0) {
+		public Expression lookup_contextual (Gee.List<Nameish> names) throws EvaluationError requires (names.size > 0) {
 			var result = lookup_contextual_internal (names);
 			if (result == null) {
 				var compound_name = new StringBuilder ();
@@ -312,7 +312,7 @@ namespace Flabbergast {
 			}
 		}
 
-		public Expression lookup_direct(Gee.List<Nameish> names) throws EvaluationError requires(names.size > 0) {
+		public Expression lookup_direct (Gee.List<Nameish> names) throws EvaluationError requires (names.size > 0) {
 			var it = 0;
 			bool exists;
 			var result = lookup_direct_internal (names, ref it, out exists);
@@ -326,7 +326,7 @@ namespace Flabbergast {
 			return (!)result;
 		}
 
-		public Datum run(Expression expression, bool restore_stack_on_failure = true) throws EvaluationError {
+		public Datum run (Expression expression, bool restore_stack_on_failure = true) throws EvaluationError {
 			var original_stack_length = call_stack.length;
 			try {
 				call (expression);
@@ -343,7 +343,7 @@ namespace Flabbergast {
 			}
 		}
 
-		public Tuple start_from(File file) throws EvaluationError {
+		public Tuple start_from (File file) throws EvaluationError {
 			if (call_stack.length != 0) {
 				call_stack.length = 0;
 			}
@@ -357,7 +357,7 @@ namespace Flabbergast {
 		}
 
 		private Gee.Map<string, Datum> imports = new Gee.HashMap<string, Datum> ();
-		internal Expression get_import(string uri) throws EvaluationError {
+		internal Expression get_import (string uri) throws EvaluationError {
 			Datum import;
 			if (imports.has_key (uri)) {
 				import = imports[uri];
@@ -367,7 +367,7 @@ namespace Flabbergast {
 			}
 			return new Expressions.ReturnLiteral (import);
 		}
-		protected virtual Datum find_import(string uri) throws EvaluationError {
+		protected virtual Datum find_import (string uri) throws EvaluationError {
 			return new Null ();
 		}
 	}

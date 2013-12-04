@@ -8,7 +8,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (left);
 			var left_value = engine.operands.peek ();
 			if (left_value is Boolean) {
@@ -31,7 +31,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (left);
 			var left_value = engine.operands.peek ();
 			if (left_value is Boolean) {
@@ -45,7 +45,7 @@ namespace Flabbergast.Expressions {
 		}
 	}
 
-	public int compare(ExecutionEngine engine) throws EvaluationError {
+	public int compare (ExecutionEngine engine) throws EvaluationError {
 		var right = engine.operands.pop ();
 		var left = engine.operands.pop ();
 		if (left is String && right is String) {
@@ -93,7 +93,7 @@ namespace Flabbergast.Expressions {
 			set;
 		}
 
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (left);
 			engine.call (right);
 			var result = compare (engine);
@@ -109,8 +109,8 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		protected abstract bool check(int result);
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		protected abstract bool check (int result);
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (left);
 			engine.call (right);
 			var result = compare (engine);
@@ -118,32 +118,32 @@ namespace Flabbergast.Expressions {
 		}
 	}
 	internal class Equality : Comparison {
-		protected override bool check(int result) {
+		protected override bool check (int result) {
 			return result == 0;
 		}
 	}
 	internal class Inequality : Comparison {
-		protected override bool check(int result) {
+		protected override bool check (int result) {
 			return result != 0;
 		}
 	}
 	internal class GreaterThan : Comparison {
-		protected override bool check(int result) {
+		protected override bool check (int result) {
 			return result > 0;
 		}
 	}
 	internal class GreaterThanOrEqualTo : Comparison {
-		protected override bool check(int result) {
+		protected override bool check (int result) {
 			return result >= 0;
 		}
 	}
 	internal class LessThan : Comparison {
-		protected override bool check(int result) {
+		protected override bool check (int result) {
 			return result < 0;
 		}
 	}
 	internal class LessThanOrEqualTo : Comparison {
-		protected override bool check(int result) {
+		protected override bool check (int result) {
 			return result <= 0;
 		}
 	}
@@ -159,9 +159,9 @@ namespace Flabbergast.Expressions {
 		public abstract string name {
 			get;
 		}
-		protected abstract int compute_int(int left_value, int right_value) throws EvaluationError;
-		protected abstract double compute_double(double left_value, double right_value);
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		protected abstract int compute_int (int left_value, int right_value) throws EvaluationError;
+		protected abstract double compute_double (double left_value, double right_value);
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (left);
 			var left = engine.operands.pop ();
 			engine.call (right);
@@ -186,10 +186,10 @@ namespace Flabbergast.Expressions {
 				return "addition";
 			}
 		}
-		protected override int compute_int(int left_value, int right_value) throws EvaluationError {
+		protected override int compute_int (int left_value, int right_value) throws EvaluationError {
 			return left_value + right_value;
 		}
-		protected override double compute_double(double left_value, double right_value) {
+		protected override double compute_double (double left_value, double right_value) {
 			return left_value + right_value;
 		}
 	}
@@ -199,10 +199,10 @@ namespace Flabbergast.Expressions {
 				return "subtraction";
 			}
 		}
-		protected override int compute_int(int left_value, int right_value) throws EvaluationError {
+		protected override int compute_int (int left_value, int right_value) throws EvaluationError {
 			return left_value - right_value;
 		}
-		protected override double compute_double(double left_value, double right_value) {
+		protected override double compute_double (double left_value, double right_value) {
 			return left_value - right_value;
 		}
 	}
@@ -212,10 +212,10 @@ namespace Flabbergast.Expressions {
 				return "multiplication";
 			}
 		}
-		protected override int compute_int(int left_value, int right_value) throws EvaluationError {
+		protected override int compute_int (int left_value, int right_value) throws EvaluationError {
 			return left_value * right_value;
 		}
-		protected override double compute_double(double left_value, double right_value) {
+		protected override double compute_double (double left_value, double right_value) {
 			return left_value * right_value;
 		}
 	}
@@ -225,13 +225,13 @@ namespace Flabbergast.Expressions {
 				return "division";
 			}
 		}
-		protected override int compute_int(int left_value, int right_value) throws EvaluationError {
+		protected override int compute_int (int left_value, int right_value) throws EvaluationError {
 			if (right_value == 0) {
 				throw new EvaluationError.NUMERIC ("Division by zero.");
 			}
 			return left_value / right_value;
 		}
-		protected override double compute_double(double left_value, double right_value) {
+		protected override double compute_double (double left_value, double right_value) {
 			return left_value / right_value;
 		}
 	}
@@ -244,7 +244,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (left);
 			var left = engine.operands.pop ();
 			engine.call (right);
@@ -266,7 +266,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 			var result = engine.operands.pop ();
 			if (result is Boolean) {
@@ -281,7 +281,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 			var result = engine.operands.pop ();
 			if (result is Integer) {
@@ -300,7 +300,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 			var result = engine.operands.pop ();
 			if (result is Integer) {
@@ -317,7 +317,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 			var result = engine.operands.pop ();
 			if (result is Integer) {

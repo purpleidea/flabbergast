@@ -4,7 +4,7 @@ namespace Flabbergast {
 			get;
 			set;
 		}
-		public abstract void evaluate(ExecutionEngine engine) throws EvaluationError;
+		public abstract void evaluate (ExecutionEngine engine) throws EvaluationError;
 	}
 }
 namespace Flabbergast.Expressions {
@@ -13,7 +13,7 @@ namespace Flabbergast.Expressions {
 		public ReturnLiteral (Datum datum) {
 			this.datum = datum;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (datum);
 		}
 	}
@@ -22,17 +22,17 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 		}
 	}
 	internal class TrueLiteral : Expression {
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (new Boolean (true));
 		}
 	}
 	internal class FalseLiteral : Expression {
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (new Boolean (false));
 		}
 	}
@@ -41,7 +41,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (new Integer (@value));
 		}
 	}
@@ -50,7 +50,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (new Float (@value));
 		}
 	}
@@ -63,7 +63,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public void render(ExecutionEngine engine, StringBuilder builder) throws EvaluationError {
+		public void render (ExecutionEngine engine, StringBuilder builder) throws EvaluationError {
 			var result = (String) convert (engine, expression, Ty.STR);
 			builder.append (result.@value);
 			if (literal != null) {
@@ -81,7 +81,7 @@ namespace Flabbergast.Expressions {
 			set;
 		}
 
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var builder = new StringBuilder ();
 			builder.append (literal.str);
 			if (contents != null) {
@@ -93,7 +93,7 @@ namespace Flabbergast.Expressions {
 		}
 	}
 	internal class NullLiteral : Expression {
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (new Null ());
 		}
 	}
@@ -106,7 +106,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 			if (engine.operands.peek () is Null) {
 				engine.operands.pop ();
@@ -119,7 +119,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 			engine.operands.push (new Boolean (engine.operands.pop () is Null));
 		}
@@ -129,7 +129,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 			var result = engine.operands.pop ();
 			if (result is String) {

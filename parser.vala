@@ -108,7 +108,7 @@ internal class Flabbergast.IdentifierParser : GTeonoma.CustomParser<Name> {
 		CONTAINER_DONE,
 		PART,
 		JUNK;
-		internal GTeonoma.CustomParser.StateType get_state() {
+		internal GTeonoma.CustomParser.StateType get_state () {
 			switch (this) {
 			 case IdentifierState.START:
 			 case IdentifierState.CONTAINER:
@@ -129,7 +129,7 @@ internal class Flabbergast.IdentifierParser : GTeonoma.CustomParser<Name> {
 
 	public IdentifierParser () {}
 
-	public override GTeonoma.CustomParser.StateType next_state(unichar input) {
+	public override GTeonoma.CustomParser.StateType next_state (unichar input) {
 		if (state == IdentifierState.START) {
 			if (input == 'C') {
 				return (state = IdentifierState.CONTAINER).get_state ();
@@ -154,7 +154,7 @@ internal class Flabbergast.IdentifierParser : GTeonoma.CustomParser<Name> {
 			return (state = IdentifierState.JUNK).get_state ();
 		}
 	}
-	public override Name build_object(string str) {
+	public override Name build_object (string str) {
 		return new Name (str);
 	}
 }
@@ -163,7 +163,7 @@ internal class Flabbergast.UriParser : GTeonoma.CustomParser<File.UriReference> 
 		SCHEMA,
 		PATH,
 		JUNK;
-		internal GTeonoma.CustomParser.StateType get_state() {
+		internal GTeonoma.CustomParser.StateType get_state () {
 			switch (this) {
 			 case UriState.SCHEMA:
 				 return StateType.INTERMEDIATE;
@@ -181,7 +181,7 @@ internal class Flabbergast.UriParser : GTeonoma.CustomParser<File.UriReference> 
 
 	public UriParser () {}
 
-	public override GTeonoma.CustomParser.StateType next_state(unichar input) {
+	public override GTeonoma.CustomParser.StateType next_state (unichar input) {
 		if (state == UriState.JUNK) {
 			return state.get_state ();
 		}
@@ -195,7 +195,7 @@ internal class Flabbergast.UriParser : GTeonoma.CustomParser<File.UriReference> 
 			return (state = UriState.JUNK).get_state ();
 		}
 	}
-	public override File.UriReference build_object(string str) {
+	public override File.UriReference build_object (string str) {
 		return new File.UriReference (str);
 	}
 }

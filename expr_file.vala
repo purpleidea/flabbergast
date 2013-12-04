@@ -9,7 +9,7 @@ namespace Flabbergast {
 			get;
 			set;
 		}
-		public Tuple evaluate(ExecutionEngine engine) throws EvaluationError {
+		public Tuple evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
 			var tuple = new Tuple (context);
 

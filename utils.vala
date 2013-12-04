@@ -6,7 +6,7 @@ namespace Flabbergast.Utils {
 			base ();
 			this.make_value = (owned) make_value;
 		}
-		public override V get(K key) {
+		public override V get (K key) {
 			if (has_key (key)) {
 				return base[key];
 			} else {

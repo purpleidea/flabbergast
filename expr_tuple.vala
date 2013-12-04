@@ -26,7 +26,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
 			var tuple = new Tuple (context);
 
@@ -65,7 +65,7 @@ namespace Flabbergast.Expressions {
 			get;
 			internal set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			Template source_data = null;
 			if (source_expr != null) {
 				engine.call (source_expr);
@@ -132,7 +132,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (source_expr);
 			var result = engine.operands.pop ();
 			if (!(result is Template)) {
@@ -219,7 +219,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
 			var args_tuple = new Tuple (context);
 			var overrides = new Gee.ArrayList<TuplePart> ();
@@ -267,7 +267,7 @@ namespace Flabbergast.Expressions {
 			engine.call (lookup);
 		}
 	}
-	public string make_id(int id) {
+	public string make_id (int id) {
 		var len = (int) (sizeof (int) * 8 * Math.log (2) / Math.log (62)) + 1;
 		var id_str = new uint8[len + 2];
 		id_str[0] = 'f';
@@ -290,7 +290,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
 			var tuple = new Tuple (context);
 			for (var it = 0; it < elements.size; it++) {
@@ -314,7 +314,7 @@ namespace Flabbergast.Expressions {
 		}
 	}
 	public class This : Expression {
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var this_tuple = engine.state.this_tuple;
 			if (this_tuple == null) {
 				throw new EvaluationError.INTERNAL ("This references non-existent tuple.");

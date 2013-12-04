@@ -8,7 +8,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var left_result = convert (engine, left, Ty.STR);
 			var right_result = convert (engine, right, Ty.STR);
 			engine.operands.push (new String (((String) left_result).value.concat (((String) right_result).value)));
@@ -27,7 +27,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (condition);
 			var condition_result = engine.operands.pop ();
 			if (condition_result is Boolean) {
@@ -42,7 +42,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (engine.lookup_contextual (names));
 		}
 	}
@@ -51,7 +51,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (new Boolean (engine.is_defined (names)));
 		}
 	}
@@ -64,7 +64,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 			engine.call (engine.lookup_direct (names));
 		}
@@ -78,7 +78,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 			var result = engine.operands.pop ();
 			if (!(result is Tuple)) {

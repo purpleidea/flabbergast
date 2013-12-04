@@ -6,7 +6,7 @@ const OptionEntry[] options = {
 	{ "", 0, 0, OptionArg.FILENAME_ARRAY, ref filenames, null, "FILE..." },
 	{ null }
 };
-int main(string[] args) {
+int main (string[] args) {
 	try {
 		var opt_context = new OptionContext ("- Flabbergast Formatter");
 		opt_context.set_help_enabled (true);

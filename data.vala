@@ -5,7 +5,7 @@ namespace Flabbergast {
 				return get_datum_type (this);
 			}
 		}
-		public abstract string to_string();
+		public abstract string to_string ();
 	}
 
 	public class Boolean : Datum {
@@ -13,7 +13,7 @@ namespace Flabbergast {
 		public Boolean (bool @value) {
 			this.value = @value;
 		}
-		public override string to_string() {
+		public override string to_string () {
 			return @value.to_string ();
 		}
 	}
@@ -23,7 +23,7 @@ namespace Flabbergast {
 		public Integer (int @value) {
 			this.value = @value;
 		}
-		public override string to_string() {
+		public override string to_string () {
 			return @value.to_string ();
 		}
 	}
@@ -33,13 +33,13 @@ namespace Flabbergast {
 		public Float (double @value) {
 			this.value = @value;
 		}
-		public override string to_string() {
+		public override string to_string () {
 			return @value.to_string ();
 		}
 	}
 
 	public class Null : Datum {
-		public override string to_string() {
+		public override string to_string () {
 			return "Null";
 		}
 	}
@@ -49,7 +49,7 @@ namespace Flabbergast {
 		public String (string @value) {
 			this.value = @value;
 		}
-		public override string to_string() {
+		public override string to_string () {
 			return @value;
 		}
 	}
@@ -61,7 +61,7 @@ namespace Flabbergast {
 	public class Template : Tupleish {
 		internal ContainerReference? containers;
 		internal Gee.SortedSet<string> externals = new Gee.TreeSet<string> ();
-		public override string to_string() {
+		public override string to_string () {
 			return "template";
 		}
 	}
@@ -74,13 +74,13 @@ namespace Flabbergast {
 		public Tuple (uint context) {
 			this.context = context;
 		}
-		public Gee.Iterator<Gee.Map.Entry<string, Expression> > iterator() {
+		public Gee.Iterator<Gee.Map.Entry<string, Expression> > iterator () {
 			return attributes.entries.iterator ();
 		}
 		public Expression? get (string name) {
 			return attributes.has_key (name) ? attributes[name] : null;
 		}
-		public override string to_string() {
+		public override string to_string () {
 			return "tuple";
 		}
 	}
@@ -92,7 +92,7 @@ namespace Flabbergast {
 		STR,
 		TEMPLATE,
 		TUPLE;
-		public Type get_real_type() {
+		public Type get_real_type () {
 			switch (this) {
 			 case BOOL :
 				 return typeof (Boolean);

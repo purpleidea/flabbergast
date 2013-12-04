@@ -1,14 +1,14 @@
 using Flabbergast;
 namespace Debug {
 	abstract class Statement : Object {
-		public abstract bool execute(ExecutionEngine engine, ref int stack_frame);
+		public abstract bool execute (ExecutionEngine engine, ref int stack_frame);
 	}
 	class Switch : Statement {
 		public int frame {
 			get;
 			set;
 		}
-		public override bool execute(ExecutionEngine engine, ref int stack_frame) {
+		public override bool execute (ExecutionEngine engine, ref int stack_frame) {
 			if (frame >= 0 && frame < engine.call_depth) {
 				stack_frame = frame;
 			} else {
@@ -18,7 +18,7 @@ namespace Debug {
 		}
 	}
 	class Up : Statement {
-		public override bool execute(ExecutionEngine engine, ref int stack_frame) {
+		public override bool execute (ExecutionEngine engine, ref int stack_frame) {
 			if (stack_frame > 0) {
 				stack_frame--;
 			} else {
@@ -28,7 +28,7 @@ namespace Debug {
 		}
 	}
 	class Down : Statement {
-		public override bool execute(ExecutionEngine engine, ref int stack_frame) {
+		public override bool execute (ExecutionEngine engine, ref int stack_frame) {
 			if (stack_frame < engine.call_depth - 1) {
 				stack_frame++;
 			} else {
@@ -38,7 +38,7 @@ namespace Debug {
 		}
 	}
 	class Quit : Statement {
-		public override bool execute(ExecutionEngine engine, ref int stack_frame) {
+		public override bool execute (ExecutionEngine engine, ref int stack_frame) {
 			return true;
 		}
 	}
@@ -47,7 +47,7 @@ namespace Debug {
 			get;
 			set;
 		}
-		public override bool execute(ExecutionEngine engine, ref int stack_frame) {
+		public override bool execute (ExecutionEngine engine, ref int stack_frame) {
 			try {
 				var result = engine.debug_lookup (stack_frame, names);
 			} catch (EvaluationError e) {
@@ -58,13 +58,13 @@ namespace Debug {
 	}
 }
 
-void print_tabs(uint depth) {
+void print_tabs (uint depth) {
 	for (var it = 0; it < depth; it++) {
 		stdout.putc (' ');
 	}
 }
 
-void print_expression(Rules rules, ExecutionEngine engine, Expression expression, bool debug, uint depth = 0) {
+void print_expression (Rules rules, ExecutionEngine engine, Expression expression, bool debug, uint depth = 0) {
 	try {
 		var result = engine.run (expression, !debug);
 		if (result is Tuple) {
@@ -167,7 +167,7 @@ const OptionEntry[] options = {
 	{ null }
 };
 
-int main(string[] args) {
+int main (string[] args) {
 	try {
 		var opt_context = new OptionContext ("- Flabbergast");
 		opt_context.set_help_enabled (true);
