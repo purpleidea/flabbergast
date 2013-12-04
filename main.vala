@@ -1,14 +1,14 @@
 using Flabbergast;
 namespace Debug {
 	abstract class Statement : Object {
-		public abstract bool execute (ExecutionEngine engine, ref int stack_frame);
+		public abstract bool execute (Rules rules, ExecutionEngine engine, ref int stack_frame);
 	}
 	class Switch : Statement {
 		public int frame {
 			get;
 			set;
 		}
-		public override bool execute (ExecutionEngine engine, ref int stack_frame) {
+		public override bool execute (Rules rules, ExecutionEngine engine, ref int stack_frame) {
 			if (frame >= 0 && frame < engine.call_depth) {
 				stack_frame = frame;
 			} else {
@@ -18,7 +18,7 @@ namespace Debug {
 		}
 	}
 	class Up : Statement {
-		public override bool execute (ExecutionEngine engine, ref int stack_frame) {
+		public override bool execute (Rules rules, ExecutionEngine engine, ref int stack_frame) {
 			if (stack_frame > 0) {
 				stack_frame--;
 			} else {
@@ -28,7 +28,7 @@ namespace Debug {
 		}
 	}
 	class Down : Statement {
-		public override bool execute (ExecutionEngine engine, ref int stack_frame) {
+		public override bool execute (Rules rules, ExecutionEngine engine, ref int stack_frame) {
 			if (stack_frame < engine.call_depth - 1) {
 				stack_frame++;
 			} else {
@@ -38,7 +38,7 @@ namespace Debug {
 		}
 	}
 	class Quit : Statement {
-		public override bool execute (ExecutionEngine engine, ref int stack_frame) {
+		public override bool execute (Rules rules, ExecutionEngine engine, ref int stack_frame) {
 			return true;
 		}
 	}
@@ -47,9 +47,10 @@ namespace Debug {
 			get;
 			set;
 		}
-		public override bool execute (ExecutionEngine engine, ref int stack_frame) {
+		public override bool execute (Rules rules, ExecutionEngine engine, ref int stack_frame) {
 			try {
 				var result = engine.debug_lookup (stack_frame, names);
+				print_datum (result, rules, engine, false, 0);
 			} catch (EvaluationError e) {
 				stdout.printf ("Error: %s\n", e.message);
 			}
@@ -64,42 +65,46 @@ void print_tabs (uint depth) {
 	}
 }
 
+void print_datum (Datum result, Rules rules, ExecutionEngine engine, bool debug, uint depth) {
+	if (result is Tuple) {
+		stdout.printf ("{\n");
+		foreach (var entry in (Tuple) result) {
+			if (entry.key == "Container") {
+				continue;
+			}
+			print_tabs (depth);
+			stdout.printf (" %s: ", entry.key);
+			print_expression (rules, engine, entry.value, debug && debug_inner, depth + 1);
+		}
+		print_tabs (depth);
+		stdout.printf ("}\n");
+	} else {
+		string type_name;
+		if (result is Boolean) {
+			type_name = "bool";
+		} else if (result is Float) {
+			type_name = "float";
+		} else if (result is Null) {
+			stdout.printf ("Null\n");
+			return;
+		} else if (result is Integer) {
+			type_name = "int";
+		} else if (result is String) {
+			type_name = "str";
+		} else if (result is Template) {
+			stdout.printf ("Template\n");
+			return;
+		} else {
+			type_name = "unknown";
+		}
+		stdout.printf ("%s As %s\n", result.to_string (), type_name);
+	}
+}
+
 void print_expression (Rules rules, ExecutionEngine engine, Expression expression, bool debug, uint depth = 0) {
 	try {
 		var result = engine.run (expression, !debug);
-		if (result is Tuple) {
-			stdout.printf ("{\n");
-			foreach (var entry in (Tuple) result) {
-				if (entry.key == "Container") {
-					continue;
-				}
-				print_tabs (depth);
-				stdout.printf (" %s: ", entry.key);
-				print_expression (rules, engine, entry.value, false, depth + 1);
-			}
-			print_tabs (depth);
-			stdout.printf ("}\n");
-		} else {
-			string type_name;
-			if (result is Boolean) {
-				type_name = "bool";
-			} else if (result is Float) {
-				type_name = "float";
-			} else if (result is Null) {
-				stdout.printf ("Null\n");
-				return;
-			} else if (result is Integer) {
-				type_name = "int";
-			} else if (result is String) {
-				type_name = "str";
-			} else if (result is Template) {
-				stdout.printf ("Template\n");
-				return;
-			} else {
-				type_name = "unknown";
-			}
-			stdout.printf ("%s As %s\n", result.to_string (), type_name);
-		}
+		print_datum (result, rules, engine, debug, depth);
 	} catch (EvaluationError e) {
 		stdout.printf ("Error: %s\n", e.message);
 		if (debug) {
@@ -118,7 +123,7 @@ void print_expression (Rules rules, ExecutionEngine engine, Expression expressio
 				Value debug_stmt;
 				var parser = new GTeonoma.StringParser (rules, line, "debug command");
 				if (parser.parse (typeof (Debug.Statement), out debug_stmt) == GTeonoma.Result.OK) {
-					if (((Debug.Statement)debug_stmt.get_object ()).execute (engine, ref stack_frame)) {
+					if (((Debug.Statement)debug_stmt.get_object ()).execute (rules, engine, ref stack_frame)) {
 						break;
 					}
 				} else {
@@ -159,8 +164,10 @@ private extern string? sane_readline (string prompt);
 
 bool interactive;
 bool debug_parsing;
+bool debug_inner;
 string? filename;
 const OptionEntry[] options = {
+	{ "debug-inner", 'g', 0, OptionArg.NONE, ref debug_inner, "Interactively debug inside tuple printing.", null },
 	{ "debug-parsing", 0, 0, OptionArg.NONE, ref debug_parsing, "Turn on GTeonoma parsing output.", null },
 	{ "file", 'f', 0, OptionArg.FILENAME, ref filename, "Input file to read.", "FILE" },
 	{ "interactive", 'i', 0, OptionArg.NONE, ref interactive, "Enter interactive shell.", null },
