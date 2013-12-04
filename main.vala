@@ -1,4 +1,62 @@
 using Flabbergast;
+namespace Debug {
+	abstract class Statement : Object {
+		public abstract bool execute(ExecutionEngine engine, ref int stack_frame);
+	}
+	class Switch : Statement {
+		public int frame {
+			get;
+			set;
+		}
+		public override bool execute(ExecutionEngine engine, ref int stack_frame) {
+			if (frame >= 0 && frame < engine.call_depth) {
+				stack_frame = frame;
+			} else {
+				stdout.printf ("Stack frame %d out of range.\n", frame);
+			}
+			return false;
+		}
+	}
+	class Up : Statement {
+		public override bool execute(ExecutionEngine engine, ref int stack_frame) {
+			if (stack_frame > 0) {
+				stack_frame--;
+			} else {
+				stdout.printf ("End of stack.\n");
+			}
+			return false;
+		}
+	}
+	class Down : Statement {
+		public override bool execute(ExecutionEngine engine, ref int stack_frame) {
+			if (stack_frame < engine.call_depth - 1) {
+				stack_frame++;
+			} else {
+				stdout.printf ("End of stack.\n");
+			}
+			return false;
+		}
+	}
+	class Quit : Statement {
+		public override bool execute(ExecutionEngine engine, ref int stack_frame) {
+			return true;
+		}
+	}
+	class Lookup : Statement {
+		public Gee.List<Nameish> names {
+			get;
+			set;
+		}
+		public override bool execute(ExecutionEngine engine, ref int stack_frame) {
+			try {
+				var result = engine.debug_lookup (stack_frame, names);
+			} catch (EvaluationError e) {
+				stdout.printf ("Error: %s\n", e.message);
+			}
+			return false;
+		}
+	}
+}
 
 void print_tabs(uint depth) {
 	for (var it = 0; it < depth; it++) {
@@ -6,7 +64,7 @@ void print_tabs(uint depth) {
 	}
 }
 
-void print_expression(ExecutionEngine engine, Expression expression, bool debug, uint depth = 0) {
+void print_expression(Rules rules, ExecutionEngine engine, Expression expression, bool debug, uint depth = 0) {
 	try {
 		var result = engine.run (expression, !debug);
 		if (result is Tuple) {
@@ -17,7 +75,7 @@ void print_expression(ExecutionEngine engine, Expression expression, bool debug,
 				}
 				print_tabs (depth);
 				stdout.printf (" %s: ", entry.key);
-				print_expression (engine, entry.value, false, depth + 1);
+				print_expression (rules, engine, entry.value, false, depth + 1);
 			}
 			print_tabs (depth);
 			stdout.printf ("}\n");
@@ -49,6 +107,23 @@ void print_expression(ExecutionEngine engine, Expression expression, bool debug,
 			for (var it = 0; it < num_frames; it++) {
 				var source = engine.get_call_expression (it).source;
 				stdout.printf ("#%d %s:%d:%d\n", it, source.source, source.line, source.offset);
+			}
+			var stack_frame = 0;
+			string? line;
+			while ((line = sane_readline ("Debug:%d> ".printf (stack_frame))) != null) {
+				line = line.strip ();
+				if (line.length == 0) {
+					break;
+				}
+				Value debug_stmt;
+				var parser = new GTeonoma.StringParser (rules, line, "debug command");
+				if (parser.parse (typeof (Debug.Statement), out debug_stmt) == GTeonoma.Result.OK) {
+					if (((Debug.Statement)debug_stmt.get_object ()).execute (engine, ref stack_frame)) {
+						break;
+					}
+				} else {
+					parser.visit_errors ((source, error) => stderr.printf ("%s:%d:%d: %s\n", source.source, source.line, source.offset, error));
+				}
 			}
 		}
 		engine.clear_call_stack ();
@@ -107,6 +182,11 @@ int main(string[] args) {
 		stderr.printf ("Flabbergast – %s %s\n", Package.STRING, Package.URL);
 	}
 	var rules = new Rules ();
+	rules.register<Debug.Switch> ("switch call frame", 0, "% Switch %P{frame}% ");
+	rules.register<Debug.Up> ("up one call frame", 0, "% Up% ");
+	rules.register<Debug.Down> ("up one call frame", 0, "% Down% ");
+	rules.register<Debug.Quit> ("exit debugger", 0, "% Quit% ");
+	rules.register<Debug.Lookup> ("lookup name", 0, "% %L{names}{% .% }% ", new Type[] { typeof (Nameish) });
 	var engine = new ExecutionEngine ();
 	Tuple? root_tuple = null;
 	if (!(interactive && filename == null)) {
@@ -136,7 +216,7 @@ int main(string[] args) {
 		}
 	}
 	if (args.length == 1 && !interactive) {
-		print_expression (engine, new Expressions.This (), interactive);
+		print_expression (rules, engine, new Expressions.This (), interactive);
 	} else {
 		for (var it = 1; it < args.length; it++) {
 			var arg_parser = new GTeonoma.StringParser (rules, args[it].strip (), "argument %d".printf (it));
@@ -144,7 +224,7 @@ int main(string[] args) {
 			if (expression == null) {
 				return 1;
 			}
-			print_expression (engine, expression, interactive);
+			print_expression (rules, engine, expression, interactive);
 		}
 	}
 	if (interactive) {
@@ -173,11 +253,11 @@ int main(string[] args) {
 			} while (try_more);
 
 			if (expression != null) {
-				print_expression (engine, expression, true);
+				print_expression (rules, engine, expression, true);
 			}
 			Readline.History.add (line);
 		}
-		stdout.putc('\n');
+		stdout.putc ('\n');
 	}
 	return 0;
 }
