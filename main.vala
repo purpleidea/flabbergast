@@ -6,10 +6,9 @@ void print_tabs(uint depth) {
 	}
 }
 
-void print_expression(ExecutionEngine engine, Expression expression, uint depth = 0) {
+void print_expression(ExecutionEngine engine, Expression expression, bool debug, uint depth = 0) {
 	try {
-		engine.call (expression);
-		var result = engine.operands.pop ();
+		var result = engine.run (expression, !debug);
 		if (result is Tuple) {
 			stdout.printf ("{\n");
 			foreach (var entry in (Tuple) result) {
@@ -18,7 +17,7 @@ void print_expression(ExecutionEngine engine, Expression expression, uint depth 
 				}
 				print_tabs (depth);
 				stdout.printf (" %s: ", entry.key);
-				print_expression (engine, entry.value, depth + 1);
+				print_expression (engine, entry.value, false, depth + 1);
 			}
 			print_tabs (depth);
 			stdout.printf ("}\n");
@@ -45,6 +44,14 @@ void print_expression(ExecutionEngine engine, Expression expression, uint depth 
 		}
 	} catch (EvaluationError e) {
 		stdout.printf ("Error: %s\n", e.message);
+		if (debug) {
+			var num_frames = engine.call_depth;
+			for (var it = 0; it < num_frames; it++) {
+				var source = engine.get_call_expression (it).source;
+				stdout.printf ("#%d %s:%d:%d\n", it, source.source, source.line, source.offset);
+			}
+		}
+		engine.clear_call_stack ();
 	}
 }
 
@@ -128,7 +135,7 @@ int main(string[] args) {
 		}
 	}
 	if (args.length == 1 && !interactive) {
-		print_expression (engine, new Expressions.This ());
+		print_expression (engine, new Expressions.This (), interactive);
 	} else {
 		for (var it = 1; it < args.length; it++) {
 			var arg_parser = new GTeonoma.StringParser (rules, args[it].strip (), "argument %d".printf (it));
@@ -136,7 +143,7 @@ int main(string[] args) {
 			if (expression == null) {
 				return 1;
 			}
-			print_expression (engine, expression);
+			print_expression (engine, expression, interactive);
 		}
 	}
 	if (interactive) {
@@ -164,7 +171,7 @@ int main(string[] args) {
 			} while (try_more);
 
 			if (expression != null) {
-				print_expression (engine, expression);
+				print_expression (engine, expression, true);
 			}
 			Readline.History.add (line);
 		}

@@ -152,6 +152,11 @@ namespace Flabbergast {
 
 	public class ExecutionEngine : Object {
 		private StackFrame[] call_stack = {};
+		public int call_depth {
+			get {
+				return call_stack.length - (call_stack.length > 0 && call_stack[0].expression == null ? 1 : 0);
+			}
+		}
 		public NameEnvironment environment {
 			get;
 			private set;
@@ -187,11 +192,48 @@ namespace Flabbergast {
 				call_stack += StackFrame (call_stack[call_stack.length - 1].state, expression);
 			}
 			expression.evaluate (this);
+			call_stack[call_stack.length - 1] = { null };
 			call_stack.length--;
+		}
+
+		public void clear_call_stack() {
+			clear_stack_to (call_stack.length > 0 && call_stack[0].expression == null ? 1 : 0);
+		}
+		private void clear_stack_to(int target_length) {
+			for (var it = target_length; it < call_stack.length; it++) {
+				call_stack[it] = { null };
+			}
+			call_stack.length  = target_length;
 		}
 
 		public Expression create_closure(Expression expression) {
 			return new Promise (this, expression, state);
+		}
+
+		public Datum? debug_lookup (int frame, Gee.List<Nameish> names) throws EvaluationError {
+			if (frame < call_stack.length) {
+				var original_stack_length = call_stack.length;
+				call_stack += call_stack[call_stack.length - frame - 1];
+				try {
+					var expr = lookup_contextual (names);
+					call (expr);
+					return operands.pop ();
+				} catch (EvaluationError e) {
+					clear_stack_to (original_stack_length);
+					throw e;
+				}
+				clear_stack_to (original_stack_length);
+			} else {
+				return null;
+			}
+		}
+
+		public Expression? get_call_expression (int frame) {
+			if (frame < call_stack.length) {
+				return call_stack[call_stack.length - frame - 1].expression;
+			} else {
+				return null;
+			}
 		}
 
 		public bool is_defined(Gee.List<Nameish> names) throws EvaluationError requires(names.size > 0) {
@@ -282,6 +324,23 @@ namespace Flabbergast {
 				}
 			}
 			return (!)result;
+		}
+
+		public Datum run(Expression expression, bool restore_stack_on_failure = true) throws EvaluationError {
+			var original_stack_length = call_stack.length;
+			try {
+				call (expression);
+				var result = operands.pop ();
+				if (result == null) {
+					throw new EvaluationError.INTERNAL ("No item returned from expression.");
+				}
+				return (!)result;
+			} catch (EvaluationError e) {
+				if (restore_stack_on_failure && call_stack.length > original_stack_length) {
+					clear_stack_to (original_stack_length);
+				}
+				throw e;
+			}
 		}
 
 		public Tuple start_from(File file) throws EvaluationError {
