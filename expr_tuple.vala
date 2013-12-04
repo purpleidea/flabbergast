@@ -61,14 +61,14 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public Expression? source {
+		public Expression? source_expr {
 			get;
 			internal set;
 		}
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
 			Template source_data = null;
-			if (source != null) {
-				engine.call (source);
+			if (source_expr != null) {
+				engine.call (source_expr);
 				var result = engine.operands.pop ();
 				if (result is Template) {
 					source_data = (Template) result;
@@ -95,7 +95,7 @@ namespace Flabbergast.Expressions {
 						throw new EvaluationError.OVERRIDE (@"Attempting to override non-existant attribute $(attr.name.name).");
 					}
 					var child_override = new TemplateLiteral ();
-					child_override.source = source_data.attributes[attr.name.name];
+					child_override.source_expr = source_data.attributes[attr.name.name];
 					child_override.attributes.add_all (((Override) attr).attributes);
 					template.attributes[attr.name.name] = child_override;
 				} else if (attr is Undefine) {
@@ -128,12 +128,12 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public Expression source {
+		public Expression source_expr {
 			get;
 			set;
 		}
 		public override void evaluate(ExecutionEngine engine) throws EvaluationError {
-			engine.call (source);
+			engine.call (source_expr);
 			var result = engine.operands.pop ();
 			if (!(result is Template)) {
 				throw new EvaluationError.TYPE_MISMATCH ("Attempting to instantiate something which is not a template.");
@@ -171,7 +171,7 @@ namespace Flabbergast.Expressions {
 						throw new EvaluationError.OVERRIDE (@"Attempting to override non-existant attribute $(attr.name.name).");
 					}
 					var child_override = new TemplateLiteral ();
-					child_override.source = template.attributes[attr.name.name];
+					child_override.source_expr = template.attributes[attr.name.name];
 					child_override.attributes = new Gee.ArrayList<TemplatePart> ();
 					child_override.attributes.add_all (((Override) attr).attributes);
 					var attr_value = engine.create_closure (child_override);
@@ -258,7 +258,7 @@ namespace Flabbergast.Expressions {
 
 			var instantiation = new Instantiate ();
 			instantiation.attributes = overrides;
-			instantiation.source = function;
+			instantiation.source_expr = function;
 			var lookup = new DirectLookup ();
 			lookup.expression = instantiation;
 			var names = new Gee.ArrayList<Nameish> ();

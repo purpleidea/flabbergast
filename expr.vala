@@ -1,5 +1,9 @@
 namespace Flabbergast {
-	public abstract class Expression : Object {
+	public abstract class Expression : Object, GTeonoma.SourceInfo {
+		public GTeonoma.source_location source {
+			get;
+			set;
+		}
 		public abstract void evaluate(ExecutionEngine engine) throws EvaluationError;
 	}
 }

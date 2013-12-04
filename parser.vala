@@ -72,8 +72,8 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<TypeEnsure> ("type ensuring", precedence, "%P{+expression} As %P{ty}");
 
 		register<TupleLiteral> ("tuple literal", precedence, "{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (Attribute) });
-		register<TemplateLiteral> ("template", precedence, "Template %p{+source}%_{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });
-		register<Instantiate> ("template instantiation", precedence, "%P{+source}%-{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TuplePart) });
+		register<TemplateLiteral> ("template", precedence, "Template %p{+source_expr}%_{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });
+		register<Instantiate> ("template instantiation", precedence, "%P{+source_expr}%-{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TuplePart) });
 		register<FunctionCall> ("function call", precedence, "%P{+function}%-(%-%l{args}{% ,%-}% )", new Type[] { typeof (FunctionCall.FunctionArg) });
 
 		precedence++;
