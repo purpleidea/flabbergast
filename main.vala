@@ -91,6 +91,7 @@ const OptionEntry[] options = {
 	{ "interactive", 'i', 0, OptionArg.NONE, ref interactive, "Enter interactive shell.", null },
 	{ null }
 };
+
 int main(string[] args) {
 	try {
 		var opt_context = new OptionContext ("- Flabbergast");
@@ -164,9 +165,10 @@ int main(string[] args) {
 				expression = do_parsing (rules, arg_parser, true, out try_more);
 				if (expression == null && try_more) {
 					var next_line = sane_readline ("> ");
-					if (next_line != null) {
-						line = "%s\n%s".printf (line, next_line.strip ());
+					if (next_line == null) {
+						break;
 					}
+					line = "%s\n%s".printf (line, next_line.strip ());
 				}
 			} while (try_more);
 
@@ -175,6 +177,7 @@ int main(string[] args) {
 			}
 			Readline.History.add (line);
 		}
+		stdout.putc('\n');
 	}
 	return 0;
 }
