@@ -17,6 +17,12 @@ namespace Debug {
 			return false;
 		}
 	}
+	class Trace : Statement {
+		public override bool execute (Rules rules, ExecutionEngine engine, ref int stack_frame) {
+			back_trace (engine, stack_frame);
+			return false;
+		}
+	}
 	class Up : Statement {
 		public override bool execute (Rules rules, ExecutionEngine engine, ref int stack_frame) {
 			if (stack_frame > 0) {
@@ -55,6 +61,13 @@ namespace Debug {
 				stdout.printf ("Error: %s\n", e.message);
 			}
 			return false;
+		}
+	}
+	public void back_trace (ExecutionEngine engine, int current_frame = 0) {
+		var num_frames = engine.call_depth;
+		for (var it = 0; it < num_frames; it++) {
+			var source = engine.get_call_expression (it).source;
+			stdout.printf ("%s #%d %s:%d:%d\n", it == current_frame ? "->" : "  ",  it, source.source, source.line, source.offset);
 		}
 	}
 }
@@ -108,11 +121,7 @@ void print_expression (Rules rules, ExecutionEngine engine, Expression expressio
 	} catch (EvaluationError e) {
 		stdout.printf ("Error: %s\n", e.message);
 		if (debug) {
-			var num_frames = engine.call_depth;
-			for (var it = 0; it < num_frames; it++) {
-				var source = engine.get_call_expression (it).source;
-				stdout.printf ("#%d %s:%d:%d\n", it, source.source, source.line, source.offset);
-			}
+			Debug.back_trace (engine);
 			var stack_frame = 0;
 			string? line;
 			while ((line = sane_readline ("Debug:%d> ".printf (stack_frame))) != null) {
@@ -189,11 +198,12 @@ int main (string[] args) {
 		stderr.printf ("Flabbergast – %s %s\n", Package.STRING, Package.URL);
 	}
 	var rules = new Rules ();
-	rules.register<Debug.Switch> ("switch call frame", 0, "% Switch %P{frame}% ");
-	rules.register<Debug.Up> ("up one call frame", 0, "% Up% ");
 	rules.register<Debug.Down> ("up one call frame", 0, "% Down% ");
-	rules.register<Debug.Quit> ("exit debugger", 0, "% Quit% ");
 	rules.register<Debug.Lookup> ("lookup name", 0, "% %L{names}{% .% }% ", new Type[] { typeof (Nameish) });
+	rules.register<Debug.Quit> ("exit debugger", 0, "% Quit% ");
+	rules.register<Debug.Switch> ("switch call frame", 0, "% Switch %P{frame}% ");
+	rules.register<Debug.Trace> ("backtrace", 0, "% Trace% ");
+	rules.register<Debug.Up> ("up one call frame", 0, "% Up% ");
 	var engine = new ExecutionEngine ();
 	Tuple? root_tuple = null;
 	if (!(interactive && filename == null)) {
