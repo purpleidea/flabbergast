@@ -29,8 +29,11 @@ void flabbergast_add_library_search_path(
 	gint it;
 	init_paths();
 	paths_length++;
-	paths = realloc(paths, paths_length * sizeof(gchar *));
-	paths[paths_length - 1] = g_strdup(path);
+	paths = g_renew(gchar *, paths, paths_length);
+	for (it = paths_length - 1; it > 1; it--) {
+		paths[it] = paths[it - 1];
+	}
+	paths[0] = g_strdup(path);
 }
 
 char *flabbergast_find_library(
