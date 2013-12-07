@@ -121,6 +121,7 @@ libflabbergast_glib_la_SOURCES = \
 	expr_misc.vala \
 	expr_tuple.vala \
 	expr_type.vala \
+	foreign.vala \
 	parser.vala \
 	utils.vala \
 	$(NULL)
