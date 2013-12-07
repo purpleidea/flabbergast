@@ -217,12 +217,12 @@ namespace Flabbergast {
 				try {
 					var expr = lookup_contextual (names);
 					call (expr);
+					clear_stack_to (original_stack_length);
 					return operands.pop ();
 				} catch (EvaluationError e) {
 					clear_stack_to (original_stack_length);
 					throw e;
 				}
-				clear_stack_to (original_stack_length);
 			} else {
 				return null;
 			}
