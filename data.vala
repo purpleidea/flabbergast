@@ -1,4 +1,4 @@
-namespace Flabbergast {
+namespace Flabbergast.Data {
 	public abstract class Datum {
 		public Type g_type {
 			get {

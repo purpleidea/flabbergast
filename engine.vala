@@ -44,7 +44,7 @@ namespace Flabbergast {
 		Expression expression;
 		bool is_running = false;
 		MachineState state;
-		internal Datum? evaluated_form = null;
+		internal Data.Datum? evaluated_form = null;
 
 		internal Promise (ExecutionEngine engine, Expression expression, MachineState state) {
 			owner = WeakRef (engine);
@@ -83,20 +83,20 @@ namespace Flabbergast {
 	internal struct MachineState {
 		internal uint context;
 		internal ContainerReference? containers;
-		internal unowned Tuple? this_tuple;
+		internal unowned Data.Tuple? this_tuple;
 	}
 
 	public class DataStack {
-		Gee.Deque<Datum> stack = new Gee.ArrayQueue<Datum> ();
+		Gee.Deque<Data.Datum> stack = new Gee.ArrayQueue<Data.Datum> ();
 		public DataStack () {}
 
-		public Datum? peek () {
+		public Data.Datum? peek () {
 			return (stack.size == 0) ? null : stack.peek_head ();
 		}
-		public Datum? pop () {
+		public Data.Datum? pop () {
 			return (stack.size == 0) ? null : stack.poll_head ();
 		}
-		public void push (Datum datum) {
+		public void push (Data.Datum datum) {
 			stack.offer_head (datum);
 		}
 	}
@@ -210,7 +210,7 @@ namespace Flabbergast {
 			return new Promise (this, expression, state);
 		}
 
-		public Datum? debug_lookup (int frame, Gee.List<Nameish> names) throws EvaluationError {
+		public Data.Datum? debug_lookup (int frame, Gee.List<Nameish> names) throws EvaluationError {
 			if (frame < call_stack.length) {
 				var original_stack_length = call_stack.length;
 				call_stack += call_stack[call_stack.length - frame - 1];
@@ -287,11 +287,11 @@ namespace Flabbergast {
 			}
 			return (!)result;
 		}
-		public Expression? lookup_direct_internal (Gee.List<Nameish> names, ref int it, out bool exists = null) throws EvaluationError {
+		private Expression? lookup_direct_internal (Gee.List<Nameish> names, ref int it, out bool exists = null) throws EvaluationError {
 			var start = operands.pop ();
 			for (; it < names.size - 1; it++) {
-				if (start is Tuple) {
-					var promise = ((Tuple) start)[names[it].name];
+				if (start is Data.Tuple) {
+					var promise = ((Data.Tuple)start)[names[it].name];
 					if (promise == null) {
 						exists = false;
 						return null;
@@ -303,9 +303,9 @@ namespace Flabbergast {
 					return null;
 				}
 			}
-			if (start is Tuple) {
+			if (start is Data.Tuple) {
 				exists = false;
-				return ((Tuple) start)[names[names.size - 1].name];
+				return ((Data.Tuple)start)[names[names.size - 1].name];
 			} else {
 				exists = true;
 				return null;
@@ -326,7 +326,7 @@ namespace Flabbergast {
 			return (!)result;
 		}
 
-		public Datum run (Expression expression, bool restore_stack_on_failure = true) throws EvaluationError {
+		public Data.Datum run (Expression expression, bool restore_stack_on_failure = true) throws EvaluationError {
 			var original_stack_length = call_stack.length;
 			try {
 				call (expression);
@@ -343,7 +343,7 @@ namespace Flabbergast {
 			}
 		}
 
-		public Tuple start_from (File file) throws EvaluationError {
+		public Data.Tuple start_from (File file) throws EvaluationError {
 			if (call_stack.length != 0) {
 				call_stack.length = 0;
 			}
@@ -356,9 +356,9 @@ namespace Flabbergast {
 			return tuple;
 		}
 
-		private Gee.Map<string, Datum> imports = new Gee.HashMap<string, Datum> ();
+		private Gee.Map<string, Data.Datum> imports = new Gee.HashMap<string, Data.Datum> ();
 		internal Expression get_import (string uri) throws EvaluationError {
-			Datum import;
+			Data.Datum import;
 			if (imports.has_key (uri)) {
 				import = imports[uri];
 			} else {
@@ -367,8 +367,8 @@ namespace Flabbergast {
 			}
 			return new Expressions.ReturnLiteral (import);
 		}
-		protected virtual Datum find_import (string uri) throws EvaluationError {
-			return new Null ();
+		protected virtual Data.Datum find_import (string uri) throws EvaluationError {
+			return new Data.Null ();
 		}
 	}
 }

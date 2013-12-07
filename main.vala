@@ -78,10 +78,10 @@ void print_tabs (uint depth) {
 	}
 }
 
-void print_datum (Datum result, Rules rules, ExecutionEngine engine, bool debug, uint depth) {
-	if (result is Tuple) {
+void print_datum (Data.Datum result, Rules rules, ExecutionEngine engine, bool debug, uint depth) {
+	if (result is Data.Tuple) {
 		stdout.printf ("{\n");
-		foreach (var entry in (Tuple) result) {
+		foreach (var entry in (Data.Tuple)result) {
 			if (entry.key == "Container") {
 				continue;
 			}
@@ -93,19 +93,19 @@ void print_datum (Datum result, Rules rules, ExecutionEngine engine, bool debug,
 		stdout.printf ("}\n");
 	} else {
 		string type_name;
-		if (result is Boolean) {
+		if (result is Data.Boolean) {
 			type_name = "bool";
-		} else if (result is Float) {
+		} else if (result is Data.Float) {
 			type_name = "float";
-		} else if (result is Null) {
+		} else if (result is Data.Null) {
 			stdout.printf ("Null\n");
 			return;
-		} else if (result is Integer) {
+		} else if (result is Data.Integer) {
 			type_name = "int";
-		} else if (result is String) {
+		} else if (result is Data.String) {
 			type_name = "str";
-		} else if (result is Template) {
-			stdout.printf ("Template\n");
+		} else if (result is Data.Template) {
+			stdout.printf ("Data.Template\n");
 			return;
 		} else {
 			type_name = "unknown";
@@ -205,7 +205,7 @@ int main (string[] args) {
 	rules.register<Debug.Trace> ("backtrace", 0, "% Trace% ");
 	rules.register<Debug.Up> ("up one call frame", 0, "% Up% ");
 	var engine = new ExecutionEngine ();
-	Tuple? root_tuple = null;
+	Data.Tuple? root_tuple = null;
 	if (!(interactive && filename == null)) {
 		var parser = GTeonoma.FileParser.open (rules, filename?? "/dev/stdin");
 		if (parser == null) {

@@ -4,7 +4,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register_double ();
 		register_int ((int) sizeof (int) * 8, typeof (int));
 		register_string_literal (false);
-		register<Ty> ("type");
+		register<Data.Ty> ("type");
 
 		/* Tuple attributes */
 		register<Attribute> ("attribute", 0, "%P{name}% :%-%P{expression}");

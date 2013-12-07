@@ -9,8 +9,8 @@ namespace Flabbergast {
 }
 namespace Flabbergast.Expressions {
 	public class ReturnLiteral : Expression {
-		private unowned Datum datum;
-		public ReturnLiteral (Datum datum) {
+		private unowned Data.Datum datum;
+		public ReturnLiteral (Data.Datum datum) {
 			this.datum = datum;
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
@@ -28,12 +28,12 @@ namespace Flabbergast.Expressions {
 	}
 	internal class TrueLiteral : Expression {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			engine.operands.push (new Boolean (true));
+			engine.operands.push (new Data.Boolean (true));
 		}
 	}
 	internal class FalseLiteral : Expression {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			engine.operands.push (new Boolean (false));
+			engine.operands.push (new Data.Boolean (false));
 		}
 	}
 	internal class IntegerLiteral : Expression {
@@ -42,7 +42,7 @@ namespace Flabbergast.Expressions {
 			set;
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			engine.operands.push (new Integer (@value));
+			engine.operands.push (new Data.Integer (@value));
 		}
 	}
 	internal class FloatLiteral : Expression {
@@ -51,7 +51,7 @@ namespace Flabbergast.Expressions {
 			set;
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			engine.operands.push (new Float (@value));
+			engine.operands.push (new Data.Float (@value));
 		}
 	}
 	internal class StringPiece : Object {
@@ -64,7 +64,7 @@ namespace Flabbergast.Expressions {
 			set;
 		}
 		public void render (ExecutionEngine engine, StringBuilder builder) throws EvaluationError {
-			var result = (String) convert (engine, expression, Ty.STR);
+			var result = (Data.String)convert (engine, expression, Data.Ty.STR);
 			builder.append (result.@value);
 			if (literal != null) {
 				builder.append (literal.str);
@@ -89,12 +89,12 @@ namespace Flabbergast.Expressions {
 					chunk.render (engine, builder);
 				}
 			}
-			engine.operands.push (new String (builder.str));
+			engine.operands.push (new Data.String (builder.str));
 		}
 	}
 	internal class NullLiteral : Expression {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			engine.operands.push (new Null ());
+			engine.operands.push (new Data.Null ());
 		}
 	}
 	internal class NullCoalesce : Expression {
@@ -108,7 +108,7 @@ namespace Flabbergast.Expressions {
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
-			if (engine.operands.peek () is Null) {
+			if (engine.operands.peek () is Data.Null) {
 				engine.operands.pop ();
 				engine.call (alternate);
 			}
@@ -121,7 +121,7 @@ namespace Flabbergast.Expressions {
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
-			engine.operands.push (new Boolean (engine.operands.pop () is Null));
+			engine.operands.push (new Data.Boolean (engine.operands.pop () is Data.Null));
 		}
 	}
 	internal class RaiseError : Expression {
@@ -132,8 +132,8 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 			var result = engine.operands.pop ();
-			if (result is String) {
-				throw new EvaluationError.USER_DEFINED (((String) result).value);
+			if (result is Data.String) {
+				throw new EvaluationError.USER_DEFINED (((Data.String)result).value);
 			} else {
 				throw new EvaluationError.TYPE_MISMATCH ("Expected string in error.");
 			}

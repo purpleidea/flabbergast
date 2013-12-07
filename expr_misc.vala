@@ -9,9 +9,9 @@ namespace Flabbergast.Expressions {
 			set;
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			var left_result = convert (engine, left, Ty.STR);
-			var right_result = convert (engine, right, Ty.STR);
-			engine.operands.push (new String (((String) left_result).value.concat (((String) right_result).value)));
+			var left_result = convert (engine, left, Data.Ty.STR);
+			var right_result = convert (engine, right, Data.Ty.STR);
+			engine.operands.push (new Data.String (((Data.String)left_result).value.concat (((Data.String)right_result).value)));
 		}
 	}
 	internal class Conditional : Expression {
@@ -30,8 +30,8 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (condition);
 			var condition_result = engine.operands.pop ();
-			if (condition_result is Boolean) {
-				engine.call (((Boolean) condition_result).value ? truepart : falsepart);
+			if (condition_result is Data.Boolean) {
+				engine.call (((Data.Boolean)condition_result).value ? truepart : falsepart);
 				return;
 			}
 			throw new EvaluationError.TYPE_MISMATCH ("Expected boolean value for condition.");
@@ -52,7 +52,7 @@ namespace Flabbergast.Expressions {
 			set;
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			engine.operands.push (new Boolean (engine.is_defined (names)));
+			engine.operands.push (new Data.Boolean (engine.is_defined (names)));
 		}
 	}
 	internal class DirectLookup : Expression {
@@ -81,11 +81,11 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 			var result = engine.operands.pop ();
-			if (!(result is Tuple)) {
+			if (!(result is Data.Tuple)) {
 				throw new EvaluationError.TYPE_MISMATCH ("Can only do indirect look from the context of a tuple.");
 			}
 			var state = engine.state;
-			state.context = ((Tuple) result).context;
+			state.context = ((Data.Tuple)result).context;
 			engine.state = state;
 			engine.call (engine.lookup_contextual (names));
 		}

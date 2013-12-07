@@ -28,7 +28,7 @@ namespace Flabbergast.Expressions {
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
-			var tuple = new Tuple (context);
+			var tuple = new Data.Tuple (context);
 
 			var state = engine.state;
 			if (state.this_tuple != null) {
@@ -66,19 +66,19 @@ namespace Flabbergast.Expressions {
 			internal set;
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			Template source_data = null;
+			Data.Template source_data = null;
 			if (source_expr != null) {
 				engine.call (source_expr);
 				var result = engine.operands.pop ();
-				if (result is Template) {
-					source_data = (Template) result;
+				if (result is Data.Template) {
+					source_data = (Data.Template)result;
 				} else {
 					throw new EvaluationError.TYPE_MISMATCH ("Template based on expression which is not a template.");
 				}
 			}
 			var attr_names = new Gee.HashSet<string> ();
 
-			var template = new Template ();
+			var template = new Data.Template ();
 			template.containers = engine.state.containers;
 			foreach (var attr in attributes) {
 				if (attr.name.name in attr_names) {
@@ -135,13 +135,13 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (source_expr);
 			var result = engine.operands.pop ();
-			if (!(result is Template)) {
+			if (!(result is Data.Template)) {
 				throw new EvaluationError.TYPE_MISMATCH ("Attempting to instantiate something which is not a template.");
 			}
 
-			var template = (Template) result;
+			var template = (Data.Template)result;
 			var context = engine.environment.create ();
-			var tuple = new Tuple (context);
+			var tuple = new Data.Tuple (context);
 
 			var state = engine.state;
 			if (state.this_tuple != null) {
@@ -221,7 +221,7 @@ namespace Flabbergast.Expressions {
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
-			var args_tuple = new Tuple (context);
+			var args_tuple = new Data.Tuple (context);
 			var overrides = new Gee.ArrayList<TuplePart> ();
 			var it = 0;
 			var has_args = false;
@@ -292,7 +292,7 @@ namespace Flabbergast.Expressions {
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
-			var tuple = new Tuple (context);
+			var tuple = new Data.Tuple (context);
 			for (var it = 0; it < elements.size; it++) {
 				tuple.attributes[make_id (it)] = engine.create_closure (elements[it]);
 			}
