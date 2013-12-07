@@ -17,6 +17,15 @@ namespace Flabbergast.Expressions {
 			engine.operands.push (datum);
 		}
 	}
+	public class ReturnOwnedLiteral : Expression {
+		private Data.Datum datum;
+		public ReturnOwnedLiteral (Data.Datum datum) {
+			this.datum = datum;
+		}
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+			engine.operands.push (datum);
+		}
+	}
 	internal class SubExpression : Expression {
 		public Expression expression {
 			get;
