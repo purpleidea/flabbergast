@@ -66,7 +66,7 @@ namespace Debug {
 	public void back_trace (ExecutionEngine engine, int current_frame = 0) {
 		var num_frames = engine.call_depth;
 		for (var it = 0; it < num_frames; it++) {
-			var source = engine.get_call_expression (it).source;
+			var source = engine.get_call_source (it).source;
 			stdout.printf ("%s #%d %s:%d:%d\n", it == current_frame ? "->" : "  ",  it, source.source, source.line, source.offset);
 		}
 	}

@@ -1,5 +1,9 @@
 namespace Flabbergast {
-	public class File : Object {
+	public class File : GTeonoma.SourceInfo, Object {
+		public GTeonoma.source_location source {
+			get;
+			set;
+		}
 		public Gee.List<Import> imports {
 			get;
 			set;

@@ -3,6 +3,7 @@ namespace Flabbergast {
 		BAD_MATCH,
 		CIRCULAR,
 		EXTERNAL_REMAINING,
+		IMPORT,
 		INTERNAL,
 		NAME,
 		NUMERIC,
@@ -154,7 +155,7 @@ namespace Flabbergast {
 		private StackFrame[] call_stack = {};
 		public int call_depth {
 			get {
-				return call_stack.length - (call_stack.length > 0 && call_stack[0].expression == null ? 1 : 0);
+				return call_stack.length - (call_stack.length > 0 && (call_stack[0].source is File) ? 1 : 0);
 			}
 		}
 		public Utils.NameEnvironment environment {
@@ -177,10 +178,10 @@ namespace Flabbergast {
 		}
 
 		struct StackFrame {
-			internal Expression? expression;
+			internal GTeonoma.SourceInfo source;
 			internal MachineState state;
-			internal StackFrame (MachineState state, Expression? expression) {
-				this.expression = expression;
+			internal StackFrame (MachineState state, GTeonoma.SourceInfo source) {
+				this.source = source;
 				this.state = state;
 			}
 		}
@@ -197,7 +198,7 @@ namespace Flabbergast {
 		}
 
 		public void clear_call_stack () {
-			clear_stack_to (call_stack.length > 0 && call_stack[0].expression == null ? 1 : 0);
+			clear_stack_to (call_stack.length > 0 && (call_stack[0].source is File) ? 1 : 0);
 		}
 		private void clear_stack_to (int target_length) {
 			for (var it = target_length; it < call_stack.length; it++) {
@@ -228,9 +229,9 @@ namespace Flabbergast {
 			}
 		}
 
-		public Expression? get_call_expression (int frame) {
+		public GTeonoma.SourceInfo? get_call_source (int frame) {
 			if (frame < call_stack.length) {
-				return call_stack[call_stack.length - frame - 1].expression;
+				return call_stack[call_stack.length - frame - 1].source;
 			} else {
 				return null;
 			}
@@ -348,7 +349,7 @@ namespace Flabbergast {
 				call_stack.length = 0;
 			}
 			var state = MachineState ();
-			call_stack += StackFrame (state, null);
+			call_stack += StackFrame (state, file);
 			var tuple = file.evaluate (this);
 			state.this_tuple = tuple;
 			state.context = state.this_tuple.context;
@@ -362,13 +363,45 @@ namespace Flabbergast {
 			if (imports.has_key (uri)) {
 				import = imports[uri];
 			} else {
-				import = find_import (uri);
+				import = find_import (Uri.parse_scheme (uri), uri);
 				imports[uri] = import;
 			}
 			return new Expressions.ReturnLiteral (import);
 		}
-		protected virtual Data.Datum find_import (string uri) throws EvaluationError {
-			return new Data.Null ();
+		protected virtual Data.Datum find_import (string? scheme, string uri) throws EvaluationError {
+			if (scheme == "lib") {
+				var lib_file = find_library (uri[scheme.length + 1 : uri.length]);
+				if (lib_file == null) {
+					throw new EvaluationError.IMPORT (@"Cannot find library $(uri) in search path.");
+				}
+				return load_library_from_file (lib_file);
+			}
+			throw new EvaluationError.IMPORT (@"Unknown URI scheme $(scheme).");
+		}
+		public Data.Datum load_library_from_file (string file_name) throws EvaluationError {
+			try {
+				var rules = new Rules ();
+				var parser = GTeonoma.FileParser.open (rules, file_name);
+				if (parser == null) {
+					throw new EvaluationError.IMPORT (@"Failed to open file $(file_name).");
+				}
+				Value result;
+				if (parser.parse (typeof (File), out result) == GTeonoma.Result.OK && parser.is_finished ()) {
+					var file = ((File) result.get_object ());
+					var state = MachineState ();
+					call_stack += StackFrame (state, file);
+					var tuple = file.evaluate (this);
+					call_stack[call_stack.length - 1] = {};
+					call_stack.length--;
+					return tuple;
+				} else {
+					throw new EvaluationError.IMPORT (@"Failed to parse file $(file_name).");
+				}
+			} catch (GTeonoma.RegisterError e) {
+				throw new EvaluationError.INTERNAL (e.message);
+			}
 		}
 	}
+	public extern string? find_library (string library);
+	public extern void add_library_search_path (string path);
 }

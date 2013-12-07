@@ -100,6 +100,7 @@ libflabbergast_glib_la_VALAFLAGS = \
 	$(libflabbergast_glib_la_COMMONVALAFLAGS)
 
 libflabbergast_glib_la_CPPFLAGS = -g \
+	-DDATA_DIR=\""$(datadir)"\" \
 	$(GLIB_CFLAGS) \
 	$(GEE_CFLAGS) \
 	$(GTEONOMA_CFLAGS) \
@@ -122,6 +123,7 @@ libflabbergast_glib_la_SOURCES = \
 	expr_tuple.vala \
 	expr_type.vala \
 	foreign.vala \
+	misc.c \
 	parser.vala \
 	utils.vala \
 	$(NULL)
