@@ -197,13 +197,19 @@ int main (string[] args) {
 	if (interactive) {
 		stderr.printf ("Flabbergast – %s %s\n", Package.STRING, Package.URL);
 	}
-	var rules = new Rules ();
-	rules.register<Debug.Down> ("up one call frame", 0, "% Down% ");
-	rules.register<Debug.Lookup> ("lookup name", 0, "% %L{names}{% .% }% ", new Type[] { typeof (Nameish) });
-	rules.register<Debug.Quit> ("exit debugger", 0, "% Quit% ");
-	rules.register<Debug.Switch> ("switch call frame", 0, "% Switch %P{frame}% ");
-	rules.register<Debug.Trace> ("backtrace", 0, "% Trace% ");
-	rules.register<Debug.Up> ("up one call frame", 0, "% Up% ");
+	Rules rules;
+	try {
+		rules = new Rules ();
+		rules.register<Debug.Down> ("up one call frame", 0, "% Down% ");
+		rules.register<Debug.Lookup> ("lookup name", 0, "% %L{names}{% .% }% ", new Type[] { typeof (Nameish) });
+		rules.register<Debug.Quit> ("exit debugger", 0, "% Quit% ");
+		rules.register<Debug.Switch> ("switch call frame", 0, "% Switch %P{frame}% ");
+		rules.register<Debug.Trace> ("backtrace", 0, "% Trace% ");
+		rules.register<Debug.Up> ("up one call frame", 0, "% Up% ");
+	} catch (GTeonoma.RegisterError e) {
+		stderr.printf ("Grammar error: %s\n", e.message);
+		return 1;
+	}
 	var engine = new ExecutionEngine ();
 	Data.Tuple? root_tuple = null;
 	if (!(interactive && filename == null)) {
