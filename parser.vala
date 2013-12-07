@@ -70,6 +70,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<IsNull> ("null check", precedence, "%P{+expression}%-Is null");
 		register<TypeCheck> ("type check", precedence, "%P{+expression} Is %P{ty}");
 		register<TypeEnsure> ("type ensuring", precedence, "%P{+expression} As %P{ty}");
+		register<Through> ("range", precedence, "%P{+start} Through %P{+end}");
 
 		register<TupleLiteral> ("tuple literal", precedence, "{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (Attribute) });
 		register<TemplateLiteral> ("template", precedence, "Template %p{+source_expr}%_{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });

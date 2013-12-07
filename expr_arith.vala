@@ -329,4 +329,45 @@ namespace Flabbergast.Expressions {
 			throw new EvaluationError.TYPE_MISMATCH ("Invalid type to infinite check.");
 		}
 	}
+	internal class Through : Expression {
+		public Expression start {
+			get;
+			set;
+		}
+		public Expression end {
+			get;
+			set;
+		}
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+			engine.call (start);
+			var start_value = engine.operands.pop ();
+			engine.call (end);
+			var end_value = engine.operands.pop ();
+			if (!(start_value is Data.Integer)) {
+				throw new EvaluationError.TYPE_MISMATCH ("Invalid start type to Through.");
+			}
+			if (!(end_value is Data.Integer)) {
+				throw new EvaluationError.TYPE_MISMATCH ("Invalid end type to Through.");
+			}
+			var context = engine.environment.create ();
+			var tuple = new Data.Tuple (context);
+			var attributes = new Gee.TreeMap<string, Expression> ();
+			tuple.attributes = attributes;
+			if (engine.state.this_tuple != null) {
+				var attr_value = new ReturnLiteral (engine.state.this_tuple);
+				attributes["Container"] = attr_value;
+				engine.environment[context, "Container"] = attr_value;
+			}
+			var index = 0;
+			var end_int = ((Data.Integer)end_value).value;
+			for (var it = ((Data.Integer)start_value).value; it <= end_int; it++) {
+				var attr_name = make_id (index++);
+				var attr_value = new ReturnOwnedLiteral (new Data.Integer (it));
+				attributes[attr_name] = attr_value;
+				engine.environment[context, attr_name] = attr_value;
+			}
+			engine.operands.push (tuple);
+			return;
+		}
+	}
 }
