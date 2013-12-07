@@ -18,7 +18,18 @@ int main (string[] args) {
 		return 1;
 	}
 	stderr.printf ("Flabbergast – %s %s\n", Package.STRING, Package.URL);
-	var rules = new Rules ();
+	if (filenames.length == 0) {
+		stderr.printf ("No files specified.\n");
+		return 1;
+	}
+	Rules rules;
+	try {
+		rules = new Rules ();
+	} catch (GTeonoma.RegisterError e) {
+		stderr.printf ("Grammar error: %s\n", e.message);
+		return 1;
+	}
+	var exit_code = 0;
 	foreach (var filename in filenames) {
 		stderr.printf ("Reformatting %s...\n", filename);
 		var parser = GTeonoma.FileParser.open (rules, filename);
@@ -29,16 +40,18 @@ int main (string[] args) {
 		Value result;
 		if ((parser.parse (typeof (File), out result)) != GTeonoma.Result.OK) {
 			parser.visit_errors ((source, error) => stderr.printf ("%s:%d:%d: %s\n", source.source, source.line, source.offset, error));
+			exit_code = 1;
 			continue;
 		}
 		if (!parser.is_finished ()) {
 			var end = parser.get_location ();
 			stderr.printf ("%s:%d:%d: Junk at end of input.\n", end.source, end.line, end.offset);
+			exit_code = 1;
 			continue;
 		}
 		parser = null;
 		var printer = GTeonoma.FilePrinter.open (rules, filename);
 		printer.print (result);
 	}
-	return 0;
+	return exit_code;
 }
