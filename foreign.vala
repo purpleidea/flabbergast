@@ -174,7 +174,7 @@ namespace Flabbergast {
 				tuple.attributes["Container"] = container_expr;
 				engine.environment[context, "Container"] = container_expr;
 			}
-			state.containers = new ContainerReference (state.context, state.containers);
+			state.containers = new Utils.ContainerReference (state.context, state.containers);
 			engine.environment.append_containers (context, state.containers);
 
 			result = tuple;

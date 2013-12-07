@@ -59,7 +59,7 @@ namespace Flabbergast.Data {
 	}
 
 	public class Template : Tupleish {
-		internal ContainerReference? containers;
+		internal Utils.ContainerReference? containers;
 		internal Gee.SortedSet<string> externals = new Gee.TreeSet<string> ();
 		public override string to_string () {
 			return "template";

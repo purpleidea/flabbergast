@@ -71,7 +71,7 @@ namespace Flabbergast {
 		}
 	}
 
-	public class ContainerReference {
+	public class Utils.ContainerReference {
 		public ContainerReference? parent;
 		public uint context;
 		public ContainerReference (uint context, ContainerReference? parent) {
@@ -82,11 +82,11 @@ namespace Flabbergast {
 
 	internal struct MachineState {
 		internal uint context;
-		internal ContainerReference? containers;
+		internal Utils.ContainerReference? containers;
 		internal unowned Data.Tuple? this_tuple;
 	}
 
-	public class DataStack {
+	public class Utils.DataStack {
 		Gee.Deque<Data.Datum> stack = new Gee.ArrayQueue<Data.Datum> ();
 		public DataStack () {}
 
@@ -100,7 +100,7 @@ namespace Flabbergast {
 			stack.offer_head (datum);
 		}
 	}
-	public class NameEnvironment {
+	public class Utils.NameEnvironment {
 		Utils.DefaultMap<string, Gee.HashMap<uint, Expression> > defined_names = new Utils.DefaultMap<string, Gee.HashMap<uint, Expression> > ((key) => new Gee.HashMap<uint, Expression> ());
 
 		Utils.DefaultMap<string, Utils.DefaultMap<uint, Gee.List<Expression> > > known_names = new Utils.DefaultMap<string, Utils.DefaultMap<uint, Gee.List<Expression> > > ((key) => new Utils.DefaultMap<uint, Gee.List<Expression> > ((key) => new Gee.ArrayList<Expression> ()));
@@ -118,7 +118,7 @@ namespace Flabbergast {
 				list.add (entry.value[source_context]);
 			}
 		}
-		public void append_containers (uint target_context, ContainerReference? inherited_contexts) {
+		public void append_containers (uint target_context, Utils.ContainerReference? inherited_contexts) {
 			for (; inherited_contexts != null; inherited_contexts = inherited_contexts.parent) {
 				append (target_context, inherited_contexts.context);
 			}
@@ -157,15 +157,15 @@ namespace Flabbergast {
 				return call_stack.length - (call_stack.length > 0 && call_stack[0].expression == null ? 1 : 0);
 			}
 		}
-		public NameEnvironment environment {
+		public Utils.NameEnvironment environment {
 			get;
 			private set;
-			default = new NameEnvironment ();
+			default = new Utils.NameEnvironment ();
 		}
-		public DataStack operands {
+		public Utils.DataStack operands {
 			get;
 			private set;
-			default = new DataStack ();
+			default = new Utils.DataStack ();
 		}
 		internal MachineState state {
 			get {

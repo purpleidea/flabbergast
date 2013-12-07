@@ -36,7 +36,7 @@ namespace Flabbergast.Expressions {
 				tuple.attributes["Container"] = container_expr;
 				engine.environment[context, "Container"] = container_expr;
 			}
-			state.containers = new ContainerReference (state.context, state.containers);
+			state.containers = new Utils.ContainerReference (state.context, state.containers);
 			engine.environment.append_containers (context, state.containers);
 			state.context = context;
 			state.this_tuple = tuple;
@@ -149,7 +149,7 @@ namespace Flabbergast.Expressions {
 				tuple.attributes["Container"] = container_expr;
 				engine.environment[context, "Container"] = container_expr;
 			}
-			state.containers = new ContainerReference (state.context, state.containers);
+			state.containers = new Utils.ContainerReference (state.context, state.containers);
 			engine.environment.append_containers (context, state.containers);
 			state.context = context;
 			state.this_tuple = tuple;
@@ -303,7 +303,7 @@ namespace Flabbergast.Expressions {
 				tuple.attributes["Container"] = container_expr;
 				engine.environment[context, "Container"] = container_expr;
 			}
-			state.containers = new ContainerReference (state.context, state.containers);
+			state.containers = new Utils.ContainerReference (state.context, state.containers);
 			engine.environment.append_containers (context, state.containers);
 			state.context = context;
 			state.this_tuple = tuple;
