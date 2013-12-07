@@ -280,7 +280,7 @@ namespace Flabbergast.Expressions {
 			} else if (digit < 36) {
 				id_str[it] = 'A' + (digit - 10);
 			} else {
-				id_str[it] = 'a' + (digit - 10);
+				id_str[it] = 'a' + (digit - 36);
 			}
 		}
 		return ((string) id_str).dup ();
