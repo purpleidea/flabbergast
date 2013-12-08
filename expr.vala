@@ -112,14 +112,16 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public GTeonoma.StringLiteral literal {
+		public GTeonoma.StringLiteral? literal {
 			get;
 			set;
 		}
 
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var builder = new StringBuilder ();
-			builder.append (literal.str);
+			if (literal != null) {
+				builder.append (literal.str);
+			}
 			if (contents != null) {
 				foreach (var chunk in contents) {
 					chunk.render (engine, builder);

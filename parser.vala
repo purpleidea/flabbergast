@@ -93,6 +93,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<NullLiteral> ("null literal", precedence, "Null");
 		register<RaiseError> ("error", 0, "Error %P{expression}");
 		register<StringLiteral> ("string literal", precedence, "\"%P{literal}%l{contents}{}\"", new Type[] { typeof (StringPiece) });
+		register<StringLiteral> ("empty string literal", precedence, "\"\"");
 		register<SubExpression> ("subexpression", precedence, "(% %P{expression}% )");
 		register<This> ("self-reference", precedence, "This");
 		register<TrueLiteral> ("true literal", precedence, "True");
