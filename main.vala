@@ -242,15 +242,14 @@ int main (string[] args) {
 	}
 	if (args.length == 1 && !interactive) {
 		print_expression (rules, engine, new Expressions.This (), interactive);
-	} else {
-		for (var it = 1; it < args.length; it++) {
-			var arg_parser = new GTeonoma.StringParser (rules, args[it].strip (), "argument %d".printf (it));
-			var expression = do_parsing (rules, arg_parser);
-			if (expression == null) {
-				return 1;
-			}
-			print_expression (rules, engine, expression, interactive);
+	}
+	for (var it = 1; it < args.length; it++) {
+		var arg_parser = new GTeonoma.StringParser (rules, args[it].strip (), "argument %d".printf (it));
+		var expression = do_parsing (rules, arg_parser);
+		if (expression == null) {
+			return 1;
 		}
+		print_expression (rules, engine, expression, interactive);
 	}
 	if (interactive) {
 		Readline.initialize ();
