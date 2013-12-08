@@ -103,9 +103,10 @@ void print_datum (Data.Datum result, Rules rules, ExecutionEngine engine, bool d
 		} else if (result is Data.Integer) {
 			type_name = "int";
 		} else if (result is Data.String) {
-			type_name = "str";
+			stdout.printf ("\"%s\" As str\n", result.to_string ().escape ("'"));
+			return;
 		} else if (result is Data.Template) {
-			stdout.printf ("Data.Template\n");
+			stdout.printf ("Template\n");
 			return;
 		} else {
 			type_name = "unknown";
