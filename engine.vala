@@ -70,6 +70,9 @@ namespace Flabbergast {
 			is_running = false;
 			evaluated_form = engine.operands.peek ();
 		}
+		public override Expression transform () {
+			return this;
+		}
 	}
 
 	public class Utils.ContainerReference {

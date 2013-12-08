@@ -14,6 +14,9 @@ namespace Flabbergast.Expressions {
 			var result = engine.operands.pop ();
 			engine.operands.push (new Data.Boolean (get_datum_type (result) == ty.get_real_type ()));
 		}
+		public override Expression transform () {
+			expression = expression.transform (); return this;
+		}
 	}
 	internal class TypeEnsure : Expression {
 		public Expression expression {
@@ -30,6 +33,9 @@ namespace Flabbergast.Expressions {
 			if (get_datum_type (engine.operands.peek ()) != ty.get_real_type ()) {
 				throw new EvaluationError.TYPE_MISMATCH ("Type is not as requested.");
 			}
+		}
+		public override Expression transform () {
+			expression = expression.transform (); return this;
 		}
 	}
 	public Data.Datum convert (ExecutionEngine engine, Expression expression, Data.Ty ty) throws EvaluationError {
@@ -78,6 +84,9 @@ namespace Flabbergast.Expressions {
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (convert (engine, expression, ty));
+		}
+		public override Expression transform () {
+			expression = expression.transform (); return this;
 		}
 	}
 }

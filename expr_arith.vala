@@ -20,6 +20,12 @@ namespace Flabbergast.Expressions {
 				throw new EvaluationError.TYPE_MISMATCH ("Non-boolean value in logical AND.");
 			}
 		}
+
+		public override Expression transform () {
+			left = left.transform ();
+			right = right.transform ();
+			return this;
+		}
 	}
 
 	internal class LogicalOr : Expression {
@@ -42,6 +48,11 @@ namespace Flabbergast.Expressions {
 			} else {
 				throw new EvaluationError.TYPE_MISMATCH ("Non-boolean value in logical OR.");
 			}
+		}
+		public override Expression transform () {
+			left = left.transform ();
+			right = right.transform ();
+			return this;
 		}
 	}
 
@@ -99,6 +110,11 @@ namespace Flabbergast.Expressions {
 			var result = compare (engine);
 			engine.operands.push (new Data.Integer (result));
 		}
+		public override Expression transform () {
+			left = left.transform ();
+			right = right.transform ();
+			return this;
+		}
 	}
 	internal abstract class Comparison : Expression {
 		public Expression left {
@@ -115,6 +131,11 @@ namespace Flabbergast.Expressions {
 			engine.call (right);
 			var result = compare (engine);
 			engine.operands.push (new Data.Boolean (check (result)));
+		}
+		public override Expression transform () {
+			left = left.transform ();
+			right = right.transform ();
+			return this;
 		}
 	}
 	internal class Equality : Comparison {
@@ -160,7 +181,7 @@ namespace Flabbergast.Expressions {
 			get;
 		}
 		protected abstract int compute_int (int left_value, int right_value) throws EvaluationError;
-		protected abstract double compute_double (double left_value, double right_value);
+		protected abstract double compute_double (double left_value, double right_value) throws EvaluationError;
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (left);
 			var left = engine.operands.pop ();
@@ -179,6 +200,19 @@ namespace Flabbergast.Expressions {
 			}
 			throw new EvaluationError.TYPE_MISMATCH (@"Invalid type to mathematical operator for $(name).");
 		}
+		public abstract bool is_compatible (BinaryOperation op);
+
+		public override Expression transform () {
+			left = left.transform ();
+			right = right.transform ();
+			if (right is BinaryOperation && is_compatible ((BinaryOperation) right)) {
+				var new_parent = (BinaryOperation) right;
+				right = new_parent.left;
+				new_parent.left = this;
+				return new_parent.transform ();
+			}
+			return this;
+		}
 	}
 	internal class Addition : BinaryOperation {
 		public override string name {
@@ -189,8 +223,11 @@ namespace Flabbergast.Expressions {
 		protected override int compute_int (int left_value, int right_value) throws EvaluationError {
 			return left_value + right_value;
 		}
-		protected override double compute_double (double left_value, double right_value) {
+		protected override double compute_double (double left_value, double right_value) throws EvaluationError {
 			return left_value + right_value;
+		}
+		public override bool is_compatible (BinaryOperation op) {
+			return op is Addition || op is Subtraction;
 		}
 	}
 	internal class Subtraction : BinaryOperation {
@@ -202,8 +239,11 @@ namespace Flabbergast.Expressions {
 		protected override int compute_int (int left_value, int right_value) throws EvaluationError {
 			return left_value - right_value;
 		}
-		protected override double compute_double (double left_value, double right_value) {
+		protected override double compute_double (double left_value, double right_value) throws EvaluationError {
 			return left_value - right_value;
+		}
+		public override bool is_compatible (BinaryOperation op) {
+			return op is Addition || op is Subtraction;
 		}
 	}
 	internal class Multiplication : BinaryOperation {
@@ -215,8 +255,11 @@ namespace Flabbergast.Expressions {
 		protected override int compute_int (int left_value, int right_value) throws EvaluationError {
 			return left_value * right_value;
 		}
-		protected override double compute_double (double left_value, double right_value) {
+		protected override double compute_double (double left_value, double right_value) throws EvaluationError {
 			return left_value * right_value;
+		}
+		public override bool is_compatible (BinaryOperation op) {
+			return op is Multiplication || op is Division || op is Modulus;
 		}
 	}
 	internal class Division : BinaryOperation {
@@ -231,34 +274,30 @@ namespace Flabbergast.Expressions {
 			}
 			return left_value / right_value;
 		}
-		protected override double compute_double (double left_value, double right_value) {
+		protected override double compute_double (double left_value, double right_value) throws EvaluationError {
 			return left_value / right_value;
 		}
+		public override bool is_compatible (BinaryOperation op) {
+			return op is Multiplication || op is Division || op is Modulus;
+		}
 	}
-	internal class Modulus : Expression {
-		public Expression left {
-			get;
-			set;
-		}
-		public Expression right {
-			get;
-			set;
-		}
-		public override override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			engine.call (left);
-			var left = engine.operands.pop ();
-			engine.call (right);
-			var right = engine.operands.pop ();
-			if (left is Data.Integer && right is Data.Integer) {
-				var left_value = ((Data.Integer)left).value;
-				var right_value = ((Data.Integer)right).value;
-				if (right_value == 0) {
-					throw new EvaluationError.NUMERIC ("Modulus by zero.");
-				}
-				engine.operands.push (new Data.Integer (left_value % right_value));
-				return;
+	internal class Modulus : BinaryOperation {
+		public override string name {
+			get {
+				return "modulus";
 			}
-			throw new EvaluationError.TYPE_MISMATCH ("Invalid type to mathematical operator for modulus.");
+		}
+		protected override int compute_int (int left_value, int right_value) throws EvaluationError {
+			if (right_value == 0) {
+				throw new EvaluationError.NUMERIC ("Modulus by zero.");
+			}
+			return left_value % right_value;
+		}
+		protected override double compute_double (double left_value, double right_value) throws EvaluationError {
+			throw new EvaluationError.TYPE_MISMATCH ("Modulus is not defined for floats.");
+		}
+		public override bool is_compatible (BinaryOperation op) {
+			return op is Multiplication || op is Division || op is Modulus;
 		}
 	}
 	internal class Not : Expression {
@@ -274,6 +313,10 @@ namespace Flabbergast.Expressions {
 				return;
 			}
 			throw new EvaluationError.TYPE_MISMATCH ("Inavlid type for boolean not operation.");
+		}
+		public override Expression transform () {
+			expression = expression.transform ();
+			return this;
 		}
 	}
 	internal class Negation : Expression {
@@ -294,6 +337,10 @@ namespace Flabbergast.Expressions {
 			}
 			throw new EvaluationError.TYPE_MISMATCH ("Inavlid type for negation operation.");
 		}
+		public override Expression transform () {
+			expression = expression.transform ();
+			return this;
+		}
 	}
 	internal class IsNaN : Expression {
 		public Expression expression {
@@ -311,6 +358,10 @@ namespace Flabbergast.Expressions {
 			}
 			throw new EvaluationError.TYPE_MISMATCH ("Invalid type to not-a-number check.");
 		}
+		public override Expression transform () {
+			expression = expression.transform ();
+			return this;
+		}
 	}
 	internal class IsFinite : Expression {
 		public Expression expression {
@@ -327,6 +378,10 @@ namespace Flabbergast.Expressions {
 				engine.operands.push (new Data.Boolean (((Data.Float)result).value.is_finite ())); return;
 			}
 			throw new EvaluationError.TYPE_MISMATCH ("Invalid type to infinite check.");
+		}
+		public override Expression transform () {
+			expression = expression.transform ();
+			return this;
 		}
 	}
 	internal class Through : Expression {
@@ -368,6 +423,11 @@ namespace Flabbergast.Expressions {
 			}
 			engine.operands.push (tuple);
 			return;
+		}
+		public override Expression transform () {
+			start = start.transform ();
+			end = end.transform ();
+			return this;
 		}
 	}
 }

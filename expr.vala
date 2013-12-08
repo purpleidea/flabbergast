@@ -5,6 +5,7 @@ namespace Flabbergast {
 			set;
 		}
 		public abstract void evaluate (ExecutionEngine engine) throws EvaluationError;
+		public abstract Expression transform ();
 	}
 }
 namespace Flabbergast.Expressions {
@@ -16,6 +17,9 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (datum);
 		}
+		public override Expression transform () {
+			return this;
+		}
 	}
 	public class ReturnOwnedLiteral : Expression {
 		private Data.Datum datum;
@@ -24,6 +28,9 @@ namespace Flabbergast.Expressions {
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (datum);
+		}
+		public override Expression transform () {
+			return this;
 		}
 	}
 	internal class SubExpression : Expression {
@@ -34,15 +41,24 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 		}
+		public override Expression transform () {
+			expression = expression.transform (); return this;
+		}
 	}
 	internal class TrueLiteral : Expression {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (new Data.Boolean (true));
 		}
+		public override Expression transform () {
+			return this;
+		}
 	}
 	internal class FalseLiteral : Expression {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (new Data.Boolean (false));
+		}
+		public override Expression transform () {
+			return this;
 		}
 	}
 	internal class IntegerLiteral : Expression {
@@ -53,6 +69,9 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (new Data.Integer (@value));
 		}
+		public override Expression transform () {
+			return this;
+		}
 	}
 	internal class FloatLiteral : Expression {
 		public double @value {
@@ -61,6 +80,9 @@ namespace Flabbergast.Expressions {
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (new Data.Float (@value));
+		}
+		public override Expression transform () {
+			return this;
 		}
 	}
 	internal class StringPiece : Object {
@@ -77,6 +99,11 @@ namespace Flabbergast.Expressions {
 			builder.append (result.@value);
 			if (literal != null) {
 				builder.append (literal.str);
+			}
+		}
+		public void transform () {
+			if (expression != null) {
+				expression = expression.transform ();
 			}
 		}
 	}
@@ -100,10 +127,21 @@ namespace Flabbergast.Expressions {
 			}
 			engine.operands.push (new Data.String (builder.str));
 		}
+		public override Expression transform () {
+			if (contents != null) {
+				foreach (var piece in contents) {
+					piece.transform ();
+				}
+			}
+			return this;
+		}
 	}
 	internal class NullLiteral : Expression {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (new Data.Null ());
+		}
+		public override Expression transform () {
+			return this;
 		}
 	}
 	internal class NullCoalesce : Expression {
@@ -122,6 +160,9 @@ namespace Flabbergast.Expressions {
 				engine.call (alternate);
 			}
 		}
+		public override Expression transform () {
+			expression = expression.transform (); alternate = alternate.transform (); return this;
+		}
 	}
 	internal class IsNull : Expression {
 		public Expression expression {
@@ -131,6 +172,9 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 			engine.operands.push (new Data.Boolean (engine.operands.pop () is Data.Null));
+		}
+		public override Expression transform () {
+			expression = expression.transform (); return this;
 		}
 	}
 	internal class RaiseError : Expression {
@@ -146,6 +190,9 @@ namespace Flabbergast.Expressions {
 			} else {
 				throw new EvaluationError.TYPE_MISMATCH ("Expected string in error.");
 			}
+		}
+		public override Expression transform () {
+			expression = expression.transform (); return this;
 		}
 	}
 }

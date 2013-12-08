@@ -166,7 +166,7 @@ public Expression? do_parsing (Rules rules, GTeonoma.Parser parser, bool can_try
 		return null;
 	}
 	try_more = false;
-	return (Expression) result.get_object ();
+	return ((Expression) result.get_object ()).transform ();
 }
 
 private extern string? sane_readline (string prompt);
@@ -232,7 +232,9 @@ int main (string[] args) {
 				stderr.printf ("%s:%d:%d: Junk at end of input.\n", end.source, end.line, end.offset);
 				return 1;
 			}
-			root_tuple = engine.start_from ((File) result.get_object ());
+			var file = (File) result.get_object ();
+			file.transform ();
+			root_tuple = engine.start_from (file);
 		} catch (EvaluationError e) {
 			stderr.printf ("%s: %s\n", filename ?? "stdin", e.message);
 			return 1;

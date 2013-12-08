@@ -13,6 +13,9 @@ namespace Flabbergast.Expressions {
 			var right_result = convert (engine, right, Data.Ty.STR);
 			engine.operands.push (new Data.String (((Data.String)left_result).value.concat (((Data.String)right_result).value)));
 		}
+		public override Expression transform () {
+			left = left.transform (); right = right.transform (); return this;
+		}
 	}
 	internal class Conditional : Expression {
 		public Expression condition {
@@ -36,6 +39,9 @@ namespace Flabbergast.Expressions {
 			}
 			throw new EvaluationError.TYPE_MISMATCH ("Expected boolean value for condition.");
 		}
+		public override Expression transform () {
+			condition = condition.transform (); truepart = truepart.transform (); falsepart = falsepart.transform (); return this;
+		}
 	}
 	internal class ContextualLookup : Expression {
 		public Gee.List<Nameish> names {
@@ -45,6 +51,9 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (engine.lookup_contextual (names));
 		}
+		public override Expression transform () {
+			return this;
+		}
 	}
 	internal class IsDefined : Expression {
 		public Gee.List<Nameish> names {
@@ -53,6 +62,9 @@ namespace Flabbergast.Expressions {
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (new Data.Boolean (engine.is_defined (names)));
+		}
+		public override Expression transform () {
+			return this;
 		}
 	}
 	internal class DirectLookup : Expression {
@@ -67,6 +79,9 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 			engine.call (engine.lookup_direct (names));
+		}
+		public override Expression transform () {
+			expression = expression.transform (); return this;
 		}
 	}
 	internal class IndirectLookup : Expression {
@@ -88,6 +103,9 @@ namespace Flabbergast.Expressions {
 			state.context = ((Data.Tuple)result).context;
 			engine.state = state;
 			engine.call (engine.lookup_contextual (names));
+		}
+		public override Expression transform () {
+			expression = expression.transform (); return this;
 		}
 	}
 }

@@ -55,6 +55,12 @@ namespace Flabbergast.Expressions {
 			}
 			engine.operands.push (tuple);
 		}
+		public override Expression transform () {
+			foreach (var attribute in attributes) {
+				attribute.expression = attribute.expression.transform ();
+			}
+			return this;
+		}
 	}
 	internal class TemplateLiteral : Expression {
 		public Gee.List<TemplatePart> attributes {
@@ -121,6 +127,17 @@ namespace Flabbergast.Expressions {
 				}
 			}
 			engine.operands.push (template);
+		}
+		public override Expression transform () {
+			if (source_expr != null) {
+				source_expr = source_expr.transform ();
+			}
+			foreach (var attribute in attributes) {
+				if (attribute is Attribute) {
+					((Attribute) attribute).expression = ((Attribute) attribute).expression.transform ();
+				}
+			}
+			return this;
 		}
 	}
 	internal class Instantiate : Expression {
@@ -199,6 +216,15 @@ namespace Flabbergast.Expressions {
 			}
 			engine.operands.push (tuple);
 		}
+		public override Expression transform () {
+			source_expr = source_expr.transform ();
+			foreach (var attribute in attributes) {
+				if (attribute is Attribute) {
+					((Attribute) attribute).expression = ((Attribute) attribute).expression.transform ();
+				}
+			}
+			return this;
+		}
 	}
 	internal class FunctionCall : Expression {
 		internal class FunctionArg : Object {
@@ -266,11 +292,23 @@ namespace Flabbergast.Expressions {
 			lookup.names = names;
 			engine.call (lookup);
 		}
+		public override Expression transform () {
+			function = function.transform ();
+			foreach (var arg in args) {
+				arg.parameter = arg.parameter.transform ();
+			}
+			return this;
+		}
 	}
 	public string make_id (int id) {
 		var len = (int) (sizeof (int) * 8 * Math.log (2) / Math.log (62)) + 1;
 		var id_str = new uint8[len + 2];
-		id_str[0] = 'f';
+		if (id < 0) {
+			id_str[0] = 'e';
+			id = int.MAX + id;
+		} else {
+			id_str[0] = 'f';
+		}
 		id_str[len + 1] = '\0';
 		for (var it = len; it > 0; it--) {
 			var digit = (uint8) (id % 62);
@@ -312,6 +350,12 @@ namespace Flabbergast.Expressions {
 
 			engine.operands.push (tuple);
 		}
+		public override Expression transform () {
+			for (var it = 0; it < elements.size; it++) {
+				elements[it] = elements[it].transform ();
+			}
+			return this;
+		}
 	}
 	public class This : Expression {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
@@ -320,6 +364,9 @@ namespace Flabbergast.Expressions {
 				throw new EvaluationError.INTERNAL ("This references non-existent tuple.");
 			}
 			engine.operands.push (this_tuple);
+		}
+		public override Expression transform () {
+			return this;
 		}
 	}
 }

@@ -41,6 +41,11 @@ namespace Flabbergast {
 			}
 			return tuple;
 		}
+		public void transform () {
+			foreach (var attribute in attributes) {
+				attribute.expression = attribute.expression.transform ();
+			}
+		}
 		public class Import : Object {
 			public Name name {
 				get;

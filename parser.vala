@@ -42,12 +42,12 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 
 		precedence++;
 		register<Addition> ("addition", precedence, "%P{+left}%-+%-%P{right}");
-		register<Subtraction> ("subtraction", precedence, "%P{+left}%--%-%P{+right}");
+		register<Subtraction> ("subtraction", precedence, "%P{+left}%--%-%P{right}");
 		precedence++;
 		register<Multiplication> ("multiplication", precedence, "%P{+left}%-*%-%P{right}");
 		precedence++;
-		register<Division> ("division", precedence, "%P{+left}%-/%-%P{+right}");
-		register<Modulus> ("modulus", precedence, "%P{+left}%-%%%-%P{+right}");
+		register<Division> ("division", precedence, "%P{+left}%-/%-%P{right}");
+		register<Modulus> ("modulus", precedence, "%P{+left}%-%%%-%P{right}");
 
 		precedence++;
 		register<Shuttle> ("comparison", precedence, "%P{+left}%-<=>%-%P{right}");

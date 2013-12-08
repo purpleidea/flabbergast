@@ -160,6 +160,9 @@ namespace Flabbergast {
 				}
 				engine.operands.push (function (engine, named_args));
 			}
+			public override Expression transform () {
+				return this;
+			}
 		}
 
 		public delegate Data.Datum EvaluateFunc (ExecutionEngine engine, Gee.Map<string, Data.Datum> named_args);
