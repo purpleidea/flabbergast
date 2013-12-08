@@ -152,7 +152,7 @@ public Expression? do_parsing (Rules rules, GTeonoma.Parser parser, bool can_try
 	GTeonoma.Result r;
 	if ((r = parser.parse (typeof (Expression), out result)) != GTeonoma.Result.OK) {
 		try_more = r == GTeonoma.Result.EOI;
-		if (!try_more) {
+		if (!can_try_more) {
 			parser.visit_errors ((source, error) => stderr.printf ("%s:%d:%d: %s\n", source.source, source.line, source.offset, error));
 		}
 		return null;
