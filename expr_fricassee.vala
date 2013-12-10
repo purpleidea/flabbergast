@@ -228,4 +228,107 @@ namespace Flabbergast.Expressions {
 			return base.transform ();
 		}
 	}
+	internal class Descendent : Expression {
+		public Name name {
+			get;
+			set;
+		}
+		public Expression input {
+			get;
+			set;
+		}
+		public Expression? where {
+			get;
+			set;
+			default = null;
+		}
+		public Expression? stop {
+			get;
+			set;
+			default = null;
+		}
+		private delegate void Match (Data.Tuple tuple);
+
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+			engine.call (input);
+			var result = engine.operands.pop ();
+			if (!(result is Data.Tuple)) {
+				throw new EvaluationError.TYPE_MISMATCH ("Input expression must be a tuple.");
+			}
+
+			var evaluation_context = engine.environment.create ();
+
+			var context = engine.environment.create ();
+			var tuple = new Data.Tuple (context);
+
+			var state = engine.state;
+			if (state.this_tuple != null) {
+				var container_expr = new ReturnLiteral (state.this_tuple);
+				tuple.attributes["Container"] = container_expr;
+				engine.environment[context, "Container"] = container_expr;
+			}
+
+			var index = 0;
+			state.context = evaluation_context;
+			engine.state = state;
+			investigate (engine, (Data.Tuple)result, evaluation_context, (match) => {
+					     var index_name = make_id (index++);
+					     var match_expr = new ReturnOwnedLiteral (match);
+					     tuple.attributes[index_name] = match_expr;
+					     engine.environment[context, index_name] = match_expr;
+				     });
+
+			engine.operands.push (tuple);
+		}
+		private void investigate (ExecutionEngine engine, Data.Tuple source, uint context, Match match) throws EvaluationError {
+			foreach (var entry in source) {
+				if (!entry.key[0].islower ()) {
+					continue;
+				}
+				engine.call (entry.value);
+				var result = engine.operands.pop ();
+				if (result is Data.Tuple) {
+					engine.environment[context, name.name] = new ReturnLiteral (result);
+
+					if (where != null) {
+						engine.call (where);
+						var where_value = engine.operands.pop ();
+						if (where_value is Data.Boolean) {
+							if (((Data.Boolean)where_value).value) {
+								match ((Data.Tuple)result);
+							} else {}
+						} else {
+							throw new EvaluationError.TYPE_MISMATCH ("Where clause result must be boolean.");
+						}
+					} else {
+						match ((Data.Tuple)result);
+					}
+
+					if (stop != null) {
+						engine.call (stop);
+						var stop_value = engine.operands.pop ();
+						if (stop_value is Data.Boolean) {
+							if (!((Data.Boolean)stop_value).value) {
+								investigate (engine, (Data.Tuple)result, context, match);
+							}
+						} else {
+							throw new EvaluationError.TYPE_MISMATCH ("Stop clause result must be boolean.");
+						}
+					} else {
+						investigate (engine, (Data.Tuple)result, context, match);
+					}
+				}
+			}
+		}
+		public override Expression transform () {
+			if (where != null) {
+				where = where.transform ();
+			}
+			if (stop != null) {
+				stop = stop.transform ();
+			}
+			input = input.transform ();
+			return this;
+		}
+	}
 }

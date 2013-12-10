@@ -82,6 +82,12 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<Reduce> ("for list⋯where⋯reduce", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Where %P{-where} Reduce %P{result_expression} With %P{initial_attr}% :%-%P{initial_expression}", new Type[] { typeof (Name), typeof (Expression) });
 		register<Reduce> ("for list⋯reduce", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Reduce %P{result_expression} With %P{initial_attr}% :%-%P{initial_expression}", new Type[] { typeof (Name), typeof (Expression) });
 
+		// Descendent selector
+		register<Descendent> ("descendent⋯where⋯except", precedence, "All %P{name} In %P{-input} Where %P{where} Except %P{stop}");
+		register<Descendent> ("descendent⋯except", precedence, "All %P{name} In %P{-input} Except %P{stop}");
+		register<Descendent> ("descendent⋯where", precedence, "All %P{name} In %P{-input} Where %P{where}");
+		register<Descendent> ("descendent", precedence, "All %P{name} In %P{-input}");
+
 		precedence++;
 		register<Coerce> ("type coercion", precedence, "%P{+expression} To %P{ty}");
 		register<IndirectLookup> ("indirect lookup", precedence, "%L{names}{% .% } From %P{expression}", new Type[] { typeof (Nameish) });
