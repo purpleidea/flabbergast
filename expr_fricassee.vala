@@ -140,6 +140,7 @@ namespace Flabbergast.Expressions {
 				var container_expr = new ReturnLiteral (state.this_tuple);
 				tuple.attributes["Container"] = container_expr;
 				engine.environment[context, "Container"] = container_expr;
+				engine.environment.append_containers (context, new Utils.ContainerReference (state.context, state.containers));
 			}
 
 			var g_type = Type.INVALID;
@@ -266,6 +267,7 @@ namespace Flabbergast.Expressions {
 				var container_expr = new ReturnLiteral (state.this_tuple);
 				tuple.attributes["Container"] = container_expr;
 				engine.environment[context, "Container"] = container_expr;
+				engine.environment.append_containers (context, new Utils.ContainerReference (state.context, state.containers));
 			}
 
 			var index = 0;
