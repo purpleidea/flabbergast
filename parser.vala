@@ -7,9 +7,9 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<Data.Ty> ("type");
 
 		/* Tuple attributes */
-		register<Attribute> ("attribute", 0, "%P{name}% :%-%P{expression}");
+		register<Attribute> ("attribute", 0, "%P{name}% :%!%-%P{expression}");
 		register<External> ("external attribute", 0, "%P{name}% ?:");
-		register<Override> ("override", 0, "%P{name}% +:%-{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });
+		register<Override> ("override", 0, "%P{name}% +:%!%-{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });
 		register<Undefine> ("definition erasure", 0, "%P{name}% -:");
 
 		/* Identifiers */
@@ -17,49 +17,49 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register_custom<Name> ("identifier", () =>  new IdentifierParser (), (identifier) => identifier.name);
 
 		/* Function call arguments */
-		register<FunctionCall.FunctionArg> ("named argument", 0, "%P{name}% :%-%P{parameter}");
+		register<FunctionCall.FunctionArg> ("named argument", 0, "%P{name}% :%!%-%P{parameter}");
 		register<FunctionCall.FunctionArg> ("argument", 0, "%P{parameter}");
 
 		/* Files */
-		register<File.Import> ("import", 0, "Import %P{uri} As %P{name}");
+		register<File.Import> ("import", 0, "Import%! %P{uri} As %P{name}");
 		register<File> ("file", 0, "% %l{imports}{%n}%n%L{attributes}{%n}", new Type[] { typeof (File.Import), typeof (Attribute) });
 		register_custom<File.UriReference> ("URI", () =>  new UriParser (), (uri) => uri.path);
 
 		/* Expressions */
 		var precedence = 0;
-		register<LogicalOr> ("logical disjunction", precedence, "%P{+left}%-||%-%P{right}");
+		register<LogicalOr> ("logical disjunction", precedence, "%P{+left}%-||%!%-%P{right}");
 
 		precedence++;
-		register<LogicalAnd> ("logical conjunction", precedence, "%P{+left}%-&&%-%P{right}");
+		register<LogicalAnd> ("logical conjunction", precedence, "%P{+left}%-&&%!%-%P{right}");
 
 		precedence++;
-		register<Equality> ("equality", precedence, "%P{+left}%-==%-%P{right}");
-		register<Inequality> ("inequality", precedence, "%P{+left}%-!=%-%P{right}");
+		register<Equality> ("equality", precedence, "%P{+left}%-==%!%-%P{right}");
+		register<Inequality> ("inequality", precedence, "%P{+left}%-!=%!%-%P{right}");
 		register<LessThan> ("less than", precedence, "%P{+left}%-<%-%P{right}");
 		register<LessThanOrEqualTo> ("less than or equal to", precedence, "%P{+left}%-<=%-%P{right}");
 		register<GreaterThan> ("greater than", precedence, "%P{+left}%->%-%P{right}");
 		register<GreaterThanOrEqualTo> ("greater than or equal to", precedence, "%P{+left}%->=%-%P{right}");
 
 		precedence++;
-		register<Addition> ("addition", precedence, "%P{+left}%-+%-%P{right}");
-		register<Subtraction> ("subtraction", precedence, "%P{+left}%--%-%P{right}");
+		register<Addition> ("addition", precedence, "%P{+left}%-+%!%-%P{right}");
+		register<Subtraction> ("subtraction", precedence, "%P{+left}%--%!%-%P{right}");
 		precedence++;
-		register<Multiplication> ("multiplication", precedence, "%P{+left}%-*%-%P{right}");
+		register<Multiplication> ("multiplication", precedence, "%P{+left}%-*%!%-%P{right}");
 		precedence++;
-		register<Division> ("division", precedence, "%P{+left}%-/%-%P{right}");
-		register<Modulus> ("modulus", precedence, "%P{+left}%-%%%-%P{right}");
+		register<Division> ("division", precedence, "%P{+left}%-/%!%-%P{right}");
+		register<Modulus> ("modulus", precedence, "%P{+left}%-%%%!%-%P{right}");
 
 		precedence++;
-		register<Shuttle> ("comparison", precedence, "%P{+left}%-<=>%-%P{right}");
+		register<Shuttle> ("comparison", precedence, "%P{+left}%-<=>%!%-%P{right}");
 
 		precedence++;
-		register<StringConcatenate> ("string concatenation", precedence, "%P{+left}%-++%-%P{right}");
+		register<StringConcatenate> ("string concatenation", precedence, "%P{+left}%-++%!%-%P{right}");
 
 		precedence++;
-		register<NullCoalesce> ("null coalescence", precedence, "%P{+expression}%-??%-%P{alternate}");
+		register<NullCoalesce> ("null coalescence", precedence, "%P{+expression}%-??%!%-%P{alternate}");
 
 		precedence++;
-		register<Conditional> ("conditional", precedence, "If %P{-condition} Then %P{-truepart} Else %P{falsepart}");
+		register<Conditional> ("conditional", precedence, "If%! %P{-condition} Then %P{-truepart} Else %P{falsepart}");
 		// Select: all options
 		register<Select> ("for list⋯where⋯order⋯select list", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Where %P{-where} Order By %P{-order_by} Select %P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
 		register<Select> ("for list⋯where⋯select tuple", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Where %P{-where} Select %P{-result_attr}% :%-%P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
@@ -73,36 +73,36 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<Select> ("for tuple⋯select tuple", precedence, "For %b{ordinal}{Ordinal} %P{attr_name}% :%-%L{names}{% ,%-} In %L{-inputs}{% ,%-} Select %P{-result_attr}% :%-%P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
 
 		// Select: minimal form
-		register<Select> ("for list⋯select list", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Select %P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
-		register<Select> ("for tuple⋯select list", precedence, "For %b{ordinal}{Ordinal} %P{attr_name}% :%-%L{names}{% ,%-} In %L{-inputs}{% ,%-} Select %P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
+		register<Select> ("for list⋯select list", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Select%! %P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
+		register<Select> ("for tuple⋯select list", precedence, "For %b{ordinal}{Ordinal} %P{attr_name}% :%-%L{names}{% ,%-} In %L{-inputs}{% ,%-} Select%! %P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
 
 		// Reduce
-		register<Reduce> ("for list⋯where⋯order⋯reduce", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Where %P{-where} Order By %P{-order_by} Reduce %P{result_expression} With %P{initial_attr}% :%-%P{initial_expression}", new Type[] { typeof (Name), typeof (Expression) });
-		register<Reduce> ("for list⋯order⋯reduce", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Order By %P{-order_by} Reduce %P{result_expression} With %P{initial_attr}% :%-%P{initial_expression}", new Type[] { typeof (Name), typeof (Expression) });
-		register<Reduce> ("for list⋯where⋯reduce", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Where %P{-where} Reduce %P{result_expression} With %P{initial_attr}% :%-%P{initial_expression}", new Type[] { typeof (Name), typeof (Expression) });
-		register<Reduce> ("for list⋯reduce", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Reduce %P{result_expression} With %P{initial_attr}% :%-%P{initial_expression}", new Type[] { typeof (Name), typeof (Expression) });
+		register<Reduce> ("for list⋯where⋯order⋯reduce", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Where %P{-where} Order By %P{-order_by} Reduce%! %P{result_expression} With %P{initial_attr}% :%-%P{initial_expression}", new Type[] { typeof (Name), typeof (Expression) });
+		register<Reduce> ("for list⋯order⋯reduce", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Order By%! %P{-order_by} Reduce %P{result_expression} With %P{initial_attr}% :%-%P{initial_expression}", new Type[] { typeof (Name), typeof (Expression) });
+		register<Reduce> ("for list⋯where⋯reduce", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Where%! %P{-where} Reduce %P{result_expression} With %P{initial_attr}% :%-%P{initial_expression}", new Type[] { typeof (Name), typeof (Expression) });
+		register<Reduce> ("for list⋯reduce", precedence, "For%! %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Reduce %P{result_expression} With %P{initial_attr}% :%-%P{initial_expression}", new Type[] { typeof (Name), typeof (Expression) });
 
 		// Descendent selector
-		register<Descendent> ("descendent⋯where⋯except", precedence, "All %P{name} In %P{-input} Where %P{where} Except %P{stop}");
-		register<Descendent> ("descendent⋯except", precedence, "All %P{name} In %P{-input} Except %P{stop}");
-		register<Descendent> ("descendent⋯where", precedence, "All %P{name} In %P{-input} Where %P{where}");
-		register<Descendent> ("descendent", precedence, "All %P{name} In %P{-input}");
+		register<Descendent> ("descendent⋯where⋯except", precedence, "All %P{name} In %P{-input} Where %P{where} Except%! %P{stop}");
+		register<Descendent> ("descendent⋯except", precedence, "All %P{name} In %P{-input} Except%! %P{stop}");
+		register<Descendent> ("descendent⋯where", precedence, "All %P{name} In %P{-input} Where%! %P{where}");
+		register<Descendent> ("descendent", precedence, "All%! %P{name} In %P{-input}");
 
 		precedence++;
-		register<Coerce> ("type coercion", precedence, "%P{+expression} To %P{ty}");
-		register<IndirectLookup> ("indirect lookup", precedence, "%L{names}{% .% } From %P{expression}", new Type[] { typeof (Nameish) });
+		register<Coerce> ("type coercion", precedence, "%P{+expression} To%! %P{ty}");
+		register<IndirectLookup> ("indirect lookup", precedence, "%L{names}{% .% } From%! %P{expression}", new Type[] { typeof (Nameish) });
 		register<IsDefined> ("definition check", precedence, "%L{names}{%-.%-} Is defined", new Type[] { typeof (Nameish) });
 		register<IsFinite> ("finite check", precedence, "%P{+expression}%-Is finite");
 		register<IsNaN> ("not-a-number check", precedence, "%P{+expression}%-Is nan");
 		register<IsNull> ("null check", precedence, "%P{+expression}%-Is null");
 		register<TypeCheck> ("type check", precedence, "%P{+expression} Is %P{ty}");
-		register<TypeEnsure> ("type ensuring", precedence, "%P{+expression} As %P{ty}");
-		register<Through> ("range", precedence, "%P{+start} Through %P{+end}");
+		register<TypeEnsure> ("type ensuring", precedence, "%P{+expression} As%! %P{ty}");
+		register<Through> ("range", precedence, "%P{+start} Through%! %P{+end}");
 
-		register<TupleLiteral> ("tuple literal", precedence, "{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (Attribute) });
-		register<TemplateLiteral> ("template", precedence, "Template %p{+source_expr}%_{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });
-		register<Instantiate> ("template instantiation", precedence, "%P{+source_expr}%-{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TuplePart) });
-		register<FunctionCall> ("function call", precedence, "%P{+function}%-(%-%l{args}{% ,%-}% )", new Type[] { typeof (FunctionCall.FunctionArg) });
+		register<TupleLiteral> ("tuple literal", precedence, "{%!%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (Attribute) });
+		register<TemplateLiteral> ("template", precedence, "Template%! %p{+source_expr}%_{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });
+		register<Instantiate> ("template instantiation", precedence, "%P{+source_expr}%-{%!%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TuplePart) });
+		register<FunctionCall> ("function call", precedence, "%P{+function}%-(%!%-%l{args}{% ,%-}% )", new Type[] { typeof (FunctionCall.FunctionArg) });
 
 		precedence++;
 		register<Not> ("logical not", precedence, "!%-%P{expression}");
@@ -110,22 +110,22 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 
 		precedence++;
 		register<ContextualLookup> ("contextual lookup", precedence, "%L{names}{% .% }", new Type[] { typeof (Nameish) });
-		register<DirectLookup> ("direct lookup", precedence, "%P{+expression}%-.%-%L{names}{% .% }", new Type[] { typeof (Nameish) });
+		register<DirectLookup> ("direct lookup", precedence, "%P{+expression}%-.%!%-%L{names}{% .% }", new Type[] { typeof (Nameish) });
 
 		precedence++;
-		register<ListLiteral> ("list literal", precedence, "[%-%L{-elements}{% ,%-}%-]", new Type[] { typeof (Expression) });
+		register<ListLiteral> ("list literal", precedence, "[%!%-%L{-elements}{% ,%-}%-]", new Type[] { typeof (Expression) });
 		register<FalseLiteral> ("false literal", precedence, "False");
 		register<FloatLiteral> ("floating point literal", precedence, "%P{value}");
 		register<IntegerLiteral> ("integer literal", precedence, "%P{value}");
 		register<NullLiteral> ("null literal", precedence, "Null");
-		register<RaiseError> ("error", 0, "Error %P{expression}");
-		register<StringLiteral> ("string literal", precedence, "\"%P{literal}%l{contents}{}\"", new Type[] { typeof (StringPiece) });
+		register<RaiseError> ("raise error", precedence, "Error%! %P{expression}");
 		register<StringLiteral> ("empty string literal", precedence, "\"\"");
-		register<SubExpression> ("subexpression", precedence, "(% %P{expression}% )");
+		register<StringLiteral> ("string literal", precedence, "\"%!%P{literal}%l{contents}{}\"", new Type[] { typeof (StringPiece) });
+		register<SubExpression> ("subexpression", precedence, "(%!% %P{expression}% )");
 		register<This> ("self-reference", precedence, "This");
 		register<TrueLiteral> ("true literal", precedence, "True");
 
-		register<StringPiece> ("string contents", 0, "\\(% %P{expression}% )%p{literal}");
+		register<StringPiece> ("string contents", 0, "\\(%!% %P{expression}% )%p{literal}");
 	}
 }
 internal class Flabbergast.IdentifierParser : GTeonoma.CustomParser<Name> {
