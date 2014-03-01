@@ -2,7 +2,7 @@ namespace Flabbergast.Data {
 	public abstract class Datum {
 		public Type g_type {
 			get {
-				return get_datum_type (this);
+				return Type.from_instance (this);
 			}
 		}
 		public abstract string to_string ();

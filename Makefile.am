@@ -88,7 +88,6 @@ flabbergast_fmt_SOURCES = \
 libflabbergast_glib_la_COMMONVALAFLAGS =\
 	--pkg=gee-0.8 \
 	--pkg=libgteonoma-1 \
-	--pkg=util \
 	--vapidir=$(top_srcdir) \
 	$(NULL)
 
