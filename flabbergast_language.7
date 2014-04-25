@@ -1,0 +1,951 @@
+'\" t
+.\" Authors: Andre Masella
+.TH flabbergast 7 "Jan 2015" "1.0" "MISCELLANEOUS"
+Flabbergast is a language for creating configuration structures that can be rendered to a final configuration. Each expression is side-effect free. It has unusual look-up semantics, explained below.
+
+This document is the formal specification for the language. Fundamentally, there are three important types of values in the language: tuples, key-value pairs; templates, key-template pairs; and scalar values. There is an import mechanism that functions are the foreign function interface of the language. Each tuple and template has an associated lookup environment, which is an ordered list of tuples.
+
+There are several important features of the language:
+.IP \[bu]
+contextual lookup creates dynamic scoping
+.IP \[bu]
+values have scope, expressions do not. This an effect of contextual lookup.
+.IP \[bu]
+inheritance can be changed. That is, a tuple can extend another tuple, but this cannot be known at compile-time. This an effect of contextual lookup.
+
+.SH GENERAL NOTES ON SYNTAX
+In the language, language-defined names, a.k.a. keywords, are of the format [\fBA\fR-\fBZ\fR][\fBA\fR-\fBZa\fR-\fBz\fR]*. All user-defined names, a.k.a. identifiers, are of the form [\fBa\fR-\fBz\fR][\fBA\fR-\fBZa\fR-\fBz0\fR-\fB9_\fR]*. There are other symbols in the language, all of them ASCII. Strings and comments may contain Unicode data.
+
+No keyword defined in this specification will ever begin with X. Implementation-specific keywords for debugging are permissible if they begin with X.
+
+Future versions may extend the keyword system to Unicode.
+
+.SH TYPES IN THE LANGUAGE
+.TP
+Bool
+a Boolean value. Maybe either \fBTrue\fR or \fBFalse\fR.
+.TP
+Int
+platform-specific integral number
+.TP
+Float
+IEEE floating point number
+.TP
+Str
+a Unicode text string
+.TP
+Tuple
+a collection of pairs from identifiers to values are value of the types mentioned in this section. No duplicate identifiers are permitted (i.e., the identifier space is a set).
+.TP
+Template
+a collection of pairs from identifiers to expressions. No duplicate identifiers are permitted (i.e., the identifier space is a set).
+.TP
+Unit
+the type of the \fBNull\fR value.
+
+.SH GRAMMAR AND SEMANTICS
+Line-terminated constants may start with \fB#\fR. The grammar is a PEG, so assume that low precedence rules are shown first.
+
+For convenience of writing, expression are broken into groups, based on precedence. It can be assumed that the PEG expression for group \fIx\fR, with expressions \fIA\fR, \fIB\fR, ... is
+
+.RS
+E\*<\fIx\fR\*> = \fIA\fR / \fIB\fR / E\*<\fIx+1\fR\*>
+.RE
+
+If unspecified, assume E\*<\fIx\fR\*>. The rule E\*<\fI+\fR\*> is short-hand for E\*<\fIx+1\fR\*>.
+
+Literal values that must be matched exactly, including keywords, are written in \fBthis type-face\fR. Any space can be a combination of any Unicode space or comments. Other rules are referenced with a preceding name for the result (e.g., a:E parses and expression E and it is referred to in the accompanying text and semantics as a).
+
+For the semantics, they are written as a Horn clause of the form:
+
+.de SEM
+.HP
+.B Definition:
+\\$* :-
+.br
+.in +0.5i
+..
+
+.de SEME
+.in
+..
+
+.RS
+(\fIT\fR\*<0\*>*, \fIT\fR\*<1\*>, ...) ⊢ \fIexpr\fR ↓ value :: type :- ...
+.RE
+
+where \fIT\fR is a tuples used for lookup. Some tuples are marked with an * to change lookup semantics. If the lookup environment is unused, it is elided. If the type is implied, it is elided.
+
+Since tuples and templates are manipulated by the language, their values have special representation. A tuple is written < k\*<a\*> → v\*<a\*>, k\*<b\*> → v\*<b\*>, ... >. It is implied that there are no two values of \fIk\fR that exist in the same tuple. A template is written < Γ; k\*<a\*> → e\*<a\*>, k\*<b\*> → e\*<b\*>, ... >. Again, it is implied that there are no duplicate \fIk\fR. Since both tuples and templates have a key space that is a set, it is reasonable to allow all normal set operations over them. Since the contents of a tuple or template indicate what it it is, the type can be elided. A template has added context information, which is a list of tuples for resolution. Tuples contain this information, but it is simply an extra attribute of a tuple.
+
+.SS FILE TUPLE (START)
+The top-level entity is a file tuple.
+
+.SEM a:(A*) ↓ x
+() ⊢  \fB{\fR a \fB}\fR ↓ x
+.SEME
+
+.SS EXPRESSION SYNTAX (E) – NAME BINDING
+.TP
+Bind a new name
+
+.SEM (t, ...) ⊢ \fBLet\fR name:I \fB:\fR nameexpr:E\*<0\*> (\fB,\fR name:I \fB:\fR nameexpr:E\*<0\*> )* \fBIn\fR expr:E\*<+\*> ↓ v
+∀ nameexpr : Γ ⊢ nameexpr ↓ v\*<nameexpr\*>,
+
+(< ∀ name, nameexpr : nname → v\*<nameexpr\*> >*, t, ...) ⊢ expr ↓ v
+.SEME
+
+.SS EXPRESSION SYNTAX (E) – INSTANTIATION AND CONCATENATION
+.TP
+Instantiate a template
+
+.SEM Γ ⊢ source:E\*<+\*> \fB{\fR a:(A / O)+ \fB}\fR ↓ v
+Γ ⊢ \fB(Template\fR source \fB{\fR a \fB}) { }\fR ↓ v
+.SEME
+ 
+.SEM (t, ...) ⊢ source:E\*<+\*> \fB{ }\fR ↓ r = < ∀ x: k\*<x\*> → v\*<x\*>, \fBContainer\fR → container, \fBContext\fR → (r, t, ..., s, ...) >
+(t, ...) ⊢ source ↓ S = < (s, ...); k\*<s\*> → e\*<s\*>, ... >,
+
+∀ k\*<x\*> → e\*<x\*> ∈ S : (r, t, ..., s, ...) ⊢ e\*<s\*> ↓ v\*<x\*>,
+
+(t, ...) ⊢ \fBThis\fR ↓ container
+.SEME
+
+Creates a new tuple, based on a template, grounded in the current scope. If source is a template, instantiate that template setting the provided attributes and inheriting any others. If source is not a template, an error occurs. If any attribute is external but not overridden, it will cause an error.
+
+.TP
+Concatenate two strings
+.SEM Γ ⊢ a:E\*<+\*> \fB&\fR b:E\*<+\*> ↓ "xy"
+Γ ⊢ a \fBTo Str\fR ↓ "x" :: Str,
+
+Γ ⊢ b \fBTo Str\fR ↓ "y" :: Str
+.SEME
+
+.SS EXPRESSION SYNTAX (E) – DISJUNCTION
+.TP
+Logical disjunction (short circuiting)
+
+.SEM Γ ⊢ a:E\*<+\*> \fB||\fR b:E ↓ True
+Γ ⊢ a ↓ True
+.SEME
+
+.SEM Γ ⊢ a:E\*<+\*> \fB||\fR b:E ↓ v
+Γ ⊢ a ↓ False,
+
+Γ ⊢ b ↓ v :: Bool
+.SEME
+
+.SS EXPRESSION SYNTAX (E) – CONJUNCTION
+.TP
+Logical intersection (short circuiting)
+expr \fB&&\fR expr
+
+.SEM Γ ⊢ a:E\*<+\*> \fB&&\fR b:E ↓ False
+Γ ⊢ a ↓ False
+.SEME
+
+.SEM Γ ⊢ a:E\*<+\*> \fB&&\fR b:E ↓ v
+Γ ⊢ a ↓ True,
+
+Γ ⊢ b ↓ v :: Bool
+.SEME
+
+.SS EXPRESSION SYNTAX (E) – COMPARISON
+
+.TP
+Equality check
+.SEM Γ ⊢ a:E\*<+\*> \fB==\fR b:E\*<+\*> ↓ True
+Γ ⊢ a \fB<=>\fR b ↓ 0 :: Int
+.SEME
+
+.SEM Γ ⊢ a:E\*<+\*> \fB==\fR b:E\*<+\*> ↓ False
+Γ ⊢ a \fB<=>\fR b ↓ x :: Int,
+x ≠ 0
+.SEME
+
+.TP
+Inequality check
+.SEM Γ ⊢ a:E\*<+\*> \fB!=\fR b:E\*<+\*> ↓ False
+Γ ⊢ a \fB<=>\fR b ↓ 0 :: Int
+.SEME
+
+.SEM Γ ⊢ a:E\*<+\*> \fB!=\fR b:E\*<+\*> ↓ True
+Γ ⊢ a \fB<=>\fR b ↓ x :: Int,
+
+x ≠ 0
+.SEME
+
+.TP
+Greater than check
+.SEM Γ ⊢ a:E\*<+\*> \fB>\fR b:E\*<+\*> ↓ True
+Γ ⊢ a \fB<=>\fR b ↓ 1 :: Int
+.SEME
+
+.SEM Γ ⊢ a:E\*<+\*> \fB>\fR b:E\*<+\*> ↓ False
+Γ ⊢ a \fB<=>\fR b ↓ x :: Int,
+
+x ≠ 1
+.SEME
+
+.TP
+Greater than or equal to check
+
+.SEM Γ ⊢ a:E\*<+\*> \fB>=\fR b:E\*<+\*> ↓ False
+Γ ⊢ a \fB<=>\fR b ↓ -1 :: Int
+.SEME
+
+.SEM Γ ⊢ a:E\*<+\*> \fB>=\fR b:E\*<+\*> ↓ True
+Γ ⊢ a \fB<=>\fR b ↓ x :: Int,
+
+x ≠ -1
+.SEME
+
+.TP
+Less than check
+.SEM Γ ⊢ a:E\*<+\*> \fB<\fR b:E\*<+\*> ↓ True
+Γ ⊢ a \fB<=>\fR b ↓ -1 :: Int
+.SEME
+
+.SEM Γ ⊢ a:E\*<+\*> \fB<\fR b:E\*<+\*> ↓ False
+Γ ⊢ a \fB<=>\fR b ↓ x :: Int,
+
+x ≠ -1
+.SEME
+
+.TP
+Less than or equal to check
+
+.SEM Γ ⊢ a:E\*<+\*> \fB<=\fR b:E\*<+\*> ↓ False
+Γ ⊢ a \fB<=>\fR b ↓ 1 :: Int
+.SEME
+
+.SEM Γ ⊢ a:E\*<+\*> \fB<=\fR b:E\*<+\*> ↓ True
+Γ ⊢ a \fB<=>\fR b ↓ x :: Int,
+
+x ≠ 1
+.SEME
+
+.SS EXPRESSION SYNTAX (E) – ORDERING
+.TP
+Ordering operator
+.SEM Γ ⊢ a:E\*<+\*> \fB<=>\fR b:E\*<+\*> ↓ z :: Int
+Γ ⊢ a ↓ x :: Int ∨ Γ ⊢ a ↓ x :: Float,
+
+Γ ⊢ b ↓ y :: Int ∨ Γ ⊢ b ↓ x :: Float,
+
+z = sgnum(x - y)
+.SEME
+
+.SEM Γ ⊢ a:E\*<+\*> \fB<=>\fR b:E\*<+\*> ↓ 0 :: Int
+Γ ⊢ a ↓ True,
+
+Γ ⊢ b ↓ True
+.SEME
+
+.SEM Γ ⊢ a:E\*<+\*> \fB<=>\fR b:E\*<+\*> ↓ 0 :: Int
+Γ ⊢ a ↓ False,
+
+Γ ⊢ b ↓ False
+.SEME
+
+.SEM Γ ⊢ a:E\*<+\*> \fB<=>\fR b:E\*<+\*> ↓ -1 :: Int
+Γ ⊢ a ↓ False,
+
+Γ ⊢ b ↓ True
+.SEME
+
+.SEM Γ ⊢ a:E\*<+\*> \fB<=>\fR b:E\*<+\*> ↓ 1 :: Int
+Γ ⊢ a ↓ True,
+
+Γ ⊢ b ↓ False
+.SEME
+
+.SEM Γ ⊢ a:E\*<+\*> \fB<=>\fR b:E\*<+\*> ↓ UTS10(x, y) :: Int
+Γ ⊢ a ↓ x :: Str,
+
+Γ ⊢ b ↓ y :: Str
+.SEME
+
+Compares operands for ordering. It returns the integer -1 (left is before right), 0 (both equivalent), or 1 (right is before right) based on the operands. All combinations not listed are errors (this includes all comparisons with \fBNone\fR).
+
+.TS
+tab(;);
+al.
+\fBOperand Types;Behaviour\fR
+Both str;Compare the two strings using Unicode Technical Standard 10 collation. This is locale-dependent.
+Both bool;Compare where \fBFalse\fR < \fBTrue\fR.
+Both float;Compare numerically. If either value is NaN, raise an error.
+Both int;Compare numerically.
+One int, one float;Upgrade the integer to a float and compare as two floats.
+.TE
+
+.SS EXPRESSION SYNTAX (E) – COALESCENCE
+.TP
+Null coalescence
+.SEM Γ ⊢ value:E\*<+\*> \fB??\fR default:E\*<+\*> ↓ v
+Γ ⊢ value ↓ v
+.SEME
+
+.SEM Γ ⊢ value:E\*<+\*> \fB??\fR default:E\*<+\*> ↓ v
+Γ ⊢ value ↓ ∅,
+
+Γ ⊢ default ↓ v
+.SEME
+
+.SS EXPRESSION SYNTAX (E) – TYPE MANIPULATION
+
+.TP
+Coerce a value to the same type
+.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ v :: t
+Γ ⊢ expr ↓ v :: t
+.SEME
+
+.TP
+Coerce a value to a float
+.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ v :: Float
+Γ ⊢ expr ↓ v :: Int
+.SEME
+
+.TP
+Coerce a value to an integer
+.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ ROUND_TOWARD_ZERO(v) :: Int
+Γ ⊢ expr ↓ v :: Float
+.SEME
+
+See IEEE 754 for semantics of ROUND_TOWARD_ZERO (a.k.a., truncation).
+
+.TP
+Coerce a value to an string
+.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ PRINTF("%d", v) :: Str
+Γ ⊢ expr ↓ v :: Int
+.SEME
+.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ PRINTF("%f", v) :: Str
+Γ ⊢ expr ↓ v :: Float
+.SEME
+.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ "True" :: Str
+Γ ⊢ expr ↓ True
+.SEME
+.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ "False" :: Str
+Γ ⊢ expr ↓ False
+.SEME
+
+PRINTF conforms to
+.BR printf (3)
+defined in C89.
+
+.TP
+Type enforcement.
+.SEM Γ ⊢ expr:E\*<+\*> \fBAs\fR type:T ↓ v
+Γ ⊢ expr ↓ v :: T
+.SEME
+
+Checks if a value has a particular type and returns the value. If it does not, an error occurs.
+
+.TP
+Type check
+.SEM Γ ⊢ expr:E\*<+\*> \fBIs\fR type:T ↓ True
+Γ ⊢ expr ↓ v :: type
+.SEME
+
+.SEM Γ ⊢ expr:E\*<+\*> \fBIs\fR type:T ↓ False
+Γ ⊢ expr ↓ v :: t,
+
+t ≠ type
+.SEME
+
+Returns \fBTrue\fR if the value has the correct type, \fBFalse\fR otherwise. Always returns \fBFalse\fR for \fBNull\fR values.
+
+.TP
+Checks if a number is finite
+.SEM Γ ⊢ expr:E\*<+\*> \fBIs Finite\fR ↓ True
+Γ ⊢ expr ↓ v :: Int
+.SEME
+.SEM Γ ⊢ expr:E\*<+\*> \fBIs Finite\fR ↓ ISFINITE(v) :: Bool
+Γ ⊢ expr ↓ v :: Float
+.SEME
+
+If the value is a float, returns \fBFalse\fR if the value is infinite or not-a-number, \fTrue\fR otherwise. If the value is an integer, returns \fBTrue\fR. See IEEE 754.
+
+.TP
+Check if a number is not-a-number.
+.SEM Γ ⊢ expr:E\*<+\*> \fBIs NaN\fR ↓ False
+Γ ⊢ expr ↓ v :: Int
+.SEME
+.SEM Γ ⊢ expr:E\*<+\*> \fBIs NaN\fR ↓ ISNAN(v) :: Bool
+Γ ⊢ expr ↓ v :: Float
+.SEME
+
+If the value is a float, returns \fBTrue\fR if the value is not a number, \fBFalse\fR otherwise. If the value is an integer, returns \fBFalse\fR.
+
+.TP
+Checks if a value is \fBNull\fR.
+.SEM Γ ⊢ expr:E\*<+\*> \fBIs Null\fR ↓ True
+Γ ⊢ expr ↓ ∅
+.SEME
+
+.SEM Γ ⊢ expr:E\*<+\*> \fBIs Null\fR ↓ False
+Γ ⊢ expr ↓ v :: t,
+
+t ≠ Unit
+.SEME
+
+Returns \fBTrue\fR if the value is \fBNull\fR, \fBFalse\fR for all other values.
+
+.SS EXPRESSION SYNTAX (E) – ARITHMETIC DISJUNCTION
+.TP
+Addition and Subtraction
+
+.SEM Γ ⊢ a:E\*<+\*> o:(\fB+\fR / \fB-\fR) b:E\*<+\*> (p:(\fB+\fR / \fB-\fR) c:E\*<+\*>)+ ↓ z :: Int
+Γ ⊢ a ↓ x :: Int,
+
+Γ ⊢ b ↓ y :: Int,
+
+w = O(x, y),
+
+Γ ⊢ w p c ↓ z
+.SEME
+
+.SEM Γ ⊢ a:E\*<+\*> o:(\fB+\fR / \fB-\fR) b:E\*<+\*> (p:(\fB+\fR / \fB-\fR) c:E\*<+\*>)+ ↓ z :: Float
+Γ ⊢ a ↓ x :: Int ∨ Γ ⊢ a ↓ x :: Float,
+
+Γ ⊢ b ↓ y :: Int ∨ Γ ⊢ b ↓ x :: Float,
+
+w = O(x, y),
+
+Γ ⊢ w p c ↓ z
+.SEME
+
+.SS EXPRESSION SYNTAX (E) – ARITHMETIC CONJUNCTION
+.TP
+Multiplication and Division
+
+.SEM Γ ⊢ a:E\*<+\*> o:(\fB*\fR / \fB/\fR) b:E\*<+\*> (p:(\fB*\fR / \fB/\fR) c:E\*<+\*>)+ ↓ z :: Int
+Γ ⊢ a ↓ x :: Int,
+
+Γ ⊢ b ↓ y :: Int,
+
+w = O(x, y),
+
+Γ ⊢ w p c ↓ z
+.SEME
+
+.SEM Γ ⊢ a:E\*<+\*> o:(\fB+\fR / \fB-\fR) b:E\*<+\*> (p:(\fB+\fR / \fB-\fR) c:E\*<+\*>)+ ↓ z :: Float
+Γ ⊢ a ↓ x :: Int ∨ Γ ⊢ a ↓ x :: Float,
+
+Γ ⊢ b ↓ y :: Int ∨ Γ ⊢ b ↓ x :: Float,
+w = O(x, y),
+
+Γ ⊢ w p c ↓ z
+.SEME
+
+.TP
+Modulus
+
+.SEM Γ ⊢ a:E\*<+\*> \fB%\fR b:E\*<+\*> (\fB%\fR c:E\*<+\*>)+ ↓ z :: Int
+Γ ⊢ a ↓ x :: Int,
+
+Γ ⊢ b ↓ y :: Int,
+
+w = x - floor(x / y) × y
+
+Γ ⊢ w \fB%\fR c ↓ z
+.SEME
+
+.SS EXPRESSION SYNTAX (E) – DIRECT LOOKUP
+.TP
+Perform direct lookup
+.SEM Γ ⊢ expr:E\*<+\*> (\fB.\fR name:I)(\fB.\fR other:I)* ↓ u
+Γ ⊢ expr ↓ < name → v, ... >,
+
+Γ ⊢ v (\fB.\fR other:I)* ↓ u
+.SEME
+Get values from inside of a tuple. Do not perform contextual lookup.
+
+.SS EXPRESSION SYNTAX (E) – FUNCTION-LIKE TEMPLATE INSTANTIATION
+
+.TP
+Call template with arguments
+.SEM Γ ⊢ fn:E\*<+\*> \fB( )\fR ↓ t
+Γ ⊢ fn \fB{ args : [] }.value\fR ↓ t
+.SEME
+
+.SEM Γ ⊢ fn:E\*<+\*> \fB(\fRarg:E\*<+\*> (\fB,\fR arg:E\*<+\*>)*(\fB,\fR name:I \fB:\fR nameexpr:E\*<0\*>  )*\fB)\fR ↓ t
+∀ arg : Γ ⊢ arg ↓ v\*<arg\*>,
+
+∀ nameexpr : Γ ⊢ nameexpr ↓ v\*<nameexpr\*>,
+
+Γ ⊢ fn \fB{ args : [\fR v\*<arg\*>, ... \fB ] \fR name \fB:\fR v\*<nameexpr\*>, ... }.value\fR ↓ t
+.SEME
+
+.SEM Γ ⊢ fn:E\*<+\*> \fB(\fB,\fR name:I \fB:\fR nameexpr:E\*<0\*> (\fB,\fR name:I \fB:\fR nameexpr:E\*<0\*> )*\fB)\fR
+
+∀ nameexpr : Γ ⊢ nameexpr ↓ v\*<nameexpr\*>,
+
+Γ ⊢ fn \fB{ args : [] \fR name \fB:\fR v\*<nameexpr\*>, ... }.value\fR ↓ t
+.SEME
+
+Unlike normal template evaluation, all expressions are captured in the current context, instead of the context of the instantiation.
+
+.SS EXPRESSION SYNTAX (E) – RANGE
+.TP
+Range of integers
+start:expr \fBThrough\fR end:expr
+.SEM (t, ...) ⊢ start:E\*<+\*> \fBThrough\fR end:E\*<+\*> ↓ r = < ∀ x ≥ s ∧ x ≤ e : ORD(x) → x :: Int, \fBContainer\fR → container, \fBContext\fR → (r, t, ...) >
+(t, ...) ⊢ start ↓ s :: Int
+(t, ...) ⊢ end ↓ e :: Int
+(t, ...) ⊢ \fBThis\fR ↓ container
+.SEME
+
+Produce a list of integers that counts from the value of \fIstart\fR up to and including \fIend\fR, both of which must be integers. If \fIend\fR is less than \fIstart\fR an empty list is produced.
+
+.SS EXPRESSION SYNTAX (E) – TERMINAL
+
+.TP
+Logical negation
+.SEM Γ ⊢ \fB!\fR expr:E ↓ False
+Γ ⊢ expr ↓ True
+.SEME
+
+.SEM Γ ⊢ \fB!\fR expr:E ↓ True
+Γ ⊢ expr ↓ False
+.SEME
+
+.TP
+Numeric negation
+.SEM Γ ⊢ \fB-\fR expr:E ↓ -v :: Int
+Γ ⊢ expr ↓ v :: Int
+.SEME
+
+.SEM Γ ⊢ \fB-\fR expr:E ↓ -v :: Float
+Γ ⊢ expr ↓ v :: Float
+.SEME
+
+.TP
+Subexpression
+.SEM Γ ⊢ \fB(\fR expr:E\*<0\*> \fB)\fR ↓ v
+Γ ⊢ expr ↓ v
+.SEME
+
+.TP
+Literal list
+.SEM Γ ⊢ \fB[\fR (arg:E\*<0\*> (\fB,\fR arg:E\*<0\*>)*)? \fB]\fR ↓ < ORD(x) → v\*<x\*>, \fBContainer\fR → container >
+
+Γ ⊢ arg\*<x\*> ↓ v\*<x\*>,
+
+Γ ⊢ \fBThis\fR ↓ container
+.SEME
+
+This creates a list-like tuple. Names are selected by the ORD function such that the tuple will have the same order of items as the original list when collated. Indexing is 0-based.
+
+.TP
+Literal tuple
+.SEM (t, ...) ⊢ \fB{\fR (a:A)* \fB}\fR ↓ r = < ∀ x ∈ aa : k\*<x\*> → v\*<x\*>, \fBContainer\fR → container, \fBContext\fR → (r, t, ...) >
+
+∀ aa ∈ a : (r, t, ...) ⊢ aa ↓ v\*<aa\*>,
+
+(t, ...) ⊢ \fBThis\fR ↓ container
+.SEME
+Construct a new literal tuple.
+
+.TP
+Raise an error
+.SEM Γ ⊢ \fBError\fR expr:E\*<0\*>
+Γ ⊢ expr \fBTo Str\fR ↓ m
+.SEME
+
+Raises an error with the message \fIm\fR.
+
+.TP
+Boolean false literal
+\fBFalse\fR
+
+.TP
+Fricassée a tuple (a.k.a. \fBFor\fR expressions)
+
+.SEM Γ ⊢ \fBFor\fR s:FS r:FR ↓ v
+Γ ⊢ s ↓ W = ( < k\*<x\*> → v\*<x1\*>, k\*<y\*> → v\*<y1\*>, ... >, < k\*<x\*> → v\*<x2\*>, k\*<y\*> → v\*<y2\*>, ... >, ... ),
+
+Γ; W ⊢ r ↓ v
+.SEME
+.SEM Γ ⊢ \fBFor\fR s:FS \fBWhere\fR expr:E\*<0\*> r:FR ↓ v
+Γ ⊢ s ↓ W,
+
+∀ w\*<i\*> ∈ W : (w\*<i\*>*, t, ...) ⊢ expr ↓ v\*<i\*> :: Bool,
+
+X = { w\*<i\*> ∈ W | v\*<i\*> = True }
+
+Γ; X ⊢ r ↓ v
+.SEME
+
+This operator allows iterating over the values in a tuple to produce some new result. The syntax is handled in two pieces: a selection component (FS) that creates a list of tuples, each being an environment in which the relevant values from the input are defined (i.e., it is a list of whitnesses), a results component that evaluates expressions using the witnesses and produces a result. Optionally, a filter expression can be provided to exclude certain witnesses.
+
+.TP
+Conditional
+
+.SEM Γ ⊢ \fBIf\fR cond:E\*<0\*> \fBThen\fR true:E\*<0\*> \fBElse\fR false:E ↓ x
+Γ ⊢ cond ↓ True,
+
+Γ ⊢ true ↓ x
+.SEME
+
+.SEM Γ ⊢ \fBIf\fR cond:E\*<0\*> \fBThen\fR true:E\*<0\*> \fBElse\fR false:E ↓ x
+Γ ⊢ cond ↓ False,
+
+Γ ⊢ false ↓ x
+.SEME
+
+Computes the \fIcond\fR and, if boolean, returns \fItrue\fR or \fIfalse\fR depending on the value. Otherwise, an error. The expression which is not selected is not evaluated.
+
+.TP
+Access external data
+
+.HP
+.B Definition:
+\fBFrom\fR ([\fBA\fR-\fBZa\fR-\fBz0\fR-\fB9.+-]+\fB:\fR[\fBA\fR-\fBZa\fR-\fBz0\fR-\fB9~!*'();@&=+$,/?%#[].+-\fR]+)
+
+This expression returns data external to the program, described by the URI provided. This expression access as library access, input of user data, and a foreign data interface. The exact semantics of the command are implementation-defined, however, the same URI must yield the same data during the execution of the program and the current context must be irrelevant to the import mechanism (i.e., the return value must not depend lookup expressions, however, it can return a template which does).
+
+.TP
+Remote contextual lookup.
+.SEM Γ ⊢ \fBLookup\fR name:(I/\fBContainer\fR) name:(\fB.\fR (I/\fBContainer\fR))* \fBIn\fR expr:E ↓ v
+Γ ⊢ expr ↓ < \fBContext\fR → Δ >,
+
+Δ ⊢ name ↓ v
+.SEME
+
+Evaluate an expression, which must be a tuple, then begin lookup of the names provided from that context.
+
+.TP
+Null literal
+.SEM \fBNull\fR ↓ ∅
+.SEME
+
+.TP
+Access current tuple
+.SEM (a, ...) ⊢ \fBThis\fR ↓ a
+.SEME
+
+.SEM (a*, ...) ⊢ \fBThis\fR ↓ v
+(...) ⊢ \fBThis\fR ↓ v
+.SEME
+
+Return the current tuple. This is the first tuple in the environment not marked with a *.
+
+.TP
+Create a new template
+.SEM Γ ⊢ \fBTemplate {\fR a:(A / X)* \fB}\fR ↓ < Γ; k\*<x\*> → e\*<x\*> >
+
+∀ x ∈ a : x ↓ k\*<x\*> → e\*<x\*>,
+
+¬∃ k\*<y\*> = k\*<x\*>
+.SEME
+
+Create a new template, not based on any current template.
+
+.TP
+Extend a template
+.SEM(t, ...) ⊢ \fBTemplate\fR source:E \fB{\fR a:(A / O / X)* \fB}\fR ↓ < (t, ..., s, ...); k\*<x\*> → k\*<x\*> >
+
+(t, ...) ⊢ source ↓ S = < (s, ...); k\*<s\*> → e\*<s\*>, ... >,
+
+∀ aa ∈ a, (∃ k\*<s\*> : k\*<x\*> = k\*<s\*>) : e\*<s\*> ⊢ aa ↓ k\*<x\*> e\*<x\*>,
+
+∀ aa ∈ a, (¬∃ k\*<s\*> : k\*<x\*> = k\*<s\*>) : aa ↓ k\*<x\*> e\*<x\*>,
+
+∀ k\*<x\*> → e\*<x\*> : ¬∃ k\*<s\*> : k\*<x\*> = k\*<s\*>
+.SEME
+
+Create a template that inherits from an existing template. It contains all the attributes of the existing template unless modified by the specified attributes. The specified attributes can add, replace, ammend, or remove attributes from the existing template. Any unmodified attributes are inherited directly. The new template has the lookup context of the context where the modification was performed followed by the context of the existing template.
+
+.TP
+Boolean true literal
+.SEM \fBTrue\fR ↓ True :: Bool
+.SEME
+
+.TP
+Contextual lookup
+.SEM Γ\*<0\*> ⊢ name:(N / \fBContainer\fR) name:(\fB.\fR (N / \fBContainer\fR))* ↓ v
+∀ n ∈ names : Γ\*<n+1\*> = (x | t ∈ Γ ∧ n → x ∈ t)
+
+(v, ...) = Γ\*<n\*>
+.SEME
+
+.SEM (a, b, c, ...) ⊢ name:(N / \fBContainer\fR) others:(\fB.\fR (N / \fBContainer\fR))*
+
+This does a dynamically-scoped lookup. It searches all the existing tuple contexts for a matching name. If the value in any tuple is not a tuple, this is not an error. Any tuple that does not match the complete path of names is simply ignored. It is an error if there are no more contexts in which to search and there are still unsatisfied names.
+
+It is not an error if any value is not defined so long as it is not the first item in an Γ\*<n\*>. See EVALUATION SEMANTICS for more details.
+
+.TP
+Integer literal
+.SEM \fB0\fR/[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*/\fB0x\fR?[\fB0\fR-\fB9\fR\fBA\fR-\fBF\fR\fBa\fR-\fBf\fR]+ ↓ v :: Int
+.SEME
+
+Decimal or hexadecimal integers.
+
+.TP
+Floating point literal
+.SEM (\fB0\fR/[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)\fB.\fR[\fB0\fR-\fB9\fR]*((\fBe\fR/\fBE\fR)(\fB0\fR/(\fB-\fR)?[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)? ↓ v :: Float
+.SEME
+
+IEEE 754 floating point number.
+
+.TP
+String expression
+
+.SEM Γ ⊢ \fB"\fRa:S*\fB"\fR ↓ "v\*<0\*>v\*<1\*>...v\*<n\*>" :: Str
+Γ ⊢ a\*<n\*> ↓ v\*<n\*>
+.SEME
+
+.SS STRING PARTS (S)
+
+UNICODE converts a number to its Unicode code-point.
+
+.TP
+Characters other than quote or backslash
+.SEM x:[^\fB"\\\\\fR]+ ↓ x
+.SEME
+
+.TP
+Audible bell
+.SEM \fB\\\\a\fR ↓ UNICODE(7)
+.SEME
+
+.TP
+Backspace
+.SEM \fB\\\\b\fR ↓ UNICODE(8)
+.SEME
+
+.TP
+Form feed
+.SEM \fB\\\\f\fR ↓ UNICODE(12)
+.SEME
+
+.TP
+New line
+.SEM \fB\\\\n\fR ↓ UNICODE(10)
+.SEME
+
+.TP
+Carriage return
+.SEM \fB\\\\r\fR ↓ UNICODE(13)
+.SEME
+
+.TP
+Horizontal tab
+.SEM \fB\\\\t\fR ↓ UNICODE(9)
+.SEME
+
+.TP
+Vertical tab
+.SEM \fB\\\\v\fR ↓ UNICODE(11)
+.SEME
+
+.TP
+Quotation mark
+.SEM \fB\\\\"\fR ↓ UNICODE(34)
+.SEME
+
+.TP
+Octal escape
+.SEM \fB\\\\\fRa:[\fB0\fR-\fB7\fR]b:[\fB0\fR-\fB7\fR]c:[\fB0\fR-\fB7\fR] ↓ UNICODE(a * 64 + b * 8 + c)
+.SEME
+
+.TP
+ASCII hex escape
+.SEM \fB\\\\x\fRa:[\fB0\fR-\fB9a\fR-\fBfA\fR-\fBF\fR]b:[\fB0\fR-\fB9a\fR-\fBfA-\fBF\fR] ↓ UNICODE(a * 16 + b)
+.SEME
+
+.TP
+Unicode hex escape
+.SEM \fB\\\\u\fRa:[\fB0\fR-\fB9a\fR-\fBfA\fR-\fBF\fR]b:[\fB0\fR-\fB9a\fR-\fBfA\fR-\fBF\fR]c:[\fB0\fR-\fB9a\fR-\fBfA\fR-\fBF\fR]d:[\fB0\fR-\fB9a\fR-\fBfA\fR-\fBF\fR] ↓ UNICODE(a * 4096 + b * 256 + c * 16 + d)
+.SEME
+
+.TP
+Embedded expression
+.SEM Γ ⊢ \fB\\\\(\fR expr:E\*<0\*> \fB)\fR ↓ v
+Γ ⊢ expr \fBTo Str\fR ↓ v
+.SEME
+
+.SH OTHER SYNTAX
+.SH IDENTIFIERS (I)
+.SEM [\fBa\fR-\fBz\fR][\fBa\fR-\fBzA\fR-\fBZ0\fR-\fB9_\fR]*
+.SEME
+
+.SH TUPLE PARTS
+.TP
+Tuple attribute definition (A)
+.SEM name:I \fB:\fR expr:E ↓ name → expr
+.SEME
+.SEM R ⊢ name:I \fB:\fR expr:E ↓ name → expr
+.SEME
+Define a new attribute in a tuple, equal to some expression.
+
+.TP
+In a template, define an attribute that must be overridden. (X)
+.SEM name:I \fB?:\fR ↓ name → \fBError "Attribute \fRname\fB must be overridden."\fR
+.SEME
+.SEM R ⊢ name:I \fB?:\fR ↓ name → \fBError "Attribute \fRname\fB must be overridden."\fR
+.SEME
+
+Create an attribute whose value is an error requiring an override.
+
+.TP
+Override sub-template definition. (O)
+.SEM R ⊢ name:I \fB+:\fR \fB{\fR a:(A / O)+ \fB}\fR ↓ name → \fB+\fR R \fB: Template \fR original \fB{\fR a:(A / O)+ \fB}\fR
+.SEME
+
+The name \fIoriginal\fR must be selected to be entirely unique in the program scope.
+
+.TP
+Redefine an attribute. (O)
+.SEM R ⊢ name:I \fB+\fR original:I \fB:\fR expr:E ↓ \fBLet\fR original \fB:\fR R \fBIn\fR expr → v
+.SEME
+
+.TP
+Remove definition for an attribute. (O)
+.SEM R ⊢ name \fB-:\fR ↓
+.SEME
+
+The name must be present in the existing tuple or an error occurs.
+
+.SH TYPE DEFINITIONS (T)
+.SEM \fBBool\fR ↓ Bool
+.SEME
+.SEM \fBFloat\fR ↓ Float
+.SEME
+.SEM \fBInt\fR ↓ Int
+.SEME
+.SEM \fBStr\fR ↓ Str
+.SEME
+.SEM \fBTemplate\fR ↓ Template
+.SEME
+.SEM \fBtuple\fR ↓ Tuple
+.SEME
+
+
+.SH FRICASÉE SELECTORS (FS)
+
+.TP
+Named attribute selector
+.SEM Γ ⊢ attr:I \fB:\fR)? value:I (\fB,\fR value:I)* \fBIn\fR input:E\*<0\*> (\fB,\fR input:E\*<0\*>)* ↓ W
+∀ i ∈ input : Γ ⊢ i ↓ < k\*<ij\*> → v\*<ij\*> >,
+
+W = { < ∀ j : attr → j, ∀ i ∈ input ∃ v\*<ij\*> : value\*<i\*> → v\*<ij\*> > , ∀ i ∈ input ¬∃ v\*<ij\*> : ∅ > }
+.SEME
+
+Produce a list of witnesses where each \fIvalue\fR identifier matches the value of the current attribute, named in \fIattr\fR, in each of the inputs, or null, if not in the matching tuple.
+
+.TP
+Anonymous attribute selector
+.SEMΓ ⊢ value:I (\fB,\fR value:I)* \fBIn\fR input:E\*<0\*> (\fB,\fR input:E\*<0\*>)*
+∀ i ∈ input : Γ ⊢ i ↓ < k\*<ij\*> → v\*<ij\*> >,
+
+W = { < ∀ j : ∀ i ∈ input ∃ v\*<ij\*> : value\*<i\*> → v\*<ij\*> > , ∀ i ∈ input ¬∃ v\*<ij\*> : ∅ > }
+.SEME
+
+Produce a list of witnesses where each \fIvalue\fR identifier matches the value of the current attribute in each of the inputs, or null, if not in the matching tuple.
+
+.TP
+Numeric attribute selector
+.SEM Γ ⊢ \fBOrdinal\fR attr:I \fB:\fR value:I (\fB,\fR value:I)* \fBIn\fR input:E\*<0\*> (\fB,\fR input:E\*<0\*>)*
+∀ i ∈ input : Γ ⊢ i ↓ < k\*<ij\*> → v\*<ij\*> >,
+
+K = ∀ i ∈ input : ∪ k\*<ij\*>,
+
+W = { < ∀ j : attr → |{ k ∈ K : k\*<j\*> }| :: Int, ∀ i ∈ input ∃ v\*<ij\*> : value\*<i\*> → v\*<ij\*> > , ∀ i ∈ input ¬∃ v\*<ij\*> : ∅ > }
+.SEME
+
+Produce a list of whitnesses where each \fIvalue\fR identifer matches the value of the current attribute in each of the inputs, or null, if not in the matching tuple, and \fIattr\fR bound to an increasing numerical value, starting from 0.
+
+.SH FRICASÉE RESULTS (FR)
+
+.TP
+Reducer (fold)
+.SEM Γ; W ⊢ order:FO \fBReduce\fR expr:E\*<0\*> \fBWith\fR name:I \fB:\fR initial:E\*<+\*> ↓ v
+Γ; W ⊢ order ↓ X,
+
+Γ; X ⊢ \fBReduce\fR expr \fBWith\fR name \fB:\fR initial ↓ v
+.SEME
+
+.SEM Γ; ( ) ⊢ \fBReduce\fR expr:E\*<0\*> \fBWith\fR name:I \fB:\fR initial:E\*<+\*> ↓ v
+Γ ⊢ initial ↓ v
+.SEME
+.SEM (t, ...); ( < k\*<x\*> → v\*<x1\*>, k\*<y\*> → v\*<y1\*>, ... >, w\*<1\*>, ... ) ⊢ \fBReduce\fR expr:E\*<0\*> \fBWith\fR name:I \fB:\fR initial:E\*<+\*> ↓ v\*<f\*>
+(t, ...) ⊢ initial ↓ v\*<i\*>,
+
+(< name → v\*<i\*>, k\*<x\*> → v\*<x1\*>, k\*<y\*> → v\*<y1\*>, ... >*, t, ...) ⊢ expr ↓ v
+
+(t, ...); ( w\*<1\*>, ... ) ⊢ \fBReduce\fR expr \fBWith\fR name \fB:\fR v ↓ v\*<f\*>
+.SEME
+
+This reduces an expression to a single value.
+
+.TP
+Anonymous value map
+.SEM Γ; W ⊢ order:FO \fBSelect\fR expr:E\*<+\*> ↓ v
+Γ; W ⊢ order ↓ X,
+
+Γ; X ⊢ \fBSelect\fR expr ↓ v,
+.SEME
+
+.SEM (t, ...); ( w\*<0\*>, w\*<1\*>, ... ) ⊢ \fBSelect\fR expr:E\*<+\*> ↓ r = < ∀ x : ORD(x) → v\*<x\*>, Container\fR → container, \fBContext\fR → (r, t, ...) >
+
+∀ w\*<x\*> : (w\*<x\*>*, t, ...) ⊢ expr ↓ v\*<x\*>,
+
+(t, ...) ⊢ \fBThis\fR ↓ container
+.SEME
+
+This produces a list-like tuple by evaluating the supplied expression on each tuple of witnesses.
+
+.TP
+Named attribute tuple generator
+.SEM (t, ...); ( w\*<0\*>, w\*<1\*>, ... ) ⊢ \fBSelect\fR attr:E\*<0\*> \fB:\fR expr:E\*<+\*> ↓ r  < k\*<x\*> → v\*<x\*>, Container\fR → container, \fBContext\fR → (r, t, ...) >
+
+(w\*<x\*>*, t, ...) ⊢ attr ↓ k\*<x\*> :: Str ∨ (w\*<x\*>*, t, ...) ⊢ attr ↓ v :: Int ∧ k\*<x\*> = ORD(v),
+
+(w\*<x\*>*, t, ...) ⊢ expr ↓ v\*<x\*>,
+
+(t, ...) ⊢ \fBThis\fR ↓ container
+.SEME
+
+This produces a tuple with named attributes from strings or integers. Since tuples cannot have duplicate keys, any duplicate keys produce an error. Similarly, since not all strings are valid keys, any string which is not a valid key is an error.
+
+.SH FRICASÉE ORDERING (FO)
+
+.TP
+Value ordered
+.SEM (t, ...); (w\*<0\*>, ...) ⊢ \fBOrder\fR \fBBy\fR expr:E\*<0\*> ↓ (x\*<0\*>, x\*<1\*>, ..., x\*<n\*>)
+V = { ∀ w\*<i\*> : (w\*<i\*>*, t, ...) ⊢ e ↓ v\*<i\*> :: t\*<i\*> },
+
+t\*<0\*> = t\*<1\*> = ... = t\*<n\*>,
+
+x\*<i\*> = w\*<j\*> ∧ u\*<i\*> = v\*<j\*> : v\*<j\*> ≥ u\*<i-1\*>
+.SEME
+
+Order the values based on an expression. The ordering implied by ≥ is the same as in the \fB<=>\fR expression. For this to be possible, the types of the returned expression must be the same and comparable. If two items have the same value, the order is implementation-defined.
+
+.TP
+Reverse ordered
+.SEM Γ; (w\*<0\*>, ..., w\*<n\*>) ⊢ \fBReverse\fR ↓ (w\*<n\*>, ...w\*<0\*>)
+.SEME
+
+Reverses the order of the witnesses.
+
+.SH EVALUATION SEMANTICS
+In the semantics defined above, it is possible for a value to depend on its own value. Such situation are errors. There is one notable exception: the contextual lookup operator.
+
+During contextual lookup, a list of candidate tuples is whittled down to a list of tuples containing a matching name. Since only the first name is selected, the values of the other tuples are immaterial. It is therefore possible for one of these values to be circular, or an error, and the result still be correct.
+
+.SH URI NAME-SPACES AND THE STANDARD LIBRARY
+The URIs understood by the importer is implementation defined with one exception: the \fBlib:\fR schema holds the standard (installed) library. An implementation is free to fail to include this schema, but it may not be used with other semantics.
+
+On UNIX, it is recommended that importing \fBlib:foo\fR will search for \fBfoo.flbgst\fR in:
+Any user-specified paths specified via the API or the command-line, as appropriate.
+The directories specified in the \fBFLABBERGAST_PATH\fR environment variable.
+The directories matching {$PREFIX,/usr,/usr/local}/share/flabbergast/lib where $PREFIX is the installation prefix.
+
+.SH COLLATED NAMES FROM NUMBERS
+Tuple keys are always strings, but some instances use integers as inputs. The ORD function is an implementation-defined method to convert numbers to names such that total ordering of the numbers is preserved as total collation of the names.
+
+Since collation is locale-dependent, this function may also be locale-dependent.
