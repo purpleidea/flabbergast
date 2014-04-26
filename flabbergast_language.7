@@ -115,7 +115,7 @@ Creates a new tuple, based on a template, grounded in the current scope. If sour
 
 .TP
 Concatenate two strings
-.SEM Γ ⊢ a:E\*<+\*> \fB&\fR b:E\*<+\*> ↓ "xy"
+.SEM Γ ⊢ a:E\*<+\*> \fB&\fR b:E ↓ "xy"
 Γ ⊢ a \fBTo Str\fR ↓ "x" :: Str,
 
 Γ ⊢ b \fBTo Str\fR ↓ "y" :: Str
@@ -828,7 +828,7 @@ The name must be present in the existing tuple or an error occurs.
 
 .TP
 Named attribute selector
-.SEM Γ ⊢ attr:I \fB:\fR)? value:I (\fB,\fR value:I)* \fBIn\fR input:E\*<0\*> (\fB,\fR input:E\*<0\*>)* ↓ W
+.SEM Γ ⊢ attr:I \fB:\fR value:I (\fB,\fR value:I)* \fBIn\fR input:E\*<0\*> (\fB,\fR input:E\*<0\*>)* ↓ W
 ∀ i ∈ input : Γ ⊢ i ↓ < k\*<ij\*> → v\*<ij\*> >,
 
 W = { < ∀ j : attr → j, ∀ i ∈ input ∃ v\*<ij\*> : value\*<i\*> → v\*<ij\*> > , ∀ i ∈ input ¬∃ v\*<ij\*> : ∅ > }
