@@ -621,6 +621,46 @@ Null literal
 .SEME
 
 .TP
+Largest integer literal
+.SEM \fBIntMax\fR ↓ x :: Int
+.SEME
+
+The value of \fIx\fR is the implementation-defined largest value representable as an integer. It should be strictly greater than zero.
+
+.TP
+Smallest integer literal
+.SEM \fBIntMin\fR ↓ x :: Int
+.SEME
+
+The value of \fIx\fR is the implementation-defined smallest value representable as an integer. It should be strictly smaller than zero.
+
+.TP
+Largest floating literal
+.SEM \fBFloatMax\fR ↓ x :: Float
+.SEME
+
+The value of \fIx\fR is the implementation-defined largest value representable as a floating point number.
+
+.TP
+Smallest floating literal
+.SEM \fBFloatMin\fR ↓ x :: Float
+.SEME
+
+The value of \fIx\fR is the implementation-defined smallest value representable as a floating point number.
+
+.TP
+Infinity literal
+.SEM \fBNull\fR ↓ ∞ :: Float
+.SEME
+
+.TP
+Not-a-number literal
+.SEM \fBNull\fR ↓ NaN :: Float
+.SEME
+
+This is the IEEE not-a-number.
+
+.TP
 Access current tuple
 .SEM (a, ...) ⊢ \fBThis\fR ↓ a
 .SEME
@@ -827,7 +867,7 @@ The name must be present in the existing tuple or an error occurs.
 .SEME
 .SEM \fBTemplate\fR ↓ Template
 .SEME
-.SEM \fBtuple\fR ↓ Tuple
+.SEM \fBTuple\fR ↓ Tuple
 .SEME
 
 
