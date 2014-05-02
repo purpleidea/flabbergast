@@ -661,6 +661,11 @@ Not-a-number literal
 This is the IEEE not-a-number.
 
 .TP
+Continue literal
+.SEM \fBContinue\fR ↓ ∅*
+.SEME
+
+.TP
 Access current tuple
 .SEM (a, ...) ⊢ \fBThis\fR ↓ a
 .SEME
@@ -704,13 +709,26 @@ Boolean true literal
 
 .TP
 Contextual lookup
-.SEM Γ\*<0\*> ⊢ name:(N / \fBContainer\fR) name:(\fB.\fR (N / \fBContainer\fR))* ↓ v
-∀ n ∈ names : Γ\*<n+1\*> = (x | t ∈ Γ ∧ n → x ∈ t)
-
-(v, ...) = Γ\*<n\*>
+.SEM (t, s, ...) ⊢ names:(N / \fBContainer\fR) names:(\fB.\fR (N / \fBContainer\fR))* ↓ v
+names ⊢ t ↓ v ≠ ∅*
 .SEME
-
-.SEM (a, b, c, ...) ⊢ name:(N / \fBContainer\fR) others:(\fB.\fR (N / \fBContainer\fR))*
+.SEM (t, s, ...) ⊢ names:(N / \fBContainer\fR) names:(\fB.\fR (N / \fBContainer\fR))* ↓ v
+names ⊢ t ↓ ∅*
+(s, ...) ⊢ names ↓ v
+.SEME
+.SEM (n, ...) ⊢ t ↓ ∅*
+n → ∅* ∈ t
+.SEME
+.SEM (n, ...) ⊢ t ↓ ∅*
+¬ n → x ∈ t
+.SEME
+.SEM (n) ⊢ t ↓ v
+n → v ∈ t
+.SEME
+.SEM (n, m, ...) ⊢ t ↓ v
+n → s :: Tuple ∈ t
+(m, ...) ⊢ s ↓ v
+.SEME
 
 This does a dynamically-scoped lookup. It searches all the existing tuple contexts for a matching name. If the value in any tuple is not a tuple, this is not an error. Any tuple that does not match the complete path of names is simply ignored. It is an error if there are no more contexts in which to search and there are still unsatisfied names.
 
