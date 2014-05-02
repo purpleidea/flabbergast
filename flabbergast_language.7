@@ -893,7 +893,7 @@ Produce a list of witnesses where each \fIvalue\fR identifier matches the value 
 
 .TP
 Anonymous attribute selector
-.SEMΓ ⊢ value:I (\fB,\fR value:I)* \fBIn\fR input:E\*<0\*> (\fB,\fR input:E\*<0\*>)*
+.SEM Γ ⊢ value:I (\fB,\fR value:I)* \fBIn\fR input:E\*<0\*> (\fB,\fR input:E\*<0\*>)* ↓ W
 ∀ i ∈ input : Γ ⊢ i ↓ < k\*<ij\*> → v\*<ij\*> >,
 
 W = { < ∀ j : ∀ i ∈ input ∃ v\*<ij\*> : value\*<i\*> → v\*<ij\*> > , ∀ i ∈ input ¬∃ v\*<ij\*> : ∅ > }
@@ -903,7 +903,7 @@ Produce a list of witnesses where each \fIvalue\fR identifier matches the value 
 
 .TP
 Numeric attribute selector
-.SEM Γ ⊢ \fBOrdinal\fR attr:I \fB:\fR value:I (\fB,\fR value:I)* \fBIn\fR input:E\*<0\*> (\fB,\fR input:E\*<0\*>)*
+.SEM Γ ⊢ \fBOrdinal\fR attr:I \fB:\fR value:I (\fB,\fR value:I)* \fBIn\fR input:E\*<0\*> (\fB,\fR input:E\*<0\*>)* ↓ W
 ∀ i ∈ input : Γ ⊢ i ↓ < k\*<ij\*> → v\*<ij\*> >,
 
 K = ∀ i ∈ input : ∪ k\*<ij\*>,
@@ -937,7 +937,7 @@ Reducer (fold)
 This reduces an expression to a single value.
 
 .TP
-Anonymous value map
+Anonymous value generator
 .SEM Γ; W ⊢ order:FO \fBSelect\fR expr:E\*<+\*> ↓ v
 Γ; W ⊢ order ↓ X,
 
