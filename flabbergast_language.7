@@ -874,6 +874,14 @@ The name must be present in the existing tuple or an error occurs.
 .SH FRICASÉE SELECTORS (FS)
 
 .TP
+Pass-through selector
+.SEM Γ ⊢ \fBAll\fR input:E\*<0\*> ↓ { ∀ i :  v\*<i\*> }
+Γ ⊢ input ↓ < k\*<i\*> → v\*<i\*> :: Tuple >
+.SEME
+
+Passes-though a list of witnesses provided as a tuple of tuples.
+
+.TP
 Named attribute selector
 .SEM Γ ⊢ attr:I \fB:\fR value:I (\fB,\fR value:I)* \fBIn\fR input:E\*<0\*> (\fB,\fR input:E\*<0\*>)* ↓ W
 ∀ i ∈ input : Γ ⊢ i ↓ < k\*<ij\*> → v\*<ij\*> >,
