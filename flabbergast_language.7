@@ -988,7 +988,7 @@ Reverse ordered
 Reverses the order of the witnesses.
 
 .SH EVALUATION SEMANTICS
-In the semantics defined above, it is possible for a value to depend on its own value. Such situation are errors. There is one notable exception: the contextual lookup operator.
+In the semantics defined above, it is possible for a value to depend on its own value. Such situation are errors with one notable exception: the contextual lookup operator.
 
 During contextual lookup, a list of candidate tuples is whittled down to a list of tuples containing a matching name. Since only the first name is selected, the values of the other tuples are immaterial. It is therefore possible for one of these values to be circular, or an error, and the result still be correct.
 
