@@ -202,9 +202,9 @@ There are four sources provided: values, attribute names and values, numbers and
     i : For a, b, c In x, y, z ... # Yields { a : 1  b : 3  c : 5 }, { a : 2  b : 4  c : Null }
     j : For n : a, b, c In x, y, z ... # Yields { a : 1  b : 3  c : 5  n : "p" }, { a : 2  b : 4  c : Null  n : "q" }
     k : For Ordinal n : a, b, c In x, y, z ... # Yields { a : 1  b : 3  c : 5  n : 1 }, { a : 2  b : 4  c : Null  n : 2}
-    l : For All [ x, y, z ] ... # Yields { p : 1  q : 2 }, { p : 3  q : 4 }, { p : 5 }
+    l : For Each [ x, y, z ] ... # Yields { p : 1  q : 2 }, { p : 3  q : 4 }, { p : 5 }
 
-The prepared tuple source, `All`, is meant for library functions to produce iterable sources of data. One could imagine a library function matching a regular expression and returning the matched groups. It becomes the responsibility of the source to provide sensible variables in each tuple. In the example, `z` makes for an awkward environment since `q` is not bound, and the `All` source is not obligated to correct the inconsistency.
+The prepared tuple source, `Each`, is meant for library functions to produce iterable sources of data. One could imagine a library function matching a regular expression and returning the matched groups. It becomes the responsibility of the source to provide sensible variables in each tuple. In the example, `z` makes for an awkward environment since `q` is not bound, and the `Each` source is not obligated to correct the inconsistency.
 
 Optionally, a `Where` clause can be used to filter the results. It must return a Boolean value.
 
