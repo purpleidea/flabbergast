@@ -124,6 +124,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<SubExpression> ("subexpression", precedence, "(%!% %P{expression}% )");
 		register<This> ("self-reference", precedence, "This");
 		register<TrueLiteral> ("true literal", precedence, "True");
+		register<IdentifierStringLiteral> ("identifier string", precedence, "$%P{name}");
 
 		register<StringPiece> ("string contents", 0, "\\(%!% %P{expression}% )%p{literal}");
 	}

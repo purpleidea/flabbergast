@@ -85,6 +85,18 @@ namespace Flabbergast.Expressions {
 			return this;
 		}
 	}
+	internal class IdentifierStringLiteral : Expression {
+		public Name name {
+			get;
+			set;
+		}
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+			engine.operands.push (new Data.String (name.name));
+		}
+		public override Expression transform () {
+			return this;
+		}
+	}
 	internal class StringPiece : Object {
 		public Expression? expression {
 			get;
