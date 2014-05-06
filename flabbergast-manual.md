@@ -10,15 +10,15 @@ Flabbergast, in some ways, is like a macro system. However, macro systems, such 
 
 There are two core concepts in Flabbergast: inside-out (dynamic) lookup and inheritance. Both of these exist in the context of tuples, which are the primary data structure. They somewhat resemble objects in Python, Perl and JavaScript.
 
-A tuple is a map of names to values, including other tuples. Each tuple is immutable upon creation. The values in the tuple can be expressions (i.e., dynamically computed when the tuple is created); there are no methods as there are in other object oriented languages. Expression can reference each other and the Flabbergast interpreter will determine the correct evaluation order. Although tuples cannot be modified, new tuples can be created from existing tuples using `For` expressions that allow generation of tuples based on the values in existing tuples, much like SQL or XQuery statements produce new tables from existing tables. Tuples can also be instantiated from templates, which are essentially unevaluated tuples (i.e., the values of the attributes have not yet been computed).
+A tuple is a map of names to values, including other tuples. Each tuple is immutable upon creation. The values in the tuple can be expressions (i.e., dynamically computed when the tuple is created); there are no methods as there are in other object oriented languages. Expression can reference each other and the Flabbergast interpreter will determine the correct evaluation order. Although tuples cannot be modified, new tuples can be created from existing tuples using fricassée (`For`) expressions that allow generation of tuples based on the values in existing tuples, much like SQL or XQuery statements produce new tables from existing tables. Tuples can also be instantiated from templates, which are essentially unevaluated tuples (i.e., the values of the attributes have not yet been computed).
 
 Each tuple also has an evaluation context. In most languages, there are multiple scopes in which variables can be found. For instance, in C, the compiler tries to resolve a variable in the current block and proceeds through each containing block, then checks the function parameters, and finally global variables. Java is considerably more complicated as it needs to check not only the enclosing blocks and the function parameters, but also the fields of the class, and it has to make a distinction between static and instantiated fields, and inner classes are even more involved as the containing classes have to be checked. Flabbergast's algorithm for resolution is very simple, but can yield very complicated results.
 
-Flabbergast uses inside-out lookup. It is easiest to think of resolution as having two dimensions: containment and inheritance. When resolving a variable, the language will first look for an attribute of the same name in the current tuple; if none exists, it will look in the containing tuple (i.e., the tuple in which the current tuple is an attribute) and will continue to examine containers until a matching tuple is found. If there is no match, resolution will continue in the parents of the template; that is, it will go to the context in which the template was define and search through the containing tuples there. If that yields no matches, resolution will proceed back through the template's template's containers and back until there are no more contexts.
+Flabbergast uses inside-out lookup. It is easiest to think of resolution as having two dimensions: containment and inheritance. When resolving a variable, the language will first look for an attribute of the same name in the current tuple; if none exists, it will look in the containing tuple (i.e., the tuple in which the current tuple is an attribute) and will continue to examine containers until a matching tuple is found. If there is no match, resolution will continue in the parents of the template; that is, it will go to the context in which the template was defined and search through the containing tuples there. If that yields no matches, resolution will proceed back through the template's template's containers and back until there are no more contexts.
 
 ![Resolution order diagram](flabbergast-resolution.svg "The order in which resolution occurs")
 
-Resolution has an extra complexity: chained accesses. Since tuples can be nested, it is desirable to access the attributes of an inner tuple using the `x.y` syntax. In most languages, resolution stops when the first name match is met (e.g., in Java, if there is a parameter `int foo` and a class field `String foo`, then `foo.charAt(3)` will fail to compile because `foo` has been resolved to the parameter, which is an `int` and so does not have the `charAt` method) while Flabbergast will attempt to find “the one you meant”. In the case of `x.y`, if a tuple `x` is found but it does not contain an attribute `y`, then the language assumes that this was not the `x` intended and _continue_ looking for an `x` does _does_ contain an attribute `y`. This means that the expression `x.y * x.z` can have two different tuples referenced for the first and second `x`! For instance, below `b.z` will be 12 and the `a` in the `a.x` reference will be the top-level `a` while the `a` in the `a.y` reference will be `b.a`:
+Resolution has an extra complexity: chained accesses. Since tuples can be nested, it is desirable to access the attributes of an inner tuple using the `x.y` syntax. In most languages, resolution stops when the first name match is met (e.g., in Java, if there is a parameter `int foo` and a class field `String foo`, then `foo.charAt(3)` will fail to compile because `foo` has been resolved to the parameter, which is an `int` and so does not have the `charAt` method) while Flabbergast will attempt to find “the one you meant”. In the case of `x.y`, if a tuple `x` is found but it does not contain an attribute `y`, then the language assumes that this was not the `x` intended and _continues_ looking for an `x` does _does_ contain an attribute `y`. This means that the expression `x.y * x.z` can have two different tuples referenced for the first and second `x`! For instance, below, `b.z` will be 12 and the `a` in the `a.x` reference will be the top-level `a` while the `a` in the `a.y` reference will be `b.a`:
 
     a : { x : 3 }
     b : {
@@ -32,11 +32,11 @@ In general-purpose programming languages, this idea sounds like madness, but Fla
 
 In the last sentence, to whom does _her_ refer? While _my mum_ is the closest noun that could match _her_, it has been previously established that my mum does not have a cat, so _her cat_ wouldn't make sense. Because we treat _her cat_ as a unit, we contextually keep looking for a _her_ that does have a cat, which would be _my sister_. Conceptually, this is how Flabbergast's resolution algorithm works: it finds the match that makes the most contextual sense.
 
-Inheritance allows creation of attributes, in addition to providing a history for contextual lookup. A tuple or template is a collection of key-value pairs, where each key is a valid identifier and a value can be any expression. A template can be “modified” at the time of instantiation or through the `Template` expression, which creates a new template that copies all the existing attributes, less the modified ones. In most object oriented languages, fields and methods can be overridden (i.e., replaced with new code). Similarly, attributes can be overridden with new expressions. Some languages allow access the overridden method through special keywords (e.g., Java's `super`, C#'s `base`, or Python's `super()`). Flabbergast permits accessing the original attribute, but a name must be specified. Unlike most languages, Flabbergast permits deletion of an attribute. Because of inside-out lookup, any other attributes referencing the deleted attribute will simply look elsewhere. 
+Inheritance allows creation of attributes, in addition to providing a history for contextual lookup. A tuple or template is a collection of key-value pairs, where each key is a valid identifier and a value can be any expression. A template can be “modified” at the time of instantiation or through the `Template` expression, which creates a new template that copies all the existing attributes, less the modified ones. In most object oriented languages, fields and methods can be overridden (i.e., replaced with new code). Similarly, attributes can be overridden with new expressions. Some languages allow access the overridden method through special keywords (e.g., Java's `super`, C#'s `base`, or Python's `super()`). Flabbergast permits accessing the original attribute, but a new name must be specified; there is no default name like `super`. Unlike most languages, Flabbergast permits deletion of an attribute. Because of inside-out lookup, any other attributes referencing the deleted attribute will simply look elsewhere. 
 
-Since attributes can refer to each other, it is the interpreter's duty to determine the order to evaluate the expressions. This means that attributes can be specified in any order (unlike C and C++). In fact, inside-out lookup makes it impossible to determine to what attributes references refer until evaluation time. One unusual effect is that the inheritance path of a tuple can be changed at runtime! In fact, since templates can be instantiated in different contexts, it is possible for the same declaration to be used in different contexts that create two different tuple inheritance paths. Obviously, this is the kind of stuff that can be used for good or evil–there are legitimate reasons to re-parent tuples, but it can be very dangerous.
+Since attributes can refer to each other, it is the interpreter's duty to determine the order to evaluate the expressions. This means that attributes can be specified in any order (unlike C and C++). In fact, inside-out lookup makes it impossible to determine to what attributes references refer until evaluation time. One unusual effect is that the inheritance path of a tuple can be changed at runtime (i.e., the “class” heirarchy is not determined at compile-time)! In fact, since templates can be instantiated in different contexts, it is possible for the same declaration to be used in different contexts that create two different tuple inheritance paths. Obviously, this is the kind of stuff that can be used for good or evil–there are legitimate reasons to re-parent tuples, but it can be very confusing and cause unexpected behaviour.
 
-The interpreter must be able to linearise the order in which it will perform evaluations. If the expression evaluation contains a cycle, then it is not possible to evaluate any of the expressions in the cycle. This is called circular evaluation. While theoretically possible, determining a fixed point is a rather impractical proposition. There are pseudo-cycles that are acceptable: the expressions can refer to one-another circularly so long as they don't need the value. This happens mostly during inside-out lookup:
+The interpreter must be able to linearise the order in which it will perform evaluations. If the expression evaluation contains a cycle, then it is not possible to evaluate any of the expressions in the cycle. This is called _circular evaluation_. While theoretically possible, determining a fixed point is a rather impractical proposition. There are pseudo-cycles that are acceptable: the expressions can refer to one-another circularly so long as they don't need the value. This happens mostly during inside-out lookup:
 
     x : {
       w : 4
@@ -61,7 +61,7 @@ Usually, the intended meaning of this expression is:
 
 ## Syntax
 
-In Flabbergast, all keywords start with a capital letter and identifiers start with a small letter, making them easily distinguishable. There are also a number of special characters used for operators.
+In Flabbergast, all keywords start with a capital letter and identifiers start with a small letter, making them easily distinguishable. There are also a number of special characters used for operators. Comments being with `#` and terminate at the end of the line. For the purposes of code formatting, comments preceding an attribute are assumed to be associated with it.
 
 ### Types and Constants
 
@@ -71,14 +71,19 @@ Integral and floating point number literals are specified in the familiar way. T
 
 The Boolean constants provided are `True` and `False` that can be manipulated using the operators `&&`, `||`, and `!`. They can also be compared using the full set of comparison operators; true is considered to be greater than false. There is no separate exclusive-or operator as `!=` serves this role. Both `&&` and `||` are short-circuiting.
 
-String literals, delimited by double quotation marks, can cover multiple lines and can contain embedded escape sequences and expressions. The escape sequences supported include the single-character escapes supported by C, triplets of octal digits, pairs of hexadecimal digits, and Unicode-friendly quadruplets of hexadecimal digits. Embedded expressions start with `\(`, followed by any expression, and terminated with a matching `)`; the expression must return a string, or a type that can be coerced to a string. Strings can also be joined together with the `&` operator. Sometimes, attribute names are provided as strings and, since not all strings are valid attribute names, it is useful to have a way to create a string that is a valid attribute name. By placing `$` before a valid identifier, a string with the identifier name will be created. For example, `a` and `b` will have the same value and both embed a reference to `x`, which is an integer, and so converted to a string:
+String literals, delimited by double quotation marks, can cover multiple lines and can contain embedded escape sequences and expressions. The escape sequences supported include the single-character escapes supported by C, triplets of octal digits, pairs of hexadecimal digits, and Unicode-friendly quadruplets of hexadecimal digits. Embedded expressions start with `\(`, followed by an expression, and terminated with a matching `)`; the expression must return a string, or a type that can be coerced to a string. Strings can also be joined together with the `&` operator. For example, `a` and `b` will have the same value and both embed a reference to `x`, which is an integer, and so converted to a string:
 
     x : 3
     a : "foo=\(x)\n"
     b : "foo=\(x)
     "
 
-Tuples are collections of attributes. Literal tuples are specified starting with `{`, followed by a list of attributes, and terminated with a matching `}`. Each attribute is an attribute, followed by `:`, and an expression. Tuples inherit the context of the tuple in which they are defined. Templates look similar except that they are preceded by the `Template` keyword. There are two important differences between templates and tuples: tuples are immutable while templates can be manipulated and variable resolution can look inside tuples, but not inside of templates. Neither can be coerced to strings.
+Sometimes, attribute names are provided as strings and, since not all strings are valid attribute names, it is useful to have a way to create a string that is a valid attribute name. By placing `$` before a valid identifier, a string with the identifier name will be created.
+
+    x : $foo == "foo" # True
+    y : $5 # Error
+
+Tuples are collections of attributes. Literal tuples are specified starting with `{`, followed by a list of attributes, and terminated with a matching `}`. Each attribute is a name, followed by `:`, and an expression. Tuples inherit the context of the tuple in which they are defined. Templates look similar except that they are preceded by the `Template` keyword. There are two important differences between templates and tuples: tuples are immutable while templates can be manipulated and variable resolution can look inside tuples, but not inside of templates. Neither can be coerced to strings. More details on tuples are provided later.
 
 There is also a special `Null` constant which can be checked for using the `Is Null` operator. The null value cannot be used in any comparison operator and doing so will cause an error. The null value is not the same as an undefined variable. There is a null coalescence operator `??` that can substitute a default value if the left operand is null. Unlike most languages, null should be used extremely sparingly in Flabbergast: it is usually preferable to let inside-out lookup find appropriate values. Null should mean “this value is not helpful and that's the final word” instead of the usual meanings of “I don't know” or “this does not exist”. As an example, `y` will be 3, `z` will be an error, and `w` will be true.
 
@@ -89,13 +94,17 @@ There is also a special `Null` constant which can be checked for using the `Is N
 
 The `To` operator can be used to coerce values to other types. Integral and floating point types can be inter-converted, with appropriate truncation, and converted to strings. The `As` operator ensures that a value is of a particular type, if not, an error occurs. The `Is` operator checks whether a value is a particular type and returns the result as a Boolean value.
 
-    x : 3 As Str
+    x : 3 As Str # Null
+    y : 3 To Str # "3"
+    z : 4.5 Is Int # False
+
+The `As` operator is shorthand for `If value Is Type Then value Else Null`.
 
 ### Special Tuple Literals
 
 Two special tuple literals are provided: the literal list and the range operator.
 
-Tuples are implicitly sorted by their attribute names. The literal list is a way to create a tuple with only values and the attributes are set to arbitrary labels that have a guaranteed stable sorting. It is a comma-separated list of expressions starting with a `[` and terminating with a `]`.
+Tuples are implicitly sorted by their attribute names. The literal list is a way to create a tuple with only values and the names are set to arbitrary labels that have a guaranteed stable sorting. It is a comma-separated list of expressions starting with a `[` and terminating with a `]`.
 
 The `Through` operator produces a list with the values being numbers starting from the left operand up to, and including, the right operand, both of which must be integers. If the right operand is the same or less than the left, the list returned will be empty.
 
@@ -125,12 +134,37 @@ The `Error` expression raises an error, stopping execution of the whole program.
 
 ### Lookup
 
-A period-separated list of identifiers forms a free variable to be resolved by inside-out lookup. A period-separated list of identifiers can also be added to any expression, in which case it will do exact matching starting from the expression supplied; this is called a direct lookup. The keyword `This` gives access to the tuple where the expression is being evaluated. The keyword `Container` access the parent of the tuple (either the current tuple if it is used alone, or the preceding tuple if used in an inside-out or direct lookup. The `Lookup` expression performs a remote inside out lookup; `Lookup a.b.c In x` will start inside-out lookup for `a.b.c` starting from the context of the tuple `y`, rather than the current context.
+A period-separated list of identifiers forms a free variable to be resolved by inside-out lookup; this is called contextual lookup.
 
-Here is example uses of all lookup styles:
+    a : 5
+    b : {
+      c : a + 3
+    }
+
+Here, in `b.c`, lookup will start in the current tuple, which does not contain `a`, so lookup will continue to the containing tuple, which does have `a`.
+
+A period-separated list of identifiers can also be added to any expression, in which case it will do exact matching starting from the expression supplied; this is called a direct lookup. The keyword `This` gives access to the tuple where the expression is being evaluated, effectively forcing direct lookup. Using parentheses or the result of an expression will also result in direct lookup.
+
+     x : 1
+     a : {
+       x : 3
+       y : This.x + 1 # Yields 4
+     }
+     b : (a).x # Yields 4
+
+The keyword `Container` access the parent of the tuple (either the current tuple if it is used alone, or the preceding tuple if used in an inside-out or direct lookup).
+
+     a : 1
+     b : {
+       a : Container.a # Yields 1
+     }
+
+The `Lookup` expression performs a remote inside out lookup; `Lookup a.b.c In x` will start inside-out lookup for `a.b.c` starting from the context of the tuple `y`, rather than the current context.
+
+Here is non-trivial example uses of all lookup styles:
 
     a : {
-      h : i - 1
+      h : i - 1 # Yields 4 - 1 = 3
     }
     i : 4
     x : a.h # Will be 3
@@ -152,7 +186,7 @@ In `a`, contextual lookup searches for an `i`, which does not exist in the curre
 
 Although tuples are immutable, it is possible to create new values from existing tuples using fricassée expressions. These expressions take a collection of input tuples an iterate over the attributes they share. The concept was based on XQuery's FLOWR expressions, which are based on SQL queries. It should be familiar to users of Haskell and LISP's `map` and `fold` functions, C#'s LINQ expressions, Python's `map` and `reduce` operators, or Perl's `map` construct. Conceptually, the expression has three parts: a source, an optional filter, and a sink. The source extracts data from tuples and produces a context in which each subsequent expression will be evaluated. The filter can discard any contexts that do not meet certain requirements. The sink produces a value from the contexts: either a new tuple, or a single value for a reduction. Some sinks respect the ordering of the contexts, so there are common ordering tools.
 
-There are four sources provided: values, attribute names and values, numbers and values, and, prepared tuples. In all cases, the select is done over a collection of input tuples and all the attributes of the input tuples. The following example shows the first part of a fricasée expression for each of the different sources over the same input tuples. In all cases, the source will iterate over the union of all the attributes in the tuples `x`, `y`, and `z` and each context will have `a`, `b`, and `c` bound to the values in the corresponding tuples, or `Null` if there is no corresponding value. For the values only source, `i`, this is all the context will contain. In the case of `j`, the attribute name itself will be bound as `n` in a string. In the numeric case, `k`, the position will be index, starting from 1.
+There are four sources provided: values, attribute names and values, numbers and values, and, prepared tuples. In all cases, the select is done over a collection of input tuples and all the attributes of the input tuples. The following example shows the first part of a fricasée expression for each of the different sources over the same input tuples. In the first three cases, the source will iterate over the union of all the attributes in the tuples `x`, `y`, and `z` and each context will have `a`, `b`, and `c` bound to the values in the corresponding tuples, or `Null` if there is no corresponding value. For the values only source, `i`, this is all the context will contain. In the case of `j`, the attribute name itself will be bound as `n` in a string. In the numeric case, `k`, the position will be index, starting from 1.
 
     x : {
       p : 1
@@ -170,22 +204,21 @@ There are four sources provided: values, attribute names and values, numbers and
     k : For Ordinal n : a, b, c In x, y, z ... # Yields { a : 1  b : 3  c : 5  n : 1 }, { a : 2  b : 4  c : Null  n : 2}
     l : For All [ x, y, z ] ... # Yields { p : 1  q : 2 }, { p : 3  q : 4 }, { p : 5 }
 
-The prepared tuple source, `All`, is meant for library functions to produce iterable sources of data. One could imagine a library function matching a regular expression and returning the matched groups. It becomes the responsibility of the source to provide sensible variables in each tuple. In the example, `z` makes for an awkard environment since `q` is not bound, and the `All` source is not obligated to correct the inconsistency.
+The prepared tuple source, `All`, is meant for library functions to produce iterable sources of data. One could imagine a library function matching a regular expression and returning the matched groups. It becomes the responsibility of the source to provide sensible variables in each tuple. In the example, `z` makes for an awkward environment since `q` is not bound, and the `All` source is not obligated to correct the inconsistency.
 
 Optionally, a `Where` clause can be used to filter the results. It must return a Boolean value.
 
     x : 1 Through 7
     i : For a In x Where a > 5 ... # Yields { a : 6 }, { a : 7 }
 
-
 Finally, a sink is needed to produce a value from the contexts. Three are supported: a reducer, an anonymous tuple generator, and a named tuple generator. The reducer and the anonymous tuple generator both support ordering.
 
-The reducer works as a normal reduce operation:
+The reducer works as a typical fold/reduce operation:
 
     x : 1 Through 7
     y : For v In x Reduce v + a With a : 0
 
-The initial value of the accumulator, `a`, is set to zero and the reduce expression is repeated for each of the contexts. In each context, the accumulator will be bound to the previous value. The reducer can support ordering operations, show later, on the contexts to choose the reduction order.
+The initial value of the accumulator, `a`, is set to zero and the reduce expression is repeated for each of the contexts. In each context, the accumulator will be bound to the previous value. The reducer can support ordering operations, shown later, on the contexts to choose the reduction order.
 
 The anonymous tuple generator produces a new tuple with each value being the result of an expression. The names of the tuples are generated automatically in the same way as if they had been generated by a literal list or `Through` expression.
 
@@ -217,7 +250,19 @@ Note that if two values have the same sort key, in the example -1 and 1 do, then
 
 ### Tuples and Templates
 
-In addition to literal tuples, tuples can be instantiated from templates. The instantiation can also modify a template by adding, removing, or overriding attributes. The syntax for instantiation is simply an expression yielding a template followed by `{`, an optional list of modifications, and terminated by `}`. Templates are created in a syntax similar to literal tuples: `Template {`, a list of attributes, followed by `}`. Templates can also be derived using a syntax that is a hybrid of the two: `Template`, an expression for the template from which to derive, followed by `{`, an optional list of modifications, and a terminating `}`. It's important to note that deriving a template, even with no changes, modifies it because it adds additional lookup scopes. In general, it's useful think of the curly braces and capturing scope.
+In addition to literal tuples, tuples can be instantiated from templates. The instantiation can also modify a template by adding, removing, or overriding attributes. The syntax for instantiation is simply an expression yielding a template followed by `{`, an optional list of modifications, and terminated by `}`. Templates are created in a syntax similar to literal tuples: `Template {`, a list of attributes, followed by `}`.
+
+    foo_tmpl : Template { a : b + 4 }
+    foo : foo_tmpl { b : 3 } # Yields { a : 7  b : 4 }
+
+Templates can also be derived using a syntax that is a hybrid of the two: `Template`, an expression for the template from which to derive, followed by `{`, an optional list of modifications, and a terminating `}`. It's important to note that deriving a template, even with no changes, modifies it because it adds additional lookup scopes. In general, it's useful think of the curly braces and capturing scope. In this example, `foo2_tmpl` is capturing the scope inside of `x`, making `b` available to its descendants.
+
+    foo_tmpl : Template { a : b + 4 }
+    x : {
+      foo2_tmpl : Template { }
+      b : 1
+    }
+    y : x.foo2_tmpl { } # Yields { a : 5 }
 
 There are several modification attributes, not all of which can be used in all contexts:
 
@@ -227,7 +272,7 @@ There are several modification attributes, not all of which can be used in all c
  - `+`, followed by an identifier, then `:`, followed by an expression, will replace an attribute but allows the previous value to be bound to the identifier supplied. The attribute must already exist, so this is not valid when declaring a new template.
  - `+: {`, followed by a list of modifications, terminated by `}`, performs template derivation. It is short-hand for `+oldtemplate: Template oldtemplate { ... }` with the convenience of not having to choose a name.
 
-There is also a function call convenience syntax. In tuple instantiation, the expressions are evaluated in the context of the tuple created. In a function call, expressions provided are evaluated in the current context, then placed into the instantiated template. A list of unnamed expressions can be provided and these are collected into an `args` tuple. Finally, instead of simply returning the entire tuple, the `value` attribute is returned from the instantiated tuple. For instance, the function call:
+There is also a function call convenience syntax. In their own way, templates can act as lambdas. In tuple instantiation, the expressions are evaluated in the context of the tuple created. In a function call, expressions provided are evaluated in the current (parent) context, then placed into the instantiated template. A list of unnamed expressions can be provided and these are collected into an `args` tuple. Finally, instead of simply returning the entire tuple, the `value` attribute is returned from the instantiated tuple. For instance, the function call:
 
     {
       a : 3
@@ -261,6 +306,7 @@ The `From` expression allows importing external content into the program. This d
 Supposing this was CUPS, it might be perfectly reasonable for CUPS to provide a list of backends (e.g., parallel port, USB, IPP):
 
     known_backends : From cups:backends
+    # Function-like template to determine if a backend is supported by CUPS
     supported_backend : Template {
       backend ?:
       value : For known_backend In known_backends Reduce accumulator || backend == known_backend With accumulator : False
@@ -276,7 +322,7 @@ Certainly, Flabbergast is a bad choice for writing a GUI application, or a data 
 
 In most languages, afterthoughts are not appreciated. However, most configurations are nothing but afterthoughts and exceptions. “I want the test version of the webserver to be the same as the production except for the database connection.” “I want the videos SMB share to be the same as the documents SMB share with a few extra users.” Flabbergast is built to service “except”, “and”, and “but”. Everything is malleable and done in such a way that it can be changed even if the base version didn't anticipate that change. There's no concept of Java's `final`, or C++'s `const`.
 
-Most languages, particularly object-oriented languages, have a lot of plumbing: taking data from one place and copying it to another. Most constructors in OO languages spend their time stuffing parameters into fields. There is a push in multi-paradigm object-oriented languages, including Scala, Ruby, Boo, and Nemerle, to have the compiler write the plumbing, freeing the programmer to work on the real logic. Flabbergast has a different approach: don't have plumbing at all. Define the data where it should be defined and use inside-out lookup to pull data from the wherever. Copying data is generally a sign that inside-out lookup is not being used effectively.
+Most languages, particularly object-oriented languages, have a lot of plumbing: taking data from one place and copying it to another. Most constructors in object-oriented languages spend their time stuffing parameters into fields. There is a push in multi-paradigm object-oriented languages, including Scala, Ruby, Groovy, Boo, and Nemerle, to have the compiler write the plumbing, freeing the programmer to work on the real logic. Flabbergast has a different approach: don't have plumbing at all. Define the data where it should be defined and use inside-out lookup to pull data from the wherever. Copying data is generally a sign that inside-out lookup is not being used effectively.
 
 Although Flabbergast has the `?:` attribute definition, it should almost never be used. This is one of the most frequent mistakes of novice programmers. If there's a value needed, just use it; there's no need force the consumer of a template to fill in the blank. The real use case is for things that must be provided and unique. For instance, the name of an SMB share is probably best defined with `?:`, but the users certainly are not.
 
