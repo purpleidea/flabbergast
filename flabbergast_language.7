@@ -900,36 +900,20 @@ Pass-through selector
 Passes-though a list of witnesses provided as a tuple of tuples.
 
 .TP
-Named attribute selector
-.SEM Γ ⊢ attr:I \fB:\fR value:I (\fB,\fR value:I)* \fBIn\fR input:E\*<0\*> (\fB,\fR input:E\*<0\*>)* ↓ W
-∀ i ∈ input : Γ ⊢ i ↓ < k\*<ij\*> → v\*<ij\*> >,
+Merged attribute selector
+.SEM Γ ⊢ value:I \fB:\fR input:(\fBName\fR / \fBOrdinal\fR /E\*<0\*>) (\fB,\fR value:I \fB:\fR input:(\fBName\fR / \fBOrdinal\fR /E\*<0\*>))* ↓ W
+∀ i ∈ input:E : Γ ⊢ i ↓ < k\*<ij\*> → v\*<ij\*> >,
 
-W = { < ∀ j : attr → j, ∀ i ∈ input ∃ v\*<ij\*> : value\*<i\*> → v\*<ij\*> > , ∀ i ∈ input ¬∃ v\*<ij\*> : ∅ > }
-.SEME
+∀ i ∈ input:\fBAttribute\fR : value\*<i\*> → j,
 
-Produce a list of witnesses where each \fIvalue\fR identifier matches the value of the current attribute, named in \fIattr\fR, in each of the inputs, or null, if not in the matching tuple.
+K = ∀ i ∈ input:E : ∪ k\*<ij\*>,
 
-.TP
-Anonymous attribute selector
-.SEM Γ ⊢ value:I (\fB,\fR value:I)* \fBIn\fR input:E\*<0\*> (\fB,\fR input:E\*<0\*>)* ↓ W
-∀ i ∈ input : Γ ⊢ i ↓ < k\*<ij\*> → v\*<ij\*> >,
+∀ i ∈ input:\fBOrdinal\fR : value\*<i\*> → |{ k ∈ K : k\*<j\*> < j }| :: Int
 
 W = { < ∀ j : ∀ i ∈ input ∃ v\*<ij\*> : value\*<i\*> → v\*<ij\*> > , ∀ i ∈ input ¬∃ v\*<ij\*> : ∅ > }
 .SEME
 
-Produce a list of witnesses where each \fIvalue\fR identifier matches the value of the current attribute in each of the inputs, or null, if not in the matching tuple.
-
-.TP
-Numeric attribute selector
-.SEM Γ ⊢ \fBOrdinal\fR attr:I \fB:\fR value:I (\fB,\fR value:I)* \fBIn\fR input:E\*<0\*> (\fB,\fR input:E\*<0\*>)* ↓ W
-∀ i ∈ input : Γ ⊢ i ↓ < k\*<ij\*> → v\*<ij\*> >,
-
-K = ∀ i ∈ input : ∪ k\*<ij\*>,
-
-W = { < ∀ j : attr → |{ k ∈ K : k\*<j\*> }| :: Int, ∀ i ∈ input ∃ v\*<ij\*> : value\*<i\*> → v\*<ij\*> > , ∀ i ∈ input ¬∃ v\*<ij\*> : ∅ > }
-.SEME
-
-Produce a list of whitnesses where each \fIvalue\fR identifer matches the value of the current attribute in each of the inputs, or null, if not in the matching tuple, and \fIattr\fR bound to an increasing numerical value, starting from 0.
+Produce a list of witnesses where each \fIvalue\fR identifier matches the value of the current attribute in each of the tuple inputs, or null, if not in the matching tuple. The special input \fBAttribute\fR is the name of the current attribute and the special input \fBOrdinal\fR is the position of the current attribute.
 
 .SH FRICASÉE RESULTS (FR)
 

@@ -186,7 +186,7 @@ In `a`, contextual lookup searches for an `i`, which does not exist in the curre
 
 Although tuples are immutable, it is possible to create new values from existing tuples using fricassée expressions. These expressions take a collection of input tuples an iterate over the attributes they share. The concept was based on XQuery's FLOWR expressions, which are based on SQL queries. It should be familiar to users of Haskell and LISP's `map` and `fold` functions, C#'s LINQ expressions, Python's `map` and `reduce` operators, or Perl's `map` construct. Conceptually, the expression has three parts: a source, an optional filter, and a sink. The source extracts data from tuples and produces a context in which each subsequent expression will be evaluated. The filter can discard any contexts that do not meet certain requirements. The sink produces a value from the contexts: either a new tuple, or a single value for a reduction. Some sinks respect the ordering of the contexts, so there are common ordering tools.
 
-There are four sources provided: values, attribute names and values, numbers and values, and, prepared tuples. In all cases, the select is done over a collection of input tuples and all the attributes of the input tuples. The following example shows the first part of a fricasée expression for each of the different sources over the same input tuples. In the first three cases, the source will iterate over the union of all the attributes in the tuples `x`, `y`, and `z` and each context will have `a`, `b`, and `c` bound to the values in the corresponding tuples, or `Null` if there is no corresponding value. For the values only source, `i`, this is all the context will contain. In the case of `j`, the attribute name itself will be bound as `n` in a string. In the numeric case, `k`, the position will be index, starting from 1.
+There are two sources provided: the combined attributes of tuples, and, prepared context tuples. In all cases, the select is done over a collection of input tuples and all the attributes of the input tuples. The following example shows the first part of a fricasée expression for different sources over the same input tuples. In the first three cases, the source will iterate over the union of all the attributes in the tuples `x`, `y`, and `z` and each context will have `a`, `b`, and `c` bound to the values in the corresponding tuples, or `Null` if there is no corresponding value. For the values only source, `i`, this is all the context will contain. In the case of `j`, the attribute name itself will be bound as `n` in a string, using the special `Name` value. In the case of `k`, the position will be provided using the special `Ordinal` value; indexing starts from 1.
 
     x : {
       p : 1
@@ -199,9 +199,9 @@ There are four sources provided: values, attribute names and values, numbers and
     z : {
       p : 5
     }
-    i : For a, b, c In x, y, z ... # Yields { a : 1  b : 3  c : 5 }, { a : 2  b : 4  c : Null }
-    j : For n : a, b, c In x, y, z ... # Yields { a : 1  b : 3  c : 5  n : "p" }, { a : 2  b : 4  c : Null  n : "q" }
-    k : For Ordinal n : a, b, c In x, y, z ... # Yields { a : 1  b : 3  c : 5  n : 1 }, { a : 2  b : 4  c : Null  n : 2}
+    i : For a : x, b : y, c : z ... # Yields { a : 1  b : 3  c : 5 }, { a : 2  b : 4  c : Null }
+    j : For n : Name, a : x, b : y, c : z ... # Yields { a : 1  b : 3  c : 5  n : "p" }, { a : 2  b : 4  c : Null  n : "q" }
+    k : For n : Ordinal, a : x, b : y, c : z ... # Yields { a : 1  b : 3  c : 5  n : 1 }, { a : 2  b : 4  c : Null  n : 2}
     l : For Each [ x, y, z ] ... # Yields { p : 1  q : 2 }, { p : 3  q : 4 }, { p : 5 }
 
 The prepared tuple source, `Each`, is meant for library functions to produce iterable sources of data. One could imagine a library function matching a regular expression and returning the matched groups. It becomes the responsibility of the source to provide sensible variables in each tuple. In the example, `z` makes for an awkward environment since `q` is not bound, and the `Each` source is not obligated to correct the inconsistency.
