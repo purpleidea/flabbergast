@@ -53,7 +53,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<Shuttle> ("comparison", precedence, "%P{+left}%-<=>%!%-%P{right}");
 
 		precedence++;
-		register<StringConcatenate> ("string concatenation", precedence, "%P{+left}%-++%!%-%P{right}");
+		register<StringConcatenate> ("string concatenation", precedence, "%P{+left}%-&%!%-%P{right}");
 
 		precedence++;
 		register<NullCoalesce> ("null coalescence", precedence, "%P{+expression}%-??%!%-%P{alternate}");
