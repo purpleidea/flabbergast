@@ -9,8 +9,8 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="508.94348"
-   height="350.00003"
+   width="525"
+   height="350"
    id="svg2"
    version="1.1"
    inkscape:version="0.48.4 r9939"
@@ -62,7 +62,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -70,23 +70,23 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(0,-702.36217)">
+     transform="translate(0,-702.3622)">
     <rect
-       style="fill:#f2f2f2;stroke:#000000;stroke-width:0.16140657999999999;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       style="fill:#f2f2f2;stroke:#000000;stroke-width:0.16140658;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="rect2985"
        width="199.83859"
        height="349.83859"
        x="0.080703288"
        y="702.44287" />
     <rect
-       style="fill:#f2f2f2;stroke:#000000;stroke-width:0.17718332000000001;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       style="fill:#f2f2f2;stroke:#000000;stroke-width:0.17718332;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="rect2987"
        width="174.82281"
        height="274.82281"
        x="12.088592"
        y="752.45081" />
     <rect
-       style="fill:#f2f2f2;stroke:#000000;stroke-width:0.20820852000000001;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       style="fill:#f2f2f2;stroke:#000000;stroke-width:0.20820852;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="rect2989"
        width="149.79179"
        height="99.791794"
@@ -100,7 +100,7 @@
        x="25.103073"
        y="787.46527" />
     <rect
-       style="fill:#f2f2f2;stroke:#000000;stroke-width:0.15979104000000000;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       style="fill:#f2f2f2;stroke:#000000;stroke-width:0.15979104;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
        id="rect2993"
        width="174.84021"
        height="349.84021"
