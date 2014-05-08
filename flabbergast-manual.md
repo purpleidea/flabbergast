@@ -16,7 +16,7 @@ Each tuple also has an evaluation context. In most languages, there are multiple
 
 Flabbergast uses inside-out lookup. It is easiest to think of resolution as having two dimensions: containment and inheritance. When resolving a variable, the language will first look for an attribute of the same name in the current tuple; if none exists, it will look in the containing tuple (i.e., the tuple in which the current tuple is an attribute) and will continue to examine containers until a matching tuple is found. If there is no match, resolution will continue in the parents of the template; that is, it will go to the context in which the template was defined and search through the containing tuples there. If that yields no matches, resolution will proceed back through the template's template's containers and back until there are no more contexts.
 
-![Resolution order diagram](flabbergast-resolution.svg "The order in which resolution occurs")
+![Resolution order diagram](../../raw/master/flabbergast-resolution.svg "The order in which resolution occurs")
 
 In the figure, there are two templates, shown in colour, and tuples, shown in grey. The tuple containment is indicated by physical containment and inheritance is shown by arrows. When resolution inside of the tuple marked 1 is needed, resolution begins in the tuple itself, then proceeds through the tuples, as indicated by their numbers. Note that some tuples are considered multiple times due to the template and the tuple sharing some containment; this is inconsequential, as it will either be found the first time, or fail every time. Note that templates themselves are not checked: only the tuples in which they were defined or modified.
 
