@@ -337,4 +337,75 @@ TODO
 TODO
 
 ## The Standard Library
+Because Flabbergast is meant to render data, it has a rather lean standard library. Most languages have the following major elements in their standard libraries:
+
+ - data structures. These are rather unnecessary once tuples have been accepted as the one true data structure.
+ - search and sort algorithms. These are built into the language via the fricassée expression.
+ - I/O. This is highly discouraged as configurations should be hermetic and the controlling program may have security reasons to restrict access to the world.
+   - files
+   - GUIs
+   - databases
+   - network
+ - threading. Generally, threading control is only needed so that data structures and I/O can be done safely.
+ - string manipulation. Yuck. String manipulation is the source of all computational suffering. Embrace the tuples.
+ - regular expressions and parsing. Ignoring that parsing is usually absent, generally, this is done on the strings read from files.
+ - mathematics. Computation is good!
+ - XML and JSON.
+
+So, the Flabbergast libraries look like they do to avoid I/O and minimise the ensuing insanity.
+
+### Tuple Manipulation (`lib:tuple`)
+This library is simply a collection of convenience templates for manipulating tuples. It is portable and should be present on every platform; it is reasonable to expect to have it.
+
+### String Manipulation (`lib:str`)
+These functions perform common string operations not found in the language. This is not a portable language, but should be trivial to port to new platforms; it is reasonable to expect to have it.
+
+### Regular Expressions (`lib:regex`)
+The regular expression library works in two parts: there are a set of templates to build a regular expression and a function to collect matches from a regular expression. Regular expression syntax varies across platforms, so a more uniform way of defining expressions is needed. This is what the templates provide: a consistent mechanism. Essentially, the library provides a way to build a regular expression “function” that can be called on a string. For example:
+
+    regex_lib : From lib:regex
+    my_expr : Template regex_lib.alternate {
+      elements : [
+        "foo:",
+        Template kleene {
+          of : Template char_group {
+            of : "a-z"
+          name : $foo_value
+          }
+        }
+      ]
+    }
+    x : For Each my_expr(str : my_string) Select foo_value 
+
+### Rendering (`lib:render`)
+This library converts tuples in to JSON-parseable strings and XML documents. In short, the library provides templates such that a tuple can be reduced to XML or JSON fragments.
+
+It is portable and should be present on every platform.
+
+### Relational Database Access (`lib:sql`)
+Much like regular expression, different underlying database libraries are present, but templates can be used to smooth out the wrinkles. The query-building templates are uniform across databases, but the drivers will be unique to each database. Moreover, while most databases have a concept of a connection that is held open by the application until the database is no longer needed, this has little parity in a Flabbergast program. Much more responsibility falls to the library implementation to manage the connections. In the case of in-application access, it might be best if the database connection is simply provided via `From`. The schema for the database should be provided.
+
+    sql_lib : From lib:sql
+		employee_tbl : From db:employee
+		payroll_tbl : From db:payroll
+    my_query : Template sql_lib.query {
+      results : {
+				name : from.employee.name
+        salary : from.payroll.salary
+			}
+      from : {
+        employee : employee_tbl {}
+        payroll : payroll_tbl {}
+      }
+      join : [ inner_join(from.employee.id, from.payroll.id) ]
+      where : [ greater_than(left : from.employee.id, right : 30) ]
+    }
+    employees : For Each my_query() Select "\(name) makes $\(salary) per year."
+
+This is very specialised and the mechanism to access databases is going to vary based on the host platform and the host application, if any. This should generally not be depended upon.
+
+### Parsing (`lib:parse`)
 TODO
+
+### Self-Hosting Compiler (`lib:compiler`)
+There is a compiler capable of generating a real compiler in a target language that implements the KWS VM. Although this should be available on every platform to have supported that platform, it is rather useless for in-application settings.
