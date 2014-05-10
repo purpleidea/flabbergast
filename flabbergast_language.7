@@ -902,15 +902,17 @@ Passes-though a list of witnesses provided as a tuple of tuples.
 .TP
 Merged attribute selector
 .SEM Γ ⊢ value:I \fB:\fR input:(\fBName\fR / \fBOrdinal\fR /E\*<0\*>) (\fB,\fR value:I \fB:\fR input:(\fBName\fR / \fBOrdinal\fR /E\*<0\*>))* ↓ W
-∀ i ∈ input:E : Γ ⊢ i ↓ < k\*<ij\*> → v\*<ij\*> >,
+∀ i ∈ input:E : Γ ⊢ i ↓ < kk\*<ij\*> → vv\*<ij\*> >,
 
-∀ i ∈ input:\fBAttribute\fR : value\*<i\*> → j,
+V(j) = ∀ i ∈ input : (∃ vv\*<ij\*> ≠ ∅ : value\*<i\*> → vv\*<ij\*>) ∪ (¬∃ v\*<ij\*> ≠ ∅* : value\*<i\*> → ∅ >)
+
+A(j) = ∀ i ∈ input:\fBAttribute\fR : value\*<i\*> → j,
 
 K = ∀ i ∈ input:E : ∪ k\*<ij\*>,
 
-∀ i ∈ input:\fBOrdinal\fR : value\*<i\*> → |{ k ∈ K : k\*<j\*> < j }| :: Int
+O(j) = ∀ i ∈ input:\fBOrdinal\fR : value\*<i\*> → |{ k ∈ K : k\*<j\*> < j }| :: Int
 
-W = { < ∀ j : ∀ i ∈ input ∃ v\*<ij\*> : value\*<i\*> → v\*<ij\*> > , ∀ i ∈ input ¬∃ v\*<ij\*> : ∅ > }
+W = { ∀ j : < M(j) ∪ A(j) ∪ O(j) > }
 .SEME
 
 Produce a list of witnesses where each \fIvalue\fR identifier matches the value of the current attribute in each of the tuple inputs, or null, if not in the matching tuple. The special input \fBAttribute\fR is the name of the current attribute and the special input \fBOrdinal\fR is the position of the current attribute.
