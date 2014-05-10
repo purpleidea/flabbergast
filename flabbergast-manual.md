@@ -382,6 +382,9 @@ This library converts tuples in to JSON-parseable strings and XML documents. In 
 
 It is portable and should be present on every platform.
 
+### Mathematics (`lib:math`)
+TODO
+
 ### Relational Database Access (`lib:sql`)
 Much like regular expression, different underlying database libraries are present, but templates can be used to smooth out the wrinkles. The query-building templates are uniform across databases, but the drivers will be unique to each database. Moreover, while most databases have a concept of a connection that is held open by the application until the database is no longer needed, this has little parity in a Flabbergast program. Much more responsibility falls to the library implementation to manage the connections. In the case of in-application access, it might be best if the database connection is simply provided via `From`. The schema for the database should be provided.
 
