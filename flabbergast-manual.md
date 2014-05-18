@@ -5,7 +5,7 @@ Flabbergast is a rather unique programming language. It is best-described as an 
 
 It is important to understand the niche for Flabbergast: it is a configuration language. The configuration of some systems is rather trivial: `fstab` and `resolv.conf` have remained virtually unchanged over many years. More complex programs, such as Apache, BIND, Samba, and CUPS have significantly more complicated configurations. The complexity is not a function of the configuration itself; indeed `smb.conf` is just an INI file. Complexity comes because there's a desire to share common configuration between elements (e.g., the list of privileged users among SMB shares). Configuration files start to grow awkward macro systems, get preprocessed using M4 or the like, or get evermore specific configuration operations to migrate the complexity into the binary.
 
-Flabbergast, in some ways, is like a macro system. However, macro systems, such as M4 and the CPP, operate by manipulating text or tokens and can only ever output more text or tokens. Flabbergast is a language meant to manipulate structure configuration: tuples. Tuples can behave somewhat like objects: they can have inheritance relations, they can be extended, and, finally, rendered into a standard configuration format, which might be the tuples themselves or it could be text. Either way, the needs of the configuration remain in the Flabbergast language; not the binary consuming the configuration. Moreover, Flabbergast makes it possible to write libraries of utilities and templates for configurations.
+Flabbergast, in some ways, is like a macro system. However, macro systems, such as M4 and the CPP, operate by manipulating text or tokens and can only ever output more text or tokens. Flabbergast is a language meant to manipulate structured configuration: tuples. Tuples can behave somewhat like objects: they can have inheritance relations, they can be extended, and, finally, rendered into a standard configuration format, which might be the tuples themselves or it could be text. Either way, the needs of the configuration remain in the Flabbergast language; not the binary consuming the configuration. Moreover, Flabbergast makes it possible to write libraries of utilities and templates for configurations.
 
 ## Core Concepts
 
@@ -74,12 +74,13 @@ Integral and floating point number literals are specified in the familiar way. T
 
 The Boolean constants provided are `True` and `False` that can be manipulated using the operators `&&`, `||`, and `!`. They can also be compared using the full set of comparison operators; true is considered to be greater than false. There is no separate exclusive-or operator as `!=` serves this role. Both `&&` and `||` are short-circuiting.
 
-String literals, delimited by double quotation marks, can cover multiple lines and can contain embedded escape sequences and expressions. The escape sequences supported include the single-character escapes supported by C, triplets of octal digits, pairs of hexadecimal digits, and Unicode-friendly quadruplets of hexadecimal digits. Embedded expressions start with `\(`, followed by an expression, and terminated with a matching `)`; the expression must return a string, or a type that can be coerced to a string. Strings can also be joined together with the `&` operator. For example, `a` and `b` will have the same value and both embed a reference to `x`, which is an integer, and so converted to a string:
+String literals, delimited by double quotation marks, can cover multiple lines and can contain embedded escape sequences and expressions. The escape sequences supported include the single-character escapes supported by C, triplets of octal digits, pairs of hexadecimal digits, and Unicode-friendly quadruplets of hexadecimal digits. Embedded expressions start with `\(`, followed by an expression, and terminated with a matching `)`; the expression must return a string, or a type that can be coerced to a string. Strings can also be joined together with the `&` operator. For example, `a`, `b` and `c` will have the same value and the reference to `x`, which is an integer, is converted to a string:
 
     x : 3
     a : "foo=\(x)\n"
     b : "foo=\(x)
     "
+    c : "foo=" & x & "\n"
 
 Sometimes, attribute names are provided as strings and, since not all strings are valid attribute names, it is useful to have a way to create a string that is a valid attribute name. By placing `$` before a valid identifier, a string with the identifier name will be created.
 
@@ -95,13 +96,17 @@ There is also a special `Null` constant which can be checked for using the `Is N
     z : x == Null
     w : x Is Null
 
-The `To` operator can be used to coerce values to other types. Integral and floating point types can be inter-converted, with appropriate truncation, and converted to strings. The `As` operator ensures that a value is of a particular type, if not, an error occurs. The `Is` operator checks whether a value is a particular type and returns the result as a Boolean value.
+The `To` operator can be used to coerce values to other types. Integral and floating point types can be inter-converted, with appropriate truncation, and converted to strings.
 
-    x : 3 As Str # Null
-    y : 3 To Str # "3"
+The `Is` operator checks whether a value is a particular type and returns the result as a Boolean value.
+
+The `As` operator ensures that a value is of a particular type, if not, an error occurs.
+
+    v : "3" As Str # "3"
+    w : 3 As Str # Error
+    x : 3 To Str # "3"
+    y : 4 Is Int # True
     z : 4.5 Is Int # False
-
-The `As` operator is shorthand for `If value Is Type Then value Else Null`.
 
 ### Special Tuple Literals
 
@@ -143,10 +148,11 @@ A period-separated list of identifiers forms a free variable to be resolved by i
     b : {
       c : a + 3
     }
+    x : b.c
 
-Here, in `b.c`, lookup will start in the current tuple, which does not contain `a`, so lookup will continue to the containing tuple, which does have `a`.
+Here, in `b.c`, lookup will start in the current tuple, which does not contain `a`, so lookup will continue to the containing tuple, which does have `a`. For `x`, it will look for a tuple `b` which contains an attribute `c`.
 
-A period-separated list of identifiers can also be added to any expression, in which case it will do exact matching starting from the expression supplied; this is called a direct lookup. The keyword `This` gives access to the tuple where the expression is being evaluated, effectively forcing direct lookup. Using parentheses or the result of an expression will also result in direct lookup.
+A period-separated list of identifiers can also be appened to any expression, in which case it will do exact matching starting from the expression supplied; this is called a direct lookup. The keyword `This` gives access to the tuple where the expression is being evaluated, effectively forcing direct lookup. Using parentheses or the result of an expression will also result in direct lookup.
 
      x : 1
      a : {
@@ -166,10 +172,10 @@ The `Lookup` expression performs a remote inside out lookup; `Lookup a.b.c In x`
 
 Here is non-trivial example uses of all lookup styles:
 
-    a : {
-      h : i - 1 # Yields 4 - 1 = 3
-    }
     i : 4
+    a : {
+      h : i - 1 # This tuple does not contain i, but the container does. Yields 4 - 1 = 3
+    }
     x : a.h # Will be 3
     y : a.i # Will be an error
     z : Lookup i In a # Will be 4
@@ -183,7 +189,9 @@ Here is non-trivial example uses of all lookup styles:
       v : (a).h # Will be an error
     }
 
-In `a`, contextual lookup searches for an `i`, which does not exist in the current tuple, but does exist in its parent. In `x`, contextual looks for an tuple `a` that contains an attribute `h`, which it finds at the top-level. In `y`, although `i` is accessible from the tuple `a`, it does not exist in `a`, so `a.i` fails to find a matching tuple. However, in `z`, a remote lookup searches for `i` starting from `a`, which is found in exactly the same way as when computing the value for `a.h`. Inside `w`, the situation is more complicated as another tuple named `a` is created. Searching for `a.h`, as `w.x` does, first checks the tuple `w.a`, but this tuple lacks an `h` attribute, so lookup continues, instead finding the top-level tuple. In `w.y`, lookup for `a.i` will match the `w.a` tuple as it does have an `i` attribute. In both `w.z` and `w.v`, searching for `a` yields `w.a`. In the case of `w.z`, doing a remote lookup inside `w.a` for `i` will find the attribute inside it. In the case of `w.v`, the parentheses have broken the lookup into a contextual lookup (`a`) and a direct get (`.h`); this is an error as the matched `a` (`w.a`) does not have an attribute `h`.
+In `a`, contextual lookup searches for an `i`, which does not exist in the current tuple, but does exist in its container. In `x`, contextual looks for an tuple `a` that contains an attribute `h`, which it finds at the top-level. In `y`, although `i` is accessible from the tuple `a`, it does not exist in `a`, so `a.i` fails to find a matching tuple. However, in `z`, a remote lookup searches for `i` starting from `a`, which is found in exactly the same way as when computing the value for `a.h`. Inside `w`, the situation is more complicated as another tuple named `a` is created. Searching for `a.h`, as `w.x` does, first checks the tuple `w.a`, but this tuple lacks an `h` attribute, so lookup continues, instead finding the top-level tuple. In `w.y`, lookup for `a.i` will match the `w.a` tuple as it does have an `i` attribute. In both `w.z` and `w.v`, searching for `a` yields `w.a`. In the case of `w.z`, doing a remote lookup inside `w.a` for `i` will find the attribute inside it. In the case of `w.v`, the parentheses have broken the lookup into a contextual lookup (`a`) and a direct get (`.h`); this is an error as the matched `a` (`w.a`) does not have an attribute `h`.
+
+> __This is the most complicated part of the language, but also the most useful.__
 
 ### Fricassée Expressions
 
