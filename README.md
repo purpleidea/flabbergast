@@ -7,7 +7,7 @@ In most languages, afterthoughts are not appreciated. However, most configuratio
 
 ## Documenation
 
-There are two important pieces of documentation: the rather dry [language spec man page](flabbergase_language.7) and the friendly [manual](flabbergast-manual.md).
+There are two important pieces of documentation: the rather dry [language spec man page](flabbergast_language.7) and the friendly [manual](flabbergast-manual.md).
 
 The language spec describes the syntax and behaviour with formal semantics (or, at least, a poorly-written attempt at formal semantics). This is provided as a manual page such that it is included with the installed packages.
 
