@@ -14,7 +14,7 @@ namespace Flabbergast.Data {
 			this.value = @value;
 		}
 		public override string to_string () {
-			return @value.to_string ();
+			return @value ? "True" : "False";
 		}
 	}
 
@@ -62,7 +62,7 @@ namespace Flabbergast.Data {
 		internal Utils.ContainerReference? containers;
 		internal Gee.SortedSet<string> externals = new Gee.TreeSet<string> ();
 		public override string to_string () {
-			return "template";
+			return "Template";
 		}
 	}
 
