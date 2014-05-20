@@ -1,10 +1,21 @@
 using Flabbergast.Expressions;
 public class Flabbergast.Rules : GTeonoma.Rules {
+	string? fix_name (string name) {
+		if (!name[0].isupper ()) {
+			return null;
+		}
+		for (var it = 1; it < name.length; it++) {
+			if (!name[it].islower ()) {
+				return null;
+			}
+		}
+		return name.down ();
+	}
 	public Rules () throws GTeonoma.RegisterError {
 		register_double ();
 		register_int ((int) sizeof (int) * 8, typeof (int));
 		register_string_literal (false);
-		register<Data.Ty> ("type");
+		register_enum<Data.Ty> ("type", fix_name);
 
 		/* Tuple attributes */
 		register<Attribute> ("attribute", 0, "%P{name}% :%!% %P{expression}");

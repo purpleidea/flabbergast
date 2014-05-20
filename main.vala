@@ -94,16 +94,16 @@ void print_datum (Data.Datum result, Rules rules, ExecutionEngine engine, bool d
 	} else {
 		string type_name;
 		if (result is Data.Boolean) {
-			type_name = "bool";
+			type_name = "Bool";
 		} else if (result is Data.Float) {
-			type_name = "float";
+			type_name = "Float";
 		} else if (result is Data.Null) {
 			stdout.printf ("Null\n");
 			return;
 		} else if (result is Data.Integer) {
-			type_name = "int";
+			type_name = "Int";
 		} else if (result is Data.String) {
-			stdout.printf ("\"%s\" As str\n", result.to_string ().escape ("'"));
+			stdout.printf ("\"%s\" As Str\n", result.to_string ().escape ("'"));
 			return;
 		} else if (result is Data.Template) {
 			stdout.printf ("Template\n");
