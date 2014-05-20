@@ -4,11 +4,6 @@ namespace Flabbergast {
 			get;
 			set;
 		}
-		public Gee.List<Import> imports {
-			get;
-			set;
-			default = Gee.List.empty<Import> ();
-		}
 		public Gee.List<Expressions.Attribute> attributes {
 			get;
 			set;
@@ -23,14 +18,6 @@ namespace Flabbergast {
 			state.containers = null;
 			engine.state = state;
 
-			foreach (var import in imports) {
-				if (tuple.attributes.has_key (import.name.name)) {
-					throw new EvaluationError.NAME (@"Duplicate attribute name $(import.name.name).");
-				}
-				var attr_value = engine.get_import (import.uri.path);
-				tuple.attributes[import.name.name] = attr_value;
-				engine.environment[context, import.name.name] = attr_value;
-			}
 			foreach (var attribute in attributes) {
 				if (tuple.attributes.has_key (attribute.name.name)) {
 					throw new EvaluationError.NAME (@"Duplicate attribute name $(attribute.name.name).");
@@ -46,7 +33,7 @@ namespace Flabbergast {
 				attribute.expression = attribute.expression.transform ();
 			}
 		}
-		public class Import : Object {
+		public class Import : Expression {
 			public Name name {
 				get;
 				set;
@@ -54,6 +41,12 @@ namespace Flabbergast {
 			public UriReference uri {
 				get;
 				set;
+			}
+			public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+				engine.operands.push (engine.get_import (uri.path));
+			}
+			public override Expression transform () {
+				return this;
 			}
 		}
 		public class UriReference : Object {

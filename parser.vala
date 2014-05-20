@@ -7,7 +7,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<Data.Ty> ("type");
 
 		/* Tuple attributes */
-		register<Attribute> ("attribute", 0, "%P{name}% :%!%-%P{expression}");
+		register<Attribute> ("attribute", 0, "%P{name}% :%!% %P{expression}");
 		register<External> ("external attribute", 0, "%P{name}% ?:");
 		register<Override> ("override", 0, "%P{name}% +:%!%-{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });
 		register<Undefine> ("definition erasure", 0, "%P{name}% -:");
@@ -21,8 +21,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<FunctionCall.FunctionArg> ("argument", 0, "%P{parameter}");
 
 		/* Files */
-		register<File.Import> ("import", 0, "Import%! %P{uri} As %P{name}");
-		register<File> ("file", 0, "% %l{imports}{%n}%n%L{attributes}{%n}", new Type[] { typeof (File.Import), typeof (Attribute) });
+		register<File> ("file", 0, "% %L{attributes}{%n}", new Type[] { typeof (Attribute) });
 		register_custom<File.UriReference> ("URI", () =>  new UriParser (), (uri) => uri.path);
 
 		/* Expressions */
@@ -108,6 +107,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<Negation> ("negation", precedence, "-%-%P{expression}");
 
 		precedence++;
+		register<File.Import> ("import", 0, "From%! %P{uri}");
 		register<ContextualLookup> ("contextual lookup", precedence, "%L{names}{% .% }", new Type[] { typeof (Nameish) });
 		register<DirectLookup> ("direct lookup", precedence, "%P{+expression}%-.%!%-%L{names}{% .% }", new Type[] { typeof (Nameish) });
 
@@ -144,7 +144,7 @@ internal class Flabbergast.IdentifierParser : GTeonoma.CustomParser<Name> {
 		JUNK;
 		internal GTeonoma.CustomParser.StateType get_state () {
 			switch (this) {
-			 case IdentifierState.START:
+			 case IdentifierState.START :
 			 case IdentifierState.CONTAINER:
 				 return StateType.INTERMEDIATE;
 

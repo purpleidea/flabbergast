@@ -369,7 +369,7 @@ namespace Flabbergast {
 		}
 
 		private Gee.Map<string, Data.Datum> imports = new Gee.HashMap<string, Data.Datum> ();
-		internal Expression get_import (string uri) throws EvaluationError {
+		internal Data.Datum get_import (string uri) throws EvaluationError {
 			Data.Datum import;
 			if (imports.has_key (uri)) {
 				import = imports[uri];
@@ -377,7 +377,7 @@ namespace Flabbergast {
 				import = find_import (Uri.parse_scheme (uri), uri);
 				imports[uri] = import;
 			}
-			return new Expressions.ReturnLiteral (import);
+			return import;
 		}
 		protected virtual Data.Datum find_import (string? scheme, string uri) throws EvaluationError {
 			if (scheme == "lib") {
