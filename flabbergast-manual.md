@@ -421,3 +421,68 @@ TODO
 
 ### Self-Hosting Compiler (`lib:compiler`)
 There is a compiler capable of generating a real compiler in a target language that implements the KWS VM. Although this should be available on every platform to have supported that platform, it is rather useless for in-application settings.
+
+## Questions of Varying Frequency
+
+The following answers are universally discouraging of certain ideas as these ideas are not congruent with normal Flabbergast use.
+
+### How do I use a string as the URI in `From`?
+
+This is intentionally not possible. For various embedding reasons, it's important that the dependencies of a file are known at runtime. Importing new files can lead to all kinds of misery for doing any analysis of the code, and might represent a security problem for the host application.
+
+If the goal is to read from a configuration specific file, then invert the inheritance structure:
+
+    global_config : Template {
+      name ?:
+      machine_info : From "info:machine/\(name)"
+    }
+    local_config : global_config { name : "foo" }
+
+The correct refactoring is something like:
+
+    global_config : Template {
+      machine_info ?:
+    }
+    local_config : global_config {
+      machine_info : From info:machine/foo
+    }
+
+In general, the solution is to either use inside-out lookup or inheritance to find the needed data. If there is a collection of data, then it might be useful to have a “footprint”. In a global library, create a template for each type of configuration:
+
+    global_config : Template {
+      x : footprint.machine_info.cpu
+    }
+    test_config : Template global_config {
+    }
+
+Then create a single situation-specific footprint:
+
+    foo_footprint : {
+      machine_info : From info:machine/foo
+    }
+
+Then for each configuration is simply a marriage of footprint and template:
+
+    config_lib : From lib:config_templates
+    footprint : From lib:foo_footprint
+    config : config_lib.global_config { }
+
+These final files tend to be rather short.
+
+### How do I create a new type?
+
+There isn't a mechanism to create user-defined types as such. There are two reasons: what would be the look-up rules for type names and how would one define new primitive operations? In general, there's no reason to create a new type: just create a new tuple with a well-defined interface. For all typical purposes, that is as good as defining a new type. In the typical class-based object-oriented sense, there is no guarantee that a tuple will inherit the intended template, but if it has a compliant interface, there isn't necessarily any harm.
+
+Many languages have restricted value sets: enumerations (C, C++, Java, C#) or symbols (LISP, Ruby, SmallTalk). These are intended to be universally comparable values that exist in some kind of special namespace. Symbols are essentially strings, so the `$` identifier-like string is essentially the same. An enumeration-like structure can be easily made:
+
+    my_enum : For x : [$a, $b, $c] Select x : x
+
+It would also be completely reasonable to provide a tuple:
+
+    my_enum : {
+      a : { spec : "a"  id : 0 }
+      b : { spec : "b"  id : 1 }
+      c : { spec : "c"  id : 2 }
+    }
+
+The value of enumerations is mostly that they are cheap to compare and use in `switch` statements. Since none of that really translate to Flabbergast, this isn't so pressing. Rather than have dispatch logic, put the results in the tuples or templates.
