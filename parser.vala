@@ -89,7 +89,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 
 		precedence++;
 		register<Coerce> ("type coercion", precedence, "%P{+expression} To%! %P{ty}");
-		register<IndirectLookup> ("indirect lookup", precedence, "%L{names}{% .% } From%! %P{expression}", new Type[] { typeof (Nameish) });
+		register<IndirectLookup> ("indirect lookup", precedence, "Lookup %L{names}{% .% } In%! %P{expression}", new Type[] { typeof (Nameish) });
 		register<IsFinite> ("finite check", precedence, "%P{+expression}%-Is Finite");
 		register<IsNaN> ("not-a-number check", precedence, "%P{+expression}%-Is NaN");
 		register<IsNull> ("null check", precedence, "%P{+expression}%-Is Null");
