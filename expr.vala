@@ -73,6 +73,22 @@ namespace Flabbergast.Expressions {
 			return this;
 		}
 	}
+	internal class IntMaxLiteral : Expression {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+			engine.operands.push (new Data.Integer (int.MAX));
+		}
+		public override Expression transform () {
+			return this;
+		}
+	}
+	internal class IntMinLiteral : Expression {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+			engine.operands.push (new Data.Integer (int.MIN));
+		}
+		public override Expression transform () {
+			return this;
+		}
+	}
 	internal class FloatLiteral : Expression {
 		public double @value {
 			get;
@@ -83,6 +99,35 @@ namespace Flabbergast.Expressions {
 		}
 		public override Expression transform () {
 			return this;
+		}
+	}
+	internal abstract class FixedFloatLiteral : Expression {
+		public abstract double get_value ();
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+			engine.operands.push (new Data.Float (get_value ()));
+		}
+		public override Expression transform () {
+			return this;
+		}
+	}
+	internal class FloatMaxLiteral : FixedFloatLiteral {
+		public override double get_value () {
+			return double.MAX;
+		}
+	}
+	internal class FloatMinLiteral : FixedFloatLiteral {
+		public override double get_value () {
+			return double.MIN;
+		}
+	}
+	internal class FloatInfinityLiteral : FixedFloatLiteral {
+		public override double get_value () {
+			return double.INFINITY;
+		}
+	}
+	internal class FloatNaNLiteral : FixedFloatLiteral {
+		public override double get_value () {
+			return double.NAN;
 		}
 	}
 	internal class IdentifierStringLiteral : Expression {

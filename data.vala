@@ -34,6 +34,15 @@ namespace Flabbergast.Data {
 			this.value = @value;
 		}
 		public override string to_string () {
+			if (@value.is_nan ()) {
+				return "NaN";
+			} else if (!@value.is_finite ()) {
+				if (@value < 0) {
+					return "-Infinity";
+				} else {
+					return "Infinity";
+				}
+			}
 			return @value.to_string ();
 		}
 	}

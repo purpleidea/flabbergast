@@ -91,10 +91,9 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		precedence++;
 		register<Coerce> ("type coercion", precedence, "%P{+expression} To%! %P{ty}");
 		register<IndirectLookup> ("indirect lookup", precedence, "%L{names}{% .% } From%! %P{expression}", new Type[] { typeof (Nameish) });
-		register<IsDefined> ("definition check", precedence, "%L{names}{%-.%-} Is defined", new Type[] { typeof (Nameish) });
-		register<IsFinite> ("finite check", precedence, "%P{+expression}%-Is finite");
-		register<IsNaN> ("not-a-number check", precedence, "%P{+expression}%-Is nan");
-		register<IsNull> ("null check", precedence, "%P{+expression}%-Is null");
+		register<IsFinite> ("finite check", precedence, "%P{+expression}%-Is Finite");
+		register<IsNaN> ("not-a-number check", precedence, "%P{+expression}%-Is NaN");
+		register<IsNull> ("null check", precedence, "%P{+expression}%-Is Null");
 		register<TypeCheck> ("type check", precedence, "%P{+expression} Is %P{ty}");
 		register<TypeEnsure> ("type ensuring", precedence, "%P{+expression} As%! %P{ty}");
 		register<Through> ("range", precedence, "%P{+start} Through%! %P{+end}");
@@ -124,6 +123,12 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<SubExpression> ("subexpression", precedence, "(%!% %P{expression}% )");
 		register<This> ("self-reference", precedence, "This");
 		register<TrueLiteral> ("true literal", precedence, "True");
+		register<IntMaxLiteral> ("maximum integer literal", precedence, "IntMax");
+		register<IntMinLiteral> ("minimum integer literal", precedence, "IntMin");
+		register<FloatMaxLiteral> ("maximum floating point literal", precedence, "FloatMax");
+		register<FloatMinLiteral> ("minimum floating point literal", precedence, "FloatMin");
+		register<FloatInfinityLiteral> ("infinity floating point literal", precedence, "Infinity");
+		register<FloatNaNLiteral> ("not-a-number floating point literal", precedence, "NaN");
 		register<IdentifierStringLiteral> ("identifier string", precedence, "$%P{name}");
 
 		register<StringPiece> ("string contents", 0, "\\(%!% %P{expression}% )%p{literal}");
