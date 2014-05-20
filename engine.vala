@@ -245,7 +245,7 @@ namespace Flabbergast {
 			return result != null;
 		}
 
-		private Expression? lookup_contextal_helper (Expression start_context, Gee.List<Nameish> names) throws EvaluationError {
+		private Expression? lookup_contextual_helper (Expression start_context, Gee.List<Nameish> names) throws EvaluationError {
 			if (names.size == 1) {
 				return start_context;
 			}
@@ -255,20 +255,28 @@ namespace Flabbergast {
 		}
 
 		private Expression? lookup_contextual_internal (Gee.List<Nameish> names) throws EvaluationError {
-			var child = environment.get (state.context, names[0].name);
+			var child = environment[state.context, names[0].name];
 			if (child != null) {
-				var result = lookup_contextal_helper (child, names);
+				var result = lookup_contextual_helper (child, names);
 				if (result != null) {
-					return result;
+					call (result);
+					var datum = operands.pop ();
+					if (!(datum is Data.Continue)) {
+						return result;
+					}
 				}
 			}
 			foreach (var start_context in environment.lookup (state.context, names[0].name)) {
 				if (start_context == null) {
 					continue;
 				}
-				var result = lookup_contextal_helper (start_context, names);
+				var result = lookup_contextual_helper (start_context, names);
 				if (result != null) {
-					return result;
+					call (result);
+					var datum = operands.pop ();
+					if (!(datum is Data.Continue)) {
+						return result;
+					}
 				}
 			}
 			return null;

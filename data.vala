@@ -53,6 +53,12 @@ namespace Flabbergast.Data {
 		}
 	}
 
+	public class Continue : Null {
+		public override string to_string () {
+			return "Continue";
+		}
+	}
+
 	public class String : Datum {
 		public string @value;
 		public String (string @value) {

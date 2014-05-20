@@ -203,6 +203,14 @@ namespace Flabbergast.Expressions {
 			return this;
 		}
 	}
+	internal class ContinueLiteral : Expression {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+			engine.operands.push (new Data.Continue ());
+		}
+		public override Expression transform () {
+			return this;
+		}
+	}
 	internal class NullCoalesce : Expression {
 		public Expression expression {
 			get;

@@ -129,6 +129,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<FloatMinLiteral> ("minimum floating point literal", precedence, "FloatMin");
 		register<FloatInfinityLiteral> ("infinity floating point literal", precedence, "Infinity");
 		register<FloatNaNLiteral> ("not-a-number floating point literal", precedence, "NaN");
+		register<ContinueLiteral> ("continue", precedence, "Continue");
 		register<IdentifierStringLiteral> ("identifier string", precedence, "$%P{name}");
 
 		register<StringPiece> ("string contents", 0, "\\(%!% %P{expression}% )%p{literal}");
