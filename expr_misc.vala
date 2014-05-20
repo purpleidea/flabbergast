@@ -108,4 +108,48 @@ namespace Flabbergast.Expressions {
 			expression = expression.transform (); return this;
 		}
 	}
+	internal class Let : Expression {
+		public Gee.List<Attribute> attributes {
+			get; set;
+		}
+		public Expression expression {
+			get; set;
+		}
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+			var context = engine.environment.create ();
+			var tuple = new Data.Tuple (context);
+
+			var attr_names = new Gee.HashSet<string> ();
+			foreach (var attr in attributes) {
+				if (attr.name.name in attr_names) {
+					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr.name.name).");
+				}
+				var attr_value = engine.create_closure (attr.expression);
+				tuple.attributes[attr.name.name] = attr_value;
+				engine.environment[context, attr.name.name] = attr_value;
+				attr_names.add (attr.name.name);
+			}
+
+			var state = engine.state;
+			if (state.this_tuple != null) {
+				var container_expr = new ReturnLiteral (tuple);
+				tuple.attributes["Container"] = container_expr;
+				engine.environment[context, "Container"] = container_expr;
+			}
+			state.containers = new Utils.ContainerReference (state.context, state.containers);
+			engine.environment.append_containers (context, state.containers);
+			state.context = context;
+			state.this_tuple = tuple;
+
+			engine.state = state;
+			engine.call (expression);
+		}
+		public override Expression transform () {
+			foreach (var attribute in attributes) {
+				attribute.expression = attribute.expression.transform ();
+			}
+			expression = expression.transform ();
+			return this;
+		}
+	}
 }

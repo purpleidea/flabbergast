@@ -112,6 +112,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<DirectLookup> ("direct lookup", precedence, "%P{+expression}%-.%!%-%L{names}{% .% }", new Type[] { typeof (Nameish) });
 
 		precedence++;
+		register<Let> ("name binding", precedence, "Let %L{attributes}{% ,%-} In %P{expression}", new Type[] { typeof (Attribute) });
 		register<ListLiteral> ("list literal", precedence, "[%!%-%L{-elements}{% ,%-}%-]", new Type[] { typeof (Expression) });
 		register<FalseLiteral> ("false literal", precedence, "False");
 		register<FloatLiteral> ("floating point literal", precedence, "%P{value}");
