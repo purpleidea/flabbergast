@@ -1,263 +1,344 @@
-namespace Flabbergast.Expressions {
-	internal abstract class Fricassee : Expression {
-		public Name? attr_name {
-			get;
-			set;
-			default = null;
-		}
-		public bool ordinal {
-			get;
-			set;
-			default = false;
-		}
-		public Gee.List<Name> names {
+namespace Flabbergast.Expressions.Fricassee {
+	internal class ForExpression : Expression {
+		public Selector selector {
 			get;
 			set;
 		}
-		public Gee.List<Expression> inputs {
+		public Result result {
 			get;
 			set;
 		}
 		public Expression? where {
 			get;
 			set;
+			default = null;
 		}
-		public Expression? order_by {
-			get;
-			set;
-		}
-		protected void evaluation_helper (ExecutionEngine engine, out Gee.MultiMap<string, uint> output) throws EvaluationError {
-			if (names.size != inputs.size || names.size < 1) {
-				throw new EvaluationError.BAD_MATCH (@"There number of names ($(names.size)) does not match the number of expression to assign ($(inputs.size)) in For.");
-			}
-			var input_map = new Gee.HashMap<string, Data.Tuple> ();
-			for (var it = 0; it < names.size; it++) {
-				if (input_map.has_key (names[it].name)) {
-					throw new EvaluationError.NAME (@"Duplicate name $(names[it].name) in For.");
-				}
-				engine.call (inputs[it]);
-				var result = engine.operands.pop ();
-				if (!(result is Data.Tuple)) {
-					throw new EvaluationError.NAME (@"$(names[it].name) is not a tuple.");
-				}
-
-				input_map[names[it].name] = (Data.Tuple)result;
-			}
-
-			var original_context = engine.state.context;
-
-			var keys = new Gee.TreeSet<string> ();
-			foreach (var input in input_map.values) {
-				keys.add_all (input.attributes.keys);
-			}
-
-			output = new Gee.TreeMultiMap<string, uint> ();
-			var index = 0;
-			foreach (var key in keys) {
-				if (!key[0].islower ()) {
-					continue;
-				}
-				var context = engine.environment.create ();
-				if (attr_name != null) {
-					Data.Datum attr_key;
-					if (ordinal) {
-						attr_key = new Data.Integer (index++);
-					} else {
-						attr_key =  new Data.String (key);
-					}
-					engine.environment[context, attr_name.name] = new ReturnOwnedLiteral (attr_key);
-				}
-				foreach (var entry in input_map.entries) {
-					engine.environment[context, entry.key] =
-						entry.value.attributes.has_key (key)?
-						entry.value.attributes[key] : new NullLiteral ();
-				}
-				engine.environment.append (context, original_context);
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+			var contexts = selector.generate_contexts (engine);
+			if (where != null) {
+				var selected_contexts = new Gee.ArrayList<uint> ();
 				var state = engine.state;
-				state.context = context;
-				engine.state = state;
-
-				if (where != null) {
-					engine.call (where);
+				foreach (var context in contexts) {
+					var local_state = state;
+					local_state.context = context;
+					engine.state = local_state;
+					engine.call ((!)where);
 					var result = engine.operands.pop ();
 					if (!(result is Data.Boolean)) {
 						throw new EvaluationError.TYPE_MISMATCH ("Result from Where clause is not a boolean.");
 					}
-					if (!((Data.Boolean)result).value) {
-						continue;
+					if (((Data.Boolean)result).value) {
+						selected_contexts.add (context);
 					}
 				}
-				if (order_by != null) {
-					engine.call (order_by);
-					var order_key = engine.operands.pop ();
-					if (order_key is Data.String) {
-						output[((Data.String)order_key).value] = context;
-					} else if (order_key is Data.Integer) {
-						output[make_id (((Data.Integer)order_key).value)] = context;
-					} else {
-						throw new EvaluationError.TYPE_MISMATCH ("Order key must be either an integer or a string.");
-					}
-				} else {
-					output[key] = context;
-				}
+				contexts = selected_contexts;
+				engine.state = state;
 			}
+			result.generate_result (engine, contexts);
 		}
 		public override Expression transform () {
-			for (var it = 0; it < inputs.size; it++) {
-				inputs[it] = inputs[it].transform ();
-			}
+			selector.transform ();
+			result.transform ();
 			if (where != null) {
 				where = where.transform ();
-			}
-			if (order_by != null) {
-				order_by = order_by.transform ();
 			}
 			return this;
 		}
 	}
-	internal class Select : Fricassee {
-		public Expression? result_attr {
+	internal abstract class Selector : Object {
+		public abstract void transform ();
+		public abstract Gee.List<uint> generate_contexts (ExecutionEngine engine) throws EvaluationError;
+	}
+	internal abstract class Result : Object {
+		public abstract void transform ();
+		public abstract void generate_result (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError;
+	}
+	internal abstract class OrderClause : Object {
+		public abstract void transform ();
+		public abstract Gee.List<uint> reorder_contexts (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError;
+	}
+	internal class PassThrough : Selector {
+		public Expression source {
 			get;
 			set;
-			default = null;
 		}
-		public Expression result_expression {
-			get;
-			set;
+		public override void transform () {
+			source = source.transform ();
 		}
-		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			if (result_attr != null && order_by != null) {
-				throw new EvaluationError.INTERNAL ("Cannot have a result attribute name and an Order By clause in For⋯Select.");
+		public override Gee.List<uint> generate_contexts (ExecutionEngine engine) throws EvaluationError {
+			engine.call (source);
+			var container_tuple = engine.operands.pop ();
+			if (!(container_tuple is Data.Tuple)) {
+				throw new EvaluationError.NAME ("Value passed to Each is not a tuple.");
 			}
-			Gee.MultiMap<string, uint> output_contexts;
-			evaluation_helper (engine, out output_contexts);
-
-			var context = engine.environment.create ();
-			var tuple = new Data.Tuple (context);
-
+			var contexts = new Gee.ArrayList<uint> ();
 			var state = engine.state;
-			if (state.this_tuple != null) {
-				var container_expr = new ReturnLiteral (state.this_tuple);
-				tuple.attributes["Container"] = container_expr;
-				engine.environment[context, "Container"] = container_expr;
-				engine.environment.append_containers (context, new Utils.ContainerReference (state.context, state.containers));
-			}
-
-			var g_type = Type.INVALID;
-			var index = 0;
-			foreach (var key in output_contexts.get_keys ()) {
-				foreach (var @value in output_contexts[key]) {
-					var local_state = engine.state;
-					local_state.context = @value;
-					engine.state = local_state;
-					string attr_name;
-					if (result_attr != null) {
-						engine.call (result_attr);
-						var attr_name_value = engine.operands.pop ();
-						if (index == 0) {
-							g_type = attr_name_value.g_type;
-						} else if (attr_name_value.g_type != g_type) {
-							throw new EvaluationError.TYPE_MISMATCH ("The attribute names must be of different types.");
-						}
-						if (attr_name_value is Data.Integer) {
-							attr_name = make_id (((Data.Integer)attr_name_value).value);
-						} else if (attr_name_value is Data.String) {
-							attr_name = ((Data.String)attr_name_value).value;
-							if (!Regex.match_simple ("^[a-z][a-zA-Z0-9_]", attr_name)) {
-								throw new EvaluationError.NAME (@"The name $(attr_name) is not a legal attribute name.");
-							}
-						} else {
-							throw new EvaluationError.TYPE_MISMATCH ("The attribute type must be an integer or a string.");
-						}
-						if (tuple.attributes.has_key (attr_name)) {
-							throw new EvaluationError.NAME (@"Duplicate attribute name $(attr_name) in result of For⋯Select.");
-						}
-					} else {
-						attr_name = make_id (index);
+			foreach (Gee.Map.Entry<string, Expression> entry in (Data.Tuple)container_tuple) {
+				if (entry.key[0].isupper ()) {
+					continue;
+				}
+				engine.call (entry.value);
+				var datum = engine.operands.pop ();
+				if (!(datum is Data.Tuple)) {
+					throw new EvaluationError.TYPE_MISMATCH (@"$(entry.key) is not a tuple in Each selector.");
+				}
+				var context = engine.environment.create ();
+				foreach (Gee.Map.Entry<string, Expression> subentry in (Data.Tuple)datum) {
+					if (entry.key[0].isupper ()) {
+						continue;
 					}
-					var attr_value = engine.create_closure (result_expression);
-					tuple.attributes[attr_name]  = attr_value;
-					engine.environment[context, attr_name] = attr_value;
-					index++;
+					engine.environment[context, subentry.key] = subentry.value;
 				}
+				engine.environment.append_containers (context, state.containers);
+				contexts.add (context);
 			}
-			engine.operands.push (tuple);
-		}
-		public override Expression transform () {
-			if (result_attr != null) {
-				result_attr = result_attr.transform ();
-			}
-			result_expression = result_expression.transform ();
-			return base.transform ();
+			return contexts;
 		}
 	}
-	internal class Reduce : Fricassee {
-		public Name initial_attr {
+	internal abstract class NameGetter {
+		internal string name {
 			get;
-			set;
-			default = null;
+			private set;
 		}
-		public Expression initial_expression {
-			get;
-			set;
-		}
-		public Expression result_expression {
-			get;
-			set;
-		}
-		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			Gee.MultiMap<string, uint> output_contexts;
-			evaluation_helper (engine, out output_contexts);
-
-			var initial_value = engine.create_closure (initial_expression);
-
-			foreach (var key in output_contexts.get_keys ()) {
-				foreach (var @value in output_contexts[key]) {
-					var local_state = engine.state;
-					local_state.context = @value;
-					engine.state = local_state;
-					engine.environment[@value, initial_attr.name] = initial_value;
-
-					initial_value = engine.create_closure (result_expression);
-				}
-			}
-			engine.call (initial_value);
-		}
-		public override Expression transform () {
-			initial_expression = initial_expression.transform ();
-			result_expression = result_expression.transform ();
-			return base.transform ();
-		}
+		internal abstract Expression get (ExecutionEngine engine, string name) throws EvaluationError;
 	}
-	internal class Descendent : Expression {
+	internal abstract class Source : Object, GTeonoma.SourceInfo {
+		public GTeonoma.source_location source {
+			get;
+			set;
+		}
 		public Name name {
 			get;
 			set;
 		}
-		public Expression input {
+		internal abstract NameGetter prepare_input (ExecutionEngine engine, Gee.Set<string> attributes) throws EvaluationError;
+		internal abstract void transform ();
+	}
+	internal class TupleGetter : NameGetter {
+		private Data.Tuple tuple;
+		internal TupleGetter (string name, Data.Tuple tuple) {
+			this.name = name;
+			this.tuple = tuple;
+		}
+		internal override Expression get (ExecutionEngine engine, string name)  throws EvaluationError {
+			if (tuple.attributes.has_key (name)) {
+				var expr = tuple[name];
+				engine.call (expr);
+				if (engine.operands.pop () is Data.Continue) {
+					return new NullLiteral ();
+				}
+				return expr;
+			} else {
+				return new NullLiteral ();
+			}
+		}
+	}
+	internal class TupleSource : Source {
+		public Expression expression {
 			get;
 			set;
 		}
-		public Expression? where {
+		internal override NameGetter prepare_input (ExecutionEngine engine, Gee.Set<string> attributes) throws EvaluationError {
+			engine.call (expression);
+			var tuple = engine.operands.pop ();
+			if (!(tuple is Data.Tuple)) {
+				throw new EvaluationError.TYPE_MISMATCH (@"Value for $(name.name) is not a tuple.");
+			}
+			foreach (var entry in ((Data.Tuple)tuple).attributes.entries) {
+				if (!entry.key[0].islower ()) {
+					continue;
+				}
+				engine.call (entry.value);
+				if (engine.operands.pop () is Data.Continue) {
+					continue;
+				}
+				attributes.add (entry.key);
+			}
+			return new TupleGetter (name.name, (Data.Tuple)tuple);
+		}
+		internal override void transform () {
+			expression = expression.transform ();
+		}
+	}
+	internal class OrdinalGetter : NameGetter {
+		private int index = 0;
+		internal OrdinalGetter (string name) {
+			this.name = name;
+		}
+		internal override Expression get (ExecutionEngine engine, string name)  throws EvaluationError {
+			return new ReturnOwnedLiteral.int(++index);
+		}
+	}
+	internal class OrdinalSource : Source {
+		internal override NameGetter prepare_input (ExecutionEngine engine, Gee.Set<string> attributes) throws EvaluationError {
+			return new OrdinalGetter (name.name);
+		}
+		internal override void transform () {}
+	}
+	internal class AttributeGetter : NameGetter {
+		internal AttributeGetter (string name) {
+			this.name = name;
+		}
+		internal override Expression get (ExecutionEngine engine, string name)  throws EvaluationError {
+			return new ReturnOwnedLiteral.str (name);
+		}
+	}
+	internal class AttributeSource : Source {
+		internal override NameGetter prepare_input (ExecutionEngine engine, Gee.Set<string> attributes) throws EvaluationError {
+			return new AttributeGetter (name.name);
+		}
+		internal override void transform () {}
+	}
+	internal class MergedTuples : Selector {
+		public Gee.List<Source> sources {
 			get;
 			set;
-			default = null;
 		}
-		public Expression? stop {
-			get;
-			set;
-			default = null;
+		public override void transform () {
+			foreach (var source in sources) {
+				source.transform ();
+			}
 		}
-		private delegate void Match (Data.Tuple tuple);
-
-		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			engine.call (input);
-			var result = engine.operands.pop ();
-			if (!(result is Data.Tuple)) {
-				throw new EvaluationError.TYPE_MISMATCH ("Input expression must be a tuple.");
+		public override Gee.List<uint> generate_contexts (ExecutionEngine engine) throws EvaluationError {
+			var environment_names = new Gee.HashSet<string> ();
+			foreach (var source in sources) {
+				var name = source.name.name;
+				if (name in environment_names) {
+					throw new EvaluationError.NAME (@"Duplicate name $(name) in For.");
+				}
+				environment_names.add (name);
 			}
 
-			var evaluation_context = engine.environment.create ();
+			var attr_names = new Gee.TreeSet<string> ();
+			var getters = new Gee.ArrayList<NameGetter> ();
+			foreach (var source in sources) {
+				getters.add (source.prepare_input (engine, attr_names));
+			}
+
+			var output = new Gee.ArrayList<uint> ();
+			foreach (var attr_name in attr_names) {
+				var context = engine.environment.create ();
+				foreach (var getter in getters) {
+					engine.environment[context, getter.name] = getter[engine, attr_name];
+				}
+				engine.environment.append_containers (context, engine.state.containers);
+				output.add (context);
+			}
+			return output;
+		}
+	}
+	internal class OrderBy : OrderClause {
+		public Expression order {
+			get;
+			set;
+		}
+		public override void transform () {
+			order = order.transform ();
+		}
+		public override Gee.List<uint> reorder_contexts (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError {
+			var output = new Gee.TreeMultiMap<string, uint> ();
+			var state = engine.state;
+			foreach (var context in contexts) {
+				var local_state = state;
+				local_state.context = context;
+				engine.state = local_state;
+				engine.call (order);
+				var order_key = engine.operands.pop ();
+				if (order_key is Data.String) {
+					output[((Data.String)order_key).value] = context;
+				} else if (order_key is Data.Integer) {
+					output[make_id (((Data.Integer)order_key).value)] = context;
+				} else {
+					throw new EvaluationError.TYPE_MISMATCH ("Order key must be either an integer or a string.");
+				}
+			}
+			engine.state = state;
+			var output_list = new Gee.ArrayList<uint> ();
+			output_list.add_all (output.get_values ());
+			return output_list;
+		}
+	}
+	internal class Reverse : OrderClause {
+		public override void transform () {}
+		public override Gee.List<uint> reorder_contexts (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError {
+			var output_list = new Gee.ArrayList<uint> ();
+			for (var it = contexts.size - 1; it >= 0; it--) {
+				output_list.add (contexts[it]);
+			}
+			return output_list;
+		}
+	}
+
+	internal class NamedTuple : Result {
+		public Expression result_attr {
+			get;
+			set;
+			default = null;
+		}
+		public Expression result_value {
+			get;
+			set;
+		}
+		public override void generate_result (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError {
+			var context = engine.environment.create ();
+			var tuple = new Data.Tuple (context);
+
+			var state = engine.state;
+			if (state.this_tuple != null) {
+				var container_expr = new ReturnLiteral (state.this_tuple);
+				tuple.attributes["Container"] = container_expr;
+				engine.environment[context, "Container"] = container_expr;
+				engine.environment.append_containers (context, new Utils.ContainerReference (state.context, state.containers));
+			}
+
+			foreach (var target_context in contexts) {
+				state.context = target_context;
+				engine.state = state;
+
+				string attr_name;
+				engine.call (result_attr);
+				var attr_name_value = engine.operands.pop ();
+				if (attr_name_value is Data.Integer) {
+					attr_name = make_id (((Data.Integer)attr_name_value).value);
+				} else if (attr_name_value is Data.String) {
+					attr_name = ((Data.String)attr_name_value).value;
+					if (!Regex.match_simple ("^[a-z][a-zA-Z0-9_]", attr_name)) {
+						throw new EvaluationError.NAME (@"The name $(attr_name) is not a legal attribute name.");
+					}
+				} else {
+					throw new EvaluationError.TYPE_MISMATCH ("The attribute type must be an integer or a string.");
+				}
+				if (tuple.attributes.has_key (attr_name)) {
+					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr_name) in result of For⋯Select.");
+				}
+
+				var attr_value = engine.create_closure (result_value);
+				tuple.attributes[attr_name]  = attr_value;
+				engine.environment[context, attr_name] = attr_value;
+			}
+			engine.operands.push (tuple);
+		}
+		public override void transform () {
+			result_attr = result_attr.transform ();
+			result_value = result_value.transform ();
+		}
+	}
+	internal class AnonymousTuple : Result {
+		public Expression result {
+			get;
+			set;
+		}
+		public OrderClause? order {
+			get;
+			set;
+			default = null;
+		}
+		public override void generate_result (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError {
+			var input_contexts = contexts;
+			if (order != null) {
+				var new_contexts = order.reorder_contexts (engine, contexts);
+				input_contexts = new_contexts;
+			}
 
 			var context = engine.environment.create ();
 			var tuple = new Data.Tuple (context);
@@ -270,67 +351,63 @@ namespace Flabbergast.Expressions {
 				engine.environment.append_containers (context, new Utils.ContainerReference (state.context, state.containers));
 			}
 
-			var index = 0;
-			state.context = evaluation_context;
-			engine.state = state;
-			investigate (engine, (Data.Tuple)result, evaluation_context, (match) => {
-					     var index_name = make_id (index++);
-					     var match_expr = new ReturnOwnedLiteral (match);
-					     tuple.attributes[index_name] = match_expr;
-					     engine.environment[context, index_name] = match_expr;
-				     });
-
+			for (var it = 0; it < input_contexts.size; it++) {
+				state.context = input_contexts[it];
+				engine.state = state;
+				var attr_value = engine.create_closure (result);
+				var attr_name = make_id (it);
+				tuple.attributes[attr_name] = attr_value;
+				engine.environment[context, attr_name] = attr_value;
+			}
 			engine.operands.push (tuple);
 		}
-		private void investigate (ExecutionEngine engine, Data.Tuple source, uint context, Match match) throws EvaluationError {
-			foreach (var entry in source) {
-				if (!entry.key[0].islower ()) {
-					continue;
-				}
-				engine.call (entry.value);
-				var result = engine.operands.pop ();
-				if (result is Data.Tuple) {
-					engine.environment[context, name.name] = new ReturnLiteral (result);
-
-					if (where != null) {
-						engine.call (where);
-						var where_value = engine.operands.pop ();
-						if (where_value is Data.Boolean) {
-							if (((Data.Boolean)where_value).value) {
-								match ((Data.Tuple)result);
-							} else {}
-						} else {
-							throw new EvaluationError.TYPE_MISMATCH ("Where clause result must be boolean.");
-						}
-					} else {
-						match ((Data.Tuple)result);
-					}
-
-					if (stop != null) {
-						engine.call (stop);
-						var stop_value = engine.operands.pop ();
-						if (stop_value is Data.Boolean) {
-							if (!((Data.Boolean)stop_value).value) {
-								investigate (engine, (Data.Tuple)result, context, match);
-							}
-						} else {
-							throw new EvaluationError.TYPE_MISMATCH ("Stop clause result must be boolean.");
-						}
-					} else {
-						investigate (engine, (Data.Tuple)result, context, match);
-					}
-				}
+		public override void transform () {
+			result = result.transform ();
+			if (order != null) {
+				order.transform ();
 			}
 		}
-		public override Expression transform () {
-			if (where != null) {
-				where = where.transform ();
+	}
+	internal class Reduce : Result {
+		public Name initial_attr {
+			get;
+			set;
+		}
+		public Expression initial {
+			get;
+			set;
+		}
+		public Expression result {
+			get;
+			set;
+		}
+		public OrderClause? order {
+			get;
+			set;
+			default = null;
+		}
+		public override void generate_result (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError {
+			var input_contexts = contexts;
+			if (order != null) {
+				var new_contexts = order.reorder_contexts (engine, contexts);
+				input_contexts = new_contexts;
 			}
-			if (stop != null) {
-				stop = stop.transform ();
+			engine.call (initial);
+			var state = engine.state;
+			foreach (var context in input_contexts) {
+				var initial_value = engine.operands.pop ();
+				engine.environment[context, initial_attr.name] = new ReturnOwnedLiteral (initial_value);
+				state.context = context;
+				engine.state = state;
+				engine.call (result);
 			}
-			input = input.transform ();
-			return this;
+		}
+		public override void transform () {
+			initial = initial.transform ();
+			result = result.transform ();
+			if (order != null) {
+				order.transform ();
+			}
 		}
 	}
 }

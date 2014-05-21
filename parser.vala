@@ -70,33 +70,8 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 
 		precedence++;
 		register<Conditional> ("conditional", precedence, "If%! %P{-condition} Then %P{-truepart} Else %P{falsepart}");
-		// Select: all options
-		register<Select> ("for list⋯where⋯order⋯select list", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Where %P{-where} Order By %P{-order_by} Select %P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
-		register<Select> ("for list⋯where⋯select tuple", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Where %P{-where} Select %P{-result_attr}% :%-%P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
-		register<Select> ("for tuple⋯where⋯order⋯select list", precedence, "For %b{ordinal}{Ordinal} %P{attr_name}% :%-%L{names}{% ,%-} In %L{-inputs}{% ,%-} Where %P{-where} Order By %P{-order_by} Select %P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
-		register<Select> ("for tuple⋯where⋯select tuple", precedence, "For %b{ordinal}{Ordinal} %P{attr_name}% :%-%L{names}{% ,%-} In %L{-inputs}{% ,%-} Where %P{-where} Select %P{-result_attr}% :%-%P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
-
-		// Select: no Where clause
-		register<Select> ("for list⋯order⋯select list", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Order By %P{-order_by} Select %P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
-		register<Select> ("for list⋯select tuple", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Select %P{-result_attr}% :%-%P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
-		register<Select> ("for tuple⋯order⋯select list", precedence, "For %b{ordinal}{Ordinal} %P{attr_name}% :%-%L{names}{% ,%-} In %L{-inputs}{% ,%-} Order By %P{-order_by} Select %P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
-		register<Select> ("for tuple⋯select tuple", precedence, "For %b{ordinal}{Ordinal} %P{attr_name}% :%-%L{names}{% ,%-} In %L{-inputs}{% ,%-} Select %P{-result_attr}% :%-%P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
-
-		// Select: minimal form
-		register<Select> ("for list⋯select list", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Select%! %P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
-		register<Select> ("for tuple⋯select list", precedence, "For %b{ordinal}{Ordinal} %P{attr_name}% :%-%L{names}{% ,%-} In %L{-inputs}{% ,%-} Select%! %P{result_expression}", new Type[] { typeof (Name), typeof (Expression) });
-
-		// Reduce
-		register<Reduce> ("for list⋯where⋯order⋯reduce", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Where %P{-where} Order By %P{-order_by} Reduce%! %P{result_expression} With %P{initial_attr}% :%-%P{initial_expression}", new Type[] { typeof (Name), typeof (Expression) });
-		register<Reduce> ("for list⋯order⋯reduce", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Order By%! %P{-order_by} Reduce %P{result_expression} With %P{initial_attr}% :%-%P{initial_expression}", new Type[] { typeof (Name), typeof (Expression) });
-		register<Reduce> ("for list⋯where⋯reduce", precedence, "For %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Where%! %P{-where} Reduce %P{result_expression} With %P{initial_attr}% :%-%P{initial_expression}", new Type[] { typeof (Name), typeof (Expression) });
-		register<Reduce> ("for list⋯reduce", precedence, "For%! %b{ordinal}{Ordinal} %L{names}{% ,%-} In %L{-inputs}{% ,%-} Reduce %P{result_expression} With %P{initial_attr}% :%-%P{initial_expression}", new Type[] { typeof (Name), typeof (Expression) });
-
-		// Descendent selector
-		register<Descendent> ("descendent⋯where⋯except", precedence, "All %P{name} In %P{-input} Where %P{where} Except%! %P{stop}");
-		register<Descendent> ("descendent⋯except", precedence, "All %P{name} In %P{-input} Except%! %P{stop}");
-		register<Descendent> ("descendent⋯where", precedence, "All %P{name} In %P{-input} Where%! %P{where}");
-		register<Descendent> ("descendent", precedence, "All%! %P{name} In %P{-input}");
+		register<Fricassee.ForExpression> ("for⋯where⋯", precedence, "For %P{selector} Where%! %P{-where} %P{result}");
+		register<Fricassee.ForExpression> ("for⋯", precedence, "For %P{selector} %P{result}");
 
 		precedence++;
 		register<Coerce> ("type coercion", precedence, "%P{+expression} To%! %P{ty}");
@@ -145,6 +120,22 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<IdentifierStringLiteral> ("identifier string", precedence, "$%P{name}");
 
 		register<StringPiece> ("string contents", 0, "\\(%!% %P{expression}% )%p{literal}");
+
+		/* Selectors */
+		register<Fricassee.PassThrough> ("pass-through (Each)", 0, "Each %P{source}");
+		register<Fricassee.MergedTuples> ("merged tuple", 0, "%L{sources}{% ,%-}", new Type[] { typeof (Fricassee.Source) });
+		/* Results */
+		register<Fricassee.AnonymousTuple> ("ordered anonymous tuple", 0, "%P{order} Select %P{result}");
+		register<Fricassee.AnonymousTuple> ("anonymous tuple", 0, "Select %P{result}");
+		register<Fricassee.NamedTuple> ("named tuple", 0, "Select %P{result_attr}%-:%-%P{result_value}");
+		register<Fricassee.Reduce> ("reduce", 0, "%p{order}%-Reduce %P{result} With %P{initial_attr}%-:%-%P{initial}");
+		/* Order Clauses */
+		register<Fricassee.OrderBy> ("orderby", 0, "Order By %P{order}");
+		register<Fricassee.Reverse> ("reverse", 0, "Reverse");
+		/* Sources */
+		register<Fricassee.AttributeSource> ("ordinal", 0, "%P{name}%-:%-Attribute");
+		register<Fricassee.OrdinalSource> ("ordinal", 0, "%P{name}%-:%-Ordinal");
+		register<Fricassee.TupleSource> ("ordinal", 0, "%P{name}%-:%-%P{expression}");
 	}
 }
 internal class Flabbergast.IdentifierParser : GTeonoma.CustomParser<Name> {
