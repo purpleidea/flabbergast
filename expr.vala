@@ -158,8 +158,10 @@ namespace Flabbergast.Expressions {
 			set;
 		}
 		public void render (ExecutionEngine engine, StringBuilder builder) throws EvaluationError {
-			var result = (Data.String)convert (engine, expression, Data.Ty.STR);
-			builder.append (result.@value);
+			if (expression != null) {
+				var result = (Data.String)convert (engine, expression, Data.Ty.STR);
+				builder.append (result.@value);
+			}
 			if (literal != null) {
 				builder.append (literal.str);
 			}
