@@ -26,6 +26,12 @@ namespace Flabbergast.Expressions {
 		public ReturnOwnedLiteral (Data.Datum datum) {
 			this.datum = datum;
 		}
+		public ReturnOwnedLiteral.int (int @value) {
+			this(new Data.Integer (@value));
+		}
+		public ReturnOwnedLiteral.str (string @value) {
+			this(new Data.String (@value));
+		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.operands.push (datum);
 		}
