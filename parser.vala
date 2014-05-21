@@ -18,17 +18,17 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register_enum<Data.Ty> ("type", fix_name);
 
 		/* Tuple attributes */
-		register<Attribute> ("attribute", 0, "%P{name}% :%!% %P{expression}");
-		register<External> ("external attribute", 0, "%P{name}% ?:");
-		register<Override> ("override", 0, "%P{name}% +:%!%-{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });
-		register<Undefine> ("definition erasure", 0, "%P{name}% -:");
+		register<Attribute> ("attribute", 0, "%P{name}%-:%-%P{expression}");
+		register<External> ("external attribute", 0, "%P{name}%-?:");
+		register<Override> ("override", 0, "%P{name}%-+:%!%-{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });
+		register<Undefine> ("definition erasure", 0, "%P{name}%--:");
 
 		/* Identifiers */
 		register<ContainerName> ("container reference", 0, "Container");
 		register_custom<Name> ("identifier", () =>  new IdentifierParser (), (identifier) => identifier.name);
 
 		/* Function call arguments */
-		register<FunctionCall.FunctionArg> ("named argument", 0, "%P{name}% :%!%-%P{parameter}");
+		register<FunctionCall.FunctionArg> ("named argument", 0, "%P{name}%-:%!%-%P{parameter}");
 		register<FunctionCall.FunctionArg> ("argument", 0, "%P{parameter}");
 
 		/* Files */
