@@ -214,7 +214,7 @@ int main (string[] args) {
 	var engine = new ExecutionEngine ();
 	Data.Tuple? root_tuple = null;
 	if (!(interactive && filename == null)) {
-		var parser = GTeonoma.FileParser.open (rules, filename?? "/dev/stdin");
+		var parser = GTeonoma.StreamParser.open (rules, filename?? "/dev/stdin");
 		if (parser == null) {
 			stderr.printf ("Failed to open input file.\n");
 			return 1;
