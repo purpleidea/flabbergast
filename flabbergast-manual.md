@@ -44,7 +44,7 @@ For integers and floating-point numbers, the usual mathematical and comparison o
 Integers also have a few special suffixes for dealing with large values, including time. The suffixes `G`, `M`, and `k` are giga-, mega- and kilo-, respectively. These are the SI versions (powers of 1000). There are also the computer versions, `Gi`, `Mi` and `ki`, which are powers of 1024. For time durations, there are the suffixes `d`, `h`, `m`, and `s`, which express to `days`, `hours`, `minutes`, and `seconds` in seconds.
 
     a : 4ki # Yields 4096
-    b : 5G # Yields 5000 000 00
+    b : 5G # Yields 5000 000 000
     c : 1h2m5s # Yields 3725
 
 Booleans are very much as expected, with `!` for logical negation, `&&` for short-circuiting conjunction, and `||` for short-circuiting disjunction. The comparison operators also work; one quirk is that they all work:
