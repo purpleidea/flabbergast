@@ -742,6 +742,26 @@ Integer literal
 Decimal or hexadecimal integers.
 
 .TP
+Integer literal with units
+.SEM t:T\*<0\*> ↓ v :: Int
+.SEME
+.SEM (\fB0\fR/[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)\fBk\fR ↓ v * 1000 :: Int
+.SEME
+.SEM (\fB0\fR/[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)\fBM\fR ↓ v * 1000² :: Int
+.SEME
+.SEM (\fB0\fR/[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)\fBG\fR ↓ v * 1000³ :: Int
+.SEME
+
+.SEM (\fB0\fR/[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)\fBki\fR ↓ v * 1024 :: Int
+.SEME
+.SEM (\fB0\fR/[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)\fBMi\fR ↓ v * 1024² :: Int
+.SEME
+.SEM (\fB0\fR/[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)\fBGi\fR ↓ v * 1024³ :: Int
+.SEME
+
+Integers with units.
+
+.TP
 Floating point literal
 .SEM (\fB0\fR/[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)\fB.\fR[\fB0\fR-\fB9\fR]*((\fBe\fR/\fBE\fR)(\fB0\fR/(\fB-\fR)?[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)? ↓ v :: Float
 .SEME
@@ -990,6 +1010,31 @@ Reverse ordered
 .SEME
 
 Reverses the order of the witnesses.
+
+.SS TIME PARTS (T)
+.TP
+Days (T\*<0\*>)
+.SEM (\fB0\fR/[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)\fBd\fRt:T\*<1\*> ↓ v * 86400 + u :: Int
+t ↓ u :: Int
+.SEME
+
+.TP
+Days (T\*<1\*>)
+.SEM (\fB0\fR/[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)\fBh\fRt:T\*<2\*> ↓ v * 3600 + u :: Int
+t ↓ u :: Int
+.SEME
+
+.TP
+Hours (T\*<2\*>)
+.SEM (\fB0\fR/[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)\fBm\fRt:T\*<3\*> ↓ v * 60 + u :: Int
+t ↓ u :: Int
+.SEME
+
+.TP
+Seconds (T\*<3\*>)
+.SEM (\fB0\fR/[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)\fBs\fR ↓ v :: Int
+t ↓ u :: Int
+.SEME
 
 .SH EVALUATION SEMANTICS
 In the semantics defined above, it is possible for a value to depend on its own value. Such situation are errors with one notable exception: the contextual lookup operator.
