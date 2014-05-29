@@ -41,20 +41,20 @@ For integers and floating-point numbers, the usual mathematical and comparison o
     h : 10 < 5 # Yields False
     i : 1.0 >= -3 # Yields True
 
-Integers also have a few special suffixes for dealing with large values, including time. The suffixes `G`, `M`, and `k` are giga-, mega- and kilo-, respectively. These are the SI versions (powers of 1000). There are also the computer versions, `Gi`, `Mi` and `ki`, which are powers of 1024. For time durations, there are the suffixes `d`, `h`, `m`, and `s`, which express to `days`, `hours`, `minutes`, and `seconds` in seconds.
+Integers also have a few special suffixes for dealing with large values, including time. The suffixes `G`, `M`, and `k` are giga-, mega- and kilo-, respectively. These are the SI versions (powers of 1000). There are also the computer versions, `Gi`, `Mi` and `ki`, which are powers of 1024. For time durations, there are the suffixes `d`, `h`, `m`, and `s`, which express to days, hours, minutes, and seconds, respectively, in seconds.
 
     a : 4ki # Yields 4096
     b : 5G # Yields 5000 000 000
     c : 1h2m5s # Yields 3725
 
-Booleans are very much as expected, with `!` for logical negation, `&&` for short-circuiting conjunction, and `||` for short-circuiting disjunction. The comparison operators also work; one quirk is that they all work:
+Booleans are very much as expected, with `!` for logical negation, `&&` for short-circuiting conjunction, and `||` for short-circuiting disjunction. The comparison operators also work; one quirk is that they all work, not just equal and not equal. This means that truth is greater than falsehood–don't read too much into it.
 
     a : True && False # Yields False
     b : False && Error "I don't care" # Yields False
     c : True != False # Yields True, this is XOR
     d : True > False # Yields True
 
-Strings support the usual C-style escape sequences, and Unicode escape sequences. They are also implicitly multi-line. There is a special escape sequence `\()` which allows embedding an expression inside a string. Strings can also be joined using `&`. Comparison works lexicographically on the strings.
+Strings support the usual C-style escape sequences, and Unicode escape sequences. They are also implicitly multi-line, like in shell. There is a special escape sequence `\()` which allows embedding an expression inside a string. Strings can also be joined using `&`. Comparison works lexicographically on the strings.
 
     a : "Single-line string."
     b : "Multi
@@ -70,7 +70,7 @@ The embedded expression must have converted an integer to a string; this is done
     b : 3.0 Is Int # Yields False
     c : 3 As Int # Yields 3
     d : "Hi" As Int # Error
-    e : 3.5 As Int # Yields 3
+    e : 3.5 To Int # Yields 3
 
 On to tuples, the core data structure of the language. Tuples are arranged in a hierarchy: one tuple nested inside another, this is called _containment_. Attributes in containing tuples are available to contained tuples:
 
@@ -121,7 +121,7 @@ Now, something unexpected happens when using this notation, compared with most o
 
 Although the closest match of `a` is tuple 2, it does not contain an attribute `x`, so it must not be the correct `a`. Resolution can continue and consider other `a` values until one is matched! This will find tuple 1, which does have an `x`.
 
-There are other ways to generate tuples beyond typing them literally. Templates are prototype tuples, like classes are prototype objects. It might be fair to call templates “abstract tuples” in the Java or C# sense of the word.
+There are other ways to generate tuples beyond typing them literally. Templates are prototype tuples, like classes are prototype objects. It might be fair to call templates “abstract tuples” in the Java or C# sense of the word. This measure is called _inheritance_, as it is in object-oriented languages; a tuple _inherits_ a template or the template is an _ancestor_ of the tuple.
 
     a_tmpl : Template {
       x : y + 1
@@ -130,7 +130,7 @@ There are other ways to generate tuples beyond typing them literally. Templates 
       y : 1
     } # Yields { x : 2  y : 1 }
 
-Notice that `a_tmpl` does not produce an error for lacking `y`, because the attributes in it weren't evaluated until it was instantiated. The instantiation also modified the template by adding `y`. Like classes, templates can also extend other templates and modify them:
+Notice that `a_tmpl` does not produce an error for lacking `y`, because the attributes in it weren't evaluated until it was instantiated. The instantiation also modified the template by adding `y`. Like classes, templates can also inherit from other templates and modify them:
 
     a_tmpl : Template {
       x : y + 1
@@ -143,7 +143,7 @@ Notice that `a_tmpl` does not produce an error for lacking `y`, because the attr
 
 When instantiated, the new tuple can perform lookups into the _containers_ of the location where it was instantiated and into the _containers_ of its _ancestors_, that is, the containers of the template that defined it, and any ancestors of that templates. This is described in great detail in the more advanced sections. This feature, coupled with contextual lookup, is the useful basis to the Flabbergast language.
 
-Like Java and C#, templates can only inherit a single parent. In Java and C#, this is mostly a concern over how to handle methods with the same name inherited from both parents. Flabbergast has an additional reason not to encourage this: how to combine the history of the containers of the two templates. Java and C# work around their lack of multiple inheritance issues using interfaces. In Flabbergast, there is no need for interfaces, since those are a by-product of a type system that Flabbergast doesn't have. The consumer of a tuple can simply pluck the attributes it needs out of that tuple; it doesn't need to define a type. Tuples also don't have methods, as attributes can perform computation, so there are no type signatures to “get right”.
+Like Java and C#, templates can only inherit a single parent. In Java and C#, this is mostly a concern over how to handle methods with the same name inherited from both parents. Flabbergast has an additional reason not to encourage this: how to combine the ancestry of the two templates. Java and C# work around their lack of multiple inheritance issues using interfaces. In Flabbergast, there is no need for interfaces, since those are a by-product of a type system that Flabbergast doesn't have. The consumer of a tuple can simply pluck the attributes it needs out of that tuple; it doesn't need to define a type. Tuples also don't have methods, as attributes can perform computation, so there are no type signatures to “get right”.
 
 Like object-oriented languages, in addition to adding new things, template inheritance can also replace existing things:
 
@@ -217,7 +217,7 @@ In general-purpose programming languages, this idea sounds like madness, but Fla
 
 > My father hates cats even though my mum likes them, so my parents never got a cat. When my sister moved out, she got a cat. My mum loves playing with her cat.
 
-In the last sentence, to whom does _her_ refer? While _my mum_ is the closest noun that could match _her_, it has been previously established that my mum does not have a cat, so _her cat_ wouldn't make sense. Because we treat _her cat_ as a unit, we contextually keep looking for a _her_ that does have a cat, which would be _my sister_. Conceptually, this is how Flabbergast's resolution algorithm works: it finds the match that makes the most contextual sense.
+In the last sentence, to whom does _her_ refer? While _my mum_ is the closest noun that could match _her_, it has been previously established that my mum does not have a cat, so _my mum's cat_ wouldn't make sense. Because we treat _her cat_ as a unit, we contextually keep looking for a _her_ that does have a cat, which would be _my sister_. Conceptually, this is how Flabbergast's resolution algorithm works: it finds the match that makes the most contextual sense.
 
 Inheritance allows creation of attributes, in addition to providing a history for contextual lookup. A tuple or template is a collection of key-value pairs, where each key is a valid identifier and a value can be any expression. A template can be “modified” at the time of instantiation or through the `Template` expression, which creates a new template that copies all the existing attributes, less the modified ones. In most object oriented languages, fields and methods can be overridden (i.e., replaced with new code). Similarly, attributes can be overridden with new expressions. Some languages allow access the overridden method through special keywords (e.g., Java's `super`, C#'s `base`, or Python's `super()`). Flabbergast permits accessing the original attribute, but a new name must be specified; there is no default name like `super`. Unlike most languages, Flabbergast permits deletion of an attribute. Because of contextual lookup, any other attributes referencing the deleted attribute will simply look elsewhere. 
 
