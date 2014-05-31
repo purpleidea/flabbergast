@@ -111,9 +111,9 @@ Now, something unexpected happens when using this notation, compared with most o
       x : 5
     }
     b : {
-			a : { # Tuple 2
-				y : 1
-			}
+      a : { # Tuple 2
+        y : 1
+      }
       c : {
         x : a.x + 1 # Yields 6
       }
@@ -571,7 +571,7 @@ This has two advantage: the rendering logic can be overridden and the interface 
     }
     item_xml_tmpl : Template item_base_tmpl {
       value : "<person><name>\(name)</name><country>\(country)</country></person>"
-		}
+    }
     item_pretty_tmpl : Template item_base_tmpl {
       value : "name: \(name) country: \(country)"
     }
@@ -604,7 +604,161 @@ Naming things is difficult. Very difficult. The major disadvantage to dynamic sc
 4. Use lookup traps when needed. If lookup should stop beyond a certain point, define the name to `Null` to stop lookup from continuing. In templates, if the value needs to be provided or the name is common (e.g., `name` or `enabled`) use the `?:` definition to trap lookup.
 
 ## Patterns
-TODO
+In all languages, having common design patterns that introduce intent are important and this is especially true in languages that are more flexible, since they serve the added duty of communicating intent.
+
+### Self-Rendering Items
+If a list of items is generated, it can be useful to give each an attribute that renders the result. The result can then be accumulated from this attribute.
+
+    arg_tmpl : Template {
+      name ?:
+      value ?:
+      spec : "--" & name & " " & value
+    }
+    switch_tmpl : Template {
+      name ?:
+      value ?:
+      spec : If value Then "--" & name Else ""
+    }
+    binary : "foo"
+    args : {
+      input : arg_tmpl { name : "input"  value : "~/input.txt" }
+      compression : arg_tmpl { name : "c"  value : 8 }
+      log : switch_tmpl { name : "log"  value : True }
+    }
+    arg_str : For arg : args Reduce acc & " " & arg.spec With acc : binary
+
+This will allow each argument to choose how to render itself as a string and provide a uniform way to aggregate the results, free of the rendering logic itself. It is convention to use `spec` (i.e., specification) as the name for rendered results.
+
+### Modifiable Inputs
+In the previous example, an argument list is created for an executable binary. The problem with this design is that it becomes impossible to modify. It would be better to keep it as a template:
+
+    foo_tmpl : Template
+      arg_tmpl : Template {
+        name ?:
+        value ?:
+        spec : "--" & name & " " & value
+      }
+      switch_tmpl : Template {
+        name ?:
+        value ?:
+        spec : If value Then "--" & name Else ""
+      }
+      binary : "foo"
+      args : Template {
+        input : Template arg_tmpl { name : "input"  value : "~/input.txt" }
+        compression : Template arg_tmpl { name : "c"  value : 8 }
+        log : Template switch_tmpl { name : "log"  value : True }
+      }
+      arg_str : For arg : args {} Reduce acc & " " & (arg {}).spec With acc : binary
+    }
+    foo_devel : foo_tmpl {
+       binary : "foo-nightly"
+       args +: {
+         log +: { value : False }
+       }
+    }
+
+Now, tuples inheriting from `foo_tmpl` can easily change the `args`.
+
+### Enabled Items
+Since there can be logic to decide if an item should be included or not, it is tempting to write code as follows:
+
+     x : If y > 5 Then Template a_tmpl { a : 3 } Else Null
+
+And then include a null check. There are two problems with this approach: the condition cannot be modified and once the value has been replaced with null, it becomes difficult to override `x`, since a null check must be performed every time.
+
+The solution is to add an `enabled` attribute:
+
+     x : Template a_tmpl {
+       a : 3
+       enabled : y > 5
+     }
+
+This means that the `+:` attribute definition can always be used. In sequence, one could do the following in an inheriting template:
+
+     x +: { enabled : False }
+
+Although `x` is now permanently disabled, in an inheriting template, the following is still legal:
+
+     x +: { a : 9 }
+
+This also allows the logic to be extended in more complex ways:
+
+     x +: { enabled +old_enabled: old_enabled && database_connection.enabled }
+
+In the case where a collection of items is used, this can be trivial to work with using a `Where` clause:
+
+    args : Template {
+      input : Template arg_tmpl { name : "input"  value : "~/input.txt" }
+      compression : Template arg_tmpl { name : "c"  value : 8 }
+      log : Template switch_tmpl { name : "log"  value : True }
+    }
+    args_tuples : For arg : args {} Select arg {}
+    args_str : For arg : args_tuples Where arg.enabled Reduce acc & " " & arg.spec With acc : ""
+
+### Flexible Rendering
+This uses tuple re-parenting to create multiple was of rendering the same data:
+
+    weather : Template {
+      toronto : data_tmpl { city : "Toronto"  temperature : 35  humdity : 71 }
+      waterloo : data_tmpl { city : "Waterloo"  temperature : 30  humdity : 64 }
+      ottawa : data_tmpl { city : "Ottawa"  temperature : 33  humdity : 68 }
+    }
+    xml : {
+       data_tmpl : Template {
+         spec : "<city><name>\(city)</name><temperature>\(temperature)</temperature></city>"
+       }
+       weather_data : weather {}
+       str : "<weather>" & (For city : weather_data Reduce acc & city.spec With acc : "") & "</weather>"
+    }
+    text : {
+       data_tmpl : Template {
+         spec : "\(city)\t\(temperature)\t\(humidity)"
+       }
+       weather_data : weather {}
+       str : For city : weather_data Reduce acc & "\n" & city.spec With acc : "City\tTemp\tHum"
+    }
+
+Here, the data is specified separate and the renders are provided as a template allowing different parts of the program to use different rendering methods.
+
+### Multi-part Rendering
+While the `spec` attribute is extremely useful, sometimes, it can be helpful to have more than one. Consider generating C code: there need to be prototypes and implementations for each function.
+
+    c_function_tmpl : Template {
+      signature ?:
+      body ?:
+      prototype_spec : signature & ";\n"
+      implementation_spec : signature & "{\n" & body & "\n}\n"
+    }
+    functions : ...
+    signatures : For function : functions Reduce acc & function.prototype_spec : With acc : ""
+    implementations : For function : functions Reduce acc & function.implementation_spec : With acc : ""
+    c_file : signatures & "\n" & implementations
+
+### Contextual Accumulation
+There are situations where it is desirable to have an accumulator that is not common to all cases. For instance, suppose Python code was being generated and the indentation must be correct:
+
+    python_stmt_tmpl : Template { line ?:  spec : indent & line }
+    python_group_tmpl : Template {
+      statements ?:
+      spec : For statement : statements Reduce acc & statement & "\n" With acc : ""
+    }
+    python_block_tmpl : Template {
+      line ?:
+      parent_indent : Lookup indent In Container
+      indent : parent_indent & "\t"
+      statements ?:
+      spec : For statement : statements
+        Reduce acc & statement & "\n"
+        With acc : (parent_indent & line & "\n")
+    }
+    indent : ""
+
+These templates can now be nested and the resulting `spec` will have correct indentation. Groups here, are collections of statements at the same indentation level, so any statement or block inside will continue contextual lookup until it finds `indent`. Each block takes the existing `indent` and then adds another tab, making all of the statements contained within be indented.
+
+Finally, the `indent` definition is an contextual lookup trap. If the user of these templates did not define an `indent` value at the top level, contextual lookup would continue until it found this one.
+
+In most other languages, this effect would be achieved by passing the indentation value as a parameter to every function (plumbing) while Flabbergast can use contextual lookup to do the heavy lifting.
 
 ## The Standard Library
 Because Flabbergast is meant to render data, it has a rather lean standard library. Most languages have the following major elements in their standard libraries:
@@ -659,13 +813,13 @@ TODO
 Much like regular expression, different underlying database libraries are present, but templates can be used to smooth out the wrinkles. The query-building templates are uniform across databases, but the drivers will be unique to each database. Moreover, while most databases have a concept of a connection that is held open by the application until the database is no longer needed, this has little parity in a Flabbergast program. Much more responsibility falls to the library implementation to manage the connections. In the case of in-application access, it might be best if the database connection is simply provided via `From`. The schema for the database should be provided.
 
     sql_lib : From lib:sql
-		employee_tbl : From db:employee
-		payroll_tbl : From db:payroll
+    employee_tbl : From db:employee
+    payroll_tbl : From db:payroll
     my_query : Template sql_lib.query {
       results : {
-				name : from.employee.name
+        name : from.employee.name
         salary : from.payroll.salary
-			}
+      }
       from : {
         employee : employee_tbl {}
         payroll : payroll_tbl {}
