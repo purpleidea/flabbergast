@@ -350,7 +350,7 @@
            y="425.68924"
            x="495.73792"
            id="tspan3069"
-           sodipodi:role="line">libkws.so</tspan></text>
+           sodipodi:role="line">libkws-rt.so</tspan></text>
     </g>
     <g
        id="g4158"
@@ -997,7 +997,7 @@
          sodipodi:role="line"
          id="tspan6453"
          x="660.65625"
-         y="398.36218">C</tspan></text>
+         y="398.36218">C/POSIX</tspan></text>
     <text
        sodipodi:linespacing="125%"
        id="text6455"
