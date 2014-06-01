@@ -1,5 +1,7 @@
 '\" t
 .\" Authors: Andre Masella
+.ds < \v'0.4m'\x'\\n(0x=0*0.2m'\s-3
+.ds > \s0\v'-0.4m'
 .TH flabbergast 7 "Jan 2015" "1.0" "MISCELLANEOUS"
 Flabbergast is a language for creating configuration structures that can be rendered to a final configuration. Each expression is side-effect free. It has unusual look-up semantics, explained below.
 
@@ -270,14 +272,16 @@ Compares operands for ordering. It returns the integer -1 (left is before right)
 
 .TS
 tab(;);
-al.
+al;e.
 \fBOperand Types;Behaviour\fR
-Both str;Compare the two strings using Unicode Technical Standard 10 collation. This is locale-dependent.
+Both str;Collated the strings using Unicode Technical Standard 10.
 Both bool;Compare where \fBFalse\fR < \fBTrue\fR.
 Both float;Compare numerically. If either value is NaN, raise an error.
 Both int;Compare numerically.
 One int, one float;Upgrade the integer to a float and compare as two floats.
 .TE
+
+Note that string comparison is locale-dependent.
 
 .SS EXPRESSION SYNTAX (E) – COALESCENCE
 .TP
@@ -364,7 +368,7 @@ Checks if a number is finite
 Γ ⊢ expr ↓ v :: Float
 .SEME
 
-If the value is a float, returns \fBFalse\fR if the value is infinite or not-a-number, \fTrue\fR otherwise. If the value is an integer, returns \fBTrue\fR. See IEEE 754.
+If the value is a float, returns \fBFalse\fR if the value is infinite or not-a-number, \fBTrue\fR otherwise. If the value is an integer, returns \fBTrue\fR. See IEEE 754.
 
 .TP
 Check if a number is not-a-number.
