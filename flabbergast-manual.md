@@ -765,12 +765,12 @@ Because Flabbergast is meant to render data, it has a rather lean standard libra
 
  - data structures. These are rather unnecessary once tuples have been accepted as the one true data structure.
  - search and sort algorithms. These are built into the language via the fricassée expression.
- - I/O. This is highly discouraged as configurations should be hermetic and the controlling program may have security reasons to restrict access to the world.
-   - files
-   - GUIs
-   - databases
-   - network
- - threading. Generally, threading control is only needed so that data structures and I/O can be done safely.
+ - I/O. This is highly discouraged as configurations should be hermetic and the controlling program may have security reasons to restrict access to the world. Since there is no way to control the order of operations, output that cause side-effects in the program is discouraged. In particular, if writing is permitted, should it happen immediately on evaluation or after success of the whole program (i.e., can a program which produces an error still write).
+   - files. Traditional file I/O has too much state to be practical. The best compromise would be operations to read and write whole files. The write issue still applies.
+   - GUIs. This is entirely mutable state.
+   - databases. Read-only queries of databases are probably reasonable as the results can be converted to tuples. Writing can also be done transactionally, dependent on the success of the whole program.
+   - network. Again, this is entirely mutable state. It would certainly be possible to do read-only network access, however, the semantics surrounding network failures is unclear. Suppose an HTTP GET is available: what errors should be handled by the program? 404? 403? 500? non-existent domain? Any can be argued, but the question is: which represents the failure of the program and which represent the failure of the network and, most importantly, what is the correct behaviour of the program when an error of any kind occurs?
+ - threading. Generally, threading control is only needed so that data structures and I/O can be done safely. Since both of those are handled outside the language, threading should be too.
  - string manipulation. Yuck. String manipulation is the source of all computational suffering. Embrace the tuples.
  - regular expressions and parsing. Ignoring that parsing is usually absent, generally, this is done on the strings read from files.
  - mathematics. Computation is good!
