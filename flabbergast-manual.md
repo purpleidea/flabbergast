@@ -660,6 +660,22 @@ In the previous example, an argument list is created for an executable binary. T
 
 Now, tuples inheriting from `foo_tmpl` can easily change the `args`.
 
+The attribute names, if useful, can be included in the template instantiation.
+
+    arg_tmpl : Template {
+      name ?:
+      value ?:
+      spec : "--" & name & " " & value
+    }
+    binary : "foo"
+    args : Template {
+      input : Template arg_tmpl { value : "~/input.txt" }
+      compression : Template arg_tmpl { value : 8 }
+    }
+    arg_str : For arg : args {}, name_ : Attribute
+      Reduce acc & " " & (arg { name : name_ }).spec
+      With acc : binary
+
 ### Enabled Items
 Since there can be logic to decide if an item should be included or not, it is tempting to write code as follows:
 
