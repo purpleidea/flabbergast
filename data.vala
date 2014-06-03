@@ -76,6 +76,33 @@ namespace Flabbergast.Data {
 	public class Template : Tupleish {
 		internal Utils.ContainerReference? containers;
 		internal Gee.SortedSet<string> externals = new Gee.TreeSet<string> ();
+		private class TemplateExternal : Gee.Map.Entry<string, Expression ? > {
+			private string name;
+			public override string key {
+				get {
+					return name;
+				}
+			}
+			public override Expression? value {
+				set {} get {
+					return null;
+				}
+			}
+			public override bool read_only {
+				get {
+					return false;
+				}
+			}
+			internal TemplateExternal (string name) {
+				this.name = name;
+			}
+		}
+		public Gee.Iterator<Gee.Map.Entry<string, Expression? > > iterator () {
+			var list = new Gee.ArrayList<Gee.Iterator<Gee.Map.Entry<string, Expression? > > > ();
+			list.add (attributes.entries.iterator ());
+			list.add (externals.iterator ().map<Gee.Map.Entry<string, Expression? > > ((name) => new TemplateExternal (name)));
+			return Gee.Iterator.concat<Gee.Map.Entry<string, Expression? > > (list.iterator ());
+		}
 		public override string to_string () {
 			return "Template";
 		}
@@ -115,19 +142,19 @@ namespace Flabbergast.Data {
 			 case FLOAT :
 				 return typeof (Float);
 
-			 case INT:
+			 case INT :
 				 return typeof (Integer);
 
-			 case STR:
+			 case STR :
 				 return typeof (String);
 
-			 case TEMPLATE:
+			 case TEMPLATE :
 				 return typeof (Template);
 
-			 case TUPLE:
+			 case TUPLE :
 				 return typeof (Tuple);
 
-			 default:
+			 default :
 				 assert_not_reached ();
 			}
 		}
