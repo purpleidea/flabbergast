@@ -106,7 +106,19 @@ void print_datum (Data.Datum result, Rules rules, ExecutionEngine engine, bool d
 			stdout.printf ("\"%s\" As Str\n", result.to_string ().escape ("'"));
 			return;
 		} else if (result is Data.Template) {
-			stdout.printf ("Template\n");
+			stdout.printf ("Template {\n");
+			foreach (var entry in (Data.Template)result) {
+				print_tabs (depth + 1);
+				if (entry.value == null) {
+					stdout.printf ("%s ?:\n", entry.key);
+				} else {
+					var printer = new GTeonoma.Printer (rules, depth + 1);
+					printer.print_obj (entry.value);
+					stdout.printf ("%s : %s\n", entry.key, printer.str);
+				}
+			}
+			print_tabs (depth);
+			stdout.printf ("}\n");
 			return;
 		} else {
 			type_name = "unknown";

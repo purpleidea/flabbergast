@@ -50,8 +50,14 @@ int main (string[] args) {
 			continue;
 		}
 		parser = null;
-		var printer = GTeonoma.FilePrinter.open (rules, filename);
+		var printer = new GTeonoma.Printer (rules);
 		printer.print (result);
+		try {
+			FileUtils.set_contents (filename, printer.str);
+		} catch (FileError e) {
+			stderr.printf ("%s: %s\n", filename, e.message);
+			exit_code = 1;
+		}
 	}
 	return exit_code;
 }
