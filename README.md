@@ -1,7 +1,7 @@
 # The Flabbergast Programming Language
 ![](https://rawgithub.com/apmasell/flabbergast/master/flabbergast.svg)
 
-Flabbergast is a object-oriented macro system that uses inside-out lookup (dynamic scope) and inheritance to making writing complex configurations easy.
+Flabbergast is a object-oriented macro system that uses contextual lookup (dynamic scope) and inheritance to making writing complex configurations easy.
 
 In most languages, afterthoughts are not appreciated. However, most configurations are nothing but afterthoughts and exceptions. “I want the test version of the webserver to be the same as the production except for the database connection.” “I want the videos SMB share to be the same as the documents SMB share with a few extra users.” Flabbergast is built to service “except”, “and”, and “but”.
 
@@ -25,4 +25,4 @@ Each platform also contains an implementation of the runtime library and non-por
 ## Miscellaneous
 The Flabbergast langauge would not be possible without the help of [Kyle](https://github.com/edrac) and Jonathan.
 
-The logo is the worst symbolic representation of inside-out lookup.
+The logo is the worst symbolic representation of contextual lookup, previously called inside-out lookup.
