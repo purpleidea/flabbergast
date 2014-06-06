@@ -117,10 +117,10 @@ Creates a new tuple, based on a template, grounded in the current scope. If sour
 
 .TP
 Concatenate two strings
-.SEM Γ ⊢ a:E\*<+\*> \fB&\fR b:E ↓ "xy"
-Γ ⊢ a \fBTo Str\fR ↓ "x" :: Str,
+.SEM Γ ⊢ a:E\*<+\*> \fB&\fR b:E ↓ \(dqxy\(dq
+Γ ⊢ a \fBTo Str\fR ↓ \(dqx\(dq :: Str,
 
-Γ ⊢ b \fBTo Str\fR ↓ "y" :: Str
+Γ ⊢ b \fBTo Str\fR ↓ \(dqy\(dq :: Str
 .SEME
 
 .SS EXPRESSION SYNTAX (E) – DISJUNCTION
@@ -320,16 +320,16 @@ See IEEE 754 for semantics of ROUND_TOWARD_ZERO (a.k.a., truncation).
 
 .TP
 Coerce a value to an string
-.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ PRINTF("%d", v) :: Str
+.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ PRINTF(\(dq%d\(dq, v) :: Str
 Γ ⊢ expr ↓ v :: Int
 .SEME
-.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ PRINTF("%f", v) :: Str
+.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ PRINTF(\(dq%f\(dq, v) :: Str
 Γ ⊢ expr ↓ v :: Float
 .SEME
-.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ "True" :: Str
+.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ \(dqTrue\(dq :: Str
 Γ ⊢ expr ↓ True
 .SEME
-.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ "False" :: Str
+.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ \(dqFalse\(dq :: Str
 Γ ⊢ expr ↓ False
 .SEME
 
@@ -775,13 +775,13 @@ IEEE 754 floating point number.
 .TP
 String expression
 
-.SEM Γ ⊢ \fB"\fRa:S*\fB"\fR ↓ "v\*<0\*>v\*<1\*>...v\*<n\*>" :: Str
+.SEM Γ ⊢ \fB\(dq\fRa:S*\fB\(dq\fR ↓ \(dqv\*<0\*>v\*<1\*>...v\*<n\*>\(dq :: Str
 Γ ⊢ a\*<n\*> ↓ v\*<n\*>
 .SEME
 
 .TP
 Identifier-like string
-.SEM \fB$\fI name:I ↓ "name" :: String
+.SEM \fB$\fR name:I ↓ \(dqname\(dq :: String
 .SEME
 
 Produce a string that is parsed as an identifier, so it is necessarily a valid identifier.
@@ -792,7 +792,7 @@ UNICODE converts a number to its Unicode code-point.
 
 .TP
 Characters other than quote or backslash
-.SEM x:[^\fB"\\\\\fR]+ ↓ x
+.SEM x:[^\fB\(dq\\\\\fR]+ ↓ x
 .SEME
 
 .TP
@@ -832,7 +832,7 @@ Vertical tab
 
 .TP
 Quotation mark
-.SEM \fB\\\\"\fR ↓ UNICODE(34)
+.SEM \fB\\\\\(dq\fR ↓ UNICODE(34)
 .SEME
 
 .TP
@@ -872,9 +872,9 @@ Define a new attribute in a tuple, equal to some expression.
 
 .TP
 In a template, define an attribute that must be overridden. (X)
-.SEM name:I \fB?:\fR ↓ name → \fBError "Attribute \fRname\fB must be overridden."\fR
+.SEM name:I \fB?:\fR ↓ name → \fBError \(dqAttribute \fRname\fB must be overridden.\(dq\fR
 .SEME
-.SEM R ⊢ name:I \fB?:\fR ↓ name → \fBError "Attribute \fRname\fB must be overridden."\fR
+.SEM R ⊢ name:I \fB?:\fR ↓ name → \fBError \(dqAttribute \fRname\fB must be overridden.\(dq\fR
 .SEME
 
 Create an attribute whose value is an error requiring an override.
