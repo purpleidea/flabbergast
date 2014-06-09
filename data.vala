@@ -99,8 +99,8 @@ namespace Flabbergast.Data {
 		}
 		public Gee.Iterator<Gee.Map.Entry<string, Expression? > > iterator () {
 			var list = new Gee.ArrayList<Gee.Iterator<Gee.Map.Entry<string, Expression? > > > ();
-			list.add (attributes.entries.iterator ());
 			list.add (externals.iterator ().map<Gee.Map.Entry<string, Expression? > > ((name) => new TemplateExternal (name)));
+			list.add (attributes.entries.iterator ());
 			return Gee.Iterator.concat<Gee.Map.Entry<string, Expression? > > (list.iterator ());
 		}
 		public override string to_string () {
