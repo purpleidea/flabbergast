@@ -670,6 +670,14 @@ Continue literal
 .SEME
 
 .TP
+String character length
+.SEM Γ ⊢ \fBLength\fR expr:E ↓ n :: Int
+Γ ⊢ expr \fBTo Str\fR ↓ "c\*<1\*>c\*<2\*>...c\*<n\*>" :: Str
+.SEME
+
+Returns the Unicode character count of the provided string.
+
+.TP
 Access current tuple
 .SEM (a, ...) ⊢ \fBThis\fR ↓ a
 .SEME

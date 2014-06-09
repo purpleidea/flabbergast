@@ -17,6 +17,20 @@ namespace Flabbergast.Expressions {
 			left = left.transform (); right = right.transform (); return this;
 		}
 	}
+	internal class StringLength : Expression {
+		public Expression expression {
+			get;
+			set;
+		}
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+			var result = convert (engine, expression, Data.Ty.STR);
+			engine.operands.push (new Data.Integer (((Data.String)result).value.char_count ()));
+		}
+		public override Expression transform () {
+			expression = expression.transform ();
+			return this;
+		}
+	}
 	internal class Conditional : Expression {
 		public Expression condition {
 			get;
