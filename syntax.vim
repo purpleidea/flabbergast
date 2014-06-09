@@ -24,7 +24,7 @@ syn match flabbergastComment "#.*$" contains=flabbergastTodo,@Spell display
 syn keyword flabbergastConstant Continue False FloatMax FloatMin Infinity IntMax IntMin NaN Null True
 syn match flabbergastIdentifier "\<[a-z][a-zA-Z0-9_]*\>" display
 syn match flabbergastIdentifierString "\$[a-z][a-zA-Z0-9_]*\>" display
-syn keyword flabbergastKeyword As By Container Each Error Finite For From If Then Else In Is Let Lookup Name Order Ordinal Reduce Select Template This Through To Where With 
+syn keyword flabbergastKeyword As By Container Each Error Finite For From If Then Else In Is Length Let Lookup Name Order Ordinal Reduce Select Template This Through To Where With 
 syn match flabbergastOperators '\(<=\?\|<\=>\|>=\?\|==\|||\|-\|!\|!=\|/\|\*\|&\|&&\|%\|+\)' display
 syn keyword flabbergastTodo contained TODO FIXME XXX
 syn keyword flabbergastType Bool Float Int Str Tuple
