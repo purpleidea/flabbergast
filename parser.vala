@@ -106,8 +106,8 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<NullLiteral> ("null literal", precedence, "Null");
 		register<RaiseError> ("raise error", precedence, "Error%! %P{expression}");
 		register<StringLength> ("string length", precedence, "Length%! %P{expression}");
-		register<StringLiteral> ("empty string literal", precedence, "\"\"");
 		register<StringLiteral> ("string literal", precedence, "\"%!%P{literal}%l{contents}{}\"", new Type[] { typeof (StringPiece) });
+		register<StringLiteral> ("empty string literal", precedence, "\"\"");
 		register<SubExpression> ("subexpression", precedence, "(%!% %P{expression}% )");
 		register<This> ("self-reference", precedence, "This");
 		register<TrueLiteral> ("true literal", precedence, "True");
@@ -129,7 +129,8 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<Fricassee.AnonymousTuple> ("ordered anonymous tuple", 0, "%P{order} Select %P{result}");
 		register<Fricassee.AnonymousTuple> ("anonymous tuple", 0, "Select %P{result}");
 		register<Fricassee.NamedTuple> ("named tuple", 0, "Select %P{result_attr}%-:%-%P{result_value}");
-		register<Fricassee.Reduce> ("reduce", 0, "%p{order}%-Reduce %P{result} With %P{initial_attr}%-:%-%P{initial}");
+		register<Fricassee.Reduce> ("reduce (ordered)", 0, "%P{order} Reduce %P{result} With %P{initial_attr}%-:%-%P{initial}");
+		register<Fricassee.Reduce> ("reduce", 0, "Reduce %P{result} With %P{initial_attr}%-:%-%P{initial}");
 		/* Order Clauses */
 		register<Fricassee.OrderBy> ("orderby", 0, "Order By %P{order}");
 		register<Fricassee.Reverse> ("reverse", 0, "Reverse");
