@@ -8,6 +8,8 @@
 *.lo
 *.o
 *.pc
+*.pdf
+*.png
 *.stamp
 .libs/
 ChangeLog
@@ -27,6 +29,7 @@ config.h.in
 config.log
 config.status
 configure
+doc/
 flabbergast
 flabbergast-fmt
 flabbergast-print
