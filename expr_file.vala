@@ -15,7 +15,7 @@ namespace Flabbergast {
 			var state = engine.state;
 			state.context = context;
 			state.this_tuple = tuple;
-			state.containers = null;
+			state.containers = new Utils.ContainerReference (context, null);
 			engine.state = state;
 
 			foreach (var attribute in attributes) {
