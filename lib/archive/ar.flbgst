@@ -1,6 +1,13 @@
 archive_tmpl : Template {
 	args ?:
 	value : For file : args Reduce acc & file.value With acc : "!<arch>\n"
+	uid : 0
+	gid : 0
+	mtime : 0
+	user : 6
+	group : 4
+	other : 4
+	mode : user & group & other
 }
 
 pad_string : Template {
@@ -8,28 +15,23 @@ pad_string : Template {
 	length ?:
 
 	value : input & padding
-	padding : For x : 1 Through (length - Length input) Reduce (acc & " ") With acc : ""
+	padding : For x : (1 Through (length - Length input)) Reduce (acc & " ") With acc : ""
 }
 
 file_tmpl : Template {
 	file_name ?:
-	uid : 0
-	gid : 0
-	mtime : 0
-	user : 6
-	group : 4
-	other : 4
-	mode : user * 64 + group * 8 + other
 	contents ?:
 
-	file_header : If Length file_name > 16 Then "#1/" & Length file_name Else file_name
-	header_suffix : If Length file_name > 16 Then file_name Else ""
+	file_name_length : Length file_name
+	file_header : If file_name_length > 16 Then "#1/" & file_name_length Else file_name
+	header_suffix : If file_name_length > 16 Then file_name Else ""
+	extended_content_length : If file_name_length > 16 Then file_name_length Else 0
 	value :
 		pad_string(length : 16, input : file_header) &
 		pad_string(length : 12, input : mtime) &
 		pad_string(length : 6, input : uid) &
-		pad_string(length : 6, input : guid) &
+		pad_string(length : 6, input : gid) &
 		pad_string(length : 8, input : mode) &
-		pad_string(length : 10, input : Length contents) &
+		pad_string(length : 10, input : Length contents + extended_content_length) &
 		"`\n" & header_suffix & contents
 }
