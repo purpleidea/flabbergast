@@ -37,6 +37,9 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 
 		/* Expressions */
 		var precedence = 0;
+		register<Let> ("name binding", precedence, "Let %L{attributes}{% ,%-} In %P{expression}", new Type[] { typeof (Attribute) });
+
+		precedence++;
 		register<LogicalOr> ("logical disjunction", precedence, "%P{+left}%-||%!%-%P{right}");
 
 		precedence++;
@@ -69,6 +72,8 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<NullCoalesce> ("null coalescence", precedence, "%P{+expression}%-??%!%-%P{alternate}");
 
 		precedence++;
+		register<RaiseError> ("raise error", precedence, "Error%! %P{expression}");
+		register<StringLength> ("string length", precedence, "Length%! %P{expression}");
 		register<Conditional> ("conditional", precedence, "If%! %P{-condition} Then %P{-truepart} Else %P{falsepart}");
 		register<Fricassee.ForExpression> ("for⋯where⋯", precedence, "For %P{selector} Where%! %P{-where} %P{result}");
 		register<Fricassee.ForExpression> ("for⋯", precedence, "For %P{selector} %P{result}");
@@ -98,17 +103,14 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<DirectLookup> ("direct lookup", precedence, "%P{+expression}%-.%!%-%L{names}{% .% }", new Type[] { typeof (Nameish) });
 
 		precedence++;
-		register<Let> ("name binding", precedence, "Let %L{attributes}{% ,%-} In %P{expression}", new Type[] { typeof (Attribute) });
 		register<ListLiteral> ("list literal", precedence, "[%!%-%L{-elements}{% ,%-}%-]", new Type[] { typeof (Expression) });
 		register<FalseLiteral> ("false literal", precedence, "False");
 		register<FloatLiteral> ("floating point literal", precedence, "%P{value}");
 		register<IntegerLiteral> ("integer literal", precedence, "%P{value}");
 		register<NullLiteral> ("null literal", precedence, "Null");
-		register<RaiseError> ("raise error", precedence, "Error%! %P{expression}");
-		register<StringLength> ("string length", precedence, "Length%! %P{expression}");
 		register<StringLiteral> ("string literal", precedence, "\"%!%P{literal}%l{contents}{}\"", new Type[] { typeof (StringPiece) });
 		register<StringLiteral> ("empty string literal", precedence, "\"\"");
-		register<SubExpression> ("subexpression", precedence, "(%!% %P{expression}% )");
+		register<SubExpression> ("subexpression", precedence, "(%!% %P{-expression}% )");
 		register<This> ("self-reference", precedence, "This");
 		register<TrueLiteral> ("true literal", precedence, "True");
 		register<IntMaxLiteral> ("maximum integer literal", precedence, "IntMax");
