@@ -29,6 +29,7 @@ config.status
 configure
 flabbergast
 flabbergast-fmt
+flabbergast-print
 libtool
 m4/
 stamp-h1

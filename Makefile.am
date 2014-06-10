@@ -17,7 +17,7 @@ EXTRA_DIST = \
 	$(libflabbergast_glib_la_SOURCES) \
 	$(NULL)
 
-bin_PROGRAMS = flabbergast flabbergast-fmt
+bin_PROGRAMS = flabbergast flabbergast-fmt flabbergast-print
 
 lib_LTLIBRARIES = libflabbergast-glib.la
 
@@ -73,7 +73,7 @@ flabbergast_fmt_CPPFLAGS = -g \
 	$(GEE_CFLAGS) \
 	$(GTEONOMA_CFLAGS) \
 	$(NULL)
-	
+
 flabbergast_fmt_LDADD = \
 	libflabbergast-glib.la \
 	$(GLIB_LIBS) \
@@ -83,6 +83,28 @@ flabbergast_fmt_LDADD = \
 
 flabbergast_fmt_SOURCES = \
 	formatter.vala \
+	$(NULL)
+
+flabbergast_print_VALAFLAGS = \
+	--debug \
+	$(VALALOCAL)
+
+flabbergast_print_CPPFLAGS = -g \
+	-I. \
+	$(GLIB_CFLAGS) \
+	$(GEE_CFLAGS) \
+	$(GTEONOMA_CFLAGS) \
+	$(NULL)
+
+flabbergast_print_LDADD = \
+	libflabbergast-glib.la \
+	$(GLIB_LIBS) \
+	$(GEE_LIBS) \
+	$(GTEONOMA_LIBS) \
+	$(NULL)
+
+flabbergast_print_SOURCES = \
+	print.vala \
 	$(NULL)
 
 libflabbergast_glib_la_COMMONVALAFLAGS =\
