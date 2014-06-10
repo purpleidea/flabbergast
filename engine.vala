@@ -82,6 +82,16 @@ namespace Flabbergast {
 			this.parent = parent;
 			this.context = context;
 		}
+		public static ContainerReference? append (ContainerReference? main, ContainerReference? tail) {
+			if (tail == null) {
+				return main;
+			}
+			if (main == null) {
+				return tail;
+			}
+			return new ContainerReference (main.context,
+						       main.parent == null ?  tail : append (main.parent, tail));
+		}
 	}
 
 	internal struct MachineState {

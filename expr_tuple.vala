@@ -85,7 +85,7 @@ namespace Flabbergast.Expressions {
 			var attr_names = new Gee.HashSet<string> ();
 
 			var template = new Data.Template ();
-			template.containers = engine.state.containers;
+			template.containers = Utils.ContainerReference.append (engine.state.containers, source_data == null ? null : source_data.containers);
 			foreach (var attr in attributes) {
 				if (attr.name.name in attr_names) {
 					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr.name.name).");
@@ -168,6 +168,7 @@ namespace Flabbergast.Expressions {
 			}
 			state.containers = new Utils.ContainerReference (state.context, state.containers);
 			engine.environment.append_containers (context, state.containers);
+			engine.environment.append_containers (context, template.containers);
 			state.context = context;
 			state.this_tuple = tuple;
 
