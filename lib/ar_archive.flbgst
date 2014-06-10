@@ -25,7 +25,7 @@ file_tmpl : Template {
 	file_header : If Length file_name > 16 Then "#1/" & Length file_name Else file_name
 	header_suffix : If Length file_name > 16 Then file_name Else ""
 	value :
-		file_header &
+		pad_string(length : 16, input : file_header) &
 		pad_string(length : 12, input : mtime) &
 		pad_string(length : 6, input : uid) &
 		pad_string(length : 6, input : guid) &
