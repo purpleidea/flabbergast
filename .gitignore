@@ -33,6 +33,7 @@ doc/
 flabbergast
 flabbergast-fmt
 flabbergast-print
+update-flabbergast
 libtool
 m4/
 stamp-h1

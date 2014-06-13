@@ -1,0 +1,35 @@
+#!/bin/sh
+# @PACKAGE_NAME@ @PACKAGE_VERSION@
+#
+# Updates the compiled caches for Flabbergast implementations.
+#
+# All the standard caches are scanned, including the one in the user's home
+# directory, and any outdated compiled libraries are rebuilt for all installed
+# implementations.
+#
+# New directories can be added using the $FLABBERGAST_PATH environment
+# variable.
+
+set -eu
+
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+libexecdir="${exec_prefix}/libexec"
+libdir="${exec_prefix}/lib"
+datarootdir="@datarootdir@"
+datadir="@datadir@"
+pkgdatadir="${datadir}/@PACKAGE@"
+
+IFS=":"
+DIRECTORIES="${FLABBERGAST_PATH:-}:${libdir}/flabbergast:/usr/lib/flabbergast:/usr/local/lib/flabbergast:$HOME/.local/lib/flabbergast"
+for DIRECTORY in $DIRECTORIES
+do
+	if [ -d "$DIRECTORY" -a -w "$DIRECTORY" ]
+	then
+		for HANDLER in "$libdir/flabbergast-cache/"*
+		do
+			make -C "$pkgdatadir/update.makefile" -f "$HANDLER" -s -k HANDLER="$HANDLER" || true
+		done
+	fi
+done
+unset IFS

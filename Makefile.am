@@ -18,6 +18,9 @@ EXTRA_DIST = \
 	$(NULL)
 
 bin_PROGRAMS = flabbergast flabbergast-fmt flabbergast-print
+bin_SCRIPTS = \
+	update-flabbergast \
+	$(NULL)
 
 lib_LTLIBRARIES = libflabbergast-glib.la
 
@@ -31,6 +34,10 @@ dist_vapi_DATA = $(PACKAGE_NAME)-$(PACKAGE_MAJOR).deps $(PACKAGE_NAME)-$(PACKAGE
 
 girdir = $(datadir)/gir-1.0
 dist_gir_DATA = $(PACKAGE_NAME)-$(PACKAGE_MAJOR).gir
+
+pkgdata_dir = \
+	update.makefile \
+	$(NULL)
 
 VALALOCAL = \
 	--pkg=config \
