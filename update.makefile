@@ -1,11 +1,10 @@
-EXT = $(notdir $(HANDLER))
-SOURCES = $(shell find . -type f -name '*.flbgst')
-TARGETS = $(patsubst %.flbgst, %.$(EXT), $(SOURCES))
-CACHES = $(shell find . -type f -name '*.$(EXT)')
+EXTS =
+ALL = $(shell find . -type f)
+SOURCES = $(filter %.flbgst, $(ALL))
+TARGETS = $(foreach EXT, $(EXTS), $(patsubst %.flbgst, %.$(EXT), $(SOURCES)))
 
 .PHONY: all
 all: $(TARGETS)
-	@echo rm -f $(filter-out $(TARGETS), $(CACHES))
+	@echo rm -f $(filter-out $(SOURCES) $(TARGETS), $(ALL))
 
-%.$(EXT): %.flbgst
-	@$(HANDLER) $<
+include: $(libdir)/flabbergast-compiler/*

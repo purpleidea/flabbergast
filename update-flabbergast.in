@@ -26,10 +26,7 @@ for DIRECTORY in $DIRECTORIES
 do
 	if [ -d "$DIRECTORY" -a -w "$DIRECTORY" ]
 	then
-		for HANDLER in "$libdir/flabbergast-cache/"*
-		do
-			make -C "$pkgdatadir/update.makefile" -f "$HANDLER" -s -k HANDLER="$HANDLER" || true
-		done
+		make -C "$DIRECTORY" -f "$pkgdatadir/update.makefile" -s -k || true
 	fi
 done
 unset IFS
