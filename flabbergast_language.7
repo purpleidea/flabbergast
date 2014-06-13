@@ -91,30 +91,52 @@ The top-level entity is a file tuple.
 .TP
 Bind a new name
 
-.SEM (t, ...) ⊢ \fBLet\fR name:I \fB:\fR nameexpr:E\*<0\*> (\fB,\fR name:I \fB:\fR nameexpr:E\*<0\*> )* \fBIn\fR expr:E\*<+\*> ↓ v
+.SEM (t, ...) ⊢ \fBLet\fR name:I \fB:\fR nameexpr:E\*<0\*> (\fB,\fR name:I \fB:\fR nameexpr:E\*<0\*> )* \fBIn\fR expr:E ↓ v
 ∀ nameexpr : Γ ⊢ nameexpr ↓ v\*<nameexpr\*>,
 
 (< ∀ name, nameexpr : nname → v\*<nameexpr\*> >*, t, ...) ⊢ expr ↓ v
 .SEME
 
-.SS EXPRESSION SYNTAX (E) – INSTANTIATION AND CONCATENATION
+.SS EXPRESSION SYNTAX (E) – FRICASÉE
 .TP
-Instantiate a template
+Fricassée a tuple (a.k.a. \fBFor\fR expressions)
 
-.SEM Γ ⊢ source:E\*<+\*> \fB{\fR a:(A / O)+ \fB}\fR ↓ v
-Γ ⊢ \fB(Template\fR source \fB{\fR a \fB}) { }\fR ↓ v
+.SEM Γ ⊢ \fBFor\fR s:FS r:FR ↓ v
+Γ ⊢ s ↓ W = ( < k\*<x\*> → v\*<x1\*>, k\*<y\*> → v\*<y1\*>, ... >, < k\*<x\*> → v\*<x2\*>, k\*<y\*> → v\*<y2\*>, ... >, ... ),
+
+Γ; W ⊢ r ↓ v
 .SEME
- 
-.SEM (t, ...) ⊢ source:E\*<+\*> \fB{ }\fR ↓ r = < ∀ x: k\*<x\*> → v\*<x\*>, \fBContainer\fR → container, \fBContext\fR → (r, t, ..., s, ...) >
-(t, ...) ⊢ source ↓ S = < (s, ...); k\*<s\*> → e\*<s\*>, ... >,
+.SEM Γ ⊢ \fBFor\fR s:FS \fBWhere\fR expr:E\*<0\*> r:FR ↓ v
+Γ ⊢ s ↓ W,
 
-∀ k\*<x\*> → e\*<x\*> ∈ S : (r, t, ..., s, ...) ⊢ e\*<s\*> ↓ v\*<x\*>,
+∀ w\*<i\*> ∈ W : (w\*<i\*>*, t, ...) ⊢ expr ↓ v\*<i\*> :: Bool,
 
-(t, ...) ⊢ \fBThis\fR ↓ container
+X = { w\*<i\*> ∈ W | v\*<i\*> = True }
+
+Γ; X ⊢ r ↓ v
 .SEME
 
-Creates a new tuple, based on a template, grounded in the current scope. If source is a template, instantiate that template setting the provided attributes and inheriting any others. If source is not a template, an error occurs. If any attribute is external but not overridden, it will cause an error.
+This operator allows iterating over the values in a tuple to produce some new result. The syntax is handled in two pieces: a selection component (FS) that creates a list of tuples, each being an environment in which the relevant values from the input are defined (i.e., it is a list of whitnesses), a results component that evaluates expressions using the witnesses and produces a result. Optionally, a filter expression can be provided to exclude certain witnesses.
 
+.SS EXPRESSION SYNTAX (E) – CONDITITONAL
+.TP
+Conditional
+
+.SEM Γ ⊢ \fBIf\fR cond:E\*<0\*> \fBThen\fR true:E\*<0\*> \fBElse\fR false:E ↓ x
+Γ ⊢ cond ↓ True,
+
+Γ ⊢ true ↓ x
+.SEME
+
+.SEM Γ ⊢ \fBIf\fR cond:E\*<0\*> \fBThen\fR true:E\*<0\*> \fBElse\fR false:E ↓ x
+Γ ⊢ cond ↓ False,
+
+Γ ⊢ false ↓ x
+.SEME
+
+Computes the \fIcond\fR and, if boolean, returns \fItrue\fR or \fIfalse\fR depending on the value. Otherwise, an error. The expression which is not selected is not evaluated.
+
+.SS EXPRESSION SYNTAX (E) – CONCATENATION
 .TP
 Concatenate two strings
 .SEM Γ ⊢ a:E\*<+\*> \fB&\fR b:E ↓ \(dqxy\(dq
@@ -283,18 +305,76 @@ One int, one float;Upgrade the integer to a float and compare as two floats.
 
 Note that string comparison is locale-dependent.
 
-.SS EXPRESSION SYNTAX (E) – COALESCENCE
+.SS EXPRESSION SYNTAX (E) – ARITHMETIC DISJUNCTION
 .TP
-Null coalescence
-.SEM Γ ⊢ value:E\*<+\*> \fB??\fR default:E\*<+\*> ↓ v
-Γ ⊢ value ↓ v
+Addition and Subtraction
+
+.SEM Γ ⊢ a:E\*<+\*> o:(\fB+\fR / \fB-\fR) b:E\*<+\*> (p:(\fB+\fR / \fB-\fR) c:E\*<+\*>)+ ↓ z :: Int
+Γ ⊢ a ↓ x :: Int,
+
+Γ ⊢ b ↓ y :: Int,
+
+w = O(x, y),
+
+Γ ⊢ w p c ↓ z
 .SEME
 
-.SEM Γ ⊢ value:E\*<+\*> \fB??\fR default:E\*<+\*> ↓ v
-Γ ⊢ value ↓ ∅,
+.SEM Γ ⊢ a:E\*<+\*> o:(\fB+\fR / \fB-\fR) b:E\*<+\*> (p:(\fB+\fR / \fB-\fR) c:E\*<+\*>)+ ↓ z :: Float
+Γ ⊢ a ↓ x :: Int ∨ Γ ⊢ a ↓ x :: Float,
 
-Γ ⊢ default ↓ v
+Γ ⊢ b ↓ y :: Int ∨ Γ ⊢ b ↓ x :: Float,
+
+w = O(x, y),
+
+Γ ⊢ w p c ↓ z
 .SEME
+
+.SS EXPRESSION SYNTAX (E) – ARITHMETIC CONJUNCTION
+.TP
+Multiplication and Division
+
+.SEM Γ ⊢ a:E\*<+\*> o:(\fB*\fR / \fB/\fR) b:E\*<+\*> (p:(\fB*\fR / \fB/\fR) c:E\*<+\*>)+ ↓ z :: Int
+Γ ⊢ a ↓ x :: Int,
+
+Γ ⊢ b ↓ y :: Int,
+
+w = O(x, y),
+
+Γ ⊢ w p c ↓ z
+.SEME
+
+.SEM Γ ⊢ a:E\*<+\*> o:(\fB+\fR / \fB-\fR) b:E\*<+\*> (p:(\fB+\fR / \fB-\fR) c:E\*<+\*>)+ ↓ z :: Float
+Γ ⊢ a ↓ x :: Int ∨ Γ ⊢ a ↓ x :: Float,
+
+Γ ⊢ b ↓ y :: Int ∨ Γ ⊢ b ↓ x :: Float,
+w = O(x, y),
+
+Γ ⊢ w p c ↓ z
+.SEME
+
+.TP
+Modulus
+
+.SEM Γ ⊢ a:E\*<+\*> \fB%\fR b:E\*<+\*> (\fB%\fR c:E\*<+\*>)+ ↓ z :: Int
+Γ ⊢ a ↓ x :: Int,
+
+Γ ⊢ b ↓ y :: Int,
+
+w = x - floor(x / y) × y
+
+Γ ⊢ w \fB%\fR c ↓ z
+.SEME
+
+.SS EXPRESSION SYNTAX (E) – RANGE
+.TP
+Range of integers
+.SEM (t, ...) ⊢ start:E\*<+\*> \fBThrough\fR end:E\*<+\*> ↓ r = < ∀ x ≥ s ∧ x ≤ e : ORD(x) → x :: Int, \fBContainer\fR → container, \fBContext\fR → (r, t, ...) >
+(t, ...) ⊢ start ↓ s :: Int
+(t, ...) ⊢ end ↓ e :: Int
+(t, ...) ⊢ \fBThis\fR ↓ container
+.SEME
+
+Produce a list of integers that counts from the value of \fIstart\fR up to and including \fIend\fR, both of which must be integers. If \fIend\fR is less than \fIstart\fR an empty list is produced.
 
 .SS EXPRESSION SYNTAX (E) – TYPE MANIPULATION
 
@@ -395,75 +475,116 @@ t ≠ Unit
 
 Returns \fBTrue\fR if the value is \fBNull\fR, \fBFalse\fR for all other values.
 
-.SS EXPRESSION SYNTAX (E) – ARITHMETIC DISJUNCTION
+.SS EXPRESSION SYNTAX (E) – ERROR AND LENGTH
 .TP
-Addition and Subtraction
-
-.SEM Γ ⊢ a:E\*<+\*> o:(\fB+\fR / \fB-\fR) b:E\*<+\*> (p:(\fB+\fR / \fB-\fR) c:E\*<+\*>)+ ↓ z :: Int
-Γ ⊢ a ↓ x :: Int,
-
-Γ ⊢ b ↓ y :: Int,
-
-w = O(x, y),
-
-Γ ⊢ w p c ↓ z
+Raise an error
+.SEM Γ ⊢ \fBError\fR expr:E\*<+\*>
+Γ ⊢ expr \fBTo Str\fR ↓ m
 .SEME
 
-.SEM Γ ⊢ a:E\*<+\*> o:(\fB+\fR / \fB-\fR) b:E\*<+\*> (p:(\fB+\fR / \fB-\fR) c:E\*<+\*>)+ ↓ z :: Float
-Γ ⊢ a ↓ x :: Int ∨ Γ ⊢ a ↓ x :: Float,
-
-Γ ⊢ b ↓ y :: Int ∨ Γ ⊢ b ↓ x :: Float,
-
-w = O(x, y),
-
-Γ ⊢ w p c ↓ z
-.SEME
-
-.SS EXPRESSION SYNTAX (E) – ARITHMETIC CONJUNCTION
+Returns the Unicode character count of the provided string.
 .TP
-Multiplication and Division
-
-.SEM Γ ⊢ a:E\*<+\*> o:(\fB*\fR / \fB/\fR) b:E\*<+\*> (p:(\fB*\fR / \fB/\fR) c:E\*<+\*>)+ ↓ z :: Int
-Γ ⊢ a ↓ x :: Int,
-
-Γ ⊢ b ↓ y :: Int,
-
-w = O(x, y),
-
-Γ ⊢ w p c ↓ z
+String character length
+.SEM Γ ⊢ \fBLength\fR expr:E\*<+\*> ↓ n :: Int
+Γ ⊢ expr \fBTo Str\fR ↓ "c\*<1\*>c\*<2\*>...c\*<n\*>" :: Str
 .SEME
 
-.SEM Γ ⊢ a:E\*<+\*> o:(\fB+\fR / \fB-\fR) b:E\*<+\*> (p:(\fB+\fR / \fB-\fR) c:E\*<+\*>)+ ↓ z :: Float
-Γ ⊢ a ↓ x :: Int ∨ Γ ⊢ a ↓ x :: Float,
+.SS EXPRESSION SYNTAX (E) – REMOTE LOOKUP
+.TP
+Remote contextual lookup.
+.SEM Γ ⊢ \fBLookup\fR name:(I/\fBContainer\fR) name:(\fB.\fR (I/\fBContainer\fR))* \fBIn\fR expr:E ↓ v
+Γ ⊢ expr ↓ < \fBContext\fR → Δ >,
 
-Γ ⊢ b ↓ y :: Int ∨ Γ ⊢ b ↓ x :: Float,
-w = O(x, y),
+Δ ⊢ name ↓ v
+.SEME
 
-Γ ⊢ w p c ↓ z
+.SS EXPRESSION SYNTAX (E) – INSTANTIATION
+.TP
+Instantiate a template
+
+.SEM Γ ⊢ source:E\*<+\*> \fB{\fR a:(A / O)+ \fB}\fR ↓ v
+Γ ⊢ \fB(Template\fR source \fB{\fR a \fB}) { }\fR ↓ v
+.SEME
+
+.SEM (t, ...) ⊢ source:E\*<+\*> \fB{ }\fR ↓ r = < ∀ x: k\*<x\*> → v\*<x\*>, \fBContainer\fR → container, \fBContext\fR → (r, t, ..., s, ...) >
+(t, ...) ⊢ source ↓ S = < (s, ...); k\*<s\*> → e\*<s\*>, ... >,
+
+∀ k\*<x\*> → e\*<x\*> ∈ S : (r, t, ..., s, ...) ⊢ e\*<s\*> ↓ v\*<x\*>,
+
+(t, ...) ⊢ \fBThis\fR ↓ container
+.SEME
+
+Creates a new tuple, based on a template, grounded in the current scope. If source is a template, instantiate that template setting the provided attributes and inheriting any others. If source is not a template, an error occurs. If any attribute is external but not overridden, it will cause an error.
+
+.SS EXPRESSION SYNTAX (E) – COALESCENCE
+.TP
+Null coalescence
+.SEM Γ ⊢ value:E\*<+\*> \fB??\fR default:E\*<+\*> ↓ v
+Γ ⊢ value ↓ v
+.SEME
+
+.SEM Γ ⊢ value:E\*<+\*> \fB??\fR default:E\*<+\*> ↓ v
+Γ ⊢ value ↓ ∅,
+
+Γ ⊢ default ↓ v
+.SEME
+
+.SS EXPRESSION SYNTAX (E) – TUPLE CREATION AND UNARY OPERATORS
+.TP
+Literal tuple
+.SEM (t, ...) ⊢ \fB{\fR (a:A)* \fB}\fR ↓ r = < ∀ x ∈ aa : k\*<x\*> → v\*<x\*>, \fBContainer\fR → container, \fBContext\fR → (r, t, ...) >
+
+∀ aa ∈ a : (r, t, ...) ⊢ aa ↓ v\*<aa\*>,
+
+(t, ...) ⊢ \fBThis\fR ↓ container
+.SEME
+Construct a new literal tuple.
+
+.TP
+Create a new template
+.SEM Γ ⊢ \fBTemplate {\fR a:(A / X)* \fB}\fR ↓ < Γ; k\*<x\*> → e\*<x\*> >
+
+∀ x ∈ a : x ↓ k\*<x\*> → e\*<x\*>,
+
+¬∃ k\*<y\*> = k\*<x\*>
+.SEME
+
+Create a new template, not based on any current template.
+
+.TP
+Extend a template
+.SEM(t, ...) ⊢ \fBTemplate\fR source:E\*<+\*> \fB{\fR a:(A / O / X)* \fB}\fR ↓ < (t, ..., s, ...); k\*<x\*> → k\*<x\*> >
+
+(t, ...) ⊢ source ↓ S = < (s, ...); k\*<s\*> → e\*<s\*>, ... >,
+
+∀ aa ∈ a, (∃ k\*<s\*> : k\*<x\*> = k\*<s\*>) : e\*<s\*> ⊢ aa ↓ k\*<x\*> e\*<x\*>,
+
+∀ aa ∈ a, (¬∃ k\*<s\*> : k\*<x\*> = k\*<s\*>) : aa ↓ k\*<x\*> e\*<x\*>,
+
+∀ k\*<x\*> → e\*<x\*> : ¬∃ k\*<s\*> : k\*<x\*> = k\*<s\*>
+.SEME
+
+Create a template that inherits from an existing template. It contains all the attributes of the existing template unless modified by the specified attributes. The specified attributes can add, replace, ammend, or remove attributes from the existing template. Any unmodified attributes are inherited directly. The new template has the lookup context of the context where the modification was performed followed by the context of the existing template.
+
+.TP
+Logical negation
+.SEM Γ ⊢ \fB!\fR expr:E\*<+\*> ↓ False
+Γ ⊢ expr ↓ True
+.SEME
+
+.SEM Γ ⊢ \fB!\fR expr:E\*<+\*> ↓ True
+Γ ⊢ expr ↓ False
 .SEME
 
 .TP
-Modulus
-
-.SEM Γ ⊢ a:E\*<+\*> \fB%\fR b:E\*<+\*> (\fB%\fR c:E\*<+\*>)+ ↓ z :: Int
-Γ ⊢ a ↓ x :: Int,
-
-Γ ⊢ b ↓ y :: Int,
-
-w = x - floor(x / y) × y
-
-Γ ⊢ w \fB%\fR c ↓ z
+Numeric negation
+.SEM Γ ⊢ \fB-\fR expr:E\*<+\*> ↓ -v :: Int
+Γ ⊢ expr ↓ v :: Int
 .SEME
 
-.SS EXPRESSION SYNTAX (E) – DIRECT LOOKUP
-.TP
-Perform direct lookup
-.SEM Γ ⊢ expr:E\*<+\*> (\fB.\fR name:I)(\fB.\fR other:I)* ↓ u
-Γ ⊢ expr ↓ < name → v, ... >,
-
-Γ ⊢ v (\fB.\fR other:I)* ↓ u
+.SEM Γ ⊢ \fB-\fR expr:E\*<+\*> ↓ -v :: Float
+Γ ⊢ expr ↓ v :: Float
 .SEME
-Get values from inside of a tuple. Do not perform contextual lookup.
 
 .SS EXPRESSION SYNTAX (E) – FUNCTION-LIKE TEMPLATE INSTANTIATION
 
@@ -490,40 +611,55 @@ Call template with arguments
 
 Unlike normal template evaluation, all expressions are captured in the current context, instead of the context of the instantiation.
 
-.SS EXPRESSION SYNTAX (E) – RANGE
+.SS EXPRESSION SYNTAX (E) – LOOKUP
 .TP
-Range of integers
-start:expr \fBThrough\fR end:expr
-.SEM (t, ...) ⊢ start:E\*<+\*> \fBThrough\fR end:E\*<+\*> ↓ r = < ∀ x ≥ s ∧ x ≤ e : ORD(x) → x :: Int, \fBContainer\fR → container, \fBContext\fR → (r, t, ...) >
-(t, ...) ⊢ start ↓ s :: Int
-(t, ...) ⊢ end ↓ e :: Int
-(t, ...) ⊢ \fBThis\fR ↓ container
+Access external data
+
+.HP
+.B Definition:
+\fBFrom\fR ([\fBA\fR-\fBZa\fR-\fBz0\fR-\fB9.+-]+\fB:\fR[\fBA\fR-\fBZa\fR-\fBz0\fR-\fB9~!*'();@&=+$,/?%#[].+-\fR]+)
+
+This expression returns data external to the program, described by the URI provided. This expression access as library access, input of user data, and a foreign data interface. The exact semantics of the command are implementation-defined, however, the same URI must yield the same data during the execution of the program and the current context must be irrelevant to the import mechanism (i.e., the return value must not depend lookup expressions, however, it can return a template which does).
+
+Evaluate an expression, which must be a tuple, then begin lookup of the names provided from that context.
+
+.TP
+Contextual lookup
+.SEM (t, s, ...) ⊢ names:(N / \fBContainer\fR) names:(\fB.\fR (N / \fBContainer\fR))* ↓ v
+names ⊢ t ↓ v ≠ ∅*
+.SEME
+.SEM (t, s, ...) ⊢ names:(N / \fBContainer\fR) names:(\fB.\fR (N / \fBContainer\fR))* ↓ v
+names ⊢ t ↓ ∅*
+(s, ...) ⊢ names ↓ v
+.SEME
+.SEM (n, ...) ⊢ t ↓ ∅*
+n → ∅* ∈ t
+.SEME
+.SEM (n, ...) ⊢ t ↓ ∅*
+¬ n → x ∈ t
+.SEME
+.SEM (n) ⊢ t ↓ v
+n → v ∈ t
+.SEME
+.SEM (n, m, ...) ⊢ t ↓ v
+n → s :: Tuple ∈ t
+(m, ...) ⊢ s ↓ v
 .SEME
 
-Produce a list of integers that counts from the value of \fIstart\fR up to and including \fIend\fR, both of which must be integers. If \fIend\fR is less than \fIstart\fR an empty list is produced.
+This does a dynamically-scoped lookup. It searches all the existing tuple contexts for a matching name. If the value in any tuple is not a tuple, this is not an error. Any tuple that does not match the complete path of names is simply ignored. It is an error if there are no more contexts in which to search and there are still unsatisfied names.
+
+It is not an error if any value is not defined so long as it is not the first item in an Γ\*<n\*>. See EVALUATION SEMANTICS for more details.
+
+.TP
+Perform direct lookup
+.SEM Γ ⊢ expr:E\*<+\*> (\fB.\fR name:I)(\fB.\fR other:I)* ↓ u
+Γ ⊢ expr ↓ < name → v, ... >,
+
+Γ ⊢ v (\fB.\fR other:I)* ↓ u
+.SEME
+Get values from inside of a tuple. Do not perform contextual lookup.
 
 .SS EXPRESSION SYNTAX (E) – TERMINAL
-
-.TP
-Logical negation
-.SEM Γ ⊢ \fB!\fR expr:E ↓ False
-Γ ⊢ expr ↓ True
-.SEME
-
-.SEM Γ ⊢ \fB!\fR expr:E ↓ True
-Γ ⊢ expr ↓ False
-.SEME
-
-.TP
-Numeric negation
-.SEM Γ ⊢ \fB-\fR expr:E ↓ -v :: Int
-Γ ⊢ expr ↓ v :: Int
-.SEME
-
-.SEM Γ ⊢ \fB-\fR expr:E ↓ -v :: Float
-Γ ⊢ expr ↓ v :: Float
-.SEME
-
 .TP
 Subexpression
 .SEM Γ ⊢ \fB(\fR expr:E\*<0\*> \fB)\fR ↓ v
@@ -542,83 +678,11 @@ Literal list
 This creates a list-like tuple. Names are selected by the ORD function such that the tuple will have the same order of items as the original list when collated. Indexing is 1-based.
 
 .TP
-Literal tuple
-.SEM (t, ...) ⊢ \fB{\fR (a:A)* \fB}\fR ↓ r = < ∀ x ∈ aa : k\*<x\*> → v\*<x\*>, \fBContainer\fR → container, \fBContext\fR → (r, t, ...) >
-
-∀ aa ∈ a : (r, t, ...) ⊢ aa ↓ v\*<aa\*>,
-
-(t, ...) ⊢ \fBThis\fR ↓ container
-.SEME
-Construct a new literal tuple.
-
-.TP
-Raise an error
-.SEM Γ ⊢ \fBError\fR expr:E\*<0\*>
-Γ ⊢ expr \fBTo Str\fR ↓ m
-.SEME
-
-Raises an error with the message \fIm\fR.
-
-.TP
 Boolean false literal
 .SEM \fBFalse\fR ↓ False :: Bool
 .SEME
 
-.TP
-Fricassée a tuple (a.k.a. \fBFor\fR expressions)
-
-.SEM Γ ⊢ \fBFor\fR s:FS r:FR ↓ v
-Γ ⊢ s ↓ W = ( < k\*<x\*> → v\*<x1\*>, k\*<y\*> → v\*<y1\*>, ... >, < k\*<x\*> → v\*<x2\*>, k\*<y\*> → v\*<y2\*>, ... >, ... ),
-
-Γ; W ⊢ r ↓ v
-.SEME
-.SEM Γ ⊢ \fBFor\fR s:FS \fBWhere\fR expr:E\*<0\*> r:FR ↓ v
-Γ ⊢ s ↓ W,
-
-∀ w\*<i\*> ∈ W : (w\*<i\*>*, t, ...) ⊢ expr ↓ v\*<i\*> :: Bool,
-
-X = { w\*<i\*> ∈ W | v\*<i\*> = True }
-
-Γ; X ⊢ r ↓ v
-.SEME
-
-This operator allows iterating over the values in a tuple to produce some new result. The syntax is handled in two pieces: a selection component (FS) that creates a list of tuples, each being an environment in which the relevant values from the input are defined (i.e., it is a list of whitnesses), a results component that evaluates expressions using the witnesses and produces a result. Optionally, a filter expression can be provided to exclude certain witnesses.
-
-.TP
-Conditional
-
-.SEM Γ ⊢ \fBIf\fR cond:E\*<0\*> \fBThen\fR true:E\*<0\*> \fBElse\fR false:E ↓ x
-Γ ⊢ cond ↓ True,
-
-Γ ⊢ true ↓ x
-.SEME
-
-.SEM Γ ⊢ \fBIf\fR cond:E\*<0\*> \fBThen\fR true:E\*<0\*> \fBElse\fR false:E ↓ x
-Γ ⊢ cond ↓ False,
-
-Γ ⊢ false ↓ x
-.SEME
-
-Computes the \fIcond\fR and, if boolean, returns \fItrue\fR or \fIfalse\fR depending on the value. Otherwise, an error. The expression which is not selected is not evaluated.
-
-.TP
-Access external data
-
-.HP
-.B Definition:
-\fBFrom\fR ([\fBA\fR-\fBZa\fR-\fBz0\fR-\fB9.+-]+\fB:\fR[\fBA\fR-\fBZa\fR-\fBz0\fR-\fB9~!*'();@&=+$,/?%#[].+-\fR]+)
-
-This expression returns data external to the program, described by the URI provided. This expression access as library access, input of user data, and a foreign data interface. The exact semantics of the command are implementation-defined, however, the same URI must yield the same data during the execution of the program and the current context must be irrelevant to the import mechanism (i.e., the return value must not depend lookup expressions, however, it can return a template which does).
-
-.TP
-Remote contextual lookup.
-.SEM Γ ⊢ \fBLookup\fR name:(I/\fBContainer\fR) name:(\fB.\fR (I/\fBContainer\fR))* \fBIn\fR expr:E ↓ v
-Γ ⊢ expr ↓ < \fBContext\fR → Δ >,
-
-Δ ⊢ name ↓ v
-.SEME
-
-Evaluate an expression, which must be a tuple, then begin lookup of the names provided from that context.
+Raises an error with the message \fIm\fR.
 
 .TP
 Null literal
@@ -671,14 +735,6 @@ Continue literal
 .SEME
 
 .TP
-String character length
-.SEM Γ ⊢ \fBLength\fR expr:E ↓ n :: Int
-Γ ⊢ expr \fBTo Str\fR ↓ "c\*<1\*>c\*<2\*>...c\*<n\*>" :: Str
-.SEME
-
-Returns the Unicode character count of the provided string.
-
-.TP
 Access current tuple
 .SEM (a, ...) ⊢ \fBThis\fR ↓ a
 .SEME
@@ -690,62 +746,9 @@ Access current tuple
 Return the current tuple. This is the first tuple in the environment not marked with a *.
 
 .TP
-Create a new template
-.SEM Γ ⊢ \fBTemplate {\fR a:(A / X)* \fB}\fR ↓ < Γ; k\*<x\*> → e\*<x\*> >
-
-∀ x ∈ a : x ↓ k\*<x\*> → e\*<x\*>,
-
-¬∃ k\*<y\*> = k\*<x\*>
-.SEME
-
-Create a new template, not based on any current template.
-
-.TP
-Extend a template
-.SEM(t, ...) ⊢ \fBTemplate\fR source:E \fB{\fR a:(A / O / X)* \fB}\fR ↓ < (t, ..., s, ...); k\*<x\*> → k\*<x\*> >
-
-(t, ...) ⊢ source ↓ S = < (s, ...); k\*<s\*> → e\*<s\*>, ... >,
-
-∀ aa ∈ a, (∃ k\*<s\*> : k\*<x\*> = k\*<s\*>) : e\*<s\*> ⊢ aa ↓ k\*<x\*> e\*<x\*>,
-
-∀ aa ∈ a, (¬∃ k\*<s\*> : k\*<x\*> = k\*<s\*>) : aa ↓ k\*<x\*> e\*<x\*>,
-
-∀ k\*<x\*> → e\*<x\*> : ¬∃ k\*<s\*> : k\*<x\*> = k\*<s\*>
-.SEME
-
-Create a template that inherits from an existing template. It contains all the attributes of the existing template unless modified by the specified attributes. The specified attributes can add, replace, ammend, or remove attributes from the existing template. Any unmodified attributes are inherited directly. The new template has the lookup context of the context where the modification was performed followed by the context of the existing template.
-
-.TP
 Boolean true literal
 .SEM \fBTrue\fR ↓ True :: Bool
 .SEME
-
-.TP
-Contextual lookup
-.SEM (t, s, ...) ⊢ names:(N / \fBContainer\fR) names:(\fB.\fR (N / \fBContainer\fR))* ↓ v
-names ⊢ t ↓ v ≠ ∅*
-.SEME
-.SEM (t, s, ...) ⊢ names:(N / \fBContainer\fR) names:(\fB.\fR (N / \fBContainer\fR))* ↓ v
-names ⊢ t ↓ ∅*
-(s, ...) ⊢ names ↓ v
-.SEME
-.SEM (n, ...) ⊢ t ↓ ∅*
-n → ∅* ∈ t
-.SEME
-.SEM (n, ...) ⊢ t ↓ ∅*
-¬ n → x ∈ t
-.SEME
-.SEM (n) ⊢ t ↓ v
-n → v ∈ t
-.SEME
-.SEM (n, m, ...) ⊢ t ↓ v
-n → s :: Tuple ∈ t
-(m, ...) ⊢ s ↓ v
-.SEME
-
-This does a dynamically-scoped lookup. It searches all the existing tuple contexts for a matching name. If the value in any tuple is not a tuple, this is not an error. Any tuple that does not match the complete path of names is simply ignored. It is an error if there are no more contexts in which to search and there are still unsatisfied names.
-
-It is not an error if any value is not defined so long as it is not the first item in an Γ\*<n\*>. See EVALUATION SEMANTICS for more details.
 
 .TP
 Integer literal

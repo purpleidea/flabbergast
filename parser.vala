@@ -40,62 +40,75 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<Let> ("name binding", precedence, "Let %L{attributes}{% ,%-} In %P{expression}", new Type[] { typeof (Attribute) });
 
 		precedence++;
+		register<Fricassee.ForExpression> ("for⋯where⋯", precedence, "For %P{selector} Where%! %P{-where} %P{result}");
+		register<Fricassee.ForExpression> ("for⋯", precedence, "For %P{selector} %P{result}");
+
+		precedence++;
+		register<Conditional> ("conditional", precedence, "If%! %P{-condition} Then %P{-truepart} Else %P{falsepart}");
+
+		precedence++;
+		register<StringConcatenate> ("string concatenation", precedence, "%P{+left}%-&%!%-%P{right}");
+
+		precedence++;
 		register<LogicalOr> ("logical disjunction", precedence, "%P{+left}%-||%!%-%P{right}");
 
 		precedence++;
 		register<LogicalAnd> ("logical conjunction", precedence, "%P{+left}%-&&%!%-%P{right}");
 
 		precedence++;
-		register<Equality> ("equality", precedence, "%P{+left}%-==%!%-%P{right}");
-		register<Inequality> ("inequality", precedence, "%P{+left}%-!=%!%-%P{right}");
-		register<LessThan> ("less than", precedence, "%P{+left}%-<%-%P{right}");
-		register<LessThanOrEqualTo> ("less than or equal to", precedence, "%P{+left}%-<=%-%P{right}");
-		register<GreaterThan> ("greater than", precedence, "%P{+left}%->%-%P{right}");
-		register<GreaterThanOrEqualTo> ("greater than or equal to", precedence, "%P{+left}%->=%-%P{right}");
+		register<Equality> ("equality", precedence, "%P{+left}%-==%!%-%P{+right}");
+		register<Inequality> ("inequality", precedence, "%P{+left}%-!=%!%-%P{+right}");
+		register<LessThan> ("less than", precedence, "%P{+left}%-<%-%P{+right}");
+		register<LessThanOrEqualTo> ("less than or equal to", precedence, "%P{+left}%-<=%-%P{+right}");
+		register<GreaterThan> ("greater than", precedence, "%P{+left}%->%-%P{+right}");
+		register<GreaterThanOrEqualTo> ("greater than or equal to", precedence, "%P{+left}%->=%-%P{+right}");
+
+		precedence++;
+		register<Shuttle> ("comparison", precedence, "%P{+left}%-<=>%!%-%P{+right}");
 
 		precedence++;
 		register<Addition> ("addition", precedence, "%P{+left}%-+%!%-%P{right}");
 		register<Subtraction> ("subtraction", precedence, "%P{+left}%--%!%-%P{right}");
+
 		precedence++;
 		register<Multiplication> ("multiplication", precedence, "%P{+left}%-*%!%-%P{right}");
+
 		precedence++;
 		register<Division> ("division", precedence, "%P{+left}%-/%!%-%P{right}");
 		register<Modulus> ("modulus", precedence, "%P{+left}%-%%%!%-%P{right}");
 
 		precedence++;
-		register<Shuttle> ("comparison", precedence, "%P{+left}%-<=>%!%-%P{right}");
+		register<Through> ("range", precedence, "%P{+start} Through%! %P{+end}");
 
 		precedence++;
-		register<StringConcatenate> ("string concatenation", precedence, "%P{+left}%-&%!%-%P{right}");
-
-		precedence++;
-		register<NullCoalesce> ("null coalescence", precedence, "%P{+expression}%-??%!%-%P{alternate}");
-
-		precedence++;
-		register<RaiseError> ("raise error", precedence, "Error%! %P{expression}");
-		register<StringLength> ("string length", precedence, "Length%! %P{expression}");
-		register<Conditional> ("conditional", precedence, "If%! %P{-condition} Then %P{-truepart} Else %P{falsepart}");
-		register<Fricassee.ForExpression> ("for⋯where⋯", precedence, "For %P{selector} Where%! %P{-where} %P{result}");
-		register<Fricassee.ForExpression> ("for⋯", precedence, "For %P{selector} %P{result}");
-
-		precedence++;
-		register<Coerce> ("type coercion", precedence, "%P{+expression} To%! %P{ty}");
-		register<IndirectLookup> ("indirect lookup", precedence, "Lookup %L{names}{% .% } In%! %P{expression}", new Type[] { typeof (Nameish) });
 		register<IsFinite> ("finite check", precedence, "%P{+expression}%-Is Finite");
 		register<IsNaN> ("not-a-number check", precedence, "%P{+expression}%-Is NaN");
 		register<IsNull> ("null check", precedence, "%P{+expression}%-Is Null");
 		register<TypeCheck> ("type check", precedence, "%P{+expression} Is %P{ty}");
 		register<TypeEnsure> ("type ensuring", precedence, "%P{+expression} As%! %P{ty}");
-		register<Through> ("range", precedence, "%P{+start} Through%! %P{+end}");
-
-		register<TupleLiteral> ("tuple literal", precedence, "{%!%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (Attribute) });
-		register<TemplateLiteral> ("template", precedence, "Template%! %p{+source_expr}%_{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });
-		register<Instantiate> ("template instantiation", precedence, "%P{+source_expr}%-{%!%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TuplePart) });
-		register<FunctionCall> ("function call", precedence, "%P{+function}%-(%!%-%l{args}{% ,%-}% )", new Type[] { typeof (FunctionCall.FunctionArg) });
+		register<Coerce> ("type coercion", precedence, "%P{+expression} To%! %P{ty}");
 
 		precedence++;
-		register<Not> ("logical not", precedence, "!%-%P{expression}");
-		register<Negation> ("negation", precedence, "-%-%P{expression}");
+		register<RaiseError> ("raise error", precedence, "Error%! %P{+expression}");
+		register<StringLength> ("string length", precedence, "Length%! %P{+expression}");
+
+		precedence++;
+		register<IndirectLookup> ("remote lookup", precedence, "Lookup %L{names}{% .% } In%! %P{expression}", new Type[] { typeof (Nameish) });
+
+		precedence++;
+		register<Instantiate> ("template instantiation", precedence, "%P{+source_expr}%-{%!%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TuplePart) });
+
+		precedence++;
+		register<NullCoalesce> ("null coalescence", precedence, "%P{+expression}%-??%!%-%P{+alternate}");
+
+		precedence++;
+		register<TupleLiteral> ("tuple literal", precedence, "{%!%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (Attribute) });
+		register<TemplateLiteral> ("template", precedence, "Template%! %p{+source_expr}%_{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });
+		register<Not> ("logical not", precedence, "!%-%P{+expression}");
+		register<Negation> ("negation", precedence, "-%-%P{+expression}");
+
+		precedence++;
+		register<FunctionCall> ("function call", precedence, "%P{+function}%-(%!% %l{args}{% ,%-}% )", new Type[] { typeof (FunctionCall.FunctionArg) });
 
 		precedence++;
 		register<File.Import> ("import", 0, "From%! %P{uri}");
