@@ -713,7 +713,7 @@ In the case where a collection of items is used, this can be trivial to work wit
     args_str : For arg : args_tuples Where arg.enabled Reduce acc & " " & arg.spec With acc : ""
 
 ### Flexible Rendering
-This uses tuple re-parenting to create multiple was of rendering the same data:
+This uses tuple re-parenting to create multiple ways of rendering the same data:
 
     weather : Template {
       toronto : data_tmpl { city : "Toronto"  temperature : 35  humdity : 71 }
@@ -916,7 +916,7 @@ It would also be completely reasonable to provide a tuple:
       c : { spec : "c"  id : 2 }
     }
 
-The value of enumerations is mostly that they are cheap to compare and use in `switch` statements. Since none of that really translate to Flabbergast, this isn't so pressing. Rather than have dispatch logic, put the results in the tuples or templates.
+The value of enumerations is mostly that they are cheap to compare and use in `switch` statements. Since none of that really translates to Flabbergast, this isn't so pressing. Rather than have dispatch logic, put the results in the tuples or templates.
 
 ### How do I do reflection/evaluation?
 
