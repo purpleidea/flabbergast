@@ -22,11 +22,17 @@ pkgdatadir="${datadir}/@PACKAGE@"
 
 IFS=":"
 DIRECTORIES="${FLABBERGAST_PATH:-}:${libdir}/flabbergast:/usr/lib/flabbergast:/usr/local/lib/flabbergast:$HOME/.local/lib/flabbergast"
-for DIRECTORY in $DIRECTORIES
+for DIRECTORY in ${@:-$DIRECTORIES}
 do
-	if [ -d "$DIRECTORY" -a -w "$DIRECTORY" ]
+	if [ "x$DIRECTORY" = x ]
+	then
+		# Skip pathless directory.
+		true
+	elif [ -d "$DIRECTORY" -a -w "$DIRECTORY" ]
 	then
 		make -C "$DIRECTORY" -f "$pkgdatadir/update.makefile" -s -k || true
+	else
+		echo "$DIRECTORY: no write permission" 1>&2
 	fi
 done
 unset IFS
