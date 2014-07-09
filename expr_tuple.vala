@@ -29,6 +29,7 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
 			var tuple = new Data.Tuple (context);
+			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 
 			var state = engine.state;
 			if (state.this_tuple != null) {
@@ -159,6 +160,7 @@ namespace Flabbergast.Expressions {
 			var template = (Data.Template)result;
 			var context = engine.environment.create ();
 			var tuple = new Data.Tuple (context);
+			tuple.containers = new Utils.ContainerReference (engine.state.context, Utils.ContainerReference.append (engine.state.containers, template.containers));
 
 			var state = engine.state;
 			if (state.this_tuple != null) {
@@ -332,6 +334,7 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
 			var tuple = new Data.Tuple (context);
+			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 			for (var it = 0; it < elements.size; it++) {
 				tuple.attributes[make_id (it)] = engine.create_closure (elements[it]);
 			}

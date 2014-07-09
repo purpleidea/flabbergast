@@ -71,10 +71,13 @@ namespace Flabbergast.Data {
 
 	public abstract class Tupleish : Datum {
 		internal Gee.SortedMap<string, Expression> attributes = new Gee.TreeMap<string, Expression> ();
+		public Utils.ContainerReference? containers {
+			get;
+			internal set;
+		}
 	}
 
 	public class Template : Tupleish {
-		internal Utils.ContainerReference? containers;
 		internal Gee.SortedSet<string> externals = new Gee.TreeSet<string> ();
 		private class TemplateExternal : Gee.Map.Entry<string, Expression ? > {
 			private string name;

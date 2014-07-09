@@ -282,6 +282,7 @@ namespace Flabbergast.Expressions.Fricassee {
 		public override void generate_result (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError {
 			var context = engine.environment.create ();
 			var tuple = new Data.Tuple (context);
+			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 
 			var state = engine.state;
 			if (state.this_tuple != null) {
@@ -342,6 +343,7 @@ namespace Flabbergast.Expressions.Fricassee {
 
 			var context = engine.environment.create ();
 			var tuple = new Data.Tuple (context);
+			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 
 			var state = engine.state;
 			if (state.this_tuple != null) {
