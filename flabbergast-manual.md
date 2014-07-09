@@ -130,7 +130,7 @@ There are other ways to generate tuples beyond typing them literally. Templates 
       y : 1
     } # Yields { x : 2  y : 1 }
 
-Notice that `a_tmpl` does not produce an error for lacking `y`, because the attributes in it weren't evaluated until it was instantiated. The instantiation also modified the template by adding `y`. Like classes, templates can also inherit from other templates and modify them:
+Notice that `a_tmpl` does not produce an error for lacking `y`, because the attributes in it weren't evaluated until it was instantiated. The instantiation also _amended_ the template by adding `y`. Like classes, templates can also inherit from other templates and modify them:
 
     a_tmpl : Template {
       x : y + 1
@@ -203,7 +203,7 @@ Flabbergast uses contextual lookup. It is easiest to think of resolution as havi
 
 ![Resolution order diagram](https://rawgithub.com/apmasell/flabbergast/master/flabbergast-resolution.svg "The order in which resolution occurs")
 
-In the figure, there are two templates, shown in colour, and tuples, shown in grey. The tuple containment is indicated by physical containment and inheritance is shown by arrows. When resolution inside of the tuple marked 1 is needed, resolution begins in the tuple itself, then proceeds through the tuples, as indicated by their numbers. Note that some tuples are considered multiple times due to the template and the tuple sharing some containment; this is inconsequential, as it will either be found the first time, or fail every time. Note that templates themselves are not checked: only the tuples in which they were defined or modified.
+In the figure, there are two templates, shown in colour, and tuples, shown in grey. The tuple containment is indicated by physical containment and inheritance is shown by arrows. When resolution inside of the tuple marked 1 is needed, resolution begins in the tuple itself, then proceeds through the tuples, as indicated by their numbers. Note that some tuples are considered multiple times due to the template and the tuple sharing some containment; this is inconsequential, as it will either be found the first time, or fail every time. Note that templates themselves are not checked: only the tuples in which they were defined or amended.
 
 Resolution has an extra complexity: chained accesses. Since tuples can be nested, it is desirable to access the attributes of an inner tuple using the `x.y` syntax. In most languages, resolution stops when the first name match is met (e.g., in Java, if there is a parameter `int foo` and a class field `String foo`, then `foo.charAt(3)` will fail to compile because `foo` has been resolved to the parameter, which is an `int` and so does not have the `charAt` method) while Flabbergast will attempt to find “the one you meant”. In the case of `x.y`, if a tuple `x` is found but it does not contain an attribute `y`, then the language assumes that this was not the `x` intended and _continues_ looking for an `x` does _does_ contain an attribute `y`. This means that the expression `x.y * x.z` can have two different tuples referenced for the first and second `x`! For instance, below, `b.z` will be 12 and the `a` in the `a.x` reference will be the top-level `a` while the `a` in the `a.y` reference will be `b.a`:
 
@@ -219,7 +219,7 @@ In general-purpose programming languages, this idea sounds like madness, but Fla
 
 In the last sentence, to whom does _her_ refer? While _my mum_ is the closest noun that could match _her_, it has been previously established that my mum does not have a cat, so _my mum's cat_ wouldn't make sense. Because we treat _her cat_ as a unit, we contextually keep looking for a _her_ that does have a cat, which would be _my sister_. Conceptually, this is how Flabbergast's resolution algorithm works: it finds the match that makes the most contextual sense.
 
-Inheritance allows creation of attributes, in addition to providing a history for contextual lookup. A tuple or template is a collection of key-value pairs, where each key is a valid identifier and a value can be any expression. A template can be “modified” at the time of instantiation or through the `Template` expression, which creates a new template that copies all the existing attributes, less the modified ones. In most object oriented languages, fields and methods can be overridden (i.e., replaced with new code). Similarly, attributes can be overridden with new expressions. Some languages allow access the overridden method through special keywords (e.g., Java's `super`, C#'s `base`, or Python's `super()`). Flabbergast permits accessing the original attribute, but a new name must be specified; there is no default name like `super`. Unlike most languages, Flabbergast permits deletion of an attribute. Because of contextual lookup, any other attributes referencing the deleted attribute will simply look elsewhere. 
+Inheritance allows creation of attributes, in addition to providing a history for contextual lookup. A tuple or template is a collection of key-value pairs, where each key is a valid identifier and a value can be any expression. A template can be _amended_ at the time of instantiation or through the `Template` expression, which creates a new template that copies all the existing attributes, less the amended ones. In most object oriented languages, fields and methods can be overridden (i.e., replaced with new code). Similarly, attributes can be overridden with new expressions. Some languages allow access the overridden method through special keywords (e.g., Java's `super`, C#'s `base`, or Python's `super()`). Flabbergast permits accessing the original attribute, but a new name must be specified; there is no default name like `super`. Unlike most languages, Flabbergast permits deletion of an attribute. Because of contextual lookup, any other attributes referencing the deleted attribute will simply look elsewhere.
 
 Since attributes can refer to each other, it is the interpreter's duty to determine the order to evaluate the expressions. This means that attributes can be specified in any order (unlike C and C++). In fact, contextual lookup makes it impossible to determine to what attributes references refer until evaluation time. One unusual effect is that the inheritance path of a tuple can be changed at runtime (i.e., the “class” hierarchy is not determined at compile-time)! In fact, since templates can be instantiated in different contexts, it is possible for the same declaration to be used in different contexts that create two different tuple inheritance paths. Obviously, this is the kind of stuff that can be used for good or evil–there are legitimate reasons to re-parent tuples, but it can be very confusing and cause unexpected behaviour.
 
@@ -449,12 +449,12 @@ Note that if two values have the same sort key, in the example -1 and 1 do, then
 
 ### Tuples and Templates
 
-In addition to literal tuples, tuples can be instantiated from templates. The instantiation can also modify a template by adding, removing, or overriding attributes. The syntax for instantiation is simply an expression yielding a template followed by `{`, an optional list of modifications, and terminated by `}`. Templates are created in a syntax similar to literal tuples: `Template {`, a list of attributes, followed by `}`.
+In addition to literal tuples, tuples can be instantiated from templates. The instantiation can also modify a template by adding, removing, or overriding attributes. The syntax for instantiation is simply an expression yielding a template followed by `{`, an optional list of amendments, and terminated by `}`. Templates are created in a syntax similar to literal tuples: `Template {`, a list of attributes, followed by `}`.
 
     foo_tmpl : Template { a : b + 4 }
     foo : foo_tmpl { b : 3 } # Yields { a : 7  b : 4 }
 
-Templates can also be derived using a syntax that is a hybrid of the two: `Template`, an expression for the template from which to derive, followed by `{`, an optional list of modifications, and a terminating `}`. It's important to note that deriving a template, even with no changes, modifies it because it adds additional lookup scopes. In general, it's useful think of the curly braces and capturing scope. In this example, `foo2_tmpl` is capturing the scope inside of `x`, making `b` available to its descendants.
+Templates can also be derived using a syntax that is a hybrid of the two: `Template`, an expression for the template from which to derive, followed by `{`, an optional list of amendments, and a terminating `}`. It's important to note that deriving a template, even with no changes, amends it because it adds additional lookup scopes. In general, it's useful think of the curly braces and capturing scope. In this example, `foo2_tmpl` is capturing the scope inside of `x`, making `b` available to its descendants.
 
     foo_tmpl : Template { a : b + 4 }
     x : {
@@ -463,13 +463,13 @@ Templates can also be derived using a syntax that is a hybrid of the two: `Templ
     }
     y : x.foo2_tmpl { } # Yields { a : 5 }
 
-There are several modification attributes, not all of which can be used in all contexts:
+There are several amendment attributes, not all of which can be used in all contexts:
 
  - `:`, followed by an expression, simply defines an attribute to be the supplied expression. If there previously was an attribute of the same name, it is discarded.
  - `?:` creates an attribute that is always an error. This can be thought of as an _abstract_ attribute, in the C++/Java/C# terminology. This is not permitted during instantiation.
  - `-:` deletes an attribute. The attribute must already exist, so this is not valid when declaring a new template.
  - `+`, followed by an identifier, then `:`, followed by an expression, will replace an attribute but allows the previous value to be bound to the identifier supplied. The attribute must already exist, so this is not valid when declaring a new template.
- - `+: {`, followed by a list of modifications, terminated by `}`, performs template derivation. It is short-hand for `+oldtemplate: Template oldtemplate { ... }` with the convenience of not having to choose a name.
+ - `+: {`, followed by a list of amendments, terminated by `}`, performs template derivation. It is short-hand for `+oldtemplate: Template oldtemplate { ... }` with the convenience of not having to choose a name.
 
 There is also a function call convenience syntax. In their own way, templates can act as lambdas. In tuple instantiation, the expressions are evaluated in the context of the tuple created. In a function call, expressions provided are evaluated in the current (parent) context, then placed into the instantiated template. A list of unnamed expressions can be provided and these are collected into an `args` tuple. Finally, instead of simply returning the entire tuple, the `value` attribute is returned from the instantiated tuple. For instance, the function call:
 
