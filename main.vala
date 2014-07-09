@@ -80,7 +80,12 @@ void print_tabs (uint depth) {
 
 void print_datum (Data.Datum result, Rules rules, ExecutionEngine engine, bool debug, uint depth) {
 	if (result is Data.Tuple) {
-		stdout.printf ("{\n");
+		stdout.printf ("{ # Id: %u Containers:", ((Data.Tuple)result).context);
+		for (var container = ((Data.Tuple)result).containers; container != null; container = container.parent) {
+			stdout.printf (" %u", container.context);
+		}
+		stdout.printf ("\n");
+
 		foreach (var entry in (Data.Tuple)result) {
 			if (entry.key == "Container") {
 				continue;
@@ -106,7 +111,11 @@ void print_datum (Data.Datum result, Rules rules, ExecutionEngine engine, bool d
 			stdout.printf ("\"%s\" As Str\n", result.to_string ().escape ("'"));
 			return;
 		} else if (result is Data.Template) {
-			stdout.printf ("Template {\n");
+			stdout.printf ("Template { # Containers:");
+			for (var container = ((Data.Template)result).containers; container != null; container = container.parent) {
+				stdout.printf (" %u", container.context);
+			}
+			stdout.printf ("\n");
 			foreach (var entry in (Data.Template)result) {
 				print_tabs (depth + 1);
 				if (entry.value == null) {
