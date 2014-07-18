@@ -76,7 +76,7 @@ Although Flabbergast is dynamically typed, mostly on account of being dynamicall
 By type inference, `x` must be a Boolean and `y` and `z` must be templates. That allows checking types at the time of lookup rather than the time of use. It also means that certain type errors can be detected statically. For instance:
 
     (If x Then x Else x) { }
-		If y Then y + 3 Else y
+    If y Then y + 3 Else y
     a + a.x
 
 are always a type error since `x` needs to be both a Boolean, a template and `y` need to be both Boolean and a numeric type (integer or floating point), and `a` must be a tuple on account of `a.x` but the addition requires it to be a numeric type.
