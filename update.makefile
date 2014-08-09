@@ -7,4 +7,4 @@ TARGETS = $(foreach EXT, $(EXTS), $(patsubst %.flbgst, %.$(EXT), $(SOURCES)))
 all: $(TARGETS)
 	@echo rm -f $(filter-out $(SOURCES) $(TARGETS), $(ALL))
 
-include: $(libdir)/flabbergast-compiler/*
+include: $(wildcard $(libdir)/flabbergast-compiler/*)
