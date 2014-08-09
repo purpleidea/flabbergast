@@ -3,38 +3,86 @@
 KWS is the standard virtual machine for running Flabbergast programs on other virtual machines (e.g., CLR and JVM). It makes the following assumptions:
 
  - The target VM can cope with cyclic references between objects.
- - There is some kind of co-routine system such that evaluation can seem to block.
- - There is no need to box or unbox data.
+ - There is some kind of scheduling system.
+ - There is a type-based dynamic dispatch system.
 
-Obviously, if the target VM does not support these features, the target platform is still a reasonable choice if they can be emulated.
+Obviously, if the target VM does not support these features, the target platform is still a reasonable choice if they can be emulated. The purpose of this VM is to make the Flabbergast compiler easier to implement, by pushing some of the repetitive code into KWS VM, and make it easier to target a new VM by having the KWS VM be more like the target VM. In particular, the KWS VM ensures:
+
+ - Everything is statically typed.
+ - Lookup semantics are encapsulated.
 
 The name of the VM is for the person who inspired it, not an acronym.
 
 ## Design
 
-The VM uses static single assignment with the note that variable resolution and errors can introduce non-local control flow. The KWS has the same types as the Flabbergast language with additional types:
+The VM uses static single assignment with the note that variable resolution and errors can introduce non-local control flow. The KWS has a different set of types from the Flabbergast language:
 
- - a linked-list of tuples. The linked lists also have a _marked_ property. This is simply an extra bit of information used in lookup semantics.
- - a set of strings.
- - the iterator type. This iterates over the contents of a set.
- - a function.  All functions have the same type: they take a list of tuples (the context) and return a value.
- - the null-family type. Note that there are two distinct null values: `Null` and `Continue`.
+ - an integer (`Int`), as in the Flabbergast language.
+ - a floating point number (`Float`), as in the Flabbergast language.
+ - a Boolean (`Bool`), as in the Flabbergast language.
+ - a string (`Str`), as in the Flabbergast language.
+ - a map (`Map`), where keys are strings and values are any type.
+ - a linked-list of maps (`List`).
+ - the null-family type (`NullFamily`). Note that there are two distinct null values: `Null` and `Continue`. These are distinct from the empty list.
+ - a function pointer (`Function`_n_). This is a function pointer of arity _n_.
+ - a promise (`Promise`). That is a closure with a memorised answer.
 
-All operations are assumed to not mutate the arguments except those ending in `_APPEND`. The special type `Flabbergast` is used to denote any of the types in the Flabbergast language, excluding the additional ones. Types marked with `*` must be constant (i.e., specified at compile-time, not run-time).
+Most operations do not mutate values, unless explicitly specified. Types marked with `*` must be constant (i.e., specified at compile-time, not run-time).
+
+The VM uses single static assignment. Unlike most SSA, there are no phi nodes are paths are not permitted to merge again; each basic block must end in a terminal instruction.
 
 The self-hosting Flabbergast compiler generates a compiler in a language that then emits instructions in the target VM format. The self-hosting compiler requires some other facilities beyond what is described here in order to generate the target compiler. These are described in the self-hosting compiler and include, principally, the parser.
 
-### Pseudo-blocking
-In general, each operation in the virtual machine will complete immediately. However, some functions rely on values not yet computed. Therefore, they will block until the operation completes. The VM is therefore encouraged to pause the executing code and continue when the operation is complete. This is where the co-routine system is needed. There is no interaction between code other than during pseudo-blocking operations and the `return` operation; therefore KWS VM is trivially parallelisable.
+## Functions and Flow Control
+
+The VM has a scheduler capable of executing functions. Functions always terminate and provide the exit scenarios: return or fail. Every function has one or more listeners, that is, other functions which rely on the result of this function.
+
+Each function may take typed arguments and there can be multiple implementations of a function with different types of arguments, though the number must be the same. Each function has a basic block for a body. All functions, theoretically, return a value, but the type is not specified as it is implied by the basic blocks and different basic blocks need not return the same type. Each signature of a function must be distinct (i.e., no two signatures may have the same types in the same order). No signature may request a promise. The scheduling system must evaluate the promise and then dispatch based on the type of the result from the promise.
+
+    foo
+    (x : Int, y : Float) {
+     t = int_const(2)
+     a = int_mul(x, t)
+     b = int_flt(a)
+     c = flt_max(b, y)
+     return(c)
+    }
+    (x : Int, y : Int) {
+     t = int_const(2)
+     a = int_mul(x, t)
+     b = int_max(a, y)
+     return(b)
+    }
+
+## Basic Blocks
+
+Each basic block, denoted by `{ ... }` must end in a terminal operation, as follows. A block cannot directly join back to another flow.
+
+### Return Value
+Passes control to the listeners and provide the value given as an argument.
+
+    return(value)
+
+If the value is a promise, it is evaluated and that value is returned instead (i.e., tail-call).
+
+### Raise an Error
+Produce a user-visible error message. The listeners must never execute.
+
+    error(message : Str)
 
 ## Operations
 
-Below defines the behaviour for each operation in the VM. Pseudo-blocking functions are marked with _PB_.
+Below defines the behaviour for each operation in the VM.
 
 ### Boolean Branch
-Branch to the provided label if the provided condition is true.
+Perform the block specified if the condition is true.
 
-    bool_br(cond: Bool, label)
+    bool_br(cond: Bool) { ... }
+
+### Select Value
+Select value based on Boolean. This is generic over the type `T`.
+
+    r : T = bool_choose(cond : Bool, true_value : T, false_value : T)
 
 ### Boolean False Constant
 Set the result to Boolean false.
@@ -46,20 +94,27 @@ Set the result to Boolean true.
 
     r : Bool = bool_true()
 
-### Always Branch
-Branch to the specified label.
+### Create Promise for Function
+Run a function, eventually, and return a promise for the result.
 
-    branch(label)
+    r : Promise = [function](...)
 
-### Invoke a Function (PB)
-Invokes the provided function, then assigns the result of that function to the result. Note that the function may pseudo-block.
+The values provided can be of the needed type or promises. If promises, the promises will be evaluated before calling the function. After all promises have been resolved, if no type signature of the function matches, a runtime error occurs.
 
-    r : Flabbergast = call(function : Function)
+### Get the Reference to a Function
+Create a handle for a function, where _X_ is the arity of the function.
 
-### Raise an Error
-Produce a user-visible error message. The remainder of the function and any functions that would pseudo-block on it must not execute.
+    r : FunctionX = [function]
 
-    r : Str = error(message : Str)
+### Access Library
+Load external data. Since the URL is fixed, this can be thought of as information to the dynamic loader rather than part of the execution.
+
+    r : Promise = external(url : Str*)
+
+### Evaluate a Delayed Function
+Evaluate a delayed function with the provided arguments, which may be promises. The arity of the function must match the number of parameters provided.
+
+    r : Promise = evaluate(function : Function<X>, ...)
 
 ### Add Floating-Point Numbers
 Add `left` and `right`.
@@ -69,7 +124,7 @@ Add `left` and `right`.
 ### Floating-Point Constant
 Returns the floating-point number provided at compile-time.
 
-    r : Float = flt_const(value : Float\*)
+    r : Float = flt_const(value : Float*)
 
 ### Divide Floating-Point Numbers
 Divides `left` by `right`.
@@ -95,11 +150,6 @@ Check if a floating-point number is finite.
 Check if a floating-point value is a number.
 
     r : Bool = flt_is_nan(value : Float)
-
-### Floating-Point Type Check
-Determine if a value is a floating-point number.
-
-    r : Bool = flt_is(value : Flabbergast)
 
 ### Floating-Point Maximum Constant
 Produce the largest value representable as a floating-point number.
@@ -146,20 +196,20 @@ Add `left` and `right`.
 
     r : Int = int_add(left : Int, right : Int)
 
-### Branch if Greater Than
-Branch to `label` if `value` is strictly greater than zero.
+### Is Integer Greater Than
+Perform the block provided if `value` is strictly greater than zero.
 
-    int_brgt(value : Int, label)
+    r : Bool = int_gt(value : Int)
 
-### Branch if Less Than
-Branch to `label` if `value` is strictly less than zero.
+### Is Integer Less Than
+Perform the block provided if `value` is strictly less than zero.
 
-    int_brlt(value : Int, label)
+    r : Bool = int_lt(value : Int)
 
-### Branch if Equal
-Branch to `label if `value` is zero.
+### Is Integer Equal
+Perform the block provided if `value` is zero.
 
-    int_breq(value : Int, label)
+    r : Bool = int_eq(value : Int)
 
 ### Integral Number Constant
 Returns the integral constant provided at compile-time.
@@ -175,11 +225,6 @@ Divides `left` by `right`, and set the result to the dividend.
 Create a floating-point representation of an integral number.
 
     r : Float = int_flt(value : Int)
-
-### Integral Number Type Check
-Determine if the provided value is an integral number.
-
-    r : Bool = int_is(value : Flabbergast)
 
 ### Integral Maximum Constant
 Produce the largest value representable as a integral number.
@@ -216,40 +261,25 @@ Subtract `right` from `left`.
 
     r : Int = int_sub(left : Int, right : Int)
 
-### Branch on Iterator
-Branch to label if there are no values in the iterator. Otherwise, the result is set to the value in the iterator.
-
-    r : Str = iter_br(iter : Iter, label)
-
-### Access Library
-Get the value associated with a library. The mechanism for this is implementation-defined.
-
-    r : Flabbergast = library(uri : Str*)
-
 ### Is List Empty
 Check if `list` has no items. That is, the same as the result from `list_nil`.
 
     r : Bool = list_empty(list : List)
 
 ### List Item
-Get the first tuple in the list.
+Get the first map in the list.
 
-    r : Tuple = list_item(list : List)
-
-### Is List Marked
-Check if the first item in the list is marked (i.e., created with `list_marked` instead of `list_unmarked`). The behaviour of calling on the empty list is undefined.
-
-    r : Bool = list_is_marked(list : List)
+    r : Map = list_item(list : List)
 
 ### List Join
-Create a new list where all the items of `first` precede all the items of `second`, preserving their _marked_ state.
+Create a new list where all the items of `first` precede all the items of `second`.
 
     r : List = list_join(first : List, second : List)
 
-### Create Marked List
-Create a new list containing the provided tuple with the _marked_ state set.
+### Create List
+Create a new list containing the provided map.
 
-    r : List = list_marked(head : Tuple, tail : List)
+    r : List = list_new(head : Map, tail : List)
 
 ### Create Empty List
 Create an empty list.
@@ -261,10 +291,12 @@ Get a list holding the remaining elements in the list.
 
     r : List = list_tail(list : List)
 
-### Create Unmarked List
-Create a new list containing the provided tuple without the _marked_ state set.
+### Contextual Lookup
+Perform contextual lookup over a list of maps.
 
-    r : List = list_unmarked(head : Tuple, tail : List)
+    r : Promise = lookup(list : List, name1 : Str*, name2 : Str*, ...)
+
+This promise will perform contextual lookup and return the value after lookup, if one exists.
 
 ### Continue Constant
 Set the result to be the continue value. Note that since there are two null values, this should probably not be the target platform's null value.
@@ -273,52 +305,13 @@ Set the result to be the continue value. Note that since there are two null valu
 
 ### Check if Continue
 Checks if `value` is the same as the result of `null_cont`.
-    r : Bool = null_is_cont(value : Flabbergast)
 
-### Check if Null
-Checks if `value` is the same as the result of `null` or `null_cont`.
-
-    r : Bool = null_is(value : Flabbergast)
+    r : Bool = null_is_cont(value : NullFamily)
 
 ### Null Constant
 Set the result to be the null value. Note that since there are two null values, this should probably not be the target platform's null value.
 
     r : NullFamily = null()
-
-### Phi Node
-Creates a φ-node in the SSA. Understanding these is complicated enough, so it won't be explained badly here.
-
-    r : 'a = phi(value0 : 'a, label0, value1 : 'a, label1, ...)
-
-### Return
-Sets the caller's result to the supplied value and stop execution.
-
-    return(value : Flabbergast)
-
-### Set Append
-Add an additional string to the set, if it is not already present.
-
-    r : Set = set_append(set : Set, name : Str)
-
-### Is Set Empty
-Check if the set contains no strings.
-
-    r : Bool = set_empty(set : Set)
-
-### Is String in Set
-Checks if the provided string is presently in the set.
-
-    r : Bool = set_has(set : Set, name : Str)
-
-### Create Iterator
-Creates an iterator over the items in the set. The iterator should return items in collated order.
-
-    r : Iter = set_iter(set : Set)
-
-### Create Set
-Create a new set with no items in it.
-
-    r : Set = set_new()
 
 ### Concatenate Strings
 Create a new string of `first` followed by `second`.
@@ -335,95 +328,44 @@ Determine if `left` collates before, the same, or after `right` and set the resu
 
     r : Int = str_col(left : Str, right : Str)
 
-### String Type Check
-Determine if the provided value is a string.
-
-    r : Bool = str_is(value : Flabbergast)
-
 ### String from Ordinal
 Create a string from an integer such that ordering of integers is preserved when using `str_col` and the resulting string is a valid Flabbergast identifier.
 
     r : Str = str_ord(value : Int)
 
-### Append to Template
-Add a new function to a template. If `name` already exists in the template, an error occurs. If the name is not a valid Flabbergast identifier, an error occurs.
+### Map Item Retrieval
+Get a value from a map. If the item exists in the map, but is not of the correct type, an error occurs.
 
-    tmpl_append(tmpl : Template, name : Str, function : Function)
+    r : Bool = map_get_bool(map : Map, name : Str*)
+    r : Delayed = map_get_delayed(map : Map, name : Str*)
+    r : Float = map_get_float(map : Map, name : Str*)
+    r : Int = map_get_int(map : Map, name : Str*)
+    r : List = map_get_list(map : Map, name : Str*)
+    r : Map = map_get_map(map : Map, name : Str*)
+    r : NullFamily = map_get_null(map : Map, name : Str*)
+    r : Str = map_get_str(map : Map, name : Str*)
 
-### Template Context
-Get the context associated with a template.
+### Is Item in Map
+Checks if the provided string is the name of an entry in the map.
 
-    r : List = tmpl_ctxt(template : Template)
+    r : Bool = map_has(map : Map, name : Str*)
 
-### Template Item
-Get the function associated with the name in a template. If one is not associated, then an error occurs.
+### Map Item Lookup
+Do a recursive get from a map.
 
-    r : Function = tmpl_get(tmpl : Template, name : Str)
+     r : Promise = map_lookup(map : Map, name1 : Str*, ...)
 
-### Is Attribute in Template
-Checks if the provided string is the name of an attribute in a template.
+### Create Map
+Create an empty map.
 
-    r : Bool = tmpl_has(tmpl : Template, name : Str)
+    r : Map = map_new()
 
-### Template Type Check
-Determine if the provided value is a template.
+### Set Item in Map
+Add or replace an attribute in a map. This is generic over the type `T`. If the value is a promise, the result of evaluating the promise will be stored in the map.
 
-    r : Bool = tmpl_is(value : Flabbergast)
+    map_set(map : Map, name : Str, value : T)
 
-### Template Attribute Names
-Create a set of all the attribute names in a template.
-
-    r : Set = tmpl_names(tmpl : Template)
-
-### Create Template
-Create a template, associated with the provided context, containing no attributes.
-
-    r : Template = tmpl_new(context : List)
-
-### Add Attribute to Template
-Add an attribute to a template. If an attribute of the same name exists, an error occurs. If the tuple is closed, an error occurs. If the name is not a valid Flabbergast identifier, an error occurs.
-
-    tuple_append(tuple : Tuple, name : Str, function : Function)
-
-### Close Tuple
-Indicate that no more elements will be added to a tuple (i.e., make it immutable.) The VM should also dispatch evaluation of any attributes. If the tuple is already closed, an error occurs.
-
-    tuple_close(tuple : Tuple)
-
-### Tuple Context
-Get the context associated with a tuple. Note that is is not exactly the same as the context with which it was created. This can be called if the tuple is open or closed.
-
-    r : List Tuple = tuple_ctxt(tuple : Tuple)
-
-### Tuple Item (PB)
-Get the value of an attribute in a tuple. If the attribute was added as a function, then this may pseudo-block until the value is computed. If the tuple is open, an error occurs.
-
-    r : Flabbergast = tuple_get(tuple : Tuple, name : Str)
-
-### Is Attribute in Tuple
-Check if there exists an attribute in the tuple with the name provided. This may be called when the tuple is open or closed.
-
-    r : Bool = tuple_has(tuple : Tuple, name : Str)
-
-### Tuple Type Check
-Determine if the provided value is a tuple.
-
-    r : Bool = tuple_is(value : Flabbergast)
-
-### Tuple Attribute Names
-Create a set of all the attribute names in a tuple.
-
-    r : Set = tuple_names(tuple : Tuple)
-
-### Create Tuple
-Create a new tuple. The context of the tuple will be the context provided preceded by the newly-created tuple. Any functions added to the tuple will be evaluated in this context. The tuple will be in the open state.
-
-    r : Tuple = tuple_new(context : List)
-
-### Add Attribute to Tuple by Value
-Add an existing value to a tuple. The tuple must be in the open state, otherwise an error occurs. If the attribute of the same name is present in the tuple, an error occurs.
-
-    tuple_value_append(tuple : Tuple, name : Str, value : Flabbergast)
+If value is a promise, then the value returned by the promise will be put into the map. However, the promise must not be evaluated until the current function has returned.
 
 ## Porting to a New VM
 
