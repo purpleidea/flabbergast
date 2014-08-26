@@ -13,6 +13,7 @@ namespace Flabbergast.Expressions {
 		}
 	}
 	internal class External : TemplatePart {}
+	internal class Informative : TemplatePart {}
 	internal class Override : TuplePart {
 		public Gee.List<TemplatePart> attributes {
 			get;
@@ -88,6 +89,10 @@ namespace Flabbergast.Expressions {
 			var template = new Data.Template ();
 			template.containers = new Utils.ContainerReference (engine.state.context, Utils.ContainerReference.append (engine.state.containers, source_data == null ? null : source_data.containers));
 			foreach (var attr in attributes) {
+				if (attr is Informative) {
+					/* Skip informative attributes. They don't do anything. */
+					continue;
+				}
 				if (attr.name.name in attr_names) {
 					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr.name.name).");
 				}

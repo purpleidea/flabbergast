@@ -892,6 +892,13 @@ In a template, define an attribute that must be overridden. (X)
 Create an attribute whose value is an error requiring an override.
 
 .TP
+In a template, define an attribute that is expected to be found via lookup. (X)
+.SEM name:I \fB%:\fR ↓
+.SEME
+
+This does not do anything. It is intended to convey that an attribute should be available for inside out lookup. This is inteded as a place to collect documentation.
+
+.TP
 Override sub-template definition. (O)
 .SEM R ⊢ name:I \fB+:\fR \fB{\fR a:(A / O)+ \fB}\fR ↓ name → \fB+\fR R \fB: Template \fR original \fB{\fR a:(A / O)+ \fB}\fR
 .SEME
