@@ -28,7 +28,7 @@ char *sane_readline(
 		rl_reset_line_state();
 	}
 	p = readline(prompt);
-	sigaction(SIGHUP, &old_action, NULL);
+	sigaction(SIGINT, &old_action, NULL);
 
 	return p;
 }
