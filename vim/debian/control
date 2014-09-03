@@ -1,0 +1,16 @@
+Source: vim-flabbergast
+Section: devel
+Priority: optional
+Maintainer: Andre Masella <andre@masella.name>
+Build-Depends: debhelper (>= 9.0.0)
+Standards-Version: 3.9.5
+Homepage: https://github.com/apmasell/flabbergast/
+Vcs-Git: git://github.com/apmasell/flabbergast/
+Vcs-Browser: https://github.com/apmasell/flabbergast/
+
+Package: vim-flabbergast
+Architecture: all
+Recommends: vim-addon-manager
+Depends: ${misc:Depends}
+Description: Flabbergast Configuration Langauge - Vim syntax highlighting
+ This provide syntax hilighting for the Flabbergast language in Vim.
