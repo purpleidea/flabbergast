@@ -331,5 +331,97 @@ language_tmpl : Template {
 				}
 			}
 		}
+
+		ordering : Template syntax_group {
+			rules +: {
+				order_by : Template syntax_element {
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "Order" },
+							space { mandatory : True },
+							parser.exact { word : "By" },
+							space { mandatory : True },
+							parser.other {
+								type: $expression
+								alternate: $expression0
+								field : $expression
+							}
+						]
+					}
+				}
+				reverse : Template literal_tmpl { word : "Reverse" }
+			}
+		}
+
+		results : Template syntax_group {
+			reduce : Template syntax_element {
+				pattern : parser.sequence {
+					of : [
+						parser.accumulate_list {
+							type : $ordering
+							in : parser.many {
+								of : parser.other { type: $ordering  field : Null }
+							}
+						},
+						space { mandatory : True },
+						parser.exact { word : "Reduce" },
+						parser.other { type: $expression  alternative : $expression0 field : $reduce_expr },
+						space { mandatory : True },
+						parser.exact { word : "With" },
+						space { mandatory : True },
+						valid_identifer { field : $initial_name },
+						space { preferred : True },
+						parser.exact { word : ":" },
+						space { preferred : True },
+						parser.other { type: $expression  alternative : $expressionTODO field : $initial_expr }
+					]
+				}
+			}
+			anonymous_select : Template syntax_element {
+				pattern : parser.sequence {
+					of : [
+						parser.exact { word : "Select" },
+						space { preferred : True },
+						parser.other { type: $expression  alternative : $expressionTODO field : $expression }
+					]
+				}
+			}
+			named_select : Template syntax_element {
+				pattern : parser.sequence {
+					of : [
+						parser.exact { word : "Select" },
+						space { mandatory : True },
+						parser.other { type: $expression  alternative : $expression0 field : $name_expr },
+						space { preferred : True },
+						parser.exact { word : ":" },
+						space { preferred : True },
+						parser.other { type: $expression  alternative : $expressionTODO field : $value_expr }
+					]
+				}
+			}
+		}
+
+		selectors : Template syntax_group {
+			each : Template syntax_element {
+				pattern : parser.sequence {
+					of : [
+						parser.exact { word : "Each" },
+						space { preferred : True },
+						parser.other { type: $expression  alternative : $expression0 field : $expression }
+					]
+				}
+			}
+			attr_merge : Template syntax_element {
+				pattern : parser.accumulate_list {
+					field : $inputs
+					type : $attribute
+					in : parser.many {
+						of : parser.other { type : $attribute  alternative : $fricasee_attributes  field : Null }
+						separator : ","
+					}
+				}
+			}
+		}
+
 	}
 }
