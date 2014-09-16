@@ -1,0 +1,182 @@
+# The parser for Flabbergast is constructed by assembly of small parser
+# combinators that are rendered into a parser in the target language. This
+# describes the interface expected.
+parser_tmpl : Template {
+	# Match a literal string, exactly as provided.
+	exact : Template { word ?: }
+	# Match another parse element, but, if parsing fails, back up the parser and
+	# continue to the next rule.
+	optional : Template { of ?: }
+	# Match a list of parse elements, in order.
+	sequence : Template { of ?: }
+	# Match a parse element many times, with the provided separator in between
+	# each element. That is, parse a list of the form `e,e,e` where `e` is the
+	# element and `s` is the separator. The `nonempty` Boolean insists that there
+	# is at least one element parsed, otherwise, an empty is list is valid.
+	many : Template { of ?:  separator : None  nonempty : False }
+	many_word : Template many {
+		separator_word ?:
+		separator : exact { word : separator_word }
+	}
+	# Parses the elements provided in succession, succeeding if any one succeeds
+	# and failing if all fail.
+	alternate : Template { of ?: }
+	# Parses a single character in the range of characters provided. 
+	range : Template { from ?:  to ?: }
+	# Parses a single character, as indicated.
+	single : Template { char ?: }
+	# Parses sub rules and uses their values to compute an integer.
+	accumulate_integer : Template {
+		# Each successful rule where `accumulate` is true will have the current
+		# input character applied to the accumulator.
+		accumulate : False
+		# The initial value of the accumulator.
+		initial : 0
+		# The multiplier is the base of the number used. At each character, the
+		# existing value will be multiplied by the supplied multiplier before the
+		# new value is added.
+		multiplier %:
+		# The character will have the provided offset subtracted from the current
+		# character before adding it to the accumulator.
+		offset %:
+		# After successful parsing, the value is stored in the desired field.
+		field ?:
+		in ?:
+	}
+	accumulate_float : Template { accumulate : False  field ?:  in ?: }
+	accumulate_list : Template { accumulate : False  field ?: type ?:  in ?: }
+	accumulate_string : Template { accumulate : False  field ?:  in ?: }
+	accumulate_char : Template { accumulate : False  field ?:  in ?: }
+	# Parses another rule
+	other : Template {
+		# This it the name (and therefore type) of the desired rule to parse.
+		type ?:
+		# Some rules have many possible AST nodes that they can generate. In some
+		# instances, it is desirable to parse only subsets of those possible AST
+		# nodes. Rules may then define groups of AST nodes as “alternate” versions
+		# of the rule, which will produce the same type, but a different possible
+		# subset of values. If specified, this selects one of the predefined
+		# subsets. The name of any given AST node is also valid.
+		alternate : None
+	}
+
+}
+# The syntax of the Flabbergast language
+language_tmpl : Template {
+	# The templates to generate the parser, as per `parser_tmpl`.
+	parser %:
+	# A rule that creates a single node in the AST
+	syntax_element : Template {
+		# The name of AST node. This will be provided by the attribute name. In a
+		# parser generated targeting an object-oriented language, this would be the
+		# name of the class for each different element in the syntax tree.
+		rule_name %:
+		# The name of the group of rules. In a parser generated targeting an
+		# object-oriented language, this would be the abstract super-class of a
+		# collection of rules.
+		group_name %:
+		# The parser generator structure, made from `parser` templates.
+		pattern ?:
+	}
+	# A group of syntax rules that form a logical group of syntax elements. These
+	# should correspond to the single-letter production rules in the
+	# specification.
+	syntax_group : Template {
+		rules : Template {}
+		# For the attribute rules, some times, we need to package the same rules in
+		# different ways. The alternatives provide names for parsing different
+		# groups with the same type as the syntax group.
+		alternatives : Template {}
+		expanded_rules :
+			For rule_tmpl : rules {}, rule_name : Attribute
+			Select rule_name : rule_tmpl {}
+		expanded_alts : alternatives {}
+	}
+
+	# TODO: make this parse spaces and comments and put the comments in a buffer
+	space : Template parser.alternate {
+	}
+	expanded_groups :
+		For rule_group_tmpl : rule_groups {}, group_name : Attribute
+		Select group_name : rule_group_tmpl {}
+
+	# Syntax element for expressions
+	expression_tmpl : Template syntax_element {
+		# The depth/precedence in the expression nesting system, as inferred from
+		# the specification.
+		level %:
+		# A parser for an expression one level more nested.
+		child_expression : Template parser.other { accumulate : True  type : "expression" & (level + 1) }
+		# A parser for an expression of the same level.
+		sibling_expression : Template parser.other { accumulate : True  type : "expression" & level }
+	}
+	# An expression with two operands separated by a token
+	binary_operator : Template expression_tmpl {
+		# A string which is the separating token
+		operator ?:
+		# A template for the right-hand operand, normally a child expression.
+		right_operand : Template child_expression { }
+		pattern : parser.sequence {
+			of : [
+				child_expression { field : $left },
+				space { preferred : True },
+				parser.exact { word : operator },
+				space { preferred : True },
+				right_operand { field : $right }
+				]
+		}
+	}
+	# A unary expression preceded by a token
+	unary_tmpl : Template expression_tmpl  {
+		# A string which precedes the expression
+		operator ?:
+		pattern : parser.sequence {
+			of : [
+				parser.exact { word : operator },
+				space { },
+				child_expression { field : $expr }
+			]
+		}
+	}
+	# A expression which is a single word
+	literal_tmpl : Template expression_tmpl {
+		name ?:
+		pattern : parser.exact { word : name }
+	}
+	# A decimal number with no preceding zeros.
+	valid_number : Template parser.alternate {
+		multiplier : 10
+		offset : 48
+		of : [
+			parser.exact { word : "0" },
+			parser.sequence {
+				of : [
+					parser.range { from : "1"  to : "9"  accumulate : True },
+					parser.many {
+						of : parser.range { from : "0"  to : "9"  accumulate : True }
+					}
+				]
+			}
+		]
+	}
+
+	# All the groups in the language
+	rule_groups : Template {
+		file : syntax_group {
+			rules +: {
+				file : syntax_element {
+					pattern : accumulate_list {
+						in : parser.many {
+							of : parser.other {
+								type : $attribute
+								alternate : $plain_attribute
+								accumulate : True
+							}
+							nonempty : True
+						}
+					}
+				}
+			}
+		}
+	}
+}
