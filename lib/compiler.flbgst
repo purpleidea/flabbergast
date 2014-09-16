@@ -206,5 +206,130 @@ language_tmpl : Template {
 				}
 			}
 		}
+
+		attribute : Template syntax_group {
+			alternatives +: {
+				literal_attributes : [ plain_attribute ]
+				base_tmpl_attributes : [ plain_attribute, informative_attribute, missing_attribute ]
+				extend_tmpl_attributes : [ plain_attribute, informative_attribute, missing_attribute, named_override, template_override, remove_attribute ]
+				instantiate_tmpl_attributes : [ plain_attribute, informative_attribute, named_override, template_override, remove_attribute ]
+				fricasee_attributes :  [ plain_attribute, ordinal_attribute, name_attribute ]
+			}
+			common +: {
+				name : $str
+			}
+			rules +: {
+				plain_attribute : Template syntax_element {
+					pattern : parser.sequence {
+						of : [
+							space { preferred : True },
+							valid_identifer { field : $name },
+							space { preferred : True },
+							parser.exact { char : ":" },
+							space { preferred : True },
+							parser.other {
+								type : $expression
+								alternate : $expression0
+								field : $expression
+							}
+						]
+					}
+				}
+				named_override : Template syntax_element {
+					pattern : parser.sequence {
+						of : [
+							space { preferred : True },
+							valid_identifer { field : $name },
+							space { preferred : True },
+							parser.exact { char : "+" },
+							valid_identifer { field : $temporary_name },
+							parser.exact { char : ":" },
+							space { preferred : True },
+							parser.other {
+								type : $expression
+								alternate : $expression0
+								field : $expression
+							}
+						]
+					}
+				}
+				template_override : Template syntax_element {
+					pattern : parser.sequence {
+						of : [
+							space { preferred : True },
+							identifer,
+							space { preferred : True },
+							parser.exact { char : "+:" },
+							space { preferred : True },
+							parser.exact { char : "{" },
+							space { preferred : True },
+							parser.accumulate_list {
+								field : $overrides
+								in : parser.many {
+									of : parser.other { type : $attribute  alternate : $extend_tmpl_attributes  field : Null }
+								}
+							},
+							space { preferred : True },
+							parser.exact { char : "}" },
+							space { preferred : True },
+						]
+					}
+				}
+				missing_attribute : Template syntax_element {
+					pattern : parser.sequence {
+						of : [
+							space { preferred : True },
+							valid_identifer { field : $name },
+							space { preferred : True },
+							parser.exact { char : "?:" }
+						]
+					}
+				}
+				informative_attribute : Template syntax_element {
+					pattern : parser.sequence {
+						of : [
+							space { preferred : True },
+							valid_identifer { field : $name },
+							space { preferred : True },
+							parser.exact { char : "%:" }
+						]
+					}
+				}
+				remove_attribute : Template syntax_element {
+					pattern : parser.sequence {
+						of : [
+							space { preferred : True },
+							valid_identifer { field : $name },
+							space { preferred : True },
+							parser.exact { word : "-:" }
+						]
+					}
+				}
+				name_attribute : Template syntax_element {
+					pattern : parser.sequence {
+						of : [
+							space { preferred : True },
+							valid_identifer { field : $name },
+							space { preferred : True },
+							parser.exact { char : ":" },
+							space { preferred : True },
+							parser.exact { char : "Name" }
+						]
+					}
+				}
+				ordinal_attribute : Template syntax_element {
+					pattern : parser.sequence {
+						of : [
+							space { preferred : True },
+							valid_identifer { field : $name },
+							space { preferred : True },
+							parser.exact { char : ":" },
+							space { preferred : True },
+							parser.exact { char : "Ordinal" }
+						]
+					}
+				}
+			}
+		}
 	}
 }
