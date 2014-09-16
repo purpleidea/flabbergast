@@ -423,5 +423,20 @@ language_tmpl : Template {
 			}
 		}
 
+		type : Template syntax_group {
+			type_element : Template syntax_element {
+				friendly_name ?:
+				pattern : parser.exact { word : friendly_name }
+			}
+			elements +: {
+				bool : Template type_element { friendly_name : "Bool" }
+				float : Template type_element { friendly_name : "Float" }
+				int : Template type_element { friendly_name : "Int" }
+				str : Template type_element { friendly_name : "Str" }
+				tmpl : Template type_element { friendly_name : "Template" }
+				tuple : Template type_element { friendly_name : "Tuple" }
+			}
+		}
+
 	}
 }
