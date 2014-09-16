@@ -92,10 +92,14 @@ language_tmpl : Template {
 		# different ways. The alternatives provide names for parsing different
 		# groups with the same type as the syntax group.
 		alternatives : Template {}
+		# This moves fields from the individual AST nodes to the superclass. Each
+		# entry is the name of the field and its type (e.g., `name : $str`).
+		common : Template {}
 		expanded_rules :
 			For rule_tmpl : rules {}, rule_name : Attribute
 			Select rule_name : rule_tmpl {}
 		expanded_alts : alternatives {}
+		expanded_common : common {}
 	}
 
 	# TODO: make this parse spaces and comments and put the comments in a buffer
