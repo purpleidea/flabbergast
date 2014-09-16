@@ -105,6 +105,25 @@ language_tmpl : Template {
 	# TODO: make this parse spaces and comments and put the comments in a buffer
 	space : Template parser.alternate {
 	}
+	valid_identifier : Template parser.accumulate_string {
+		accumulate : True
+		in : parser.sequence {
+			of : [
+				parser.range { from : "a"  to : "z" },
+				parser.many {
+					of : parser.alternate {
+						of : [
+							parser.range { from : "a"  to : "z" },
+							parser.range { from : "A"  to : "Z" },
+							parser.range { from : "0"  to : "9" },
+							parser.exact { char : "_" }
+						]
+					}
+				}
+			]
+		}
+	}
+
 	expanded_groups :
 		For rule_group_tmpl : rule_groups {}, group_name : Attribute
 		Select group_name : rule_group_tmpl {}
