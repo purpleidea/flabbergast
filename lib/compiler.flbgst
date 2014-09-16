@@ -13,7 +13,7 @@ parser_tmpl : Template {
 	# each element. That is, parse a list of the form `e,e,e` where `e` is the
 	# element and `s` is the separator. The `nonempty` Boolean insists that there
 	# is at least one element parsed, otherwise, an empty is list is valid.
-	many : Template { of ?:  separator : None  nonempty : False }
+	many : Template { of ?:  separator : Null  nonempty : False }
 	many_word : Template many {
 		separator_word ?:
 		separator : exact { word : separator_word }
@@ -45,6 +45,8 @@ parser_tmpl : Template {
 	}
 	accumulate_float : Template { accumulate : False  field ?:  in ?: }
 	accumulate_list : Template { accumulate : False  field ?: type ?:  in ?: }
+	# TODO: collect a unicode literal into a string
+	# TODO: collect a unicode codepoint by integer into a string
 	accumulate_string : Template { accumulate : False  field ?:  in ?: }
 	accumulate_char : Template { accumulate : False  field ?:  in ?: }
 	# Parses another rule
@@ -57,7 +59,10 @@ parser_tmpl : Template {
 		# of the rule, which will produce the same type, but a different possible
 		# subset of values. If specified, this selects one of the predefined
 		# subsets. The name of any given AST node is also valid.
-		alternate : None
+		alternate : Null
+		# The field in which to place the result. If `Null`, it will be added to
+		# the current list.
+		field ?:
 	}
 
 }
@@ -160,17 +165,17 @@ language_tmpl : Template {
 		]
 	}
 
-	# All the groups in the language
+	# All the groups in the language. For details, see the specification.
 	rule_groups : Template {
-		file : syntax_group {
+		file : Template syntax_group {
 			rules +: {
-				file : syntax_element {
+				file : Template syntax_element {
 					pattern : accumulate_list {
 						in : parser.many {
 							of : parser.other {
 								type : $attribute
 								alternate : $plain_attribute
-								accumulate : True
+								field : Null
 							}
 							nonempty : True
 						}
