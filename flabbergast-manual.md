@@ -185,6 +185,17 @@ For convenience, Flabbergast provides alternate syntax for consuming such a temp
 
     b : square(x : 5)
 
+Unnamed values are placed in an `args` attribute.
+
+    sum_of_squares : Template {
+        args ?:
+        value : For x : args Reduce acc + x * x With acc : 0
+    }
+    c : sum_of_squares(3, 4, 5)
+    d : sum_of_squares(args : 3 Through 5)
+
+This means that function-like template can offer both variadic and non-variadic calling conventions. It is an error to specify both `args` and have unnamed arguments.
+
 There is an entirely different way to generate tuples: from existing tuples using the fricassée expressions. These work something like SQL or XQuery statements to generate new tuples from existing tuples, as SQL generates new tables from existing tables and XQuery generates new trees from existing trees.
 
     a : { x : 1  y : 2  z : 3 }
