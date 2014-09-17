@@ -43,12 +43,30 @@ parser_tmpl : Template {
 		field ?:
 		in ?:
 	}
+	# This works much like `accumulate_integer` except the integer is a Unicode
+	# codepoint added to the currently accumulated string.
+	accumulate_unichar_integer : Template {
+		# Each successful rule where `accumulate` is true will have the current
+		# input character applied to the accumulator.
+		accumulate : False
+		# The initial value of the accumulator.
+		initial : 0
+		# The multiplier is the base of the number used. At each character, the
+		# existing value will be multiplied by the supplied multiplier before the
+		# new value is added.
+		multiplier %:
+		# The character will have the provided offset subtracted from the current
+		# character before adding it to the accumulator.
+		offset %:
+		in ?:
+	}
 	accumulate_float : Template { accumulate : False  field ?:  in ?: }
 	accumulate_list : Template { accumulate : False  field ?: type ?:  in ?: }
-	# TODO: collect a unicode literal into a string
-	# TODO: collect a unicode codepoint by integer into a string
 	accumulate_string : Template { accumulate : False  field ?:  in ?: }
 	accumulate_char : Template { accumulate : False  field ?:  in ?: }
+	# Adds a Unicode literal, by codepoint, to the currently accumulating string
+	# after successfully parsing the child parse expression.
+	collect_codepoint : Template { codepoint ?: in ?:}
 	# Parses another rule
 	other : Template {
 		# This it the name (and therefore type) of the desired rule to parse.
@@ -184,6 +202,28 @@ language_tmpl : Template {
 						of : parser.range { from : "0"  to : "9"  accumulate : True }
 					}
 				]
+			}
+		]
+	}
+
+	# A single hexidecimal digit
+	hex_digit : Template parser.alternate {
+		multiplier : 16
+		of : [
+			parser.range {
+				offset : 48
+				accumulate : True
+				from : "0"  to : "9"
+			},
+			parser.range {
+				offset: 87
+				accumulate : True
+				from : "a"  to : "f"
+			},
+			parser.range {
+				offset : 55
+				accumulate : True
+				from : "A"  to : "F"
 			}
 		]
 	}
@@ -462,6 +502,79 @@ language_tmpl : Template {
 				hours : Template time_chunk_tmpl { symbol "h"  unit : 60 * 60 }
 				minutes : Template time_chunk_tmpl { symbol "m"  unit : 60 }
 				seconds : Template time_chunk_tmpl { symbol "s"  unit : 1 }
+			}
+		}
+
+		string_piece : Template syntax_group {
+			string_escape_tmpl : Template parser.collect_codepoint {
+				char ?:
+				in : parser.exact { word : "\\" & char }
+			}
+			rules +: {
+				literal_string : Template syntax_element {
+					pattern : parser.accumulate_string {
+						field : $text
+						in : parser.alternate {
+							of : [
+								alert : string_escape_tmpl { char : "a"  codepoint : 7 }
+								backspace : string_escape_tmpl { char : "b"  codepoint : 8 }
+								form_feed : string_escape_tmpl { char : "f"  codepoint : 12 }
+								new_line : string_escape_tmpl { char : "n" codepoint : 10 }
+								return : string_escape_tmpl { char : "r" codepoint : 13 }
+								tab : string_escape_tmpl { char : "t" codepoint : 9 }
+								vertical_tab : string_escape_tmpl { char : "v"  codepoint : 11 }
+								quote : string_escape_tmpl { char : "\""  codepoint : 34 }
+								octal : parser.accumulate_unichar_integer {
+									multiplier : 8
+									offset : 48
+									in : parser.sequence {
+										of : [
+											parser.exact { char : "\\" },
+											parser.range { from : "0"  to : "7"  accumulate : True},
+											parser.range { from : "0"  to : "7"  accumulate : True},
+											parser.range { from : "0"  to : "7"  accumulate : True}
+										]
+									}
+								}
+								hex_escape : parser.accumulate_unichar_integer {
+									in : parser.sequence {
+										of : [
+											parser.exact { char : "\\x" },
+											hex_digit { },
+											hex_digit { }
+										]
+									}
+								}
+								unicode_escape : parser.accumulate_unichar_integer {
+									in : parser.sequence {
+										of : [
+											parser.exact { char : "\\u" },
+											hex_digit { },
+											hex_digit { },
+											hex_digit { },
+											hex_digit { }
+										]
+									}
+								}
+							]
+						}
+					}
+				}
+				expression_escape : Template syntax_element {
+					pattern : parser.sequence {
+						of : [
+							parser.exact { char : "\\(" },
+							space { },
+							parser.other {
+								type : $expression
+								alternate : $expression0
+								field : $expression
+							},
+							space { },
+							parser.exact { char : ")" }
+						]
+					}
+				}
 			}
 		}
 
