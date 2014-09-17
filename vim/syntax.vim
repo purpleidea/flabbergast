@@ -19,6 +19,8 @@ syn match flabbergastEscape contained '\\[abfnvrt"\\]' display
 syn match flabbergastEscape contained "\\\(\o\{3}\|x\x\{2}\|u\x\{4}\)" display
 syn region flabbergastEscape contained start="\\(" end=")" contains=TOP
 
+syn match flabbergastTrailingWhite "[ \t]\+$"
+syn match flabbergastTrailingWhite "[ \t]\+$" containedin=ALL
 syn match flabbergastAttribute "[+?-]\?:" display
 syn match flabbergastComment "#.*$" contains=flabbergastTodo,@Spell display
 syn keyword flabbergastConstant Continue False FloatMax FloatMin Infinity IntMax IntMin NaN Null True
@@ -40,6 +42,7 @@ hi def link flabbergastAttribute	Statement
 hi def link flabbergastIdentifierString	String
 hi def link flabbergastString		String
 hi def link flabbergastTodo		Todo
+hi def link flabbergastTrailingWhite	DiffDelete
 hi def link flabbergastType		Type
 
 let b:current_syntax = "flabbergast"
