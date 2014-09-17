@@ -623,6 +623,8 @@ This expression returns data external to the program, described by the URI provi
 
 Evaluate an expression, which must be a tuple, then begin lookup of the names provided from that context.
 
+The interpreter may process all \fBFrom\fR expressions first, outside of normal program flow. That is, \fBFalse && From foo:\fR may evaluate the \fBFrom\fR expression.
+
 .TP
 Contextual lookup
 .SEM (t, s, ...) ⊢ names:(N / \fBContainer\fR) names:(\fB.\fR (N / \fBContainer\fR))* ↓ v
