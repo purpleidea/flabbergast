@@ -24,7 +24,14 @@ parser_tmpl : Template {
 	# Parses a single character in the range of characters provided. 
 	range : Template { from ?:  to ?: }
 	# Parses a single character, as indicated.
-	single : Template { char ?: }
+	single : Template {
+		# A string of characters where the parser may match any single character in
+		# the string.
+		char ?:
+		# If true, parsing will succeed if the current character is not in the
+		# string defined in `char`.
+		invert_match : False
+	}
 	# Parses sub rules and uses their values to compute an integer.
 	accumulate_integer : Template {
 		# Each successful rule where `accumulate` is true will have the current
@@ -556,7 +563,8 @@ language_tmpl : Template {
 											hex_digit { }
 										]
 									}
-								}
+								},
+								parser.single { char : "\\\""  invert_match : True }
 							]
 						}
 					}
