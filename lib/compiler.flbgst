@@ -516,15 +516,16 @@ language_tmpl : Template {
 						field : $text
 						in : parser.alternate {
 							of : [
-								alert : string_escape_tmpl { char : "a"  codepoint : 7 }
-								backspace : string_escape_tmpl { char : "b"  codepoint : 8 }
-								form_feed : string_escape_tmpl { char : "f"  codepoint : 12 }
-								new_line : string_escape_tmpl { char : "n" codepoint : 10 }
-								return : string_escape_tmpl { char : "r" codepoint : 13 }
-								tab : string_escape_tmpl { char : "t" codepoint : 9 }
-								vertical_tab : string_escape_tmpl { char : "v"  codepoint : 11 }
-								quote : string_escape_tmpl { char : "\""  codepoint : 34 }
-								octal : parser.accumulate_unichar_integer {
+								string_escape_tmpl { char : "a"  codepoint : 7 },
+								string_escape_tmpl { char : "b"  codepoint : 8 },
+								string_escape_tmpl { char : "f"  codepoint : 12 },
+								string_escape_tmpl { char : "n" codepoint : 10 },
+								string_escape_tmpl { char : "r" codepoint : 13 },
+								string_escape_tmpl { char : "t" codepoint : 9 },
+								string_escape_tmpl { char : "v"  codepoint : 11 },
+								string_escape_tmpl { char : "\""  codepoint : 34 },
+								string_escape_tmpl { char : "\\"  codepoint : 92 },
+								parser.accumulate_unichar_integer {
 									multiplier : 8
 									offset : 48
 									in : parser.sequence {
@@ -535,8 +536,8 @@ language_tmpl : Template {
 											parser.range { from : "0"  to : "7"  accumulate : True}
 										]
 									}
-								}
-								hex_escape : parser.accumulate_unichar_integer {
+								},
+								parser.accumulate_unichar_integer {
 									in : parser.sequence {
 										of : [
 											parser.exact { word : "\\x" },
@@ -544,8 +545,8 @@ language_tmpl : Template {
 											hex_digit { }
 										]
 									}
-								}
-								unicode_escape : parser.accumulate_unichar_integer {
+								},
+								parser.accumulate_unichar_integer {
 									in : parser.sequence {
 										of : [
 											parser.exact { word : "\\u" },
