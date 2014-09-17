@@ -134,7 +134,7 @@ language_tmpl : Template {
 							parser.range { from : "a"  to : "z" },
 							parser.range { from : "A"  to : "Z" },
 							parser.range { from : "0"  to : "9" },
-							parser.exact { char : "_" }
+							parser.single { char : "_" }
 						]
 					}
 				}
@@ -265,7 +265,7 @@ language_tmpl : Template {
 							space { preferred : True },
 							valid_identifer { field : $name },
 							space { preferred : True },
-							parser.exact { char : ":" },
+							parser.exact { word : ":" },
 							space { preferred : True },
 							parser.other {
 								type : $expression
@@ -281,9 +281,9 @@ language_tmpl : Template {
 							space { preferred : True },
 							valid_identifer { field : $name },
 							space { preferred : True },
-							parser.exact { char : "+" },
+							parser.exact { word : "+" },
 							valid_identifer { field : $temporary_name },
-							parser.exact { char : ":" },
+							parser.exact { word : ":" },
 							space { preferred : True },
 							parser.other {
 								type : $expression
@@ -299,9 +299,9 @@ language_tmpl : Template {
 							space { preferred : True },
 							identifer,
 							space { preferred : True },
-							parser.exact { char : "+:" },
+							parser.exact { word : "+:" },
 							space { preferred : True },
-							parser.exact { char : "{" },
+							parser.exact { word : "{" },
 							space { preferred : True },
 							parser.accumulate_list {
 								field : $overrides
@@ -310,7 +310,7 @@ language_tmpl : Template {
 								}
 							},
 							space { preferred : True },
-							parser.exact { char : "}" },
+							parser.exact { word : "}" },
 							space { preferred : True },
 						]
 					}
@@ -321,7 +321,7 @@ language_tmpl : Template {
 							space { preferred : True },
 							valid_identifer { field : $name },
 							space { preferred : True },
-							parser.exact { char : "?:" }
+							parser.exact { word : "?:" }
 						]
 					}
 				}
@@ -331,7 +331,7 @@ language_tmpl : Template {
 							space { preferred : True },
 							valid_identifer { field : $name },
 							space { preferred : True },
-							parser.exact { char : "%:" }
+							parser.exact { word : "%:" }
 						]
 					}
 				}
@@ -351,9 +351,9 @@ language_tmpl : Template {
 							space { preferred : True },
 							valid_identifer { field : $name },
 							space { preferred : True },
-							parser.exact { char : ":" },
+							parser.exact { word : ":" },
 							space { preferred : True },
-							parser.exact { char : "Name" }
+							parser.exact { word : "Name" }
 						]
 					}
 				}
@@ -365,7 +365,7 @@ language_tmpl : Template {
 							space { preferred : True },
 							parser.exact { char : ":" },
 							space { preferred : True },
-							parser.exact { char : "Ordinal" }
+							parser.exact { word : "Ordinal" }
 						]
 					}
 				}
@@ -529,7 +529,7 @@ language_tmpl : Template {
 									offset : 48
 									in : parser.sequence {
 										of : [
-											parser.exact { char : "\\" },
+											parser.exact { word : "\\" },
 											parser.range { from : "0"  to : "7"  accumulate : True},
 											parser.range { from : "0"  to : "7"  accumulate : True},
 											parser.range { from : "0"  to : "7"  accumulate : True}
@@ -539,7 +539,7 @@ language_tmpl : Template {
 								hex_escape : parser.accumulate_unichar_integer {
 									in : parser.sequence {
 										of : [
-											parser.exact { char : "\\x" },
+											parser.exact { word : "\\x" },
 											hex_digit { },
 											hex_digit { }
 										]
@@ -548,7 +548,7 @@ language_tmpl : Template {
 								unicode_escape : parser.accumulate_unichar_integer {
 									in : parser.sequence {
 										of : [
-											parser.exact { char : "\\u" },
+											parser.exact { word : "\\u" },
 											hex_digit { },
 											hex_digit { },
 											hex_digit { },
@@ -563,7 +563,7 @@ language_tmpl : Template {
 				expression_escape : Template syntax_element {
 					pattern : parser.sequence {
 						of : [
-							parser.exact { char : "\\(" },
+							parser.exact { word : "\\(" },
 							space { },
 							parser.other {
 								type : $expression
@@ -571,7 +571,7 @@ language_tmpl : Template {
 								field : $expression
 							},
 							space { },
-							parser.exact { char : ")" }
+							parser.exact { word : ")" }
 						]
 					}
 				}
