@@ -561,20 +561,20 @@ Indeed, this could be translated into Flabbergast as follows:
         (If acc Is Null
           Then ""
           Else (acc & "\n"))
-        & "name: \(x.name) country: \(x.country)"
+        & "name: \(item.name) country: \(item.country)"
 
 However, it is often simpler to make items self-rendering:
 
     item_tmpl : Template {
       name ?:
       country ?:
-      value : "name: \(x.name) country: \(x.country)"
+      value : "name: \(name) country: \(country)"
     }
     strs : For item : items
       Reduce
         If acc Is Null
-          Then x.value
-          Else "\(acc)\n\(x.value)"
+          Then item.value
+          Else "\(acc)\n\(item.value)"
 
 This has two advantage: the rendering logic can be overridden and the interface is simpler. As a disadvantage, there is now an inheritance implication for the values of `items`. However, because the template `item_tmpl` can be overridden and replaced, the inheritance implication is flexible. In fact, it would be reasonable to have:
 
