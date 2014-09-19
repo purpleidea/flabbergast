@@ -73,7 +73,7 @@ parser_tmpl : Template {
 	accumulate_char : Template { accumulate : False  field ?:  in ?: }
 	# Adds a Unicode literal, by codepoint, to the currently accumulating string
 	# after successfully parsing the child parse expression.
-	collect_codepoint : Template { codepoint ?: in ?:}
+	collect_codepoint : Template { codepoint ?:  in ?: }
 	# Parses another rule
 	other : Template {
 		# This it the name (and therefore type) of the desired rule to parse.
@@ -257,7 +257,7 @@ language_tmpl : Template {
 		attribute : Template syntax_group {
 			alternatives +: {
 				literal_attributes : [ plain_attribute ]
-				base_tmpl_attributes : [ plain_attribute, informative_attribute, missing_attribute ]
+				new_tmpl_attributes : [ plain_attribute, informative_attribute, missing_attribute ]
 				extend_tmpl_attributes : [ plain_attribute, informative_attribute, missing_attribute, named_override, template_override, remove_attribute ]
 				instantiate_tmpl_attributes : [ plain_attribute, informative_attribute, named_override, template_override, remove_attribute ]
 				fricasee_attributes :  [ plain_attribute, ordinal_attribute, name_attribute ]
@@ -313,7 +313,11 @@ language_tmpl : Template {
 							parser.accumulate_list {
 								field : $overrides
 								in : parser.many {
-									of : parser.other { type : $attribute  alternate : $extend_tmpl_attributes  field : Null }
+									of : parser.other {
+										type : $attribute
+										alternate : $extend_tmpl_attributes
+										field : Null
+									}
 								}
 							},
 							space { preferred : True },
@@ -400,7 +404,7 @@ language_tmpl : Template {
 			}
 		}
 
-		results : Template syntax_group {
+		result : Template syntax_group {
 			rules +: {
 				reduce : Template syntax_element {
 					pattern : parser.sequence {
@@ -450,7 +454,7 @@ language_tmpl : Template {
 			}
 		}
 
-		selectors : Template syntax_group {
+		selector : Template syntax_group {
 			rules +: {
 				each : Template syntax_element {
 					pattern : parser.sequence {
@@ -465,9 +469,13 @@ language_tmpl : Template {
 					pattern : parser.accumulate_list {
 						field : $inputs
 						type : $attribute
-						in : parser.many {
-							of : parser.other { type : $attribute  alternative : $fricasee_attributes  field : Null }
-							separator : ","
+						in : parser.many_word {
+							of : parser.other {
+								type : $attribute
+								alternative : $fricasee_attributes
+								field : Null
+							}
+							separator_word : ","
 						}
 					}
 				}
