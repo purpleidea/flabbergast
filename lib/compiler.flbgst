@@ -234,6 +234,20 @@ language_tmpl : Template {
 			}
 		]
 	}
+	int_with_unit_tmpl : Template syntax_element {
+		symbol ?:
+		unit ?:
+		pattern : parser.optional {
+			of : parser.sequence {
+				of : [
+					parser.accumulate_integer {
+						in : valid_number {}
+						field : $count
+					}, parser.exact { word : symbol }
+				]
+			}
+		}
+	}
 
 	# All the groups in the language. For details, see the specification.
 	rule_groups : Template {
@@ -498,25 +512,11 @@ language_tmpl : Template {
 		}
 
 		time : Template syntax_group {
-			time_chunk_tmpl : Template syntax_element {
-				symbol ?:
-				unit ?:
-				pattern : parser.optional {
-					of : parser.sequence {
-						of : [
-							parser.accumulate_integer {
-								in : valid_number {}
-								field : $duration
-							}, parser.exact { word : symbol }
-						]
-					}
-				}
-			}
 			rules +: {
-				days : Template time_chunk_tmpl { symbol "d"  unit : 60 * 60 * 24 }
-				hours : Template time_chunk_tmpl { symbol "h"  unit : 60 * 60 }
-				minutes : Template time_chunk_tmpl { symbol "m"  unit : 60 }
-				seconds : Template time_chunk_tmpl { symbol "s"  unit : 1 }
+				days : Template int_with_unit_tmpl { symbol "d"  unit : 60 * 60 * 24 }
+				hours : Template int_with_unit_tmpl { symbol "h"  unit : 60 * 60 }
+				minutes : Template int_with_unit_tmpl { symbol "m"  unit : 60 }
+				seconds : Template int_with_unit_tmpl { symbol "s"  unit : 1 }
 			}
 		}
 
