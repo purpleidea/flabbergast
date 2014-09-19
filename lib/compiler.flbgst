@@ -193,8 +193,44 @@ language_tmpl : Template {
 	}
 	# A expression which is a single word
 	literal_tmpl : Template expression_tmpl {
+		level : 19
 		name ?:
 		pattern : parser.exact { word : name }
+	}
+	# A “long” expression (i.e., one containing many terms)
+	long_expression_tmpl : Template expression_tmpl {
+		# The type of the terms to collect
+		term_type ?:
+		pattern : parser.sequence {
+			of : [
+				child_expression { field : $start_expr },
+				parser.accumulate_list {
+					field : $terms
+					in : parser.many {
+						of : parser.other {
+							type : term_type
+							accumulate : True
+							field : Null
+						}
+					}
+				}
+			]
+		}
+	}
+	# A right-hand term in “long” expression
+	term_tmpl : Template expression_tmpl {
+		# The precedence level of the term's enclosing expression.
+		level %:
+		# The symbol that separates the term.
+		symbol ?:
+		pattern : parser.sequence {
+			of : [
+				space { preferred : True },
+				parser.exact { word : symbol },
+				space { preferred : True },
+				child_expression { field : $expression }
+			]
+		}
 	}
 	# A decimal number with no preceding zeros.
 	valid_number : Template parser.alternate {
@@ -612,6 +648,33 @@ language_tmpl : Template {
 							parser.exact { word : "Container" }
 						]
 					}
+				}
+			}
+		}
+
+		arithmetic_disjunction_term : Template syntax_group {
+			level : 8
+			rules +: {
+				addition_term : Template term_tmpl {
+					symbol : "+"
+				}
+				subtraction_term : Template term_tmpl {
+					symbol : "-"
+				}
+			}
+		}
+
+		arithmetic_conjunction_term : Template syntax_group {
+			level : 9
+			rules +: {
+				multiplication_term : Template term_tmpl {
+					symbol : "*"
+				}
+				division_term : Template term_tmpl {
+					symbol : "/"
+				}
+				modulus_term : Template term_tmpl {
+					symbol : "%"
 				}
 			}
 		}
