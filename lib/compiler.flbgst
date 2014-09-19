@@ -157,7 +157,9 @@ language_tmpl : Template {
 	expression_tmpl : Template syntax_element {
 		# The depth/precedence in the expression nesting system, as inferred from
 		# the specification.
-		level %:
+		level ?:
+		# A parser for a top-level expression
+		top_expression : Template parser.other { accumulate : True  type : "expression0" }
 		# A parser for an expression one level more nested.
 		child_expression : Template parser.other { accumulate : True  type : "expression" & (level + 1) }
 		# A parser for an expression of the same level.
@@ -178,6 +180,18 @@ language_tmpl : Template {
 				right_operand { field : $right }
 				]
 		}
+	}
+	# A binary operator where the right operand is a type.
+	type_operator : Template binary_operator {
+		right_operand : Template parser.other {
+			type : $type
+		}
+	}
+	# An "Is" operator.
+	is_suffix_operator : Template binary_operator {
+		suffix ?:
+		operator : "Is"
+		right_operand : Template parser.exact { word : suffix }
 	}
 	# A unary expression preceded by a token
 	unary_tmpl : Template expression_tmpl  {
