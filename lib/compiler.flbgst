@@ -595,5 +595,26 @@ language_tmpl : Template {
 			}
 		}
 
+		identifierish : Template syntax_group {
+			rules +: {
+				literal_identifier : Template syntax_element {
+					pattern : parser.sequence {
+						of : [
+							space { },
+							valid_identifier { field : $name }
+						]
+					}
+				}
+				container : Template syntax_element {
+					pattern : parser.sequence {
+						of : [
+							space { },
+							parser.exact { word : "Container" }
+						]
+					}
+				}
+			}
+		}
+
 	}
 }
