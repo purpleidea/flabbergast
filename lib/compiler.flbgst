@@ -692,5 +692,637 @@ language_tmpl : Template {
 			}
 		}
 
+		expression : Template syntax_group {
+			alternatives +: {
+				expression0 : [ $let, $expression1 ]
+				expression1 : [ $for, $expression2 ]
+				expression2 : [ $if, $expression3 ]
+				expression3 : [ $concatenate, $expression4 ]
+				expression4 : [ $disjunction, $expression5 ]
+				expression5 : [ $conjunction, $expression6 ]
+				expression6 : [ $equality, $inequality, $greater, $greater_or_equality, $lesser, $lesser_or_equality, $expression7 ]
+				expression7 : [ $compare, $expression8 ]
+				expression8 : [ $arithmetic_disjunction, $expression9 ]
+				expression9 : [ $arithmetic_conjunction, $expression10 ]
+				expression10 : [ $range, $expression11 ]
+				expression11 : [ $coerce, $enforce, $check, $is_finite, $is_nan, $is_null, $expression12 ]
+				expression12 : [ $error, $length, $expression13 ]
+				expression13 : [ $remote_lookup, $expression14 ]
+				expression14 : [ $instantiation, $expression15 ]
+				expression15 : [ $coalesce, $expression16 ]
+				expression16 : [ $literal_tuple, $not, $negation, $template_new, $template_extend, $expression17 ]
+				expression17 : [ $function_anonymous, $function_named, $function_mixed, $expression18 ]
+				expression18 : [ $contextual_lookup, $from, $expression19 ]
+				expression19 : [ $subexpression, $literal_list, $null, $int_max, $int_min, $float_max, $float_min, $infinity, $nan, $continue, $this, $true, $false, $time_literal, $int_k, $int_m, $int_g, $int_ki, $int_mi, $int_gi, $integer_literal, $hex_integer_literal, $float_max, $string_identifier, $string_literal ]
+			}
+			rules +: {
+				let : Template expression_tmpl {
+					level : 0
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "Let" },
+							space { mandatory : True },
+							parser.accumulate_list {
+								type : $attribute
+								field : $definitions
+								in : parser.many {
+									of : parser.other { type : $attribute  alternate : $plain_attribute  field : Null }
+									separator : ","
+									nonempty : True
+								}
+							},
+							space { mandatory : True },
+							parser.exact { word : "In" },
+							sibling_expression { field : $expression }
+						]
+					}
+				}
+
+
+				for : Template expression_tmpl {
+					level : 1
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "For" },
+							space { mandatory : True },
+							parser.other {
+								field : $selector
+								type : $selector
+							},
+							parser.optional {
+								of : parser.sequence {
+									of : [
+										space { mandatory : True },
+										parser.exact { word : "Where" },
+										space { mandatory : True },
+										parser.other {
+											type : $expression
+											alternate : $expression0
+											field : $where_expr
+										},
+									]
+								}
+							},
+							space { mandatory : True },
+							parser.other {
+								field : $result
+								type : $result
+							}
+						]
+					}
+				}
+
+
+				if : Template expression_tmpl {
+					level : 2
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "If" },
+							space { mandatory : True },
+							top_expression { field : $cond_expr },
+							space { mandatory : True },
+							parser.exact { word : "Then" },
+							space { mandatory : True },
+							top_expression { field : $then_expr },
+							space { mandatory : True },
+							parser.exact { word : "Else" },
+							space { mandatory : True },
+							sibling_expression { field : $else_expr }
+						]
+					}
+				}
+
+				concatenate : Template binary_operator {
+					level : 3
+					operator : "&"
+					right_operand : Template sibling_expression {}
+				}
+
+				disjunction : Template binary_operator {
+					level : 4
+					operator : "||"
+					right_operand : Template sibling_expression {}
+				}
+
+				conjunction : Template binary_operator {
+					level : 5
+					operator : "&&"
+					right_operand : Template sibling_expression {}
+				}
+
+				equality : Template binary_operator {
+					level : 6
+					operator : "=="
+				}
+				inequality : Template binary_operator {
+					level : 6
+					operator : "!="
+				}
+				greater : Template binary_operator {
+					level : 6
+					operator : ">"
+				}
+				greater_or_equality : Template binary_operator {
+					level : 6
+					operator : ">="
+				}
+				lesser : binary_operator {
+					level : 6
+					operator : "<"
+				}
+				lesser_or_equality : Template binary_operator {
+					level : 6
+					operator : "<="
+				}
+
+				compare : Template binary_operator {
+					level : 7
+					operator : "<=>"
+				}
+
+				arithmetic_disjunction : Template long_expression_tmpl {
+					level : 8
+					term_type : $arithmetic_disjunction_term
+				}
+
+				arithmetic_conjunction : Template long_expression_tmpl {
+					level : 9
+					term_type : $arithmetic_conjunction_term
+				}
+
+				range : Template binary_operator {
+					level : 10
+					operator : "Through"
+				}
+
+				coerce : Template type_operator {
+					level : 11
+					operator : "To"
+				}
+				enforce : Template type_operator {
+					level : 11
+					operator : "As"
+				}
+				check : Template type_operator {
+					level : 11
+					operator : "Is"
+				}
+				is_finite : Template is_suffix_operator {
+					level : 11
+					suffix : "Finite"
+				}
+				is_nan : Template is_suffix_operator {
+					level : 11
+					suffix : "NaN"
+				}
+				is_null : Template is_suffix_operator {
+					level : 11
+					suffix : "Null"
+				}
+
+				error : Template unary_tmpl {
+					level : 12
+					operator : "Error"
+				}
+				length : Template unary_tmpl {
+					level : 12
+					operator : "Length"
+				}
+
+				remote_lookup : Template expression_tmpl {
+					level : 13
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "Lookup" },
+							space { mandatory : True },
+							parser.accumulate_list {
+								type : $identifierish
+								parser.many_word {
+									of : parser.other {
+										type : $identifierish
+										field : Null
+									}
+									separator_word : "."
+								}
+							},
+							space { mandatory : True },
+							parser.exact { word : "In" },
+							space { mandatory : True },
+							sibling_expression { field : $expression }
+						]
+					}
+				}
+
+				insantiation : Template expression_tmpl {
+					level : 14
+					pattern : parser.sequence {
+						of : [
+							child_expression { field : $source }
+							space { preferred : True },
+							parser.exact { word : "{" },
+							parser.accumulate_list {
+								field : $attributes
+								in : parser.many {
+									of : parser.other {
+										type : $attribute
+										alternate : $instantiate_tmpl_attributes
+									}
+								}
+							},
+							space { preferred : True },
+							parser.exact { word : "}" }
+						]
+					}
+				}
+
+				coalesce : Template binary_operator {
+					level : 15
+					operator : "??"
+				}
+
+				literal_tuple : Template expression_tmpl {
+					level : 16
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "{" },
+							space { preferred : True },
+							parser.accumulate_list {
+								field : $attributes
+								in : parser.many {
+									of : parser.other {
+										type : $attribute
+										alternate : $plain_attribute
+									}
+								}
+							},
+							space { preferred : True },
+							parser.exact { word : "}" }
+						]
+					}
+				}
+				not : Template unary_tmpl {
+					level : 16
+					operator : "!"
+				}
+				negation : Template expression_tmpl {
+					level : 16
+					operator : "-"
+				}
+				template_new : Template expression_tmpl {
+					level : 16
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "Template" },
+							space { preferred : True },
+							parser.exact { word : "{" },
+							parser.accumulate_list {
+								field : $attributes
+								in : parser.many {
+									of : parser.other {
+										type : $attribute
+										alternate : $new_tmpl_attributes
+									}
+								}
+							},
+							parser.many { of : [attribute, missing_attribute ] },
+							space { preferred : True },
+							parser.exact { word : "}" }
+						]
+					}
+				}
+				template_extend : Template expression_tmpl {
+					level : 16
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "Template" },
+							space { mandatory : True },
+							child_expression { field : $source },
+							space { preferred : True },
+							parser.exact { word : "{" },
+								parser.accumulate_list {
+								field : $attributes
+								in : parser.many {
+									of : parser.other {
+										type : $attribute
+										alternate : $extend_tmpl_attributes
+									}
+								}
+							},
+							space { preferred : True },
+							parser.exact { word : "}" }
+						]
+					}
+				}
+
+				function_anonymous : Template expression_tmpl {
+					level : 17
+					pattern : parser.sequence {
+						of : [
+							child_expression { },
+							space { },
+							parser.exact { word : "(" },
+							parser.accumulate_list {
+								field : $args,
+								in : parser.many_word {
+									of : parser.sequence {
+										of : [
+											space { preferred : True },
+											top_expression { field : Null }
+										]
+									},
+									separator_word : ","
+								}
+							},
+							space { },
+							parser.exact { word : ")" }
+						]
+					}
+				}
+				function_named : Template expression_tmpl {
+					level : 17
+					pattern : parser.sequence {
+						of : [
+							child_expression { },
+							space { },
+							parser.exact { word : "(" },
+							parser.accumulate_list {
+								field : $args,
+								in : parser.many_word {
+									of : parser.sequence {
+										of : [
+											space { preferred : True },
+											parser.other {
+												type : $attribute
+												alternate : $plain_attribute
+												field : Null
+											}
+										]
+									},
+									separator_word : ","
+								}
+							},
+							space { },
+							parser.exact { word : ")" }
+						]
+					}
+				}
+				function_mixed : Template expression_tmpl {
+					level : 17
+					pattern : parser.sequence {
+						of : [
+							child_expression { },
+							space { },
+							parser.exact { word : "(" },
+							parser.accumulate_list {
+								field : $anon_args,
+								in : parser.many_word {
+									of : parser.sequence {
+										of : [
+											space { preferred : True },
+											top_expression { field : Null }
+										]
+									},
+									separator_word : ","
+								}
+							},
+							parser.exact { word : "," },
+							parser.accumulate_list {
+								field : $named_args,
+								in : parser.many_word {
+									of : parser.sequence {
+										of : [
+											space { preferred : True },
+											parser.other {
+												type : $attribute
+												alternate : $plain_attribute
+												field : Null
+											}
+										]
+									},
+									separator_word : ","
+								}
+							},
+							space { },
+							parser.exact { word : ")" }
+						]
+					}
+				}
+
+				contextual_lookup : Template expression_tmpl {
+					level : 18
+					pattern : parser.accumulate_list {
+						field : $parts
+						in : parser.many_word {
+							of : parser.other {
+								type : $identifierish
+								field : Null
+							}
+							separator_word : "."
+						}
+					}
+				}
+				from : Template expression_tmpl {
+					level : 18
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "From" },
+							space { mandatory : True },
+							parser.accumulate_string {
+								field : $uri
+								in : parser.sequence {
+									accumulate : True
+									of : [
+										parser.many {
+											of : parser.alternate {
+												of : [
+													parser.range { from : "A"  to : "Z" },
+													parser.range { from : "a"  to : "z" },
+													parser.range { from : "0"  to : "9" },
+													parser.single { char : "-.+" }
+												]
+											}
+										},
+										parser.single { char : ":" },
+										parser.many {
+											of : parser.alternate {
+												of : [
+													parser.range { from : "A"  to : "Z" },
+													parser.range { from : "a"  to : "z" },
+													parser.range { from : "0"  to : "9" },
+													parser.single { char : "~=-,;!?/.'()[]@$*&#%+" }
+												]
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+				}
+				direct_lookup : Template expression_tmpl {
+					level : 18
+					pattern : parser.sequence {
+						of : [
+							child_expression { },
+							space { },
+							parser.exact { word : "." }
+							parser.accumulate_list {
+								type : $identifierish
+								parser.many_word {
+									of : parser.other {
+										type : $identifierish
+										field : Null
+									}
+									separator_word : "."
+								}
+							}
+						]
+					}
+				}
+
+				subexpression : Template expression_tmpl {
+					level : 19
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "(" },
+							space { },
+							top_expression { field : $expression },
+							space { },
+							parser.exact { word : ")" }
+						]
+					}
+				}
+				literal_list : Template expression_tmpl {
+					level : 19
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "[" },
+							parser.accumulate_list {
+								field : $items
+								in : parser.many_word {
+									of : parser.sequence {
+										of : [
+											space { preferred : True },
+											top_expression { field : Null },
+											space { },
+										]
+										separator_word : ","
+									}
+								}
+							}
+							space { preferred : True },
+							parser.exact { word : "]" }
+						]
+					}
+				}
+
+				null : Template literal_tmpl { name : "Null" }
+				int_max : Template literal_tmpl { name : "IntMax" }
+				int_min : Template literal_tmpl { name : "IntMin" }
+				float_max : Template literal_tmpl { name : "FloatMax" }
+				float_min : Template literal_tmpl { name : "FloatMin" }
+				infinity : Template literal_tmpl { name : "Infinity" }
+				nan : Template literal_tmpl { name : "NaN" }
+				continue : Template literal_tmpl { name : "Continue" }
+				this : Template literal_tmpl { name : "This" }
+				true : Template literal_tmpl { name : "True" }
+				false : Template literal_tmpl { name : "False" }
+
+				time_literal : Template syntax_element {
+					level : 19
+					pattern : parser.accumulate_list {
+						field : $parts
+						in : parser.other {
+							type : $time
+							accumulate : True
+							field : Null
+						}
+					}
+				}
+				integer_literal : Template expression_tmpl {
+					level : 19
+					pattern : parser.accumulate_integer {
+						field : $amount
+						in : valid_number {}
+					}
+				}
+				hex_integer_literal : Template expression_tmpl {
+					level : 19
+					pattern : parser.accumulate_integer {
+						field : $amount
+						of : parser.sequence {
+							of : [
+									parser.exact { word : "0x" },
+									parser.many {
+										nonempty : True
+										of : hex_digit { }
+									}
+								]
+						}
+					}
+				}
+				int_k : Template int_with_unit_tmpl { symbol : "k"  unit : 1000 }
+				int_m : Template int_with_unit_tmpl { symbol : "M"  unit : 1000 * 1000 }
+				int_g : Template int_with_unit_tmpl { symbol : "G"  unit : 1000 * 1000 * 1000 }
+				int_ki : Template int_with_unit_tmpl { symbol : "ki"  unit : 1024 }
+				int_mi : Template int_with_unit_tmpl { symbol : "Mi"  unit : 1024 * 1024 }
+				int_gi : Template int_with_unit_tmpl { symbol : "Gi"  unit : 1024 * 1024 * 1024 }
+				float_literal : Template expression_tmpl {
+					level : 19
+					pattern : parser.accumulate_float {
+						parser.sequence {
+							accumulate : True
+				.			of : [
+								valid_number {},
+								parser.single { char : "." },
+								parser.many {
+									of : parser.range { from : "0" to : "9" },
+								},
+								parser.optional {
+									of : parser.sequence {
+										of : [
+											parser.single { char : "eE" },
+											parser.optional {
+												of : parser.single { char : "-" },
+											},
+											valid_number {}
+										]
+									}
+								}
+							]
+						}
+					}
+				}
+
+				string_identifier : Template expression_tmpl {
+					level : 19
+					pattern : parser.sequence {
+							of : [
+								parser.exact { word : "$" },
+								valid_identifier { field : $name }
+							]
+						}
+					}
+					string_literal : Template expression_tmpl {
+						level : 19
+						pattern : parser.sequence {
+							of : [
+								parser.exact { word : "\"" },
+								parser.accumulate_list {
+									field : $parts
+									in : parser.many {
+										of : parser.other {
+											type : $string_piece
+											field : Null
+										}
+									}
+								},
+								parser.exact { word : "\"" }
+							]
+						}
+					}
+			}
+		}
+
 	}
 }
