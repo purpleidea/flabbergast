@@ -373,7 +373,6 @@ language_tmpl : Template {
 							parser.exact { word : "+:" },
 							space { preferred : True },
 							parser.exact { word : "{" },
-							space { preferred : True },
 							parser.accumulate_list {
 								field : $overrides
 								in : parser.many {
