@@ -143,8 +143,8 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<Fricassee.MergedTuples> ("merged tuple", 0, "%L{sources}{% ,%-}", new Type[] { typeof (Fricassee.Source) });
 		/* Results */
 		register<Fricassee.AnonymousTuple> ("ordered anonymous tuple", 0, "%P{order} Select %P{result}");
-		register<Fricassee.AnonymousTuple> ("anonymous tuple", 0, "Select %P{result}");
 		register<Fricassee.NamedTuple> ("named tuple", 0, "Select %P{result_attr}%-:%-%P{result_value}");
+		register<Fricassee.AnonymousTuple> ("anonymous tuple", 0, "Select %P{result}");
 		register<Fricassee.Reduce> ("reduce (ordered)", 0, "%P{order} Reduce %P{result} With %P{initial_attr}%-:%-%P{initial}");
 		register<Fricassee.Reduce> ("reduce", 0, "Reduce %P{result} With %P{initial_attr}%-:%-%P{initial}");
 		/* Order Clauses */
