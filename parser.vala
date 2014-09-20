@@ -185,28 +185,41 @@ internal class Flabbergast.IdentifierParser : GTeonoma.CustomParser<Name> {
 	public IdentifierParser () {}
 
 	public override GTeonoma.CustomParser.StateType next_state (unichar input) {
-		if (state == IdentifierState.START) {
-			if (input == 'C') {
-				return (state = IdentifierState.CONTAINER).get_state ();
-			} else if (input.islower ()) {
-				return (state = IdentifierState.PART).get_state ();
-			} else {
-				return (state = IdentifierState.JUNK).get_state ();
-			}
-		} else if (state == IdentifierState.CONTAINER) {
-			if (input == "Container"[container_position]) {
-				if (container_position == "Container".length - 1) {
-					return (state = IdentifierState.CONTAINER_DONE).get_state ();
-				} else {
-					return (state = IdentifierState.CONTAINER).get_state ();
-				}
-			} else {
-				return (state = IdentifierState.JUNK).get_state ();
-			}
-		} else if (state == IdentifierState.PART && (input.isdigit () || input.isalpha () || input == '_')) {
-			return (state = IdentifierState.PART).get_state ();
-		} else {
-			return (state = IdentifierState.JUNK).get_state ();
+		state = parse_input (input);
+		return state.get_state ();
+	}
+
+	private IdentifierState parse_input (unichar input) {
+		switch (state) {
+		 case IdentifierState.START:
+			 if (input == 'C') {
+				 return IdentifierState.CONTAINER;
+			 } else if (input.islower () && input.isalpha ()) {
+				 return IdentifierState.PART;
+			 } else {
+				 return IdentifierState.JUNK;
+			 }
+
+		 case IdentifierState.CONTAINER:
+			 if (input == "Container"[container_position++]) {
+				 if (container_position == "Container".length) {
+					 return IdentifierState.CONTAINER_DONE;
+				 } else {
+					 return IdentifierState.CONTAINER;
+				 }
+			 } else {
+				 return IdentifierState.JUNK;
+			 }
+
+		 case IdentifierState.PART:
+			 if (input.isdigit () || input.isalpha () || input == '_') {
+				 return IdentifierState.PART;
+			 } else {
+				 return IdentifierState.JUNK;
+			 }
+
+		 default:
+			 return IdentifierState.JUNK;
 		}
 	}
 	public override Name build_object (string str) {
