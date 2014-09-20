@@ -127,8 +127,28 @@ language_tmpl : Template {
 		expanded_common : common {}
 	}
 
-	# TODO: make this parse spaces and comments and put the comments in a buffer
-	space : Template parser.alternate {
+	# Parse a space and/or comment
+	space : Template parser.accumulate_string {
+		# Whether there must be some space for successful parsing.
+		mandatory : False
+		# If `mandatory` is not true, emit a space when pretty printing.
+		preferred : False
+
+		field : $comment
+		in : Template parser.many {
+			nonempty : mandatory
+			of : parser.alternate {
+				of : [
+					parser.single { char : " \t\n\r\f\v" },
+					parser.sequence {
+						of : [
+							parser.exact { word : "#" },
+							parser.single { char : "\n"  invert_match : True  accumulate : True }
+						]
+					}
+				]
+			}
+		}
 	}
 	valid_identifier : Template parser.accumulate_string {
 		accumulate : True
