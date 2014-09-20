@@ -170,7 +170,7 @@ language_tmpl : Template {
 	}
 
 	expanded_groups :
-		For rule_group_tmpl : rule_groups {}, group_name : Attribute
+		For rule_group_tmpl : rule_groups {}, group_name : Name
 		Select group_name : rule_group_tmpl {}
 
 	# Syntax element for expressions
@@ -242,7 +242,7 @@ language_tmpl : Template {
 					field : $terms
 					in : parser.many {
 						of : parser.other {
-							type : term_type
+							type : $term_type
 							accumulate : True
 							field : Null
 						}
@@ -405,7 +405,7 @@ language_tmpl : Template {
 							},
 							space { preferred : True },
 							parser.exact { word : "}" },
-							space { preferred : True },
+							space { preferred : True }
 						]
 					}
 				}
@@ -582,10 +582,10 @@ language_tmpl : Template {
 
 		time : Template syntax_group {
 			rules +: {
-				days : Template int_with_unit_tmpl { symbol "d"  unit : 60 * 60 * 24 }
-				hours : Template int_with_unit_tmpl { symbol "h"  unit : 60 * 60 }
-				minutes : Template int_with_unit_tmpl { symbol "m"  unit : 60 }
-				seconds : Template int_with_unit_tmpl { symbol "s"  unit : 1 }
+				days : Template int_with_unit_tmpl { symbol : "d"  unit : 60 * 60 * 24 }
+				hours : Template int_with_unit_tmpl { symbol : "h"  unit : 60 * 60 }
+				minutes : Template int_with_unit_tmpl { symbol : "m"  unit : 60 }
+				seconds : Template int_with_unit_tmpl { symbol : "s"  unit : 1 }
 			}
 		}
 
@@ -779,7 +779,7 @@ language_tmpl : Template {
 											type : $expression
 											alternate : $expression0
 											field : $where_expr
-										},
+										}
 									]
 								}
 							},
@@ -917,7 +917,7 @@ language_tmpl : Template {
 							space { mandatory : True },
 							parser.accumulate_list {
 								type : $identifierish
-								parser.many_word {
+								in : parser.many_word {
 									of : parser.other {
 										type : $identifierish
 										field : Null
@@ -937,7 +937,7 @@ language_tmpl : Template {
 					level : 14
 					pattern : parser.sequence {
 						of : [
-							child_expression { field : $source }
+							child_expression { field : $source },
 							space { preferred : True },
 							parser.exact { word : "{" },
 							parser.accumulate_list {
@@ -1042,14 +1042,14 @@ language_tmpl : Template {
 							space { },
 							parser.exact { word : "(" },
 							parser.accumulate_list {
-								field : $args,
+								field : $args
 								in : parser.many_word {
 									of : parser.sequence {
 										of : [
 											space { preferred : True },
 											top_expression { field : Null }
 										]
-									},
+									}
 									separator_word : ","
 								}
 							},
@@ -1066,7 +1066,7 @@ language_tmpl : Template {
 							space { },
 							parser.exact { word : "(" },
 							parser.accumulate_list {
-								field : $args,
+								field : $args
 								in : parser.many_word {
 									of : parser.sequence {
 										of : [
@@ -1077,7 +1077,7 @@ language_tmpl : Template {
 												field : Null
 											}
 										]
-									},
+									}
 									separator_word : ","
 								}
 							},
@@ -1094,20 +1094,20 @@ language_tmpl : Template {
 							space { },
 							parser.exact { word : "(" },
 							parser.accumulate_list {
-								field : $anon_args,
+								field : $anon_args
 								in : parser.many_word {
 									of : parser.sequence {
 										of : [
 											space { preferred : True },
 											top_expression { field : Null }
 										]
-									},
+									}
 									separator_word : ","
 								}
 							},
 							parser.exact { word : "," },
 							parser.accumulate_list {
-								field : $named_args,
+								field : $named_args
 								in : parser.many_word {
 									of : parser.sequence {
 										of : [
@@ -1118,7 +1118,7 @@ language_tmpl : Template {
 												field : Null
 											}
 										]
-									},
+									}
 									separator_word : ","
 								}
 							},
@@ -1185,10 +1185,10 @@ language_tmpl : Template {
 						of : [
 							child_expression { },
 							space { },
-							parser.exact { word : "." }
+							parser.exact { word : "." },
 							parser.accumulate_list {
 								type : $identifierish
-								parser.many_word {
+								in : parser.many_word {
 									of : parser.other {
 										type : $identifierish
 										field : Null
@@ -1224,12 +1224,12 @@ language_tmpl : Template {
 										of : [
 											space { preferred : True },
 											top_expression { field : Null },
-											space { },
+											space { }
 										]
 										separator_word : ","
 									}
 								}
-							}
+							},
 							space { preferred : True },
 							parser.exact { word : "]" }
 						]
@@ -1290,20 +1290,20 @@ language_tmpl : Template {
 				float_literal : Template expression_tmpl {
 					level : 19
 					pattern : parser.accumulate_float {
-						parser.sequence {
+						in : parser.sequence {
 							accumulate : True
-				.			of : [
+							of : [
 								valid_number {},
 								parser.single { char : "." },
 								parser.many {
-									of : parser.range { from : "0" to : "9" },
+									of : parser.range { from : "0" to : "9" }
 								},
 								parser.optional {
 									of : parser.sequence {
 										of : [
 											parser.single { char : "eE" },
 											parser.optional {
-												of : parser.single { char : "-" },
+												of : parser.single { char : "-" }
 											},
 											valid_number {}
 										]
