@@ -199,7 +199,7 @@ This means that function-like template can offer both variadic and non-variadic 
 There is an entirely different way to generate tuples: from existing tuples using the fricassée expressions. These work something like SQL or XQuery statements to generate new tuples from existing tuples, as SQL generates new tables from existing tables and XQuery generates new trees from existing trees.
 
     a : { x : 1  y : 2  z : 3 }
-    b : For n : Attribute, v : a Select n : v + 1 # Yields { x : 2  y : 3  z : 4 }
+    b : For n : Name, v : a Select n : v + 1 # Yields { x : 2  y : 3  z : 4 }
     c : For v : a Reduce v + acc With acc : 0 # Yields 6
 
 These are the essential features of the language. Many other built-in expressions are provided, including an `If` expression, other ways to generate tuples, access to external libraries, more variants of the fricassée expression, and more subtle ways to lookup identifiers.
@@ -685,7 +685,7 @@ The attribute names, if useful, can be included in the template instantiation.
       input : Template arg_tmpl { value : "~/input.txt" }
       compression : Template arg_tmpl { value : 8 }
     }
-    arg_str : For arg : args {}, name_ : Attribute
+    arg_str : For arg : args {}, name_ : Name
       Reduce acc & " " & (arg { name : name_ }).spec
       With acc : binary
 
@@ -941,7 +941,7 @@ Converting strings to executable code is a rather undesirable prospect. Again, s
 
 The more restricted version of this is allowing strings to be used for lookup. In some situations, this is useful, but the desired behaviour can usually be accomplished with:
 
-    For n : Attribute, v : x Where n == name Reduce acc ?? v With acc : Null
+    For n : Name, v : x Where n == name Reduce acc ?? v With acc : Null
 
 This, however, only does a single layer of direct lookup, instead of contextual lookup.
 

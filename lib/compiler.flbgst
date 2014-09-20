@@ -121,7 +121,7 @@ language_tmpl : Template {
 		# entry is the name of the field and its type (e.g., `name : $str`).
 		common : Template {}
 		expanded_rules :
-			For rule_tmpl : rules {}, rule_name : Attribute
+			For rule_tmpl : rules {}, rule_name : Name
 			Select rule_name : rule_tmpl {}
 		expanded_alts : alternatives {}
 		expanded_common : common {}

@@ -151,9 +151,9 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<Fricassee.OrderBy> ("orderby", 0, "Order By %P{order}");
 		register<Fricassee.Reverse> ("reverse", 0, "Reverse");
 		/* Sources */
-		register<Fricassee.AttributeSource> ("ordinal", 0, "%P{name}%-:%-Attribute");
+		register<Fricassee.AttributeSource> ("name", 0, "%P{name}%-:%-Name");
 		register<Fricassee.OrdinalSource> ("ordinal", 0, "%P{name}%-:%-Ordinal");
-		register<Fricassee.TupleSource> ("ordinal", 0, "%P{name}%-:%-%P{expression}");
+		register<Fricassee.TupleSource> ("expression", 0, "%P{name}%-:%-%P{expression}");
 	}
 }
 internal class Flabbergast.IdentifierParser : GTeonoma.CustomParser<Name> {
