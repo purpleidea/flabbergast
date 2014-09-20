@@ -322,6 +322,9 @@ language_tmpl : Template {
 	# All the groups in the language. For details, see the specification.
 	rule_groups : Template {
 		file : Template syntax_group {
+			common +: {
+				comment : $str
+			}
 			rules +: {
 				file : Template syntax_element {
 					pattern : accumulate_list {
@@ -339,6 +342,9 @@ language_tmpl : Template {
 		}
 
 		attribute : Template syntax_group {
+			common +: {
+				comment : $str
+			}
 			alternatives +: {
 				literal_attributes : [ plain_attribute ]
 				new_tmpl_attributes : [ plain_attribute, informative_attribute, missing_attribute ]
@@ -467,6 +473,9 @@ language_tmpl : Template {
 		}
 
 		ordering : Template syntax_group {
+			common +: {
+				comment : $str
+			}
 			rules +: {
 				order_by : Template syntax_element {
 					pattern : parser.sequence {
@@ -488,6 +497,9 @@ language_tmpl : Template {
 		}
 
 		result : Template syntax_group {
+			common +: {
+				comment : $str
+			}
 			rules +: {
 				reduce : Template syntax_element {
 					pattern : parser.sequence {
@@ -538,6 +550,9 @@ language_tmpl : Template {
 		}
 
 		selector : Template syntax_group {
+			common +: {
+				comment : $str
+			}
 			rules +: {
 				each : Template syntax_element {
 					pattern : parser.sequence {
@@ -665,6 +680,9 @@ language_tmpl : Template {
 		}
 
 		identifierish : Template syntax_group {
+			common +: {
+				comment : $str
+			}
 			rules +: {
 				literal_identifier : Template syntax_element {
 					pattern : parser.sequence {
@@ -687,6 +705,9 @@ language_tmpl : Template {
 
 		arithmetic_disjunction_term : Template syntax_group {
 			level : 8
+			common +: {
+				comment : $str
+			}
 			rules +: {
 				addition_term : Template term_tmpl {
 					symbol : "+"
@@ -699,6 +720,9 @@ language_tmpl : Template {
 
 		arithmetic_conjunction_term : Template syntax_group {
 			level : 9
+			common +: {
+				comment : $str
+			}
 			rules +: {
 				multiplication_term : Template term_tmpl {
 					symbol : "*"
@@ -734,6 +758,9 @@ language_tmpl : Template {
 				expression17 : [ $function_anonymous, $function_named, $function_mixed, $expression18 ]
 				expression18 : [ $contextual_lookup, $from, $expression19 ]
 				expression19 : [ $subexpression, $literal_list, $null, $int_max, $int_min, $float_max, $float_min, $infinity, $nan, $continue, $this, $true, $false, $time_literal, $int_k, $int_m, $int_g, $int_ki, $int_mi, $int_gi, $integer_literal, $hex_integer_literal, $float_max, $string_identifier, $string_literal ]
+			}
+			common +: {
+				comment : $str
 			}
 			rules +: {
 				let : Template expression_tmpl {
