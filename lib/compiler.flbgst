@@ -70,7 +70,6 @@ parser_tmpl : Template {
 	accumulate_float : Template { accumulate : False  field ?:  in ?: }
 	accumulate_list : Template { accumulate : False  field ?: type ?:  in ?: }
 	accumulate_string : Template { accumulate : False  field ?:  in ?: }
-	accumulate_char : Template { accumulate : False  field ?:  in ?: }
 	# Adds a Unicode literal, by codepoint, to the currently accumulating string
 	# after successfully parsing the child parse expression.
 	collect_codepoint : Template { codepoint ?:  in ?: }
