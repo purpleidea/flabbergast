@@ -90,10 +90,19 @@ parser_tmpl : Template {
 	}
 
 }
+# Templates for making common fields in syntax elements. This is so that some parse rules accumulate results in a single field, such as comments.
+common_fields_tmpl : Template {
+	str : Template { field_name %: }
+	int : Template { field_name %: }
+	float : Template { field_name %: }
+	other : Template { field_name %:  type ?: }
+}
 # The syntax of the Flabbergast language
 language_tmpl : Template {
 	# The templates to generate the parser, as per `parser_tmpl`.
 	parser %:
+	# The templates to generate the common fields, as per `common_fields_tmpl`.
+	common_fields %:
 	# A rule that creates a single node in the AST
 	syntax_element : Template {
 		# The name of AST node. This will be provided by the attribute name. In a
@@ -123,7 +132,8 @@ language_tmpl : Template {
 			For rule_tmpl : rules {}, rule_name : Name
 			Select rule_name : rule_tmpl {}
 		expanded_alts : alternatives {}
-		expanded_common : common {}
+		expanded_common : For common_tmpl : common {}, field_name : Name
+			Select field_name : common_tmpl {}
 	}
 
 	# Parse a space and/or comment
@@ -322,7 +332,7 @@ language_tmpl : Template {
 	rule_groups : Template {
 		file : Template syntax_group {
 			common +: {
-				comment : $str
+				comment : common_fields.str
 			}
 			rules +: {
 				file : Template syntax_element {
@@ -342,7 +352,8 @@ language_tmpl : Template {
 
 		attribute : Template syntax_group {
 			common +: {
-				comment : $str
+				comment : common_fields.str
+				name : common_fields.str
 			}
 			alternatives +: {
 				literal_attributes : [ plain_attribute ]
@@ -350,9 +361,6 @@ language_tmpl : Template {
 				extend_tmpl_attributes : [ plain_attribute, informative_attribute, missing_attribute, named_override, template_override, remove_attribute ]
 				instantiate_tmpl_attributes : [ plain_attribute, informative_attribute, named_override, template_override, remove_attribute ]
 				fricasee_attributes :  [ plain_attribute, ordinal_attribute, name_attribute ]
-			}
-			common +: {
-				name : $str
 			}
 			rules +: {
 				plain_attribute : Template syntax_element {
@@ -473,7 +481,7 @@ language_tmpl : Template {
 
 		ordering : Template syntax_group {
 			common +: {
-				comment : $str
+				comment : common_fields.str
 			}
 			rules +: {
 				order_by : Template syntax_element {
@@ -497,7 +505,7 @@ language_tmpl : Template {
 
 		result : Template syntax_group {
 			common +: {
-				comment : $str
+				comment : common_fields.str
 			}
 			rules +: {
 				reduce : Template syntax_element {
@@ -550,7 +558,7 @@ language_tmpl : Template {
 
 		selector : Template syntax_group {
 			common +: {
-				comment : $str
+				comment : common_fields.str
 			}
 			rules +: {
 				each : Template syntax_element {
@@ -680,7 +688,7 @@ language_tmpl : Template {
 
 		identifierish : Template syntax_group {
 			common +: {
-				comment : $str
+				comment : common_fields.str
 			}
 			rules +: {
 				literal_identifier : Template syntax_element {
@@ -705,7 +713,7 @@ language_tmpl : Template {
 		arithmetic_disjunction_term : Template syntax_group {
 			level : 8
 			common +: {
-				comment : $str
+				comment : common_fields.str
 			}
 			rules +: {
 				addition_term : Template term_tmpl {
@@ -720,7 +728,7 @@ language_tmpl : Template {
 		arithmetic_conjunction_term : Template syntax_group {
 			level : 9
 			common +: {
-				comment : $str
+				comment : common_fields.str
 			}
 			rules +: {
 				multiplication_term : Template term_tmpl {
@@ -759,7 +767,7 @@ language_tmpl : Template {
 				expression19 : [ $subexpression, $literal_list, $null, $int_max, $int_min, $float_max, $float_min, $infinity, $nan, $continue, $this, $true, $false, $time_literal, $int_k, $int_m, $int_g, $int_ki, $int_mi, $int_gi, $integer_literal, $hex_integer_literal, $float_max, $string_identifier, $string_literal ]
 			}
 			common +: {
-				comment : $str
+				comment : common_fields.str
 			}
 			rules +: {
 				let : Template expression_tmpl {
