@@ -123,7 +123,8 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<FloatLiteral> ("floating point literal", precedence, "%P{value}");
 		register<IntegerLiteral> ("integer literal", precedence, "%P{value}");
 		register<NullLiteral> ("null literal", precedence, "Null");
-		register<StringLiteral> ("string literal", precedence, "\"%!%P{literal}%l{contents}{}\"", new Type[] { typeof (StringPiece) });
+		register<StringLiteral> ("string literal", precedence, "\"%P{literal}%l{contents}{}\"", new Type[] { typeof (StringPiece) });
+		register<StringLiteral> ("string literal", precedence, "\"%L{contents}{}\"", new Type[] { typeof (StringPiece) });
 		register<StringLiteral> ("empty string literal", precedence, "\"\"");
 		register<SubExpression> ("subexpression", precedence, "(%!% %P{-expression}% )");
 		register<This> ("self-reference", precedence, "This");
