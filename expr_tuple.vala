@@ -1,9 +1,10 @@
 namespace Flabbergast.Expressions {
-	public abstract class TemplatePart : Object {
+	public abstract class TemplatePart : Object, GTeonoma.SourceInfo {
 		public Name name {
 			get;
 			set;
 		}
+		public GTeonoma.source_location source { get; set; }
 	}
 	public abstract class TuplePart : TemplatePart {}
 	public class Attribute : TuplePart {
@@ -35,6 +36,7 @@ namespace Flabbergast.Expressions {
 			var state = engine.state;
 			if (state.this_tuple != null) {
 				var container_expr = new ReturnLiteral (tuple);
+				container_expr.source = source;
 				tuple.attributes["Container"] = container_expr;
 				engine.environment[context, "Container"] = container_expr;
 			}
@@ -48,7 +50,7 @@ namespace Flabbergast.Expressions {
 			var attr_names = new Gee.HashSet<string> ();
 			foreach (var attr in attributes) {
 				if (attr.name.name in attr_names) {
-					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr.name.name).");
+					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr.name.name) in literal tuple. $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
 				}
 				var attr_value = engine.create_closure (attr.expression);
 				tuple.attributes[attr.name.name] = attr_value;
@@ -81,7 +83,7 @@ namespace Flabbergast.Expressions {
 				if (result is Data.Template) {
 					source_data = (Data.Template)result;
 				} else {
-					throw new EvaluationError.TYPE_MISMATCH ("Template based on expression which is not a template.");
+					throw new EvaluationError.TYPE_MISMATCH ("Template based on expression which is not a template. $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
 				}
 			}
 			var attr_names = new Gee.HashSet<string> ();
@@ -94,19 +96,20 @@ namespace Flabbergast.Expressions {
 					continue;
 				}
 				if (attr.name.name in attr_names) {
-					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr.name.name).");
+					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr.name.name) in template definition. $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
 				}
 				attr_names.add (attr.name.name);
 				if (attr is External) {
 					template.externals.add (attr.name.name);
 				} else if (attr is Override) {
 					if (source_data == null) {
-						throw new EvaluationError.OVERRIDE (@"Attemping to override without a source template.");
+						throw new EvaluationError.OVERRIDE (@"Attemping to override without a source template. $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
 					}
 					if (!source_data.attributes.has_key (attr.name.name)) {
-						throw new EvaluationError.OVERRIDE (@"Attempting to override non-existant attribute $(attr.name.name).");
+						throw new EvaluationError.OVERRIDE (@"Attempting to override non-existant attribute $(attr.name.name). $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
 					}
 					var child_override = new TemplateLiteral ();
+					child_override.source = attr.source;
 					child_override.source_expr = source_data.attributes[attr.name.name];
 					child_override.attributes.add_all (((Override) attr).attributes);
 					template.attributes[attr.name.name] = child_override;
@@ -159,7 +162,7 @@ namespace Flabbergast.Expressions {
 			engine.call (source_expr);
 			var result = engine.operands.pop ();
 			if (!(result is Data.Template)) {
-				throw new EvaluationError.TYPE_MISMATCH ("Attempting to instantiate something which is not a template.");
+				throw new EvaluationError.TYPE_MISMATCH ("Attempting to instantiate something which is not a template. $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
 			}
 
 			var template = (Data.Template)result;
@@ -184,7 +187,7 @@ namespace Flabbergast.Expressions {
 			var attr_names = new Gee.HashSet<string> ();
 			foreach (var attr in attributes) {
 				if (attr.name.name in attr_names) {
-					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr.name.name).");
+					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr.name.name) in instantiation. $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
 				}
 				attr_names.add (attr.name.name);
 				if (attr is Attribute) {
@@ -193,7 +196,7 @@ namespace Flabbergast.Expressions {
 					engine.environment[context, attr.name.name] = attr_value;
 				} else if (attr is Override) {
 					if (!template.attributes.has_key (attr.name.name)) {
-						throw new EvaluationError.OVERRIDE (@"Attempting to override non-existant attribute $(attr.name.name).");
+						throw new EvaluationError.OVERRIDE (@"Attempting to override non-existant attribute $(attr.name.name). $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
 					}
 					var child_override = new TemplateLiteral ();
 					child_override.source_expr = template.attributes[attr.name.name];
