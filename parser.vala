@@ -21,7 +21,8 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<Attribute> ("attribute", 0, "%P{name}%-:%-%P{expression}");
 		register<External> ("external attribute", 0, "%P{name}%-?:");
 		register<Informative> ("informative attribute", 0, "%P{name}%-%%:");
-		register<Override> ("override", 0, "%P{name}%-+:%!%-{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });
+		register<Override> ("override", 0, "%P{name}%-+:%!%-{%I%n%L{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });
+		register<NamedOverride> ("named override", 0, "%P{name}%-+% %P{original}% :%!%-%P{expression}");
 		register<Undefine> ("definition erasure", 0, "%P{name}%--:");
 
 		/* Identifiers */

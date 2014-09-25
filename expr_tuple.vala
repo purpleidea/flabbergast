@@ -15,6 +15,16 @@ namespace Flabbergast.Expressions {
 	}
 	internal class External : TemplatePart {}
 	internal class Informative : TemplatePart {}
+	internal class NamedOverride : TuplePart {
+		public Expression expression {
+			get;
+			set;
+		}
+		public Name original {
+			get;
+			set;
+		}
+	}
 	internal class Override : TuplePart {
 		public Gee.List<TemplatePart> attributes {
 			get;
@@ -101,6 +111,25 @@ namespace Flabbergast.Expressions {
 				attr_names.add (attr.name.name);
 				if (attr is External) {
 					template.externals.add (attr.name.name);
+				} else if (attr is NamedOverride) {
+					if (source_data == null) {
+						throw new EvaluationError.OVERRIDE (@"Attemping to override without a source template. $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
+					}
+					if (!source_data.attributes.has_key (attr.name.name)) {
+						throw new EvaluationError.OVERRIDE (@"Attempting to override non-existant attribute $(attr.name.name). $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
+					}
+					var named_override = (NamedOverride) attr;
+					var let = new Let ();
+					let.source = attr.source;
+					let.expression = named_override.expression;
+					var list = new Gee.ArrayList<Attribute> ();
+					var original_attribute = new Attribute ();
+					original_attribute.source = attr.source;
+					original_attribute.name = named_override.original;
+					original_attribute.expression = source_data.attributes[attr.name.name];
+					list.add (original_attribute);
+					let.attributes = list;
+					template.attributes[attr.name.name] = let;
 				} else if (attr is Override) {
 					if (source_data == null) {
 						throw new EvaluationError.OVERRIDE (@"Attemping to override without a source template. $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
