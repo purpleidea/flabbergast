@@ -195,6 +195,10 @@ namespace Flabbergast.Expressions {
 			engine.operands.push (new Data.String (builder.str));
 		}
 		public override Expression transform () {
+			if (literal == null) {
+				literal = new GTeonoma.StringLiteral ();
+				literal.str = "";
+			}
 			if (contents != null) {
 				foreach (var piece in contents) {
 					piece.transform ();
