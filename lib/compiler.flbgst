@@ -261,7 +261,7 @@ language_tmpl : Template {
 		}
 	}
 	# A right-hand term in “long” expression
-	term_tmpl : Template expression_tmpl {
+	long_term_tmpl : Template expression_tmpl {
 		# The precedence level of the term's enclosing expression.
 		level %:
 		# The symbol that separates the term.
@@ -716,10 +716,10 @@ language_tmpl : Template {
 				comment : common_fields.str
 			}
 			rules +: {
-				addition_term : Template term_tmpl {
+				addition_term : Template long_term_tmpl {
 					symbol : "+"
 				}
-				subtraction_term : Template term_tmpl {
+				subtraction_term : Template long_term_tmpl {
 					symbol : "-"
 				}
 			}
@@ -731,13 +731,13 @@ language_tmpl : Template {
 				comment : common_fields.str
 			}
 			rules +: {
-				multiplication_term : Template term_tmpl {
+				multiplication_term : Template long_term_tmpl {
 					symbol : "*"
 				}
-				division_term : Template term_tmpl {
+				division_term : Template long_term_tmpl {
 					symbol : "/"
 				}
-				modulus_term : Template term_tmpl {
+				modulus_term : Template long_term_tmpl {
 					symbol : "%"
 				}
 			}
