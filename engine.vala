@@ -292,7 +292,7 @@ namespace Flabbergast {
 			return null;
 		}
 
-		public Expression lookup_contextual (Gee.List<Nameish> names) throws EvaluationError requires (names.size > 0) {
+		public Expression lookup_contextual (Gee.List<Nameish> names, GTeonoma.SourceInfo? reference = null) throws EvaluationError requires (names.size > 0) {
 			var result = lookup_contextual_internal (names);
 			if (result == null) {
 				var compound_name = new StringBuilder ();
@@ -305,7 +305,8 @@ namespace Flabbergast {
 					}
 					compound_name.append (name.name);
 				}
-				throw new EvaluationError.RESOLUTION (@"Could not resolve $(compound_name.str).");
+				var source_ref = reference == null ? "" : @" $(reference.source.source):$(reference.source.line):$(reference.source.offset)";
+				throw new EvaluationError.RESOLUTION (@"Could not resolve $(compound_name.str).$(source_ref)");
 			}
 			return (!)result;
 		}
@@ -334,15 +335,16 @@ namespace Flabbergast {
 			}
 		}
 
-		public Expression lookup_direct (Gee.List<Nameish> names) throws EvaluationError requires (names.size > 0) {
+		public Expression lookup_direct (Gee.List<Nameish> names, GTeonoma.SourceInfo? reference = null) throws EvaluationError requires (names.size > 0) {
 			var it = 0;
 			bool exists;
 			var result = lookup_direct_internal (names, ref it, out exists);
 			if (result == null) {
+				var source_ref = reference == null ? "" : @" $(reference.source.source):$(reference.source.line):$(reference.source.offset)";
 				if (exists) {
-					throw new EvaluationError.TYPE_MISMATCH (@"Tried to do a direct lookup inside a non-tuple $(names[it].name).");
+					throw new EvaluationError.TYPE_MISMATCH (@"Tried to do a direct lookup inside a non-tuple $(names[it].name).$(source_ref)");
 				} else {
-					throw new EvaluationError.RESOLUTION (@"Could not find matching element $(names[it].name).");
+					throw new EvaluationError.RESOLUTION (@"Could not find matching element $(names[it].name).$(source_ref)");
 				}
 			}
 			return (!)result;

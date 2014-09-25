@@ -63,7 +63,7 @@ namespace Flabbergast.Expressions {
 			set;
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			engine.call (engine.lookup_contextual (names));
+			engine.call (engine.lookup_contextual (names, this));
 		}
 		public override Expression transform () {
 			return this;
@@ -92,7 +92,7 @@ namespace Flabbergast.Expressions {
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
-			engine.call (engine.lookup_direct (names));
+			engine.call (engine.lookup_direct (names, this));
 		}
 		public override Expression transform () {
 			expression = expression.transform (); return this;
@@ -116,7 +116,7 @@ namespace Flabbergast.Expressions {
 			var state = engine.state;
 			state.context = ((Data.Tuple)result).context;
 			engine.state = state;
-			engine.call (engine.lookup_contextual (names));
+			engine.call (engine.lookup_contextual (names, this));
 		}
 		public override Expression transform () {
 			expression = expression.transform (); return this;
