@@ -140,6 +140,7 @@ namespace Flabbergast.Expressions {
 					var child_override = new TemplateLiteral ();
 					child_override.source = attr.source;
 					child_override.source_expr = source_data.attributes[attr.name.name];
+					child_override.attributes = new Gee.ArrayList<Attribute> ();
 					child_override.attributes.add_all (((Override) attr).attributes);
 					template.attributes[attr.name.name] = child_override;
 				} else if (attr is Undefine) {
