@@ -158,7 +158,7 @@ namespace Flabbergast {
 					return map[context];
 				}
 			}
-			return known_names[name][context];
+			return Gee.List.empty<Expression>();
 		}
 
 		public void set (uint context, string name, Expression @value) {
