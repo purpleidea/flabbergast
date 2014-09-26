@@ -226,6 +226,24 @@ namespace Flabbergast.Expressions {
 					var attr_value = engine.create_closure (((Attribute) attr).expression);
 					tuple.attributes[attr.name.name] = attr_value;
 					engine.environment[context, attr.name.name] = attr_value;
+				} else if (attr is NamedOverride) {
+					if (!template.attributes.has_key (attr.name.name)) {
+						throw new EvaluationError.OVERRIDE (@"Attempting to override non-existent attribute $(attr.name.name). $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
+					}
+					var named_override = (NamedOverride) attr;
+					var let = new Let ();
+					let.source = attr.source;
+					let.expression = named_override.expression;
+					var list = new Gee.ArrayList<Attribute> ();
+					var original_attribute = new Attribute ();
+					original_attribute.source = attr.source;
+					original_attribute.name = named_override.original;
+					original_attribute.expression = template.attributes[attr.name.name];
+					list.add (original_attribute);
+					let.attributes = list;
+					var attr_value = engine.create_closure (let);
+					tuple.attributes[attr.name.name] = attr_value;
+					engine.environment[context, attr.name.name] = attr_value;
 				} else if (attr is Override) {
 					if (!template.attributes.has_key (attr.name.name)) {
 						throw new EvaluationError.OVERRIDE (@"Attempting to override non-existent attribute $(attr.name.name). $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
