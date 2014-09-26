@@ -18,6 +18,7 @@ namespace Flabbergast.Expressions.Fricassee {
 			if (where != null) {
 				var selected_contexts = new Gee.ArrayList<uint> ();
 				var state = engine.state;
+				state.containers = new Utils.ContainerReference(state.context, state.containers);
 				foreach (var context in contexts) {
 					var local_state = state;
 					local_state.context = context;
@@ -74,7 +75,6 @@ namespace Flabbergast.Expressions.Fricassee {
 				throw new EvaluationError.NAME ("Value passed to Each is not a tuple.");
 			}
 			var contexts = new Gee.ArrayList<uint> ();
-			var state = engine.state;
 			foreach (Gee.Map.Entry<string, Expression> entry in (Data.Tuple)container_tuple) {
 				if (entry.key[0].isupper ()) {
 					continue;
@@ -91,7 +91,8 @@ namespace Flabbergast.Expressions.Fricassee {
 					}
 					engine.environment[context, subentry.key] = subentry.value;
 				}
-				engine.environment.append_containers (context, state.containers);
+				engine.environment.append (context, engine.state.context);
+				engine.environment.append_containers (context, engine.state.containers);
 				contexts.add (context);
 			}
 			return contexts;
@@ -223,6 +224,7 @@ namespace Flabbergast.Expressions.Fricassee {
 				foreach (var getter in getters) {
 					engine.environment[context, getter.name] = getter[engine, attr_name];
 				}
+				engine.environment.append (context, engine.state.context);
 				engine.environment.append_containers (context, engine.state.containers);
 				output.add (context);
 			}
@@ -240,6 +242,7 @@ namespace Flabbergast.Expressions.Fricassee {
 		public override Gee.List<uint> reorder_contexts (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError {
 			var output = new Gee.TreeMultiMap<string, uint> ();
 			var state = engine.state;
+			state.containers = new Utils.ContainerReference(state.context, state.containers);
 			foreach (var context in contexts) {
 				var local_state = state;
 				local_state.context = context;
@@ -292,8 +295,9 @@ namespace Flabbergast.Expressions.Fricassee {
 				var container_expr = new ReturnLiteral (state.this_tuple);
 				tuple.attributes["Container"] = container_expr;
 				engine.environment[context, "Container"] = container_expr;
-				engine.environment.append_containers (context, new Utils.ContainerReference (state.context, state.containers));
 			}
+			state.containers = tuple.containers;
+			engine.environment.append_containers (context, state.containers);
 
 			foreach (var target_context in contexts) {
 				state.context = target_context;
@@ -317,7 +321,7 @@ namespace Flabbergast.Expressions.Fricassee {
 				}
 
 				var attr_value = engine.create_closure (result_value);
-				tuple.attributes[attr_name]  = attr_value;
+				tuple.attributes[attr_name] = attr_value;
 				engine.environment[context, attr_name] = attr_value;
 			}
 			engine.operands.push (tuple);
@@ -356,6 +360,7 @@ namespace Flabbergast.Expressions.Fricassee {
 				engine.environment[context, "Container"] = container_expr;
 				engine.environment.append_containers (context, new Utils.ContainerReference (state.context, state.containers));
 			}
+			state.containers = new Utils.ContainerReference(state.context, state.containers);
 
 			for (var it = 0; it < input_contexts.size; it++) {
 				state.context = input_contexts[it];
@@ -400,6 +405,7 @@ namespace Flabbergast.Expressions.Fricassee {
 			}
 			engine.call (initial);
 			var state = engine.state;
+			state.containers = new Utils.ContainerReference(state.context, state.containers);
 			foreach (var context in input_contexts) {
 				var initial_value = engine.operands.pop ();
 				engine.environment[context, initial_attr.name] = new ReturnOwnedLiteral (initial_value);

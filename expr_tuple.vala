@@ -210,8 +210,7 @@ namespace Flabbergast.Expressions {
 				engine.environment[context, "Container"] = container_expr;
 			}
 			state.containers = new Utils.ContainerReference (state.context, state.containers);
-			engine.environment.append_containers (context, state.containers);
-			engine.environment.append_containers (context, template.containers);
+			engine.environment.append_containers (context, tuple.containers);
 			state.context = context;
 			state.this_tuple = tuple;
 
