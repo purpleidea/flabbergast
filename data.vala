@@ -1,10 +1,5 @@
 namespace Flabbergast.Data {
-	public abstract class Datum {
-		public Type g_type {
-			get {
-				return Type.from_instance (this);
-			}
-		}
+	public abstract class Datum : Object {
 		public abstract string to_string ();
 	}
 
@@ -69,12 +64,13 @@ namespace Flabbergast.Data {
 		}
 	}
 
-	public abstract class Tupleish : Datum {
+	public abstract class Tupleish : Datum, GTeonoma.SourceInfo {
 		internal Gee.SortedMap<string, Expression> attributes = new Gee.TreeMap<string, Expression> ();
 		public Utils.ContainerReference? containers {
 			get;
 			internal set;
 		}
+		public GTeonoma.source_location source { get; set; }
 	}
 
 	public class Template : Tupleish {
@@ -122,7 +118,7 @@ namespace Flabbergast.Data {
 		public Gee.Iterator<Gee.Map.Entry<string, Expression> > iterator () {
 			return attributes.entries.iterator ();
 		}
-		public Expression? get (string name) {
+		public new Expression? get (string name) {
 			return attributes.has_key (name) ? attributes[name] : null;
 		}
 		public override string to_string () {

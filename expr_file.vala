@@ -11,6 +11,7 @@ namespace Flabbergast {
 		public Data.Tuple evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
 			var tuple = new Data.Tuple (context);
+			tuple.source = source;
 
 			var state = engine.state;
 			state.context = context;

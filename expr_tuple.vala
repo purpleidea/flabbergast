@@ -41,6 +41,7 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
 			var tuple = new Data.Tuple (context);
+			tuple.source = source;
 			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 
 			var state = engine.state;
@@ -99,6 +100,7 @@ namespace Flabbergast.Expressions {
 			var attr_names = new Gee.HashSet<string> ();
 
 			var template = new Data.Template ();
+			template.source = source;
 			template.containers = new Utils.ContainerReference (engine.state.context, Utils.ContainerReference.append (engine.state.containers, source_data == null ? null : source_data.containers));
 			foreach (var attr in attributes) {
 				if (attr is Informative) {
@@ -116,7 +118,7 @@ namespace Flabbergast.Expressions {
 						throw new EvaluationError.OVERRIDE (@"Attemping to override without a source template. $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
 					}
 					if (!source_data.attributes.has_key (attr.name.name)) {
-						throw new EvaluationError.OVERRIDE (@"Attempting to override non-existant attribute $(attr.name.name). $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
+						throw new EvaluationError.OVERRIDE (@"Attempting to override non-existent attribute $(attr.name.name). $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
 					}
 					var named_override = (NamedOverride) attr;
 					var let = new Let ();
@@ -135,7 +137,7 @@ namespace Flabbergast.Expressions {
 						throw new EvaluationError.OVERRIDE (@"Attemping to override without a source template. $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
 					}
 					if (!source_data.attributes.has_key (attr.name.name)) {
-						throw new EvaluationError.OVERRIDE (@"Attempting to override non-existant attribute $(attr.name.name). $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
+						throw new EvaluationError.OVERRIDE (@"Attempting to override non-existent attribute $(attr.name.name). $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
 					}
 					var child_override = new TemplateLiteral ();
 					child_override.source = attr.source;
@@ -198,6 +200,7 @@ namespace Flabbergast.Expressions {
 			var template = (Data.Template)result;
 			var context = engine.environment.create ();
 			var tuple = new Data.Tuple (context);
+			tuple.source = source;
 			tuple.containers = new Utils.ContainerReference (engine.state.context, Utils.ContainerReference.append (engine.state.containers, template.containers));
 
 			var state = engine.state;
@@ -226,9 +229,10 @@ namespace Flabbergast.Expressions {
 					engine.environment[context, attr.name.name] = attr_value;
 				} else if (attr is Override) {
 					if (!template.attributes.has_key (attr.name.name)) {
-						throw new EvaluationError.OVERRIDE (@"Attempting to override non-existant attribute $(attr.name.name). $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
+						throw new EvaluationError.OVERRIDE (@"Attempting to override non-existent attribute $(attr.name.name). $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
 					}
 					var child_override = new TemplateLiteral ();
+					child_override.source = attr.source;
 					child_override.source_expr = template.attributes[attr.name.name];
 					child_override.attributes = new Gee.ArrayList<TemplatePart> ();
 					child_override.attributes.add_all (((Override) attr).attributes);
@@ -252,7 +256,7 @@ namespace Flabbergast.Expressions {
 			}
 			foreach (var external in template.externals) {
 				if (!(external in attr_names)) {
-					throw new EvaluationError.EXTERNAL_REMAINING (@"External attribute $(external) not overridden.");
+					throw new EvaluationError.EXTERNAL_REMAINING (@"External attribute $(external) not overridden. $(template.source.source):$(template.source.line):$(template.source.offset)");
 				}
 			}
 			engine.operands.push (tuple);
@@ -289,6 +293,7 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
 			var args_tuple = new Data.Tuple (context);
+			args_tuple.source = source;
 			var overrides = new Gee.ArrayList<TuplePart> ();
 			var it = 0;
 			var has_args = false;
@@ -372,6 +377,7 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
 			var tuple = new Data.Tuple (context);
+			tuple.source = source;
 			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 			for (var it = 0; it < elements.size; it++) {
 				tuple.attributes[make_id (it)] = engine.create_closure (elements[it]);

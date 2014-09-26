@@ -12,7 +12,7 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 			var result = engine.operands.pop ();
-			engine.operands.push (new Data.Boolean (result.g_type == ty.get_real_type ()));
+			engine.operands.push (new Data.Boolean (result.get_type () == ty.get_real_type ()));
 		}
 		public override Expression transform () {
 			expression = expression.transform (); return this;
@@ -30,7 +30,7 @@ namespace Flabbergast.Expressions {
 
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
-			if (engine.operands.peek ().g_type != ty.get_real_type ()) {
+			if (engine.operands.peek ().get_type () != ty.get_real_type ()) {
 				throw new EvaluationError.TYPE_MISMATCH ("Type is not as requested.");
 			}
 		}
@@ -41,7 +41,7 @@ namespace Flabbergast.Expressions {
 	public Data.Datum convert (ExecutionEngine engine, Expression expression, Data.Ty ty) throws EvaluationError {
 		engine.call (expression);
 		var result = engine.operands.pop ();
-		var result_type = result.g_type;
+		var result_type = result.get_type ();
 		if (result_type == ty.get_real_type ()) {
 			return result;
 		}

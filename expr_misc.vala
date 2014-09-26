@@ -132,6 +132,7 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
 			var tuple = new Data.Tuple (context);
+			tuple.source = source;
 
 			var attr_names = new Gee.HashSet<string> ();
 			foreach (var attr in attributes) {

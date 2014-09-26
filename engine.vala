@@ -51,6 +51,7 @@ namespace Flabbergast {
 			owner = WeakRef (engine);
 			this.expression = expression;
 			this.state = state;
+			source = expression.source;
 		}
 
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
@@ -58,7 +59,7 @@ namespace Flabbergast {
 				throw new EvaluationError.INTERNAL ("Tried to execute a promise on a different evaluation enginge.");
 			}
 			if (is_running) {
-				throw new EvaluationError.CIRCULAR ("Circular evaluation detected.");
+				throw new EvaluationError.CIRCULAR (@"Circular evaluation detected. $(expression.source.source):$(expression.source.line):$(expression.source.offset)");
 			}
 			if (evaluated_form != null) {
 				engine.operands.push (evaluated_form);

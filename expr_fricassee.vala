@@ -45,13 +45,15 @@ namespace Flabbergast.Expressions.Fricassee {
 			return this;
 		}
 	}
-	internal abstract class Selector : Object {
+	internal abstract class Selector : Object, GTeonoma.SourceInfo {
 		public abstract void transform ();
 		public abstract Gee.List<uint> generate_contexts (ExecutionEngine engine) throws EvaluationError;
+		public GTeonoma.source_location source { get; set; }
 	}
-	internal abstract class Result : Object {
+	internal abstract class Result : Object, GTeonoma.SourceInfo {
 		public abstract void transform ();
 		public abstract void generate_result (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError;
+		public GTeonoma.source_location source { get; set; }
 	}
 	internal abstract class OrderClause : Object {
 		public abstract void transform ();
@@ -282,6 +284,7 @@ namespace Flabbergast.Expressions.Fricassee {
 		public override void generate_result (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError {
 			var context = engine.environment.create ();
 			var tuple = new Data.Tuple (context);
+			tuple.source = source;
 			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 
 			var state = engine.state;
@@ -343,6 +346,7 @@ namespace Flabbergast.Expressions.Fricassee {
 
 			var context = engine.environment.create ();
 			var tuple = new Data.Tuple (context);
+			tuple.source = source;
 			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 
 			var state = engine.state;

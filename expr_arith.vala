@@ -406,6 +406,7 @@ namespace Flabbergast.Expressions {
 			}
 			var context = engine.environment.create ();
 			var tuple = new Data.Tuple (context);
+			tuple.source = source;
 			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 			var attributes = new Gee.TreeMap<string, Expression> ();
 			tuple.attributes = attributes;
