@@ -68,7 +68,7 @@ parser_tmpl : Template {
 		in ?:
 	}
 	accumulate_float : Template { accumulate : False  field ?:  in ?: }
-	accumulate_list : Template { accumulate : False  field ?: type ?:  in ?: }
+	accumulate_list : Template { accumulate : False  field ?:  type ?:  in ?: }
 	accumulate_string : Template { accumulate : False  field ?:  in ?: }
 	# Adds a Unicode literal, by codepoint, to the currently accumulating string
 	# after successfully parsing the child parse expression.
@@ -144,7 +144,7 @@ language_tmpl : Template {
 		preferred : False
 
 		field : $comment
-		in : Template parser.many {
+		in : parser.many {
 			nonempty : mandatory
 			of : parser.alternate {
 				of : [
@@ -261,7 +261,7 @@ language_tmpl : Template {
 		}
 	}
 	# A right-hand term in “long” expression
-	long_term_tmpl : Template expression_tmpl {
+	long_term_tmpl : Template syntax_element {
 		# The precedence level of the term's enclosing expression.
 		level %:
 		# The symbol that separates the term.
@@ -271,7 +271,11 @@ language_tmpl : Template {
 				space { preferred : True },
 				parser.exact { word : symbol },
 				space { preferred : True },
-				child_expression { field : $expression }
+				parser.other {
+					accumulate : True
+					type : "expression" & (level + 1)
+					field : $expression
+				}
 			]
 		}
 	}
