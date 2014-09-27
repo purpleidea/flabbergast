@@ -371,7 +371,7 @@ language_tmpl : Template {
 					pattern : parser.sequence {
 						of : [
 							space { preferred : True },
-							valid_identifer { field : $name },
+							valid_identifier { field : $name },
 							space { preferred : True },
 							parser.exact { word : ":" },
 							space { preferred : True },
@@ -387,10 +387,10 @@ language_tmpl : Template {
 					pattern : parser.sequence {
 						of : [
 							space { preferred : True },
-							valid_identifer { field : $name },
+							valid_identifier { field : $name },
 							space { preferred : True },
 							parser.exact { word : "+" },
-							valid_identifer { field : $temporary_name },
+							valid_identifier { field : $temporary_name },
 							parser.exact { word : ":" },
 							space { preferred : True },
 							parser.other {
@@ -405,7 +405,7 @@ language_tmpl : Template {
 					pattern : parser.sequence {
 						of : [
 							space { preferred : True },
-							identifer,
+							valid_identifier { field : $name },
 							space { preferred : True },
 							parser.exact { word : "+:" },
 							space { preferred : True },
@@ -430,7 +430,7 @@ language_tmpl : Template {
 					pattern : parser.sequence {
 						of : [
 							space { preferred : True },
-							valid_identifer { field : $name },
+							valid_identifier { field : $name },
 							space { preferred : True },
 							parser.exact { word : "?:" }
 						]
@@ -440,7 +440,7 @@ language_tmpl : Template {
 					pattern : parser.sequence {
 						of : [
 							space { preferred : True },
-							valid_identifer { field : $name },
+							valid_identifier { field : $name },
 							space { preferred : True },
 							parser.exact { word : "%:" }
 						]
@@ -450,7 +450,7 @@ language_tmpl : Template {
 					pattern : parser.sequence {
 						of : [
 							space { preferred : True },
-							valid_identifer { field : $name },
+							valid_identifier { field : $name },
 							space { preferred : True },
 							parser.exact { word : "-:" }
 						]
@@ -460,7 +460,7 @@ language_tmpl : Template {
 					pattern : parser.sequence {
 						of : [
 							space { preferred : True },
-							valid_identifer { field : $name },
+							valid_identifier { field : $name },
 							space { preferred : True },
 							parser.exact { word : ":" },
 							space { preferred : True },
@@ -472,7 +472,7 @@ language_tmpl : Template {
 					pattern : parser.sequence {
 						of : [
 							space { preferred : True },
-							valid_identifer { field : $name },
+							valid_identifier { field : $name },
 							space { preferred : True },
 							parser.exact { char : ":" },
 							space { preferred : True },
@@ -527,7 +527,7 @@ language_tmpl : Template {
 							space { mandatory : True },
 							parser.exact { word : "With" },
 							space { mandatory : True },
-							valid_identifer { field : $initial_name },
+							valid_identifier { field : $initial_name },
 							space { preferred : True },
 							parser.exact { word : ":" },
 							space { preferred : True },
