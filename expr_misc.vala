@@ -58,7 +58,7 @@ namespace Flabbergast.Expressions {
 		}
 	}
 	internal class ContextualLookup : Expression {
-		public Gee.List<Nameish> names {
+		public Gee.List<Name> names {
 			get;
 			set;
 		}
@@ -70,7 +70,7 @@ namespace Flabbergast.Expressions {
 		}
 	}
 	internal class IsDefined : Expression {
-		public Gee.List<Nameish> names {
+		public Gee.List<Name> names {
 			get;
 			set;
 		}
@@ -86,7 +86,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public Gee.List<Nameish> names {
+		public Gee.List<Name> names {
 			get;
 			set;
 		}
@@ -103,7 +103,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public Gee.List<Nameish> names {
+		public Gee.List<Name> names {
 			get;
 			set;
 		}
@@ -146,15 +146,9 @@ namespace Flabbergast.Expressions {
 			}
 
 			var state = engine.state;
-			if (state.this_tuple != null) {
-				var container_expr = new ReturnLiteral (tuple);
-				tuple.attributes["Container"] = container_expr;
-				engine.environment[context, "Container"] = container_expr;
-			}
 			state.containers = new Utils.ContainerReference (state.context, state.containers);
 			engine.environment.append_containers (context, state.containers);
 			state.context = context;
-			state.this_tuple = tuple;
 
 			engine.state = state;
 			engine.call (expression);

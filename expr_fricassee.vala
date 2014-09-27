@@ -291,11 +291,6 @@ namespace Flabbergast.Expressions.Fricassee {
 			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 
 			var state = engine.state;
-			if (state.this_tuple != null) {
-				var container_expr = new ReturnLiteral (state.this_tuple);
-				tuple.attributes["Container"] = container_expr;
-				engine.environment[context, "Container"] = container_expr;
-			}
 			state.containers = tuple.containers;
 			engine.environment.append_containers (context, state.containers);
 
@@ -354,12 +349,7 @@ namespace Flabbergast.Expressions.Fricassee {
 			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 
 			var state = engine.state;
-			if (state.this_tuple != null) {
-				var container_expr = new ReturnLiteral (state.this_tuple);
-				tuple.attributes["Container"] = container_expr;
-				engine.environment[context, "Container"] = container_expr;
-				engine.environment.append_containers (context, new Utils.ContainerReference (state.context, state.containers));
-			}
+			engine.environment.append_containers (context, new Utils.ContainerReference (state.context, state.containers));
 			state.containers = new Utils.ContainerReference(state.context, state.containers);
 
 			for (var it = 0; it < input_contexts.size; it++) {

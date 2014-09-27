@@ -410,11 +410,6 @@ namespace Flabbergast.Expressions {
 			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 			var attributes = new Gee.TreeMap<string, Expression> ();
 			tuple.attributes = attributes;
-			if (engine.state.this_tuple != null) {
-				var attr_value = new ReturnLiteral (engine.state.this_tuple);
-				attributes["Container"] = attr_value;
-				engine.environment[context, "Container"] = attr_value;
-			}
 			var index = 0;
 			var end_int = ((Data.Integer)end_value).value;
 			for (var it = ((Data.Integer)start_value).value; it <= end_int; it++) {

@@ -26,7 +26,6 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<Undefine> ("definition erasure", 0, "%P{name}%--:");
 
 		/* Identifiers */
-		register<ContainerName> ("container reference", 0, "Container");
 		register_custom<Name> ("identifier", () =>  new IdentifierParser (), (identifier) => identifier.name);
 
 		/* Function call arguments */
@@ -95,7 +94,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<StringLength> ("string length", precedence, "Length%! %P{+expression}");
 
 		precedence++;
-		register<IndirectLookup> ("remote lookup", precedence, "Lookup %L{names}{% .% } In%! %P{expression}", new Type[] { typeof (Nameish) });
+		register<IndirectLookup> ("remote lookup", precedence, "Lookup %L{names}{% .% } In%! %P{expression}", new Type[] { typeof (Name) });
 
 		precedence++;
 		register<Instantiate> ("template instantiation", precedence, "%P{+source_expr}%-{%!%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TuplePart) });
@@ -114,8 +113,8 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 
 		precedence++;
 		register<File.Import> ("import", 0, "From%! %P{uri}");
-		register<ContextualLookup> ("contextual lookup", precedence, "%L{names}{% .% }", new Type[] { typeof (Nameish) });
-		register<DirectLookup> ("direct lookup", precedence, "%P{+expression}%-.%!%-%L{names}{% .% }", new Type[] { typeof (Nameish) });
+		register<ContextualLookup> ("contextual lookup", precedence, "%L{names}{% .% }", new Type[] { typeof (Name) });
+		register<DirectLookup> ("direct lookup", precedence, "%P{+expression}%-.%!%-%L{names}{% .% }", new Type[] { typeof (Name) });
 
 		precedence++;
 		register<ListLiteral> ("list literal", precedence, "[%!%-%L{-elements}{% ,%-}%-]", new Type[] { typeof (Expression) });
@@ -128,6 +127,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<StringLiteral> ("empty string literal", precedence, "\"\"");
 		register<SubExpression> ("subexpression", precedence, "(%!% %P{-expression}% )");
 		register<This> ("self-reference", precedence, "This");
+		register<Container> ("container", precedence, "Container");
 		register<TrueLiteral> ("true literal", precedence, "True");
 		register<IntMaxLiteral> ("maximum integer literal", precedence, "IntMax");
 		register<IntMinLiteral> ("minimum integer literal", precedence, "IntMin");
@@ -182,7 +182,6 @@ internal class Flabbergast.IdentifierParser : GTeonoma.CustomParser<Name> {
 	}
 
 	private IdentifierState state = IdentifierState.START;
-	private int container_position = 1;
 
 	public IdentifierParser () {}
 
@@ -194,21 +193,8 @@ internal class Flabbergast.IdentifierParser : GTeonoma.CustomParser<Name> {
 	private IdentifierState parse_input (unichar input) {
 		switch (state) {
 		 case IdentifierState.START:
-			 if (input == 'C') {
-				 return IdentifierState.CONTAINER;
-			 } else if (input.islower () && input.isalpha ()) {
+			 if (input.islower () && input.isalpha ()) {
 				 return IdentifierState.PART;
-			 } else {
-				 return IdentifierState.JUNK;
-			 }
-
-		 case IdentifierState.CONTAINER:
-			 if (input == "Container"[container_position++]) {
-				 if (container_position == "Container".length) {
-					 return IdentifierState.CONTAINER_DONE;
-				 } else {
-					 return IdentifierState.CONTAINER;
-				 }
 			 } else {
 				 return IdentifierState.JUNK;
 			 }

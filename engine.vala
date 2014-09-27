@@ -12,31 +12,16 @@ namespace Flabbergast {
 		TYPE_MISMATCH,
 		USER_DEFINED
 	}
-	public abstract class Nameish : Object, GTeonoma.SourceInfo {
+	public class Name : Object, GTeonoma.SourceInfo {
 		public GTeonoma.source_location source {
 			get;
 			set;
 		}
-		public abstract string name {
-			get;
-		}
-	}
-	public class ContainerName : Nameish {
-		public override string name {
-			get {
-				return "Container";
-			}
-		}
-	}
-	public class Name : Nameish {
-		private string _name;
-		public override string name {
-			get {
-				return _name;
-			}
+		public string name {
+			get; private set;
 		}
 		public Name (string name) {
-			_name = name;
+			this.name = name;
 		}
 	}
 
@@ -99,6 +84,7 @@ namespace Flabbergast {
 		internal uint context;
 		internal Utils.ContainerReference? containers;
 		internal unowned Data.Tuple? this_tuple;
+		internal unowned Data.Tuple? container_tuple;
 	}
 
 	public class Utils.DataStack {
@@ -227,7 +213,7 @@ namespace Flabbergast {
 			return new Promise (this, expression, state);
 		}
 
-		public Data.Datum? debug_lookup (int frame, Gee.List<Nameish> names) throws EvaluationError {
+		public Data.Datum? debug_lookup (int frame, Gee.List<Name> names) throws EvaluationError {
 			if (frame < call_stack.length) {
 				var original_stack_length = call_stack.length;
 				call_stack += call_stack[call_stack.length - frame - 1];
@@ -253,12 +239,12 @@ namespace Flabbergast {
 			}
 		}
 
-		public bool is_defined (Gee.List<Nameish> names) throws EvaluationError requires (names.size > 0) {
+		public bool is_defined (Gee.List<Name> names) throws EvaluationError requires (names.size > 0) {
 			var result = lookup_contextual_internal (names);
 			return result != null;
 		}
 
-		private Expression? lookup_contextual_helper (Expression start_context, Gee.List<Nameish> names) throws EvaluationError {
+		private Expression? lookup_contextual_helper (Expression start_context, Gee.List<Name> names) throws EvaluationError {
 			if (names.size == 1) {
 				return start_context;
 			}
@@ -267,7 +253,7 @@ namespace Flabbergast {
 			return lookup_direct_internal (names, ref index);
 		}
 
-		private Expression? lookup_contextual_internal (Gee.List<Nameish> names) throws EvaluationError {
+		private Expression? lookup_contextual_internal (Gee.List<Name> names) throws EvaluationError {
 			var child = environment[state.context, names[0].name];
 			if (child != null) {
 				var result = lookup_contextual_helper (child, names);
@@ -295,7 +281,7 @@ namespace Flabbergast {
 			return null;
 		}
 
-		public Expression lookup_contextual (Gee.List<Nameish> names, GTeonoma.SourceInfo? reference = null) throws EvaluationError requires (names.size > 0) {
+		public Expression lookup_contextual (Gee.List<Name> names, GTeonoma.SourceInfo? reference = null) throws EvaluationError requires (names.size > 0) {
 			var result = lookup_contextual_internal (names);
 			if (result == null) {
 				var compound_name = new StringBuilder ();
@@ -313,7 +299,7 @@ namespace Flabbergast {
 			}
 			return (!)result;
 		}
-		private Expression? lookup_direct_internal (Gee.List<Nameish> names, ref int it, out bool exists = null) throws EvaluationError {
+		private Expression? lookup_direct_internal (Gee.List<Name> names, ref int it, out bool exists = null) throws EvaluationError {
 			var start = operands.pop ();
 			for (; it < names.size - 1; it++) {
 				if (start is Data.Tuple) {
@@ -338,7 +324,7 @@ namespace Flabbergast {
 			}
 		}
 
-		public Expression lookup_direct (Gee.List<Nameish> names, GTeonoma.SourceInfo? reference = null) throws EvaluationError requires (names.size > 0) {
+		public Expression lookup_direct (Gee.List<Name> names, GTeonoma.SourceInfo? reference = null) throws EvaluationError requires (names.size > 0) {
 			var it = 0;
 			bool exists;
 			var result = lookup_direct_internal (names, ref it, out exists);

@@ -45,15 +45,10 @@ namespace Flabbergast.Expressions {
 			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 
 			var state = engine.state;
-			if (state.this_tuple != null) {
-				var container_expr = new ReturnLiteral (tuple);
-				container_expr.source = source;
-				tuple.attributes["Container"] = container_expr;
-				engine.environment[context, "Container"] = container_expr;
-			}
 			state.containers = new Utils.ContainerReference (state.context, state.containers);
 			engine.environment.append_containers (context, state.containers);
 			state.context = context;
+			state.container_tuple = state.this_tuple;
 			state.this_tuple = tuple;
 
 			engine.state = state;
@@ -204,14 +199,10 @@ namespace Flabbergast.Expressions {
 			tuple.containers = new Utils.ContainerReference (engine.state.context, Utils.ContainerReference.append (engine.state.containers, template.containers));
 
 			var state = engine.state;
-			if (state.this_tuple != null) {
-				var container_expr = new ReturnLiteral (tuple);
-				tuple.attributes["Container"] = container_expr;
-				engine.environment[context, "Container"] = container_expr;
-			}
 			state.containers = new Utils.ContainerReference (state.context, state.containers);
 			engine.environment.append_containers (context, tuple.containers);
 			state.context = context;
+			state.container_tuple = state.this_tuple;
 			state.this_tuple = tuple;
 
 			engine.state = state;
@@ -350,7 +341,7 @@ namespace Flabbergast.Expressions {
 			instantiation.source_expr = function;
 			var lookup = new DirectLookup ();
 			lookup.expression = instantiation;
-			var names = new Gee.ArrayList<Nameish> ();
+			var names = new Gee.ArrayList<Name> ();
 			names.add (new Name ("value"));
 			lookup.names = names;
 			engine.call (lookup);
@@ -401,14 +392,10 @@ namespace Flabbergast.Expressions {
 			}
 
 			var state = engine.state;
-			if (state.this_tuple != null) {
-				var container_expr = new ReturnLiteral (tuple);
-				tuple.attributes["Container"] = container_expr;
-				engine.environment[context, "Container"] = container_expr;
-			}
 			state.containers = new Utils.ContainerReference (state.context, state.containers);
 			engine.environment.append_containers (context, state.containers);
 			state.context = context;
+			state.container_tuple = state.this_tuple;
 			state.this_tuple = tuple;
 
 			engine.state = state;
@@ -429,6 +416,18 @@ namespace Flabbergast.Expressions {
 				throw new EvaluationError.INTERNAL ("This references non-existent tuple.");
 			}
 			engine.operands.push (this_tuple);
+		}
+		public override Expression transform () {
+			return this;
+		}
+	}
+	public class Container : Expression {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+			var container_tuple = engine.state.container_tuple;
+			if (container_tuple == null) {
+				throw new EvaluationError.INTERNAL ("This references non-existent tuple.");
+			}
+			engine.operands.push (container_tuple);
 		}
 		public override Expression transform () {
 			return this;

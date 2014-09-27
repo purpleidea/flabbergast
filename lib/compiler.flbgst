@@ -690,7 +690,7 @@ language_tmpl : Template {
 			}
 		}
 
-		identifierish : Template syntax_group {
+		identifier : Template syntax_group {
 			common +: {
 				comment : common_fields.str
 			}
@@ -700,14 +700,6 @@ language_tmpl : Template {
 						of : [
 							space { },
 							valid_identifier { field : $name }
-						]
-					}
-				}
-				container : Template syntax_element {
-					pattern : parser.sequence {
-						of : [
-							space { },
-							parser.exact { word : "Container" }
 						]
 					}
 				}
@@ -954,10 +946,10 @@ language_tmpl : Template {
 							parser.exact { word : "Lookup" },
 							space { mandatory : True },
 							parser.accumulate_list {
-								type : $identifierish
+								type : $identifier
 								in : parser.many_word {
 									of : parser.other {
-										type : $identifierish
+										type : $identifier
 										field : Null
 									}
 									separator_word : "."
@@ -1172,7 +1164,7 @@ language_tmpl : Template {
 						field : $parts
 						in : parser.many_word {
 							of : parser.other {
-								type : $identifierish
+								type : $identifier
 								field : Null
 							}
 							separator_word : "."
@@ -1225,10 +1217,10 @@ language_tmpl : Template {
 							space { },
 							parser.exact { word : "." },
 							parser.accumulate_list {
-								type : $identifierish
+								type : $identifier
 								in : parser.many_word {
 									of : parser.other {
-										type : $identifierish
+										type : $identifier
 										field : Null
 									}
 									separator_word : "."
@@ -1283,6 +1275,7 @@ language_tmpl : Template {
 				nan : Template literal_tmpl { name : "NaN" }
 				continue : Template literal_tmpl { name : "Continue" }
 				this : Template literal_tmpl { name : "This" }
+				container : Template literal_tmpl { name : "Container" }
 				true : Template literal_tmpl { name : "True" }
 				false : Template literal_tmpl { name : "False" }
 

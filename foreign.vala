@@ -172,11 +172,6 @@ namespace Flabbergast {
 			var tuple = new Data.Tuple (context);
 
 			var state = engine.state;
-			if (state.this_tuple != null) {
-				var container_expr = new Expressions.ReturnLiteral (tuple);
-				tuple.attributes["Container"] = container_expr;
-				engine.environment[context, "Container"] = container_expr;
-			}
 			state.containers = new Utils.ContainerReference (state.context, state.containers);
 			engine.environment.append_containers (context, state.containers);
 

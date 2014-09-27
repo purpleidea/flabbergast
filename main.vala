@@ -49,7 +49,7 @@ namespace Debug {
 		}
 	}
 	class Lookup : Statement {
-		public Gee.List<Nameish> names {
+		public Gee.List<Name> names {
 			get;
 			set;
 		}
@@ -87,9 +87,6 @@ void print_datum (Data.Datum result, Rules rules, ExecutionEngine engine, bool d
 		stdout.printf ("\n");
 
 		foreach (var entry in (Data.Tuple)result) {
-			if (entry.key == "Container") {
-				continue;
-			}
 			print_tabs (depth);
 			stdout.printf (" %s: ", entry.key);
 			print_expression (rules, engine, entry.value, debug && debug_inner, depth + 1);
@@ -223,7 +220,7 @@ int main (string[] args) {
 	try {
 		rules = new Rules ();
 		rules.register<Debug.Down> ("up one call frame", 0, "% Down% ");
-		rules.register<Debug.Lookup> ("lookup name", 0, "% %L{names}{% .% }% ", new Type[] { typeof (Nameish) });
+		rules.register<Debug.Lookup> ("lookup name", 0, "% %L{names}{% .% }% ", new Type[] { typeof (Name) });
 		rules.register<Debug.Quit> ("exit debugger", 0, "% Quit% ");
 		rules.register<Debug.Switch> ("switch call frame", 0, "% Switch %P{frame}% ");
 		rules.register<Debug.Trace> ("backtrace", 0, "% Trace% ");

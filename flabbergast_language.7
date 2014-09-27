@@ -368,10 +368,9 @@ w = x - floor(x / y) × y
 .SS EXPRESSION SYNTAX (E) – RANGE
 .TP
 Range of integers
-.SEM (t, ...) ⊢ start:E\*<+\*> \fBThrough\fR end:E\*<+\*> ↓ r = < ∀ x ≥ s ∧ x ≤ e : ORD(x) → x :: Int, \fBContainer\fR → container, \fBContext\fR → (r, t, ...) >
+.SEM (t, ...) ⊢ start:E\*<+\*> \fBThrough\fR end:E\*<+\*> ↓ r = < ∀ x ≥ s ∧ x ≤ e : ORD(x) → x :: Int, \fBContext\fR → (r, t, ...) >
 (t, ...) ⊢ start ↓ s :: Int
 (t, ...) ⊢ end ↓ e :: Int
-(t, ...) ⊢ \fBThis\fR ↓ container
 .SEME
 
 Produce a list of integers that counts from the value of \fIstart\fR up to and including \fIend\fR, both of which must be integers. If \fIend\fR is less than \fIstart\fR an empty list is produced.
@@ -492,7 +491,7 @@ String character length
 .SS EXPRESSION SYNTAX (E) – REMOTE LOOKUP
 .TP
 Remote contextual lookup.
-.SEM Γ ⊢ \fBLookup\fR name:(I/\fBContainer\fR) name:(\fB.\fR (I/\fBContainer\fR))* \fBIn\fR expr:E ↓ v
+.SEM Γ ⊢ \fBLookup\fR name:I name:(\fB.\fRI)* \fBIn\fR expr:E ↓ v
 Γ ⊢ expr ↓ < \fBContext\fR → Δ >,
 
 Δ ⊢ name ↓ v
@@ -506,12 +505,10 @@ Instantiate a template
 Γ ⊢ \fB(Template\fR source \fB{\fR a \fB}) { }\fR ↓ v
 .SEME
 
-.SEM (t, ...) ⊢ source:E\*<+\*> \fB{ }\fR ↓ r = < ∀ x: k\*<x\*> → v\*<x\*>, \fBContainer\fR → container, \fBContext\fR → (r, t, ..., s, ...) >
+.SEM (t, ...) ⊢ source:E\*<+\*> \fB{ }\fR ↓ r = < ∀ x: k\*<x\*> → v\*<x\*>, \fBContext\fR → (r, t, ..., s, ...) >
 (t, ...) ⊢ source ↓ S = < (s, ...); k\*<s\*> → e\*<s\*>, ... >,
 
-∀ k\*<x\*> → e\*<x\*> ∈ S : (r, t, ..., s, ...) ⊢ e\*<s\*> ↓ v\*<x\*>,
-
-(t, ...) ⊢ \fBThis\fR ↓ container
+∀ k\*<x\*> → e\*<x\*> ∈ S : (r, t, ..., s, ...) ⊢ e\*<s\*> ↓ v\*<x\*>
 .SEME
 
 Creates a new tuple, based on a template, grounded in the current scope. If source is a template, instantiate that template setting the provided attributes and inheriting any others. If source is not a template, an error occurs. If any attribute is external but not overridden, it will cause an error.
@@ -532,11 +529,9 @@ Null coalescence
 .SS EXPRESSION SYNTAX (E) – TUPLE CREATION AND UNARY OPERATORS
 .TP
 Literal tuple
-.SEM (t, ...) ⊢ \fB{\fR (a:A)* \fB}\fR ↓ r = < ∀ x ∈ aa : k\*<x\*> → v\*<x\*>, \fBContainer\fR → container, \fBContext\fR → (r, t, ...) >
+.SEM (t, ...) ⊢ \fB{\fR (a:A)* \fB}\fR ↓ r = < ∀ x ∈ aa : k\*<x\*> → v\*<x\*>, \fBContext\fR → (r, t, ...) >
 
-∀ aa ∈ a : (r, t, ...) ⊢ aa ↓ v\*<aa\*>,
-
-(t, ...) ⊢ \fBThis\fR ↓ container
+∀ aa ∈ a : (r, t, ...) ⊢ aa ↓ v\*<aa\*>
 .SEME
 Construct a new literal tuple.
 
@@ -627,10 +622,10 @@ The interpreter may process all \fBFrom\fR expressions first, outside of normal 
 
 .TP
 Contextual lookup
-.SEM (t, s, ...) ⊢ names:(N / \fBContainer\fR) names:(\fB.\fR (N / \fBContainer\fR))* ↓ v
+.SEM (t, s, ...) ⊢ names:N names:(\fB.\fR N)* ↓ v
 names ⊢ t ↓ v ≠ ∅*
 .SEME
-.SEM (t, s, ...) ⊢ names:(N / \fBContainer\fR) names:(\fB.\fR (N / \fBContainer\fR))* ↓ v
+.SEM (t, s, ...) ⊢ names:N names:(\fB.\fR N)* ↓ v
 names ⊢ t ↓ ∅*
 (s, ...) ⊢ names ↓ v
 .SEME
@@ -670,11 +665,9 @@ Subexpression
 
 .TP
 Literal list
-.SEM Γ ⊢ \fB[\fR (arg:E\*<0\*> (\fB,\fR arg:E\*<0\*>)*)? \fB]\fR ↓ < ORD(x) → v\*<x\*>, \fBContainer\fR → container >
+.SEM Γ ⊢ \fB[\fR (arg:E\*<0\*> (\fB,\fR arg:E\*<0\*>)*)? \fB]\fR ↓ < ORD(x) → v\*<x\*> >
 
-Γ ⊢ arg\*<x\*> ↓ v\*<x\*>,
-
-Γ ⊢ \fBThis\fR ↓ container
+Γ ⊢ arg\*<x\*> ↓ v\*<x\*>
 .SEME
 
 This creates a list-like tuple. Names are selected by the ORD function such that the tuple will have the same order of items as the original list when collated. Indexing is 1-based.
@@ -746,6 +739,18 @@ Access current tuple
 .SEME
 
 Return the current tuple. This is the first tuple in the environment not marked with a *.
+
+.TP
+Access containing tuple
+.SEM (a, ...) ⊢ \fBContainer\fR ↓ v
+(...) ⊢ \fBThis\fR ↓ v
+.SEME
+
+.SEM (a*, ...) ⊢ \fBContainer\fR ↓ v
+(...) ⊢ \fBContainer\fR ↓ v
+.SEME
+
+Return the tuple containing current tuple. This is the second tuple in the environment not marked with a *.
 
 .TP
 Boolean true literal
@@ -995,24 +1000,20 @@ Anonymous value generator
 Γ; X ⊢ \fBSelect\fR expr ↓ v,
 .SEME
 
-.SEM (t, ...); ( w\*<0\*>, w\*<1\*>, ... ) ⊢ \fBSelect\fR expr:E\*<+\*> ↓ r = < ∀ x : ORD(x) → v\*<x\*>, Container\fR → container, \fBContext\fR → (r, t, ...) >
+.SEM (t, ...); ( w\*<0\*>, w\*<1\*>, ... ) ⊢ \fBSelect\fR expr:E\*<+\*> ↓ r = < ∀ x : ORD(x) → v\*<x\*>, \fBContext\fR → (r, t, ...) >
 
-∀ w\*<x\*> : (w\*<x\*>*, t, ...) ⊢ expr ↓ v\*<x\*>,
-
-(t, ...) ⊢ \fBThis\fR ↓ container
+∀ w\*<x\*> : (w\*<x\*>*, t, ...) ⊢ expr ↓ v\*<x\*>
 .SEME
 
 This produces a list-like tuple by evaluating the supplied expression on each tuple of witnesses.
 
 .TP
 Named attribute tuple generator
-.SEM (t, ...); ( w\*<0\*>, w\*<1\*>, ... ) ⊢ \fBSelect\fR attr:E\*<0\*> \fB:\fR expr:E\*<+\*> ↓ r  < k\*<x\*> → v\*<x\*>, Container\fR → container, \fBContext\fR → (r, t, ...) >
+.SEM (t, ...); ( w\*<0\*>, w\*<1\*>, ... ) ⊢ \fBSelect\fR attr:E\*<0\*> \fB:\fR expr:E\*<+\*> ↓ r  < k\*<x\*> → v\*<x\*>, \fBContext\fR → (r, t, ...) >
 
 (w\*<x\*>*, t, ...) ⊢ attr ↓ k\*<x\*> :: Str ∨ (w\*<x\*>*, t, ...) ⊢ attr ↓ v :: Int ∧ k\*<x\*> = ORD(v),
 
-(w\*<x\*>*, t, ...) ⊢ expr ↓ v\*<x\*>,
-
-(t, ...) ⊢ \fBThis\fR ↓ container
+(w\*<x\*>*, t, ...) ⊢ expr ↓ v\*<x\*>
 .SEME
 
 This produces a tuple with named attributes from strings or integers. Since tuples cannot have duplicate keys, any duplicate keys produce an error. Similarly, since not all strings are valid keys, any string which is not a valid key is an error.
