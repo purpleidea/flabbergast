@@ -51,7 +51,7 @@ namespace Flabbergast.Expressions {
 				engine.call (((Data.Boolean)condition_result).value ? truepart : falsepart);
 				return;
 			}
-			throw new EvaluationError.TYPE_MISMATCH ("Expected boolean value for condition.");
+			throw new EvaluationError.TYPE_MISMATCH (@"Expected boolean value for condition. $(source.source):$(source.line):$(source.offset)");
 		}
 		public override Expression transform () {
 			condition = condition.transform (); truepart = truepart.transform (); falsepart = falsepart.transform (); return this;
@@ -111,7 +111,7 @@ namespace Flabbergast.Expressions {
 			engine.call (expression);
 			var result = engine.operands.pop ();
 			if (!(result is Data.Tuple)) {
-				throw new EvaluationError.TYPE_MISMATCH ("Can only do indirect look from the context of a tuple.");
+				throw new EvaluationError.TYPE_MISMATCH (@"Can only do indirect look from the context of a tuple. $(source.source):$(source.line):$(source.offset)");
 			}
 			var state = engine.state;
 			state.context = ((Data.Tuple)result).context;

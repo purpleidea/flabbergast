@@ -17,7 +17,7 @@ namespace Flabbergast.Expressions {
 					engine.call (right);
 				}
 			} else {
-				throw new EvaluationError.TYPE_MISMATCH ("Non-boolean value in logical AND.");
+				throw new EvaluationError.TYPE_MISMATCH (@"Non-boolean value in logical AND. $(source.source):$(source.line):$(source.offset)");
 			}
 		}
 
@@ -46,7 +46,7 @@ namespace Flabbergast.Expressions {
 					engine.call (right);
 				}
 			} else {
-				throw new EvaluationError.TYPE_MISMATCH ("Non-boolean value in logical OR.");
+				throw new EvaluationError.TYPE_MISMATCH (@"Non-boolean value in logical OR. $(source.source):$(source.line):$(source.offset)");
 			}
 		}
 		public override Expression transform () {
@@ -56,7 +56,7 @@ namespace Flabbergast.Expressions {
 		}
 	}
 
-	public int compare (ExecutionEngine engine) throws EvaluationError {
+	public int compare (ExecutionEngine engine, Expression expr) throws EvaluationError {
 		var right = engine.operands.pop ();
 		var left = engine.operands.pop ();
 		if (left is Data.String && right is Data.String) {
@@ -91,7 +91,7 @@ namespace Flabbergast.Expressions {
 				return (int) (left_value - right_value).clamp (-1, 1);
 			}
 		}
-		throw new EvaluationError.TYPE_MISMATCH ("Incompatible types to comparison operation.");
+		throw new EvaluationError.TYPE_MISMATCH (@"Incompatible types to comparison operation. $(expr.source.source):$(expr.source.line):$(expr.source.offset)");
 	}
 
 	internal class Shuttle : Expression {
@@ -107,7 +107,7 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (left);
 			engine.call (right);
-			var result = compare (engine);
+			var result = compare (engine, this);
 			engine.operands.push (new Data.Integer (result));
 		}
 		public override Expression transform () {
@@ -129,7 +129,7 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (left);
 			engine.call (right);
-			var result = compare (engine);
+			var result = compare (engine, this);
 			engine.operands.push (new Data.Boolean (check (result)));
 		}
 		public override Expression transform () {
@@ -198,7 +198,7 @@ namespace Flabbergast.Expressions {
 				engine.operands.push (new Data.Float (compute_double (left_value, right_value)));
 				return;
 			}
-			throw new EvaluationError.TYPE_MISMATCH (@"Invalid type to mathematical operator for $(name).");
+			throw new EvaluationError.TYPE_MISMATCH (@"Invalid type to mathematical operator for $(name). $(source.source):$(source.line):$(source.offset)");
 		}
 		public abstract bool is_compatible (BinaryOperation op);
 
@@ -270,7 +270,7 @@ namespace Flabbergast.Expressions {
 		}
 		protected override int compute_int (int left_value, int right_value) throws EvaluationError {
 			if (right_value == 0) {
-				throw new EvaluationError.NUMERIC ("Division by zero.");
+				throw new EvaluationError.NUMERIC (@"Division by zero. $(source.source):$(source.line):$(source.offset)");
 			}
 			return left_value / right_value;
 		}
@@ -289,12 +289,12 @@ namespace Flabbergast.Expressions {
 		}
 		protected override int compute_int (int left_value, int right_value) throws EvaluationError {
 			if (right_value == 0) {
-				throw new EvaluationError.NUMERIC ("Modulus by zero.");
+				throw new EvaluationError.NUMERIC (@"Modulus by zero. $(source.source):$(source.line):$(source.offset)");
 			}
 			return left_value % right_value;
 		}
 		protected override double compute_double (double left_value, double right_value) throws EvaluationError {
-			throw new EvaluationError.TYPE_MISMATCH ("Modulus is not defined for floats.");
+			throw new EvaluationError.TYPE_MISMATCH (@"Modulus is not defined for floats. $(source.source):$(source.line):$(source.offset)");
 		}
 		public override bool is_compatible (BinaryOperation op) {
 			return op is Multiplication || op is Division || op is Modulus;
@@ -312,7 +312,7 @@ namespace Flabbergast.Expressions {
 				engine.operands.push (new Data.Boolean (!((Data.Boolean)result).value));
 				return;
 			}
-			throw new EvaluationError.TYPE_MISMATCH ("Inavlid type for boolean not operation.");
+			throw new EvaluationError.TYPE_MISMATCH (@"Inavlid type for boolean not operation. $(source.source):$(source.line):$(source.offset)");
 		}
 		public override Expression transform () {
 			expression = expression.transform ();
@@ -335,7 +335,7 @@ namespace Flabbergast.Expressions {
 				engine.operands.push (new Data.Float (-((Data.Float)result).value));
 				return;
 			}
-			throw new EvaluationError.TYPE_MISMATCH ("Inavlid type for negation operation.");
+			throw new EvaluationError.TYPE_MISMATCH (@"Inavlid type for negation operation. $(source.source):$(source.line):$(source.offset)");
 		}
 		public override Expression transform () {
 			expression = expression.transform ();
@@ -356,7 +356,7 @@ namespace Flabbergast.Expressions {
 			if (result is Data.Float) {
 				engine.operands.push (new Data.Boolean (((Data.Float)result).value.is_nan ())); return;
 			}
-			throw new EvaluationError.TYPE_MISMATCH ("Invalid type to not-a-number check.");
+			throw new EvaluationError.TYPE_MISMATCH (@"Invalid type to not-a-number check. $(source.source):$(source.line):$(source.offset)");
 		}
 		public override Expression transform () {
 			expression = expression.transform ();
@@ -377,7 +377,7 @@ namespace Flabbergast.Expressions {
 			if (result is Data.Float) {
 				engine.operands.push (new Data.Boolean (((Data.Float)result).value.is_finite ())); return;
 			}
-			throw new EvaluationError.TYPE_MISMATCH ("Invalid type to infinite check.");
+			throw new EvaluationError.TYPE_MISMATCH (@"Invalid type to infinite check. $(source.source):$(source.line):$(source.offset)");
 		}
 		public override Expression transform () {
 			expression = expression.transform ();
@@ -399,10 +399,10 @@ namespace Flabbergast.Expressions {
 			engine.call (end);
 			var end_value = engine.operands.pop ();
 			if (!(start_value is Data.Integer)) {
-				throw new EvaluationError.TYPE_MISMATCH ("Invalid start type to Through.");
+				throw new EvaluationError.TYPE_MISMATCH (@"Invalid start type to Through. $(source.source):$(source.line):$(source.offset)");
 			}
 			if (!(end_value is Data.Integer)) {
-				throw new EvaluationError.TYPE_MISMATCH ("Invalid end type to Through.");
+				throw new EvaluationError.TYPE_MISMATCH (@"Invalid end type to Through. $(source.source):$(source.line):$(source.offset)");
 			}
 			var context = engine.environment.create ();
 			var tuple = new Data.Tuple (context);

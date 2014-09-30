@@ -89,7 +89,7 @@ namespace Flabbergast.Expressions {
 				if (result is Data.Template) {
 					source_data = (Data.Template)result;
 				} else {
-					throw new EvaluationError.TYPE_MISMATCH ("Template based on expression which is not a template. $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
+					throw new EvaluationError.TYPE_MISMATCH (@"Template based on expression which is not a template. $(source_expr.source.source):$(source_expr.source.line):$(source_expr.source.offset)");
 				}
 			}
 			var attr_names = new Gee.HashSet<string> ();
@@ -189,7 +189,7 @@ namespace Flabbergast.Expressions {
 			engine.call (source_expr);
 			var result = engine.operands.pop ();
 			if (!(result is Data.Template)) {
-				throw new EvaluationError.TYPE_MISMATCH ("Attempting to instantiate something which is not a template. $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
+				throw new EvaluationError.TYPE_MISMATCH (@"Attempting to instantiate something which is not a template. $(source_expr.source.source):$(source_expr.source.line):$(source_expr.source.offset)");
 			}
 
 			var template = (Data.Template)result;
@@ -255,6 +255,7 @@ namespace Flabbergast.Expressions {
 			}
 			foreach (var entry in template.attributes.entries) {
 				if (entry.key in attr_names) {
+					message("Skipping previously defined attribute %s", entry.key);
 					continue;
 				}
 				attr_names.add (entry.key);
@@ -264,7 +265,7 @@ namespace Flabbergast.Expressions {
 			}
 			foreach (var external in template.externals) {
 				if (!(external in attr_names)) {
-					throw new EvaluationError.EXTERNAL_REMAINING (@"External attribute $(external) not overridden. $(template.source.source):$(template.source.line):$(template.source.offset)");
+					throw new EvaluationError.EXTERNAL_REMAINING (@"External attribute $(external) not overridden at $(source.source):$(source.line):$(source.offset). $(template.source.source):$(template.source.line):$(template.source.offset)");
 				}
 			}
 			engine.operands.push (tuple);

@@ -41,7 +41,7 @@ namespace Flabbergast {
 
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			if (owner.get () != engine) {
-				throw new EvaluationError.INTERNAL ("Tried to execute a promise on a different evaluation enginge.");
+				throw new EvaluationError.INTERNAL ("Tried to execute a promise on a different evaluation engine.");
 			}
 			if (is_running) {
 				throw new EvaluationError.CIRCULAR (@"Circular evaluation detected. $(expression.source.source):$(expression.source.line):$(expression.source.offset)");
@@ -345,7 +345,7 @@ namespace Flabbergast {
 				call (expression);
 				var result = operands.pop ();
 				if (result == null) {
-					throw new EvaluationError.INTERNAL ("No item returned from expression.");
+					throw new EvaluationError.INTERNAL (@"No item returned from expression. $(expression.source.source):$(expression.source.line):$(expression.source.offset)");
 				}
 				return (!)result;
 			} catch (EvaluationError e) {

@@ -267,7 +267,7 @@ namespace Flabbergast.Expressions {
 			if (result is Data.String) {
 				throw new EvaluationError.USER_DEFINED (((Data.String)result).value);
 			} else {
-				throw new EvaluationError.TYPE_MISMATCH ("Expected string in error.");
+				throw new EvaluationError.TYPE_MISMATCH (@"Expected string in error. $(source.source):$(source.line):$(source.offset)");
 			}
 		}
 		public override Expression transform () {

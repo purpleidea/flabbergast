@@ -141,7 +141,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<StringPiece> ("string contents", 0, "\\(%!% %P{expression}% )%p{literal}");
 
 		/* Selectors */
-		register<Fricassee.PassThrough> ("pass-through (Each)", 0, "Each %P{source}");
+		register<Fricassee.PassThrough> ("pass-through (Each)", 0, "Each %P{source_expr}");
 		register<Fricassee.MergedTuples> ("merged tuple", 0, "%L{sources}{% ,%-}", new Type[] { typeof (Fricassee.Source) });
 		/* Results */
 		register<Fricassee.AnonymousTuple> ("ordered anonymous tuple", 0, "%P{order} Select %P{result}");

@@ -21,7 +21,7 @@ namespace Flabbergast {
 
 			foreach (var attribute in attributes) {
 				if (tuple.attributes.has_key (attribute.name.name)) {
-					throw new EvaluationError.NAME (@"Duplicate attribute name $(attribute.name.name).");
+					throw new EvaluationError.NAME (@"Duplicate attribute name $(attribute.name.name). $(attribute.source.source):$(attribute.source.line):$(attribute.source.offset)");
 				}
 				var attr_value = engine.create_closure (attribute.expression);
 				tuple.attributes[attribute.name.name] = attr_value;

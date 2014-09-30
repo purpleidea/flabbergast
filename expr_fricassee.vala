@@ -26,7 +26,7 @@ namespace Flabbergast.Expressions.Fricassee {
 					engine.call ((!)where);
 					var result = engine.operands.pop ();
 					if (!(result is Data.Boolean)) {
-						throw new EvaluationError.TYPE_MISMATCH ("Result from Where clause is not a boolean.");
+						throw new EvaluationError.TYPE_MISMATCH (@"Result from Where clause is not a boolean. $(source.source):$(source.line):$(source.offset)");
 					}
 					if (((Data.Boolean)result).value) {
 						selected_contexts.add (context);
@@ -56,23 +56,24 @@ namespace Flabbergast.Expressions.Fricassee {
 		public abstract void generate_result (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError;
 		public GTeonoma.source_location source { get; set; }
 	}
-	internal abstract class OrderClause : Object {
+	internal abstract class OrderClause : Object, GTeonoma.SourceInfo {
+		public GTeonoma.source_location source { get; set; }
 		public abstract void transform ();
 		public abstract Gee.List<uint> reorder_contexts (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError;
 	}
 	internal class PassThrough : Selector {
-		public Expression source {
+		public Expression source_expr {
 			get;
 			set;
 		}
 		public override void transform () {
-			source = source.transform ();
+			source_expr = source_expr.transform ();
 		}
 		public override Gee.List<uint> generate_contexts (ExecutionEngine engine) throws EvaluationError {
-			engine.call (source);
+			engine.call (source_expr);
 			var container_tuple = engine.operands.pop ();
 			if (!(container_tuple is Data.Tuple)) {
-				throw new EvaluationError.NAME ("Value passed to Each is not a tuple.");
+				throw new EvaluationError.NAME (@"Value passed to Each is not a tuple. $(source_expr.source.source):$(source_expr.source.line):$(source_expr.source.offset)");
 			}
 			var contexts = new Gee.ArrayList<uint> ();
 			foreach (Gee.Map.Entry<string, Expression> entry in (Data.Tuple)container_tuple) {
@@ -82,7 +83,7 @@ namespace Flabbergast.Expressions.Fricassee {
 				engine.call (entry.value);
 				var datum = engine.operands.pop ();
 				if (!(datum is Data.Tuple)) {
-					throw new EvaluationError.TYPE_MISMATCH (@"$(entry.key) is not a tuple in Each selector.");
+					throw new EvaluationError.TYPE_MISMATCH (@"$(entry.key) is not a tuple in Each selector. $(source.source):$(source.line):$(source.offset)");
 				}
 				var context = engine.environment.create ();
 				foreach (Gee.Map.Entry<string, Expression> subentry in (Data.Tuple)datum) {
@@ -145,7 +146,7 @@ namespace Flabbergast.Expressions.Fricassee {
 			engine.call (expression);
 			var tuple = engine.operands.pop ();
 			if (!(tuple is Data.Tuple)) {
-				throw new EvaluationError.TYPE_MISMATCH (@"Value for $(name.name) is not a tuple.");
+				throw new EvaluationError.TYPE_MISMATCH (@"Value for $(name.name) is not a tuple. $(source.source):$(source.line):$(source.offset)");
 			}
 			foreach (var entry in ((Data.Tuple)tuple).attributes.entries) {
 				if (!entry.key[0].islower ()) {
@@ -207,7 +208,7 @@ namespace Flabbergast.Expressions.Fricassee {
 			foreach (var source in sources) {
 				var name = source.name.name;
 				if (name in environment_names) {
-					throw new EvaluationError.NAME (@"Duplicate name $(name) in For.");
+					throw new EvaluationError.NAME (@"Duplicate name $(name) in For. $(source.source.source):$(source.source.line):$(source.source.offset)");
 				}
 				environment_names.add (name);
 			}
@@ -254,7 +255,7 @@ namespace Flabbergast.Expressions.Fricassee {
 				} else if (order_key is Data.Integer) {
 					output[make_id (((Data.Integer)order_key).value)] = context;
 				} else {
-					throw new EvaluationError.TYPE_MISMATCH ("Order key must be either an integer or a string.");
+					throw new EvaluationError.TYPE_MISMATCH (@"Order key must be either an integer or a string. $(source.source):$(source.line):$(source.offset)");
 				}
 			}
 			engine.state = state;
@@ -306,13 +307,13 @@ namespace Flabbergast.Expressions.Fricassee {
 				} else if (attr_name_value is Data.String) {
 					attr_name = ((Data.String)attr_name_value).value;
 					if (!Regex.match_simple ("^[a-z][a-zA-Z0-9_]", attr_name)) {
-						throw new EvaluationError.NAME (@"The name $(attr_name) is not a legal attribute name.");
+						throw new EvaluationError.NAME (@"The name $(attr_name) is not a legal attribute name. $(source.source):$(source.line):$(source.offset)");
 					}
 				} else {
-					throw new EvaluationError.TYPE_MISMATCH ("The attribute type must be an integer or a string.");
+					throw new EvaluationError.TYPE_MISMATCH (@"The attribute type must be an integer or a string. $(source.source):$(source.line):$(source.offset)");
 				}
 				if (tuple.attributes.has_key (attr_name)) {
-					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr_name) in result of For⋯Select.");
+					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr_name) in result of For⋯Select. $(source.source):$(source.line):$(source.offset)");
 				}
 
 				var attr_value = engine.create_closure (result_value);
