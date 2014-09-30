@@ -255,7 +255,6 @@ namespace Flabbergast.Expressions {
 			}
 			foreach (var entry in template.attributes.entries) {
 				if (entry.key in attr_names) {
-					message("Skipping previously defined attribute %s", entry.key);
 					continue;
 				}
 				attr_names.add (entry.key);
