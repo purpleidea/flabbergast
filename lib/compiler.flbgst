@@ -249,9 +249,10 @@ language_tmpl : Template {
 				child_expression { field : $start_expr },
 				parser.accumulate_list {
 					field : $terms
+					type : term_type
 					in : parser.many {
 						of : parser.other {
-							type : $term_type
+							type : term_type
 							accumulate : True
 							field : Null
 						}
@@ -340,7 +341,9 @@ language_tmpl : Template {
 			}
 			rules +: {
 				file : Template syntax_element {
-					pattern : accumulate_list {
+					pattern : parser.accumulate_list {
+						field : $attributes
+						type : $attribute
 						in : parser.many {
 							of : parser.other {
 								type : $attribute
@@ -360,11 +363,11 @@ language_tmpl : Template {
 				name : common_fields.str
 			}
 			alternatives +: {
-				literal_attributes : [ plain_attribute ]
-				new_tmpl_attributes : [ plain_attribute, informative_attribute, missing_attribute ]
-				extend_tmpl_attributes : [ plain_attribute, informative_attribute, missing_attribute, named_override, template_override, remove_attribute ]
-				instantiate_tmpl_attributes : [ plain_attribute, informative_attribute, named_override, template_override, remove_attribute ]
-				fricasee_attributes :  [ plain_attribute, ordinal_attribute, name_attribute ]
+				literal_attributes : [ $plain_attribute ]
+				new_tmpl_attributes : [ $plain_attribute, $informative_attribute, $missing_attribute ]
+				extend_tmpl_attributes : [ $plain_attribute, $informative_attribute, $missing_attribute, $named_override, $template_override, $remove_attribute ]
+				instantiate_tmpl_attributes : [ $plain_attribute, $informative_attribute, $named_override, $template_override, $remove_attribute ]
+				fricasee_attributes :  [ $plain_attribute, $ordinal_attribute, $name_attribute ]
 			}
 			rules +: {
 				plain_attribute : Template syntax_element {
@@ -412,6 +415,7 @@ language_tmpl : Template {
 							parser.exact { word : "{" },
 							parser.accumulate_list {
 								field : $overrides
+								type : $attribute
 								in : parser.many {
 									of : parser.other {
 										type : $attribute
@@ -474,7 +478,7 @@ language_tmpl : Template {
 							space { preferred : True },
 							valid_identifier { field : $name },
 							space { preferred : True },
-							parser.exact { char : ":" },
+							parser.exact { word : ":" },
 							space { preferred : True },
 							parser.exact { word : "Ordinal" }
 						]
@@ -503,7 +507,7 @@ language_tmpl : Template {
 						]
 					}
 				}
-				reverse : Template literal_tmpl { word : "Reverse" }
+				reverse : Template literal_tmpl { name : "Reverse" }
 			}
 		}
 
@@ -517,6 +521,7 @@ language_tmpl : Template {
 						of : [
 							parser.accumulate_list {
 								type : $ordering
+								field : $orderings
 								in : parser.many {
 									of : parser.other { type: $ordering  field : Null }
 								}
@@ -531,7 +536,7 @@ language_tmpl : Template {
 							space { preferred : True },
 							parser.exact { word : ":" },
 							space { preferred : True },
-							parser.other { type: $expression  alternative : $expressionTODO field : $initial_expr }
+							parser.other { type: $expression  alternative : $expression2 field : $initial_expr }
 						]
 					}
 				}
@@ -540,7 +545,7 @@ language_tmpl : Template {
 						of : [
 							parser.exact { word : "Select" },
 							space { preferred : True },
-							parser.other { type: $expression  alternative : $expressionTODO field : $expression }
+							parser.other { type: $expression  alternative : $expression2 field : $expression }
 						]
 					}
 				}
@@ -553,7 +558,7 @@ language_tmpl : Template {
 							space { preferred : True },
 							parser.exact { word : ":" },
 							space { preferred : True },
-							parser.other { type: $expression  alternative : $expressionTODO field : $value_expr }
+							parser.other { type: $expression  alternative : $expression2 field : $value_expr }
 						]
 					}
 				}
@@ -775,9 +780,9 @@ language_tmpl : Template {
 							parser.accumulate_list {
 								type : $attribute
 								field : $definitions
-								in : parser.many {
+								in : parser.many_word {
 									of : parser.other { type : $attribute  alternate : $plain_attribute  field : Null }
-									separator : ","
+									separator_word : ","
 									nonempty : True
 								}
 							},
@@ -876,7 +881,7 @@ language_tmpl : Template {
 					level : 6
 					operator : ">="
 				}
-				lesser : binary_operator {
+				lesser : Template binary_operator {
 					level : 6
 					operator : "<"
 				}
@@ -947,6 +952,7 @@ language_tmpl : Template {
 							space { mandatory : True },
 							parser.accumulate_list {
 								type : $identifier
+								field : $names
 								in : parser.many_word {
 									of : parser.other {
 										type : $identifier
@@ -972,9 +978,11 @@ language_tmpl : Template {
 							parser.exact { word : "{" },
 							parser.accumulate_list {
 								field : $attributes
+								type : $attribute
 								in : parser.many {
 									of : parser.other {
 										type : $attribute
+										field : Null
 										alternate : $instantiate_tmpl_attributes
 									}
 								}
@@ -998,9 +1006,11 @@ language_tmpl : Template {
 							space { preferred : True },
 							parser.accumulate_list {
 								field : $attributes
+								type : $attribute
 								in : parser.many {
 									of : parser.other {
 										type : $attribute
+										field : Null
 										alternate : $plain_attribute
 									}
 								}
@@ -1014,7 +1024,7 @@ language_tmpl : Template {
 					level : 16
 					operator : "!"
 				}
-				negation : Template expression_tmpl {
+				negation : Template unary_tmpl {
 					level : 16
 					operator : "-"
 				}
@@ -1027,14 +1037,15 @@ language_tmpl : Template {
 							parser.exact { word : "{" },
 							parser.accumulate_list {
 								field : $attributes
+								type : $attribute
 								in : parser.many {
 									of : parser.other {
 										type : $attribute
+										field : Null
 										alternate : $new_tmpl_attributes
 									}
 								}
 							},
-							parser.many { of : [attribute, missing_attribute ] },
 							space { preferred : True },
 							parser.exact { word : "}" }
 						]
@@ -1051,9 +1062,11 @@ language_tmpl : Template {
 							parser.exact { word : "{" },
 								parser.accumulate_list {
 								field : $attributes
+								type : $attribute
 								in : parser.many {
 									of : parser.other {
 										type : $attribute
+										field : Null
 										alternate : $extend_tmpl_attributes
 									}
 								}
@@ -1068,11 +1081,12 @@ language_tmpl : Template {
 					level : 17
 					pattern : parser.sequence {
 						of : [
-							child_expression { },
+							child_expression { field : $func_expr },
 							space { },
 							parser.exact { word : "(" },
 							parser.accumulate_list {
 								field : $args
+								type : $expression
 								in : parser.many_word {
 									of : parser.sequence {
 										of : [
@@ -1092,11 +1106,12 @@ language_tmpl : Template {
 					level : 17
 					pattern : parser.sequence {
 						of : [
-							child_expression { },
+							child_expression { field : $func_expr },
 							space { },
 							parser.exact { word : "(" },
 							parser.accumulate_list {
 								field : $args
+								type : $attribute
 								in : parser.many_word {
 									of : parser.sequence {
 										of : [
@@ -1120,11 +1135,12 @@ language_tmpl : Template {
 					level : 17
 					pattern : parser.sequence {
 						of : [
-							child_expression { },
+							child_expression { field : $func_expr },
 							space { },
 							parser.exact { word : "(" },
 							parser.accumulate_list {
 								field : $anon_args
+								type : $expression
 								in : parser.many_word {
 									of : parser.sequence {
 										of : [
@@ -1138,6 +1154,7 @@ language_tmpl : Template {
 							parser.exact { word : "," },
 							parser.accumulate_list {
 								field : $named_args
+								type : $attribute
 								in : parser.many_word {
 									of : parser.sequence {
 										of : [
@@ -1162,6 +1179,7 @@ language_tmpl : Template {
 					level : 18
 					pattern : parser.accumulate_list {
 						field : $parts
+						type : $identifier
 						in : parser.many_word {
 							of : parser.other {
 								type : $identifier
@@ -1213,11 +1231,12 @@ language_tmpl : Template {
 					level : 18
 					pattern : parser.sequence {
 						of : [
-							child_expression { },
+							child_expression { field : $expr },
 							space { },
 							parser.exact { word : "." },
 							parser.accumulate_list {
 								type : $identifier
+								field : $names
 								in : parser.many_word {
 									of : parser.other {
 										type : $identifier
@@ -1249,14 +1268,15 @@ language_tmpl : Template {
 							parser.exact { word : "[" },
 							parser.accumulate_list {
 								field : $items
+								type : $expression
 								in : parser.many_word {
+									separator_word : ","
 									of : parser.sequence {
 										of : [
 											space { preferred : True },
 											top_expression { field : Null },
 											space { }
 										]
-										separator_word : ","
 									}
 								}
 							},
@@ -1283,6 +1303,7 @@ language_tmpl : Template {
 					level : 19
 					pattern : parser.accumulate_list {
 						field : $parts
+						type : $time
 						in : parser.other {
 							type : $time
 							accumulate : True
@@ -1301,7 +1322,7 @@ language_tmpl : Template {
 					level : 19
 					pattern : parser.accumulate_integer {
 						field : $amount
-						of : parser.sequence {
+						in : parser.sequence {
 							of : [
 									parser.exact { word : "0x" },
 									parser.many {
@@ -1321,6 +1342,7 @@ language_tmpl : Template {
 				float_literal : Template expression_tmpl {
 					level : 19
 					pattern : parser.accumulate_float {
+						field : $value
 						in : parser.sequence {
 							accumulate : True
 							of : [
@@ -1361,6 +1383,7 @@ language_tmpl : Template {
 								parser.exact { word : "\"" },
 								parser.accumulate_list {
 									field : $parts
+									type : $string_piece
 									in : parser.many {
 										of : parser.other {
 											type : $string_piece
