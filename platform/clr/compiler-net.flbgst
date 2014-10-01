@@ -1,0 +1,248 @@
+compiler_lib : From lib:compiler-bootstrap
+
+parser : compiler_lib.parser_tmpl {
+	exact +: {
+		class_gen : ""
+		copy_instance : ""
+		pok : (parse_complete { ok : True }).value
+		perr : (parse_complete { ok : False }).value
+		parser_gen : "\(indent)if (_parser.Match(\"\(word)\")) {\(pok)\(indent)} else {\(perr)\(indent)}"
+	}
+	optional +: {
+		class_gen : of.class_gen
+		copy_instance : of.copy_instance
+
+		parent_indent : Lookup indent In Container
+		indent : parent_indent & "\t"
+
+		pok : ((Lookup parse_complete In Container) { ok : True }).value
+		parse_complete : Template {
+			ok ?:
+			value : If ok
+				Then "\(indent)_parser_stack.Pop();\(indent)_obj_stack.Pop();"
+				Else "\(indent)_parser = _parser_stack.Pop();\(indent)_obj = _obj_stack.Pop();\(indent)throw new ParseOptionalFailure();"
+		}
+		parser_gen : "\(parent_indent)try {\(indent)_parser_stack.Push(_parser.Clone());\(indent)_obj_stack.Push(_obj.Clone());\(of.parser_gen)\(parent_indent)} catch (ParseOptionalFailure f) { } \(pok)"
+	}
+	sequence +: {
+		class_gen : For x : of Reduce acc & x.class_gen With acc : ""
+		copy_instance : For x : of Reduce acc & x.copy_instance With acc : ""
+
+		parent_parse_complete : Lookup parse_complete In Container
+		parse_complete : Template parent_parse_complete {
+			value +original: If ok Then "" Else original
+		}
+		parser_gen : (For x : of Reduce acc & x.parser_gen With acc : "") & (parent_parse_complete { ok : True }).value
+	}
+	many +: {
+		class_gen : of.class_gen & (If separator Is Null Then "" Else separator.class_gen)
+		copy_instance : of.copy_instance & (If separator Is Null Then "" Else separator.copy_instance)
+
+		parent_indent : Lookup indent In Container
+		indent : parent_indent & "\t"
+
+		pok : ((Lookup parse_complete In Container) { ok : True }).value
+		perr : ((Lookup parse_complete In Container) { ok : True }).value
+		parent_parse_complete : Lookup parse_complete In Container
+		parse_complete : Template {
+			ok ?:
+			value : If ok Then "" Else "break;"
+		}
+		parser_gen : "\(parent_indent)while(true) {\(indent)_parser_stack.Push(_parser.Clone());\(indent)_obj_stack.Push(_obj.Clone());" &
+			(If separator Is Null Then "" Else "\(indent)if (_obj.\(field).Length > 0) {\(separator.parser_gen)\(indent)}") &
+			of.parser_gen & parent_indent &
+			"\(parent_indent)_parser_stack.Pop();\(parent_indent)_obj_stack.Pop();" &
+			"}" &
+			"\(parent_indent)_parser_stack.Pop();\(parent_indent)_obj_stack.Pop();" &
+			(If nonempty Then "\(parent_indent)if (_obj.\(field).Length == 0) {\(perr)\(parent_indent)}" Else "") &
+			pok
+	}
+	alternate +: {
+		class_gen : For x : of Reduce acc & x.class_gen With acc : ""
+		copy_instance : For x : of Reduce acc & x.copy_instance With acc : ""
+
+		parent_indent : Lookup indent In Container
+		indent : parent_indent & "\t"
+
+		pok : ((Lookup parse_complete In Container) { ok : True }).value
+		perr : ((Lookup parse_complete In Container) { ok : True }).value
+		parse_complete : Template {
+			ok ?:
+			value : If ok
+				Then "\(indent)_parser_stack.Pop();\(indent)_obj_stack.Pop();\(indent)throw new ParseAlternateComplete();"
+				Else "\(indent)_parser = _parser_stack.Pop();\(indent)_obj = _obj_stack.Pop();"
+		}
+		parent_parse_complete : Lookup parse_complete In Container
+		parser_gen : "\(parent_indent)try {" &
+			(For x : of
+			Reduce acc & "\(indent)_parser_stack.Push(_parser.Clone());\(indent)_obj_stack.Push(_obj.Clone());\(x.parser_gen)"
+			With acc : "") &
+			(parent_parse_complete { ok : False }).value &
+			"\(parent_indent)} catch (ParseAlternateComplete f) {\(pok)\(parent_indent)}"
+	}
+	range +: {
+		class_gen : ""
+		copy_instance : ""
+		pok : (parse_complete { ok : True }).value
+		perr : (parse_complete { ok : False }).value
+		parser_gen : "\(indent)if (_parser.Next() >= '\(from)' && _parser.PeekLast() <= '\(to)') {\(pok)\(indent)} else {\(perr)\(indent)}"
+	}
+	single +: {
+		class_gen : ""
+		copy_instance : ""
+		pok : (parse_complete { ok : True }).value
+		perr : (parse_complete { ok : False }).value
+		parser_gen : "\(indent)if (\(If invert_match Then "!" Else "")\"\(char)\".Contains(_parser.Next())) {\(pok)\(indent)} else {\(perr)\(indent)}"
+	}
+	accumulate_integer +: {
+		class_gen : "\tint64 " & field & ";\n" & in.class_gen
+		copy_instance : "\t\t_obj.\(field) = \(field);\n" & in.copy_instance
+
+		parent_parse_complete : Lookup parse_complete In Container
+		parse_complete : Template parent_parse_complete {
+			value +original:
+				If ok
+				Then If accumulate
+					Then "\(indent)_obj.\(field) += _obj.\(field) * \(multiplier) + (_parser.PeekLast() - \(offset));"
+					Else ""
+				Else original
+		}
+		parser_gen : in.parser_gen & (parent_parse_complete { ok : True }).value
+	}
+	accumulate_unichar_integer +: {
+		class_gen : ""
+		copy_instance : ""
+
+		parent_parse_complete : Lookup parse_complete In Container
+		parse_complete : Template parent_parse_complete {
+			value +original:
+				If ok
+				Then If accumulate
+					Then "\(indent)_unicode_acc += _unicode_acc * \(multiplier) + (_parser.PeekLast() - \(offset));"
+					Else ""
+				Else original
+		}
+		parser_gen : "\(indent)int32 _unicode_acc = \(initial);" & in.parser_gen & "\(indent)_obj.\(field).Append(Char.ConvertFromUtf32(_unicode_acc));" & (parent_parse_complete { ok : True }).value
+	}
+	accumulate_float +: {
+		class_gen : "\tdouble " & field & ";\n" & in.class_gen
+		copy_instance : "\t\t_obj.\(field) = \(field);\n" & in.copy_instance
+
+		parent_parse_complete : Lookup parse_complete In Container
+		parse_complete : Template parent_parse_complete {
+			value +original:
+				If ok
+				Then If accumulate
+					Then "\(indent)_float_acc.Append(_parser.PeekLast());"
+					Else ""
+				Else original
+		}
+		parser_gen : "var _float_acc = new StringBuilder();" &
+			in.parser_gen &
+			indent & "_obj.\(field) = Double.Parse(_float_acc.To.String());" &
+			(parent_parse_complete { ok : True }).value
+	}
+	accumulate_list +: {
+		class_gen : "\tList<\(type)> \(field) = new ArrayList<\(type)>();\n" & in.class_gen
+		copy_instance : "\t\t_obj.\(field) = \(field).Clone();\n" & in.copy_instance
+		parser_gen : in.parser_gen
+	}
+	accumulate_string +: {
+		class_gen : "\tStringBuilder " & field & " = new StringBuilder();\n" & in.class_gen
+		copy_instance : "\t\t_obj.\(field).Append(\(field).ToString());\n" & in.copy_instance
+
+		parent_parse_complete : Lookup parse_complete In Container
+		parse_complete : Template parent_parse_complete {
+			value +original:
+				If ok
+				Then If accumulate
+					Then "\(indent)_obj.\(field).Append(_parser.PeekLast());"
+					Else ""
+				Else original
+		}
+		parser_gen : in.parser_gen & (parent_parse_complete { ok : True }).value
+	}
+	collect_codepoint +: {
+		class_gen : ""
+		copy_instance : ""
+		parser_gen : "\(indent)_obj.\(field).Append(Char.ConvertFromUtf32(_unicode_acc));" & (parse_complete { ok : True }).value
+	}
+	other +: {
+		is_common : If field Is Null Then False Else
+			(For common_field : Name, common_type : expanded_common Where common_field == field Reduce True With acc : False)
+		class_gen : If is_common || field Is Null Then "" Else "\t\(type) \(field);\n"
+		copy_instance : If is_common || field Is Null Then "" Else "\t\t_obj.\(field) = \(field);\n"
+
+		pok : ((Lookup parse_complete In Container) { ok : True }).value
+		perr : ((Lookup parse_complete In Container) { ok : True }).value
+		target_rule : "ParseRule_\(type)_\(alternate ?? "Base")"
+		parse_call : If field Is Null
+			Then "Parser.ParseIntoList(ref _parser, _obj.\(Lookup field In Container), \(target_rule))"
+			Else "\(target_rule)(ref _parser, out _obj.\(field))"
+		parser_gen : "\(indent)if (\(parse_call)) {\(pok)\(indent)} else {\(perr)\(indent)}"
+	}
+}
+
+common_fields : compiler_lib.common_fields_tmpl {
+	str +: {
+		class_gen : "\tStringBuilder \(field_name) = new StringBuilder();\n"
+		copy_instance : "\t\t_obj.\(field_name).Append(\(field_name).ToString());\n"
+	}
+	int : Template other {
+		type : "int64"
+	}
+	float : Template other {
+		type : "double"
+	}
+	other +: {
+		class_gen : "\t\(type) \(field_name);\n"
+		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
+	}
+}
+
+static_copy_instance : For field : [ "StartRow", "EndRow", "StartColumn", "EndColumn", "FileName" ]
+	Reduce acc & "\t\t_obj.\(field) = \(field);\n" With acc : ""
+
+compiler : compiler_lib.language_tmpl {
+	syntax_element +: {
+		indent : "\n\t"
+		class_name : group_name & "_" & rule_name
+		parser_gen : "public static bool ParseRule_\(class_name)(ref Parser _parser, out \(class_name) _result) {\n\tvar _obj = new \(class_name)();\n\tvar _obj_stack = new Stack<\(class_name)>();\n\tvar _parser_stack = new Stack<Parser>();\(pattern.parser_gen)\n}\n"
+
+		class_gen : "public class \(class_name) : \(group_name) {\n\(pattern.class_gen)\tpublic override \(class_name) Clone() {\n\tvar _obj = new \(class_name)();\n\t\t_obj.StartRow = _parser.Row;\n\t\t_parser.StartColumn = _parser.Column;\n\(common_field_copy_instance)\(pattern.copy_instance)\t\t_obj.EndRow = _parser.Row;\n\t\t_parser.EndColumn = _parser.Column;\n\\t\treturn _obj;\n\t}\n}\n"
+
+		parse_complete : Template {
+			ok ?:
+			value : If ok Then "\(indent)_result = _obj;\(indent)return true;" Else "\(indent)return false;"
+		}
+	}
+	syntax_group +: {
+		class_gen : For rule : expanded_rules
+			Reduce acc & rule.class_gen
+			With acc : "public abstract class \(group_name) : AstNode {\n\(common_field_class_gen)}\n"
+
+		common_field_class_gen : For field : expanded_common Reduce acc & field.class_gen With acc : ""
+		common_field_copy_instance : For field : expanded_common Reduce acc & field.copy_instance With acc : static_copy_instance
+
+		parser_gen : For rule : expanded_rules Reduce acc & rule.parser_gen With acc : ""
+
+		parse_base : "public static bool ParseRule_\(group_name)_Base(ref Parser parser, out \(group_name)? result) {\n\tParser slave_parser;\n\t\(group_name) result;" &
+		(For rule : expanded_rules, rule_name : Name
+			Reduce acc & "\tslave_parser = parser.Clone();\n\tif (ParseRule_\(group_name)_\(rule_name)(ref slave_parser, out result)) {\n\t\tparser = slave_parser;\n\t\treturn true;\n\t}\n"
+			With acc : "")
+		& "\tresult = null;\n\treturn false;\n}\n"
+
+		parse_alternates : For alternate_rules : expanded_alts, alternate_name : Name
+			Reduce
+				outer_acc &
+				"public static bool ParseRule_\(group_name)_\(alternate_name)(ref Parser parser, out \(group_name)? result) {\n\tParser slave_parser;\n\(group_name) result;" &
+				(For rule_name : alternate_rules
+					Reduce acc & "\tslave_parser = parser.Clone();\n\tif (ParseRule_\(group_name)_\(rule_name)(ref slave_parser, out result)) {\n\t\tparser = slave_parser;\n\t\treturn true;\n\t}\n"
+					With acc : "")
+				& "\tresult = null;\n\treturn false;\n}\n"
+			With outer_acc : ""
+
+		value : class_gen & parse_base & parser_gen & parse_alternates
+	}
+	value : "namespace Flabbergast {\n" & (For group : expanded_groups Reduce acc & group.value With acc : "") & "}"
+}
