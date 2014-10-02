@@ -95,6 +95,14 @@ namespace Flabbergast.Expressions {
 			return this;
 		}
 	}
+	internal class GenerateToken : Expression {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+			engine.operands.push (new Data.Integer (engine.generate_id++));
+		}
+		public override Expression transform () {
+			return this;
+		}
+	}
 	internal class FloatLiteral : Expression {
 		public double @value {
 			get;

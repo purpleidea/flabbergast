@@ -727,6 +727,17 @@ Infinity literal
 A floating point value representing positive infinity.
 
 .TP
+Create unique integer
+.SEM \fBGenerateToken\fR ↓ x\*<i\*> :: Int
+x\*<i\*> ≥ 0,
+∀j < i: x\*<i\*> ≠ x\*<j\*>
+.SEME
+
+This generates an integer unique over the run of the program. There need be no consistency in the sequence of integers generated, only that each call to the function produces a number not previously emitted.
+
+The formal semantics here are almost certainly wrong. Hopefully, the intention is understood.
+
+.TP
 Largest integer literal
 .SEM \fBIntMax\fR ↓ x :: Int
 .SEME

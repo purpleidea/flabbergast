@@ -1286,18 +1286,19 @@ language_tmpl : Template {
 					}
 				}
 
-				null : Template literal_tmpl { name : "Null" }
-				int_max : Template literal_tmpl { name : "IntMax" }
-				int_min : Template literal_tmpl { name : "IntMin" }
+				container : Template literal_tmpl { name : "Container" }
+				continue : Template literal_tmpl { name : "Continue" }
+				false : Template literal_tmpl { name : "False" }
 				float_max : Template literal_tmpl { name : "FloatMax" }
 				float_min : Template literal_tmpl { name : "FloatMin" }
+				generate_token : Template literal_tmpl { name : "GenerateToken" }
 				infinity : Template literal_tmpl { name : "Infinity" }
+				int_max : Template literal_tmpl { name : "IntMax" }
+				int_min : Template literal_tmpl { name : "IntMin" }
 				nan : Template literal_tmpl { name : "NaN" }
-				continue : Template literal_tmpl { name : "Continue" }
+				null : Template literal_tmpl { name : "Null" }
 				this : Template literal_tmpl { name : "This" }
-				container : Template literal_tmpl { name : "Container" }
 				true : Template literal_tmpl { name : "True" }
-				false : Template literal_tmpl { name : "False" }
 
 				time_literal : Template syntax_element {
 					level : 19

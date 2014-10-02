@@ -155,6 +155,7 @@ namespace Flabbergast {
 
 	public class ExecutionEngine : Object {
 		private StackFrame[] call_stack = {};
+		internal int generate_id = 0;
 		public int call_depth {
 			get {
 				return call_stack.length - (call_stack.length > 0 && (call_stack[0].source is File) ? 1 : 0);

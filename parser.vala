@@ -126,6 +126,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<StringLiteral> ("string literal", precedence, "\"%L{contents}{}\"", new Type[] { typeof (StringPiece) });
 		register<StringLiteral> ("empty string literal", precedence, "\"\"");
 		register<SubExpression> ("subexpression", precedence, "(%!% %P{-expression}% )");
+		register<GenerateToken> ("generate token", precedence, "GenerateToken");
 		register<This> ("self-reference", precedence, "This");
 		register<Container> ("container", precedence, "Container");
 		register<TrueLiteral> ("true literal", precedence, "True");
