@@ -148,7 +148,7 @@ language_tmpl : Template {
 			nonempty : mandatory
 			of : parser.alternate {
 				of : [
-					parser.single { char : " \t\n\r\f\v" },
+					parser.single { char : " \\t\\n\\r\\f\\v" },
 					parser.sequence {
 						of : [
 							parser.exact { word : "#" },
@@ -623,7 +623,7 @@ language_tmpl : Template {
 		string_piece : Template syntax_group {
 			string_escape_tmpl : Template parser.collect_codepoint {
 				char ?:
-				in : parser.exact { word : "\\" & char }
+				in : parser.exact { word : "\\\\" & char }
 			}
 			rules +: {
 				literal_string : Template syntax_element {
@@ -638,14 +638,14 @@ language_tmpl : Template {
 								string_escape_tmpl { char : "r" codepoint : 13 },
 								string_escape_tmpl { char : "t" codepoint : 9 },
 								string_escape_tmpl { char : "v"  codepoint : 11 },
-								string_escape_tmpl { char : "\""  codepoint : 34 },
-								string_escape_tmpl { char : "\\"  codepoint : 92 },
+								string_escape_tmpl { char : "\\\""  codepoint : 34 },
+								string_escape_tmpl { char : "\\\\"  codepoint : 92 },
 								parser.accumulate_unichar_integer {
 									multiplier : 8
 									offset : 48
 									in : parser.sequence {
 										of : [
-											parser.exact { word : "\\" },
+											parser.exact { word : "\\\\" },
 											parser.range { from : "0"  to : "7"  accumulate : True},
 											parser.range { from : "0"  to : "7"  accumulate : True},
 											parser.range { from : "0"  to : "7"  accumulate : True}
@@ -655,7 +655,7 @@ language_tmpl : Template {
 								parser.accumulate_unichar_integer {
 									in : parser.sequence {
 										of : [
-											parser.exact { word : "\\x" },
+											parser.exact { word : "\\\\x" },
 											hex_digit { },
 											hex_digit { }
 										]
@@ -664,7 +664,7 @@ language_tmpl : Template {
 								parser.accumulate_unichar_integer {
 									in : parser.sequence {
 										of : [
-											parser.exact { word : "\\u" },
+											parser.exact { word : "\\\\u" },
 											hex_digit { },
 											hex_digit { },
 											hex_digit { },
@@ -672,7 +672,7 @@ language_tmpl : Template {
 										]
 									}
 								},
-								parser.single { char : "\\\""  invert_match : True }
+								parser.single { char : "\\\\\\\""  invert_match : True }
 							]
 						}
 					}
@@ -680,7 +680,7 @@ language_tmpl : Template {
 				expression_escape : Template syntax_element {
 					pattern : parser.sequence {
 						of : [
-							parser.exact { word : "\\(" },
+							parser.exact { word : "\\\\(" },
 							space { },
 							parser.other {
 								type : $expression
@@ -1381,7 +1381,7 @@ language_tmpl : Template {
 						level : 19
 						pattern : parser.sequence {
 							of : [
-								parser.exact { word : "\"" },
+								parser.exact { word : "\\\"" },
 								parser.accumulate_list {
 									field : $parts
 									type : $string_piece
@@ -1392,7 +1392,7 @@ language_tmpl : Template {
 										}
 									}
 								},
-								parser.exact { word : "\"" }
+								parser.exact { word : "\\\"" }
 							]
 						}
 					}
