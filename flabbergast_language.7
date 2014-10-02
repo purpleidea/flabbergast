@@ -673,30 +673,37 @@ Literal list
 This creates a list-like tuple. Names are selected by the ORD function such that the tuple will have the same order of items as the original list when collated. Indexing is 1-based.
 
 .TP
+Identifier-like string
+.SEM \fB$\fR name:I ↓ \(dqname\(dq :: String
+.SEME
+
+Produce a string that is parsed as an identifier, so it is necessarily a valid identifier.
+
+.TP
+Access containing tuple
+.SEM (a, ...) ⊢ \fBContainer\fR ↓ v
+(...) ⊢ \fBThis\fR ↓ v
+.SEME
+
+.SEM (a*, ...) ⊢ \fBContainer\fR ↓ v
+(...) ⊢ \fBContainer\fR ↓ v
+.SEME
+
+Return the tuple containing current tuple. This is the second tuple in the environment not marked with a *.
+
+.TP
+Continue literal
+.SEM \fBContinue\fR ↓ ∅*
+.SEME
+
+The null-like value that change lookup behaviour.
+
+.TP
 Boolean false literal
 .SEM \fBFalse\fR ↓ False :: Bool
 .SEME
 
-Raises an error with the message \fIm\fR.
-
-.TP
-Null literal
-.SEM \fBNull\fR ↓ ∅
-.SEME
-
-.TP
-Largest integer literal
-.SEM \fBIntMax\fR ↓ x :: Int
-.SEME
-
-The value of \fIx\fR is the implementation-defined largest value representable as an integer. It should be strictly greater than zero.
-
-.TP
-Smallest integer literal
-.SEM \fBIntMin\fR ↓ x :: Int
-.SEME
-
-The value of \fIx\fR is the implementation-defined smallest value representable as an integer. It should be strictly smaller than zero.
+The Boolean falsehood value. Alternatively, thought of as boolshit.
 
 .TP
 Largest floating literal
@@ -717,16 +724,32 @@ Infinity literal
 .SEM \fBInfinity\fR ↓ ∞ :: Float
 .SEME
 
+A floating point value representing positive infinity.
+
+.TP
+Largest integer literal
+.SEM \fBIntMax\fR ↓ x :: Int
+.SEME
+
+The value of \fIx\fR is the implementation-defined largest value representable as an integer. It should be strictly greater than zero.
+
+.TP
+Smallest integer literal
+.SEM \fBIntMin\fR ↓ x :: Int
+.SEME
+
+The value of \fIx\fR is the implementation-defined smallest value representable as an integer. It should be strictly smaller than zero.
+
 .TP
 Not-a-number literal
 .SEM \fBNaN\fR ↓ NaN :: Float
 .SEME
 
-This is the IEEE not-a-number.
+This is the IEEE not-a-number value.
 
 .TP
-Continue literal
-.SEM \fBContinue\fR ↓ ∅*
+Null literal
+.SEM \fBNull\fR ↓ ∅
 .SEME
 
 .TP
@@ -741,21 +764,18 @@ Access current tuple
 Return the current tuple. This is the first tuple in the environment not marked with a *.
 
 .TP
-Access containing tuple
-.SEM (a, ...) ⊢ \fBContainer\fR ↓ v
-(...) ⊢ \fBThis\fR ↓ v
-.SEME
-
-.SEM (a*, ...) ⊢ \fBContainer\fR ↓ v
-(...) ⊢ \fBContainer\fR ↓ v
-.SEME
-
-Return the tuple containing current tuple. This is the second tuple in the environment not marked with a *.
-
-.TP
 Boolean true literal
 .SEM \fBTrue\fR ↓ True :: Bool
 .SEME
+
+The Boolean truthiness value.
+
+.TP
+Floating point literal
+.SEM (\fB0\fR/[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)\fB.\fR[\fB0\fR-\fB9\fR]*((\fBe\fR/\fBE\fR)(\fB0\fR/(\fB-\fR)?[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)? ↓ v :: Float
+.SEME
+
+IEEE 754 floating point number.
 
 .TP
 Integer literal
@@ -785,25 +805,11 @@ Integer literal with units
 Integers with units.
 
 .TP
-Floating point literal
-.SEM (\fB0\fR/[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)\fB.\fR[\fB0\fR-\fB9\fR]*((\fBe\fR/\fBE\fR)(\fB0\fR/(\fB-\fR)?[\fB1\fR-\fB9\fR][\fB0\fR-\fB9\fR]*)? ↓ v :: Float
-.SEME
-
-IEEE 754 floating point number.
-
-.TP
 String expression
 
 .SEM Γ ⊢ \fB\(dq\fRa:S*\fB\(dq\fR ↓ \(dqv\*<0\*>v\*<1\*>...v\*<n\*>\(dq :: Str
 Γ ⊢ a\*<n\*> ↓ v\*<n\*>
 .SEME
-
-.TP
-Identifier-like string
-.SEM \fB$\fR name:I ↓ \(dqname\(dq :: String
-.SEME
-
-Produce a string that is parsed as an identifier, so it is necessarily a valid identifier.
 
 .SS STRING PARTS (S)
 
