@@ -152,7 +152,10 @@ language_tmpl : Template {
 					parser.sequence {
 						of : [
 							parser.exact { word : "#" },
-							parser.single { char : "\n"  invert_match : True  accumulate : True }
+							parser.many {
+								of : parser.single { char : "\\n"  invert_match : True  accumulate : True }
+							},
+							parser.single { char : "\\n" }
 						]
 					}
 				]
