@@ -4,8 +4,8 @@ parser : compiler_lib.parser_tmpl {
 	exact +: {
 		class_gen : ""
 		copy_instance : ""
-		pok : (parse_complete { ok : True }).value
-		perr : (parse_complete { ok : False }).value
+		pok : (parse_complete { ok : True  indent : Lookup indent In Container & "\t" }).value
+		perr : (parse_complete { ok : False  indent : Lookup indent In Container & "\t" }).value
 		parser_gen : "\(indent)if (_parser.Match(\"\(word)\")) {\(pok)\(indent)} else {\(perr)\(indent)}"
 	}
 	optional +: {
@@ -16,13 +16,14 @@ parser : compiler_lib.parser_tmpl {
 		indent : parent_indent & "\t"
 
 		pok : ((Lookup parse_complete In Container) { ok : True }).value
+		perr : ((Lookup parse_complete In Container) { ok : False }).value
 		parse_complete : Template {
 			ok ?:
 			value : If ok
 				Then "\(indent)_parser_stack.Pop();\(indent)_obj_stack.Pop();"
 				Else "\(indent)_parser = _parser_stack.Pop();\(indent)_obj = _obj_stack.Pop();\(indent)throw new ParseOptionalFailure();"
 		}
-		parser_gen : "\(parent_indent)try {\(indent)_parser_stack.Push(_parser.Clone());\(indent)_obj_stack.Push(_obj.Clone());\(of.parser_gen)\(parent_indent)} catch (ParseOptionalFailure f) { } \(pok)"
+		parser_gen : "\(parent_indent)try {\(indent)_parser_stack.Push(_parser.Clone());\(indent)_obj_stack.Push(_obj.Clone());\(of.parser_gen)\(parent_indent)} catch (ParseOptionalFailure) {\(perr)} \(pok)"
 	}
 	sequence +: {
 		class_gen : For x : of Reduce acc & x.class_gen With acc : ""
@@ -41,8 +42,8 @@ parser : compiler_lib.parser_tmpl {
 		parent_indent : Lookup indent In Container
 		indent : parent_indent & "\t"
 
-		pok : ((Lookup parse_complete In Container) { ok : True }).value
-		perr : ((Lookup parse_complete In Container) { ok : True }).value
+		pok : ((Lookup parse_complete In Container) { ok : True  indent : Lookup indent In Container & "\t" }).value
+		perr : ((Lookup parse_complete In Container) { ok : False  indent : Lookup indent In Container & "\t" }).value
 		parent_parse_complete : Lookup parse_complete In Container
 		parse_complete : Template {
 			ok ?:
@@ -64,8 +65,8 @@ parser : compiler_lib.parser_tmpl {
 		parent_indent : Lookup indent In Container
 		indent : parent_indent & "\t"
 
-		pok : ((Lookup parse_complete In Container) { ok : True }).value
-		perr : ((Lookup parse_complete In Container) { ok : True }).value
+		pok : ((Lookup parse_complete In Container) { ok : True  indent : Lookup indent In Container & "\t" }).value
+		perr : ((Lookup parse_complete In Container) { ok : False  indent : Lookup indent In Container & "\t" }).value
 		parse_complete : Template {
 			ok ?:
 			value : If ok
@@ -83,15 +84,15 @@ parser : compiler_lib.parser_tmpl {
 	range +: {
 		class_gen : ""
 		copy_instance : ""
-		pok : (parse_complete { ok : True }).value
-		perr : (parse_complete { ok : False }).value
+		pok : (parse_complete { ok : True  indent : Lookup indent In Container & "\t" }).value
+		perr : (parse_complete { ok : False  indent : Lookup indent In Container & "\t" }).value
 		parser_gen : "\(indent)if (_parser.Next() >= '\(from)' && _parser.PeekLast() <= '\(to)') {\(pok)\(indent)} else {\(perr)\(indent)}"
 	}
 	single +: {
 		class_gen : ""
 		copy_instance : ""
-		pok : (parse_complete { ok : True }).value
-		perr : (parse_complete { ok : False }).value
+		pok : (parse_complete { ok : True  indent : Lookup indent In Container & "\t" }).value
+		perr : (parse_complete { ok : False  indent : Lookup indent In Container & "\t" }).value
 		parser_gen : "\(indent)if (\(If invert_match Then "!" Else "")\"\(char)\".Contains(_parser.Next())) {\(pok)\(indent)} else {\(perr)\(indent)}"
 	}
 	accumulate_integer +: {
@@ -174,7 +175,7 @@ parser : compiler_lib.parser_tmpl {
 		copy_instance : If is_common || field Is Null Then "" Else "\t\t_obj.\(field) = \(field);\n"
 
 		pok : ((Lookup parse_complete In Container) { ok : True }).value
-		perr : ((Lookup parse_complete In Container) { ok : True }).value
+		perr : ((Lookup parse_complete In Container) { ok : False }).value
 		target_rule : "ParseRule_\(type)_\(alternate ?? "Base")"
 		parse_call : If field Is Null
 			Then "Parser.ParseIntoList(ref _parser, _obj.\(Lookup field In Container), \(target_rule))"
