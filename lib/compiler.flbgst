@@ -188,11 +188,23 @@ language_tmpl : Template {
 		# the specification.
 		level ?:
 		# A parser for a top-level expression
-		top_expression : Template parser.other { accumulate : True  type : "expression0" }
+		top_expression : Template parser.other {
+			accumulate : True
+			alternate : $expression0
+			type : $expression
+		}
 		# A parser for an expression one level more nested.
-		child_expression : Template parser.other { accumulate : True  type : "expression" & (level + 1) }
+		child_expression : Template parser.other {
+			accumulate : True
+			alternate : "expression" & (level + 1)
+			type : $expression
+		}
 		# A parser for an expression of the same level.
-		sibling_expression : Template parser.other { accumulate : True  type : "expression" & level }
+		sibling_expression : Template parser.other {
+			accumulate : True
+			alternate : "expression" & level
+			type : $expression
+		}
 	}
 	# An expression with two operands separated by a token
 	binary_operator : Template expression_tmpl {
@@ -274,7 +286,8 @@ language_tmpl : Template {
 				space { preferred : True },
 				parser.other {
 					accumulate : True
-					type : "expression" & (level + 1)
+					type : $expression
+					alternate : "expression" & (level + 1)
 					field : $expression
 				}
 			]
