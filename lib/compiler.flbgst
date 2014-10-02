@@ -352,9 +352,6 @@ language_tmpl : Template {
 	# All the groups in the language. For details, see the specification.
 	rule_groups : Template {
 		file : Template syntax_group {
-			common +: {
-				comment : common_fields.str
-			}
 			rules +: {
 				file : Template syntax_element {
 					pattern : parser.accumulate_list {
@@ -637,6 +634,9 @@ language_tmpl : Template {
 		}
 
 		string_piece : Template syntax_group {
+			common +: {
+				comment : common_fields.str
+			}
 			string_escape_tmpl : Template parser.collect_codepoint {
 				char ?:
 				in : parser.exact { word : "\\\\" & char }
