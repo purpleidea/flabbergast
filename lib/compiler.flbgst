@@ -128,6 +128,10 @@ language_tmpl : Template {
 		# This moves fields from the individual AST nodes to the superclass. Each
 		# entry is the name of the field and its type (e.g., `name : $str`).
 		common : Template {}
+		# If true, a parser will be generated that parses all the rules provided in
+		# alphabetical order. Otherwise, only individual rules and alternatives
+		# will be avilable for parsing.
+		include_base_parser : True
 		expanded_rules :
 			For rule_tmpl : rules {}, rule_name : Name
 			Select rule_name : rule_tmpl {}
@@ -371,12 +375,12 @@ language_tmpl : Template {
 		}
 
 		attribute : Template syntax_group {
+			include_base_parser : False
 			common +: {
 				comment : common_fields.str
 				name : common_fields.str
 			}
 			alternatives +: {
-				literal_attributes : [ $plain_attribute ]
 				new_tmpl_attributes : [ $plain_attribute, $informative_attribute, $missing_attribute ]
 				extend_tmpl_attributes : [ $plain_attribute, $informative_attribute, $missing_attribute, $named_override, $template_override, $remove_attribute ]
 				instantiate_tmpl_attributes : [ $plain_attribute, $informative_attribute, $named_override, $template_override, $remove_attribute ]
@@ -761,6 +765,7 @@ language_tmpl : Template {
 		}
 
 		expression : Template syntax_group {
+			include_base_parser : False
 			alternatives +: {
 				expression0 : [ $let, $expression1 ]
 				expression1 : [ $for, $expression2 ]
