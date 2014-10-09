@@ -18,7 +18,7 @@ namespace Flabbergast.Expressions.Fricassee {
 			if (where != null) {
 				var selected_contexts = new Gee.ArrayList<uint> ();
 				var state = engine.state;
-				state.containers = new Utils.ContainerReference(state.context, state.containers);
+				state.containers = new Utils.ContainerReference (state.context, state.containers);
 				foreach (var context in contexts) {
 					var local_state = state;
 					local_state.context = context;
@@ -49,15 +49,24 @@ namespace Flabbergast.Expressions.Fricassee {
 	internal abstract class Selector : Object, GTeonoma.SourceInfo {
 		public abstract void transform ();
 		public abstract Gee.List<uint> generate_contexts (ExecutionEngine engine) throws EvaluationError;
-		public GTeonoma.source_location source { get; set; }
+		public GTeonoma.source_location source {
+			get;
+			set;
+		}
 	}
 	internal abstract class Result : Object, GTeonoma.SourceInfo {
 		public abstract void transform ();
 		public abstract void generate_result (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError;
-		public GTeonoma.source_location source { get; set; }
+		public GTeonoma.source_location source {
+			get;
+			set;
+		}
 	}
 	internal abstract class OrderClause : Object, GTeonoma.SourceInfo {
-		public GTeonoma.source_location source { get; set; }
+		public GTeonoma.source_location source {
+			get;
+			set;
+		}
 		public abstract void transform ();
 		public abstract Gee.List<uint> reorder_contexts (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError;
 	}
@@ -243,7 +252,7 @@ namespace Flabbergast.Expressions.Fricassee {
 		public override Gee.List<uint> reorder_contexts (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError {
 			var output = new Gee.TreeMultiMap<string, uint> ();
 			var state = engine.state;
-			state.containers = new Utils.ContainerReference(state.context, state.containers);
+			state.containers = new Utils.ContainerReference (state.context, state.containers);
 			foreach (var context in contexts) {
 				var local_state = state;
 				local_state.context = context;
@@ -351,7 +360,7 @@ namespace Flabbergast.Expressions.Fricassee {
 
 			var state = engine.state;
 			engine.environment.append_containers (context, new Utils.ContainerReference (state.context, state.containers));
-			state.containers = new Utils.ContainerReference(state.context, state.containers);
+			state.containers = new Utils.ContainerReference (state.context, state.containers);
 
 			for (var it = 0; it < input_contexts.size; it++) {
 				state.context = input_contexts[it];
@@ -396,7 +405,7 @@ namespace Flabbergast.Expressions.Fricassee {
 			}
 			engine.call (initial);
 			var state = engine.state;
-			state.containers = new Utils.ContainerReference(state.context, state.containers);
+			state.containers = new Utils.ContainerReference (state.context, state.containers);
 			foreach (var context in input_contexts) {
 				var initial_value = engine.operands.pop ();
 				engine.environment[context, initial_attr.name] = new ReturnOwnedLiteral (initial_value);

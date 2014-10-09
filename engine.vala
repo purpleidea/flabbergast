@@ -115,7 +115,7 @@ namespace Flabbergast {
 		}
 		public void append (uint target_context, uint source_context) {
 			foreach (var entry in defined_names.entries) {
-				if (entry.value.has_key(source_context)) {
+				if (entry.value.has_key (source_context)) {
 					var list = known_names[entry.key][target_context];
 					list.add (entry.value[source_context]);
 				}
@@ -145,7 +145,7 @@ namespace Flabbergast {
 					return map[context];
 				}
 			}
-			return Gee.List.empty<Expression>();
+			return Gee.List.empty<Expression> ();
 		}
 
 		public void set (uint context, string name, Expression @value) {

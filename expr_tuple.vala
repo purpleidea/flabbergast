@@ -4,7 +4,10 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		public GTeonoma.source_location source { get; set; }
+		public GTeonoma.source_location source {
+			get;
+			set;
+		}
 	}
 	public abstract class TuplePart : TemplatePart {}
 	public class Attribute : TuplePart {

@@ -70,7 +70,10 @@ namespace Flabbergast.Data {
 			get;
 			internal set;
 		}
-		public GTeonoma.source_location source { get; set; }
+		public GTeonoma.source_location source {
+			get;
+			set;
+		}
 	}
 
 	public class Template : Tupleish {
