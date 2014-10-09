@@ -1049,6 +1049,10 @@ language_tmpl : Template {
 					level : 16
 					operator : "-"
 				}
+				generate_id : Template unary_tmpl {
+					level : 16
+					operator : "GenerateId"
+				}
 				template_new : Template expression_tmpl {
 					level : 16
 					pattern : parser.sequence {
@@ -1312,7 +1316,7 @@ language_tmpl : Template {
 				false : Template literal_tmpl { name : "False" }
 				float_max : Template literal_tmpl { name : "FloatMax" }
 				float_min : Template literal_tmpl { name : "FloatMin" }
-				generate_token : Template literal_tmpl { name : "GenerateToken" }
+				id : Template literal_tmpl { name : "Id" }
 				infinity : Template literal_tmpl { name : "Infinity" }
 				int_max : Template literal_tmpl { name : "IntMax" }
 				int_min : Template literal_tmpl { name : "IntMin" }

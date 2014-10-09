@@ -95,9 +95,33 @@ namespace Flabbergast.Expressions {
 			return this;
 		}
 	}
-	internal class GenerateToken : Expression {
+	internal class GenerateId : Expression {
+		public Expression expr {
+			get;
+			set;
+		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			engine.operands.push (new Data.Integer (engine.generate_id++));
+			engine.call (expr);
+			var tuple = engine.operands.pop ();
+			if (tuple is Data.Tuple) {
+				engine.operands.push (new Data.String (make_id ((int) ((Data.Tuple)tuple).context)));
+			} else {
+				throw new EvaluationError.TYPE_MISMATCH (@"Expected tuple in generate id. $(source.source):$(source.line):$(source.offset)");
+			}
+		}
+		public override Expression transform () {
+			expr = expr.transform ();
+			return this;
+		}
+	}
+	internal class Id : Expression {
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+			var tuple = engine.state.this_tuple;
+			if (tuple != null) {
+				engine.operands.push (new Data.String (make_id ((int) tuple.context)));
+			} else {
+				throw new EvaluationError.INTERNAL (@"This tuple is null in generate id. $(source.source):$(source.line):$(source.offset)");
+			}
 		}
 		public override Expression transform () {
 			return this;

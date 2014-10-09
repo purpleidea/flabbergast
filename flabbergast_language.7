@@ -78,7 +78,7 @@ For the semantics, they are written as a Horn clause of the form:
 
 where \fIT\fR is a tuples used for lookup. Some tuples are marked with an * to change lookup semantics. If the lookup environment is unused, it is elided. If the type is implied, it is elided.
 
-Since tuples and templates are manipulated by the language, their values have special representation. A tuple is written < k\*<a\*> → v\*<a\*>, k\*<b\*> → v\*<b\*>, ... >. It is implied that there are no two values of \fIk\fR that exist in the same tuple. A template is written < Γ; k\*<a\*> → e\*<a\*>, k\*<b\*> → e\*<b\*>, ... >. Again, it is implied that there are no duplicate \fIk\fR. Since both tuples and templates have a key space that is a set, it is reasonable to allow all normal set operations over them. Since the contents of a tuple or template indicate what it it is, the type can be elided. A template has added context information, which is a list of tuples for resolution. Tuples contain this information, but it is simply an extra attribute of a tuple.
+Since tuples and templates are manipulated by the language, their values have special representation. A tuple is written < u; Γ; k\*<a\*> → v\*<a\*>, k\*<b\*> → v\*<b\*>, ... >. It is implied that there are no two values of \fIk\fR that exist in the same tuple. A template is written < Γ; k\*<a\*> → e\*<a\*>, k\*<b\*> → e\*<b\*>, ... >. Again, it is implied that there are no duplicate \fIk\fR. Since both tuples and templates have a key space that is a set, it is reasonable to allow all normal set operations over them. Since the contents of a tuple or template indicate what it it is, the type can be elided. Both have context information, Γ, which is a list of tuples for resolution. Tuples also contain a unique identifier, \fIu\fR, which is a string containing valid Flabbergast identifier such that no two tuples in the program have the same identifier.
 
 .SS FILE TUPLE (START)
 The top-level entity is a file tuple.
@@ -94,7 +94,7 @@ Bind a new name
 .SEM (t, ...) ⊢ \fBLet\fR name:I \fB:\fR nameexpr:E\*<0\*> (\fB,\fR name:I \fB:\fR nameexpr:E\*<0\*> )* \fBIn\fR expr:E ↓ v
 ∀ nameexpr : Γ ⊢ nameexpr ↓ v\*<nameexpr\*>,
 
-(< ∀ name, nameexpr : nname → v\*<nameexpr\*> >*, t, ...) ⊢ expr ↓ v
+(< u; (t, ...); ∀ name, nameexpr : nname → v\*<nameexpr\*> >*, t, ...) ⊢ expr ↓ v
 .SEME
 
 .SS EXPRESSION SYNTAX (E) – FRICASSÉE
@@ -102,7 +102,7 @@ Bind a new name
 Fricassée a tuple (a.k.a. \fBFor\fR expressions)
 
 .SEM Γ ⊢ \fBFor\fR s:FS r:FR ↓ v
-Γ ⊢ s ↓ W = ( < k\*<x\*> → v\*<x1\*>, k\*<y\*> → v\*<y1\*>, ... >, < k\*<x\*> → v\*<x2\*>, k\*<y\*> → v\*<y2\*>, ... >, ... ),
+Γ ⊢ s ↓ W = ( < u\*<1\*>; Γ\*<1\*>; k\*<x\*> → v\*<x1\*>, k\*<y\*> → v\*<y1\*>, ... >, < u\*<2\*>; Γ\*<2\*>; k\*<x\*> → v\*<x2\*>, k\*<y\*> → v\*<y2\*>, ... >, ... ),
 
 Γ; W ⊢ r ↓ v
 .SEME
@@ -368,7 +368,7 @@ w = x - floor(x / y) × y
 .SS EXPRESSION SYNTAX (E) – RANGE
 .TP
 Range of integers
-.SEM (t, ...) ⊢ start:E\*<+\*> \fBThrough\fR end:E\*<+\*> ↓ r = < ∀ x ≥ s ∧ x ≤ e : ORD(x) → x :: Int, \fBContext\fR → (r, t, ...) >
+.SEM (t, ...) ⊢ start:E\*<+\*> \fBThrough\fR end:E\*<+\*> ↓ r = < u; r, t, ...; ∀ x ≥ s ∧ x ≤ e : ORD(x) → x :: Int >
 (t, ...) ⊢ start ↓ s :: Int
 (t, ...) ⊢ end ↓ e :: Int
 .SEME
@@ -492,7 +492,7 @@ String character length
 .TP
 Remote contextual lookup.
 .SEM Γ ⊢ \fBLookup\fR name:I name:(\fB.\fRI)* \fBIn\fR expr:E ↓ v
-Γ ⊢ expr ↓ < \fBContext\fR → Δ >,
+Γ ⊢ expr ↓ < u; Δ; ... >,
 
 Δ ⊢ name ↓ v
 .SEME
@@ -505,7 +505,7 @@ Instantiate a template
 Γ ⊢ \fB(Template\fR source \fB{\fR a \fB}) { }\fR ↓ v
 .SEME
 
-.SEM (t, ...) ⊢ source:E\*<+\*> \fB{ }\fR ↓ r = < ∀ x: k\*<x\*> → v\*<x\*>, \fBContext\fR → (r, t, ..., s, ...) >
+.SEM (t, ...) ⊢ source:E\*<+\*> \fB{ }\fR ↓ r = < u; r, t, ...; ∀ x: k\*<x\*> → v\*<x\*>, \fBContext\fR → (r, t, ..., s, ...) >
 (t, ...) ⊢ source ↓ S = < (s, ...); k\*<s\*> → e\*<s\*>, ... >,
 
 ∀ k\*<x\*> → e\*<x\*> ∈ S : (r, t, ..., s, ...) ⊢ e\*<s\*> ↓ v\*<x\*>
@@ -529,7 +529,7 @@ Null coalescence
 .SS EXPRESSION SYNTAX (E) – TUPLE CREATION AND UNARY OPERATORS
 .TP
 Literal tuple
-.SEM (t, ...) ⊢ \fB{\fR (a:A)* \fB}\fR ↓ r = < ∀ x ∈ aa : k\*<x\*> → v\*<x\*>, \fBContext\fR → (r, t, ...) >
+.SEM (t, ...) ⊢ \fB{\fR (a:A)* \fB}\fR ↓ r = < u; r, t, ...;  ∀ x ∈ aa : k\*<x\*> → v\*<x\*>, \fBContext\fR → (r, t, ...) >
 
 ∀ aa ∈ a : (r, t, ...) ⊢ aa ↓ v\*<aa\*>
 .SEME
@@ -559,7 +559,7 @@ Extend a template
 ∀ k\*<x\*> → e\*<x\*> : ¬∃ k\*<s\*> : k\*<x\*> = k\*<s\*>
 .SEME
 
-Create a template that inherits from an existing template. It contains all the attributes of the existing template unless amended by the specified attributes. The specified attributes can add, replace, ammend, or remove attributes from the existing template. Any unmentioned attributes are inherited directly. The new template has the lookup context of the context where the modification was performed followed by the context of the existing template.
+Create a template that inherits from an existing template. It contains all the attributes of the existing template unless amended by the specified attributes. The specified attributes can add, replace, amend, or remove attributes from the existing template. Any unmentioned attributes are inherited directly. The new template has the lookup context of the context where the modification was performed followed by the context of the existing template.
 
 .TP
 Logical negation
@@ -580,6 +580,15 @@ Numeric negation
 .SEM Γ ⊢ \fB-\fR expr:E\*<+\*> ↓ -v :: Float
 Γ ⊢ expr ↓ v :: Float
 .SEME
+
+.TP
+Unique identifier generation
+.SEM Γ ⊢ \fBGenerateId\fR expr:E\*<+\*> ↓ i :: Str
+.SEM Γ ⊢ expr ↓ < i; Δ; ... >
+
+Extracts the unique identifier from a tuple. The implementation makes no guarantees about the format of these identifiers, other than they are valid Flabbergast identifiers.
+
+This expression is meant to have a similar function to LISP's \fIgensym\fR or XPath's \fIgenerate-id\fR. It is intended to allow generating unique, though unhelpfully opaque, identifiers in generated code. For instance, to generate temporary variable names when generating the compiler. The \fBId\fR function is similar Clojure's auto-\fIgensym\fR syntax; with the scope of a tuple, the same identifier is available.
 
 .SS EXPRESSION SYNTAX (E) – FUNCTION-LIKE TEMPLATE INSTANTIATION
 
@@ -650,7 +659,7 @@ It is not an error if any value is not defined so long as it is not the first it
 .TP
 Perform direct lookup
 .SEM Γ ⊢ expr:E\*<+\*> (\fB.\fR name:I)(\fB.\fR other:I)* ↓ u
-Γ ⊢ expr ↓ < name → v, ... >,
+Γ ⊢ expr ↓ < u; Δ; name → v, ... >,
 
 Γ ⊢ v (\fB.\fR other:I)* ↓ u
 .SEME
@@ -665,9 +674,8 @@ Subexpression
 
 .TP
 Literal list
-.SEM Γ ⊢ \fB[\fR (arg:E\*<0\*> (\fB,\fR arg:E\*<0\*>)*)? \fB]\fR ↓ < ORD(x) → v\*<x\*> >
-
-Γ ⊢ arg\*<x\*> ↓ v\*<x\*>
+.SEM (s, ...) ⊢ \fB[\fR (arg:E\*<0\*> (\fB,\fR arg:E\*<0\*>)*)? \fB]\fR ↓ t = < u; (t, s, ...); ORD(x) → v\*<x\*> >
+(s, ...) ⊢ arg\*<x\*> ↓ v\*<x\*>
 .SEME
 
 This creates a list-like tuple. Names are selected by the ORD function such that the tuple will have the same order of items as the original list when collated. Indexing is 1-based.
@@ -720,22 +728,19 @@ Smallest floating literal
 The value of \fIx\fR is the implementation-defined smallest value representable as a floating point number.
 
 .TP
+Create unique identifier for the current tuple
+.SEM Γ ⊢ \fBId\fR ↓ v
+Γ ⊢ \fBGenerateId This\fR ↓ v
+.SEME
+
+This is syntactic sugar for generating an identifier for the current tuple. See \fBGenerateId\fR for details.
+
+.TP
 Infinity literal
 .SEM \fBInfinity\fR ↓ ∞ :: Float
 .SEME
 
 A floating point value representing positive infinity.
-
-.TP
-Create unique integer
-.SEM \fBGenerateToken\fR ↓ x\*<i\*> :: Int
-x\*<i\*> ≥ 0,
-∀j < i: x\*<i\*> ≠ x\*<j\*>
-.SEME
-
-This generates an integer unique over the run of the program. There need be no consistency in the sequence of integers generated, only that each call to the function produces a number not previously emitted.
-
-The formal semantics here are almost certainly wrong. Hopefully, the intention is understood.
 
 .TP
 Largest integer literal
@@ -963,15 +968,15 @@ The name must be present in the existing tuple or an error occurs.
 .TP
 Pass-through selector
 .SEM Γ ⊢ \fBEach\fR input:E\*<0\*> ↓ { ∀ i :  v\*<i\*> }
-Γ ⊢ input ↓ < k\*<i\*> → v\*<i\*> :: Tuple >
+Γ ⊢ input ↓ < u; Δ; k\*<i\*> → v\*<i\*> :: Tuple >
 .SEME
 
 Passes-though a list of witnesses provided as a tuple of tuples.
 
 .TP
 Merged attribute selector
-.SEM Γ ⊢ value:I \fB:\fR input:(\fBName\fR / \fBOrdinal\fR /E\*<0\*>) (\fB,\fR value:I \fB:\fR input:(\fBName\fR / \fBOrdinal\fR /E\*<0\*>))* ↓ W
-∀ i ∈ input:E : Γ ⊢ i ↓ < kk\*<ij\*> → vv\*<ij\*> >,
+.SEM (t, ...) ⊢ value:I \fB:\fR input:(\fBName\fR / \fBOrdinal\fR /E\*<0\*>) (\fB,\fR value:I \fB:\fR input:(\fBName\fR / \fBOrdinal\fR /E\*<0\*>))* ↓ W
+∀ i ∈ input:E : (t, ...) ⊢ i ↓ < u\*<i\*>; Δ\*<i\*>; kk\*<ij\*> → vv\*<ij\*> >,
 
 V(j) = ∀ i ∈ input : (∃ vv\*<ij\*> ≠ ∅ : value\*<i\*> → vv\*<ij\*>) ∪ (¬∃ v\*<ij\*> ≠ ∅* : value\*<i\*> → ∅ >)
 
@@ -981,7 +986,7 @@ K = ∀ i ∈ input:E : ∪ k\*<ij\*>,
 
 O(j) = ∀ i ∈ input:\fBOrdinal\fR : value\*<i\*> → |{ k ∈ K : k\*<j\*> < j }| :: Int
 
-W = { ∀ j : < M(j) ∪ A(j) ∪ O(j) > }
+W = { ∀ j : w\*<j\*> = < u; (w\*<j\*>, t, ...); M(j) ∪ A(j) ∪ O(j) > }
 .SEME
 
 Produce a list of witnesses where each \fIvalue\fR identifier matches the value of the current attribute in each of the tuple inputs, or null, if not in the matching tuple. The special input \fBName\fR is the name of the current attribute and the special input \fBOrdinal\fR is the position of the current attribute.
@@ -999,10 +1004,10 @@ Reducer (fold)
 .SEM Γ; ( ) ⊢ \fBReduce\fR expr:E\*<0\*> \fBWith\fR name:I \fB:\fR initial:E\*<+\*> ↓ v
 Γ ⊢ initial ↓ v
 .SEME
-.SEM (t, ...); ( < k\*<x\*> → v\*<x1\*>, k\*<y\*> → v\*<y1\*>, ... >, w\*<1\*>, ... ) ⊢ \fBReduce\fR expr:E\*<0\*> \fBWith\fR name:I \fB:\fR initial:E\*<+\*> ↓ v\*<f\*>
+.SEM (t, ...); ( < u; Δ; k\*<x\*> → v\*<x1\*>, k\*<y\*> → v\*<y1\*>, ... >, w\*<1\*>, ... ) ⊢ \fBReduce\fR expr:E\*<0\*> \fBWith\fR name:I \fB:\fR initial:E\*<+\*> ↓ v\*<f\*>
 (t, ...) ⊢ initial ↓ v\*<i\*>,
 
-(< name → v\*<i\*>, k\*<x\*> → v\*<x1\*>, k\*<y\*> → v\*<y1\*>, ... >*, t, ...) ⊢ expr ↓ v
+(< u; Δ; name → v\*<i\*>, k\*<x\*> → v\*<x1\*>, k\*<y\*> → v\*<y1\*>, ... >*, t, ...) ⊢ expr ↓ v
 
 (t, ...); ( w\*<1\*>, ... ) ⊢ \fBReduce\fR expr \fBWith\fR name \fB:\fR v ↓ v\*<f\*>
 .SEME
@@ -1017,7 +1022,7 @@ Anonymous value generator
 Γ; X ⊢ \fBSelect\fR expr ↓ v,
 .SEME
 
-.SEM (t, ...); ( w\*<0\*>, w\*<1\*>, ... ) ⊢ \fBSelect\fR expr:E\*<+\*> ↓ r = < ∀ x : ORD(x) → v\*<x\*>, \fBContext\fR → (r, t, ...) >
+.SEM (t, ...); ( w\*<0\*>, w\*<1\*>, ... ) ⊢ \fBSelect\fR expr:E\*<+\*> ↓ r = < u; r, t, ...; ∀ x : ORD(x) → v\*<x\*> >
 
 ∀ w\*<x\*> : (w\*<x\*>*, t, ...) ⊢ expr ↓ v\*<x\*>
 .SEME
@@ -1026,7 +1031,7 @@ This produces a list-like tuple by evaluating the supplied expression on each tu
 
 .TP
 Named attribute tuple generator
-.SEM (t, ...); ( w\*<0\*>, w\*<1\*>, ... ) ⊢ \fBSelect\fR attr:E\*<0\*> \fB:\fR expr:E\*<+\*> ↓ r  < k\*<x\*> → v\*<x\*>, \fBContext\fR → (r, t, ...) >
+.SEM (t, ...); ( w\*<0\*>, w\*<1\*>, ... ) ⊢ \fBSelect\fR attr:E\*<0\*> \fB:\fR expr:E\*<+\*> ↓ r = < u; r, t, ...; k\*<x\*> → v\*<x\*> >
 
 (w\*<x\*>*, t, ...) ⊢ attr ↓ k\*<x\*> :: Str ∨ (w\*<x\*>*, t, ...) ⊢ attr ↓ v :: Int ∧ k\*<x\*> = ORD(v),
 

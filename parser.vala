@@ -107,6 +107,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<TemplateLiteral> ("template", precedence, "Template%! %p{+source_expr}%_{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });
 		register<Not> ("logical not", precedence, "!%-%P{+expression}");
 		register<Negation> ("negation", precedence, "-%-%P{+expression}");
+		register<GenerateId> ("generate identifier", precedence, "GenerateId% %P{expr}");
 
 		precedence++;
 		register<FunctionCall> ("function call", precedence, "%P{+function}%-(%!% %l{args}{% ,%-}% )", new Type[] { typeof (FunctionCall.FunctionArg) });
@@ -126,7 +127,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<StringLiteral> ("string literal", precedence, "\"%L{contents}{}\"", new Type[] { typeof (StringPiece) });
 		register<StringLiteral> ("empty string literal", precedence, "\"\"");
 		register<SubExpression> ("subexpression", precedence, "(%!% %P{-expression}% )");
-		register<GenerateToken> ("generate token", precedence, "GenerateToken");
+		register<Id> ("id expression", precedence, "Id");
 		register<This> ("self-reference", precedence, "This");
 		register<Container> ("container", precedence, "Container");
 		register<TrueLiteral> ("true literal", precedence, "True");
