@@ -31,7 +31,7 @@ syn match flabbergastIdentifierString "\$[a-z][a-zA-Z0-9_]*\>" display
 syn match flabbergastConstant "[A-Za-z0-9.+-]\+:[A-Za-z0-9~!*'();@&=+$,/?%#.+-]\+" display
 syn keyword flabbergastKeyword As By Container Each Error Finite For From GenerateId Id If Then Else In Is Length Let Lookup Name Order Ordinal Reduce Select Template This Through To Where With 
 syn match flabbergastOperators '\(<=\?\|<\=>\|>=\?\|==\|||\|-\|!\|!=\|/\|\*\|&\|&&\|%\|+\)' display
-syn keyword flabbergastTodo contained TODO FIXME XXX
+syn keyword flabbergastTodo contained containedin=flabbergastComment TODO FIXME XXX
 syn keyword flabbergastType Bool Float Int Str Tuple
 
 hi def link flabbergastComment		Comment
