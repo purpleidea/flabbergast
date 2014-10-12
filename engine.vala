@@ -44,7 +44,10 @@ namespace Flabbergast {
 				throw new EvaluationError.INTERNAL ("Tried to execute a promise on a different evaluation engine.");
 			}
 			if (is_running) {
-				throw new EvaluationError.CIRCULAR (@"Circular evaluation detected. $(expression.source.source):$(expression.source.line):$(expression.source.offset)");
+				var sb = new StringBuilder();
+				sb.append ("Circular evaluation detected.\n");
+				engine.back_trace (sb);
+				throw new EvaluationError.CIRCULAR (sb.str);
 			}
 			if (evaluated_form != null) {
 				engine.operands.push (evaluated_form);
@@ -411,6 +414,13 @@ namespace Flabbergast {
 				}
 			} catch (GTeonoma.RegisterError e) {
 				throw new EvaluationError.INTERNAL (e.message);
+			}
+		}
+		public void back_trace (StringBuilder sb, int current_frame = 0) {
+			var num_frames = call_depth;
+			for (var it = 0; it < num_frames; it++) {
+				var source = get_call_source (it).source;
+				sb.append_printf ("%s #%d %s:%d:%d\n", it == current_frame ? "->" : "  ",  it, source.source, source.line, source.offset);
 			}
 		}
 	}

@@ -19,7 +19,9 @@ namespace Debug {
 	}
 	class Trace : Statement {
 		public override bool execute (Rules rules, ExecutionEngine engine, ref int stack_frame) {
-			back_trace (engine, stack_frame);
+			var sb = new StringBuilder ();
+			engine.back_trace (sb, stack_frame);
+			stdout.puts(sb.str);
 			return false;
 		}
 	}
@@ -61,13 +63,6 @@ namespace Debug {
 				stdout.printf ("Error: %s\n", e.message);
 			}
 			return false;
-		}
-	}
-	public void back_trace (ExecutionEngine engine, int current_frame = 0) {
-		var num_frames = engine.call_depth;
-		for (var it = 0; it < num_frames; it++) {
-			var source = engine.get_call_source (it).source;
-			stdout.printf ("%s #%d %s:%d:%d\n", it == current_frame ? "->" : "  ",  it, source.source, source.line, source.offset);
 		}
 	}
 }
@@ -140,7 +135,9 @@ void print_expression (Rules rules, ExecutionEngine engine, Expression expressio
 	} catch (EvaluationError e) {
 		stdout.printf ("Error: %s\n", e.message);
 		if (debug) {
-			Debug.back_trace (engine);
+			var sb = new StringBuilder ();
+			engine.back_trace (sb);
+			stdout.puts(sb.str);
 			var stack_frame = 0;
 			string? line;
 			while ((line = sane_readline ("Debug:%d> ".printf (stack_frame))) != null) {
