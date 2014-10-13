@@ -179,37 +179,61 @@ namespace Flabbergast.Expressions {
 			return this;
 		}
 	}
-	internal class Instantiate : Expression {
-		public Gee.List<TuplePart> attributes {
-			get;
-			set;
-		}
+	internal abstract class InstantiateLike : Expression {
 		public Expression source_expr {
 			get;
 			set;
 		}
-		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+		protected void prepare_tuple (ExecutionEngine engine, out Data.Tuple tuple, out uint context, out Data.Template template, bool inherit_environment) throws EvaluationError {
 			engine.call (source_expr);
 			var result = engine.operands.pop ();
 			if (!(result is Data.Template)) {
 				throw new EvaluationError.TYPE_MISMATCH (@"Attempting to instantiate something which is not a template. $(source_expr.source.source):$(source_expr.source.line):$(source_expr.source.offset)");
 			}
 
-			var template = (Data.Template)result;
-			var context = engine.environment.create ();
-			var tuple = new Data.Tuple (context);
+			template = (Data.Template)result;
+			context = engine.environment.create ();
+			tuple = new Data.Tuple (context);
 			tuple.source = source;
-			tuple.containers = new Utils.ContainerReference (engine.state.context, Utils.ContainerReference.append (engine.state.containers, template.containers));
+			tuple.containers = inherit_environment ? new Utils.ContainerReference (engine.state.context, Utils.ContainerReference.append (engine.state.containers, template.containers)) : template.containers;
 
 			var state = engine.state;
-			state.containers = new Utils.ContainerReference (state.context, state.containers);
+			state.containers = inherit_environment ? new Utils.ContainerReference (state.context, state.containers) : template.containers;
 			engine.environment.append_containers (context, tuple.containers);
 			state.context = context;
 			state.container_tuple = state.this_tuple;
 			state.this_tuple = tuple;
 
 			engine.state = state;
-
+		}
+		protected void finish_tuple(ExecutionEngine engine, Data.Tuple tuple, Data.Template template, Gee.Set<string> attr_names, uint context) throws EvaluationError {
+			foreach (var entry in template.attributes.entries) {
+				if (entry.key in attr_names) {
+					continue;
+				}
+				attr_names.add (entry.key);
+				var attr_value = engine.create_closure (entry.value);
+				tuple.attributes[entry.key] = attr_value;
+				engine.environment[context, entry.key] = attr_value;
+			}
+			foreach (var external in template.externals) {
+				if (!(external in attr_names)) {
+					throw new EvaluationError.EXTERNAL_REMAINING (@"External attribute $(external) not overridden at $(source.source):$(source.line):$(source.offset). $(template.source.source):$(template.source.line):$(template.source.offset)");
+				}
+			}
+			engine.operands.push (tuple);
+		}
+	}
+	internal class Instantiate : InstantiateLike {
+		public Gee.List<TuplePart> attributes {
+			get;
+			set;
+		}
+		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
+			Data.Tuple tuple;
+			uint context;
+			Data.Template template;
+			prepare_tuple(engine, out tuple, out context, out template, true);
 			var attr_names = new Gee.HashSet<string> ();
 			foreach (var attr in attributes) {
 				if (attr.name.name in attr_names) {
@@ -256,21 +280,7 @@ namespace Flabbergast.Expressions {
 					assert_not_reached ();
 				}
 			}
-			foreach (var entry in template.attributes.entries) {
-				if (entry.key in attr_names) {
-					continue;
-				}
-				attr_names.add (entry.key);
-				var attr_value = engine.create_closure (entry.value);
-				tuple.attributes[entry.key] = attr_value;
-				engine.environment[context, entry.key] = attr_value;
-			}
-			foreach (var external in template.externals) {
-				if (!(external in attr_names)) {
-					throw new EvaluationError.EXTERNAL_REMAINING (@"External attribute $(external) not overridden at $(source.source):$(source.line):$(source.offset). $(template.source.source):$(template.source.line):$(template.source.offset)");
-				}
-			}
-			engine.operands.push (tuple);
+			finish_tuple(engine, tuple, template, attr_names, context);
 		}
 		public override Expression transform () {
 			source_expr = source_expr.transform ();
@@ -282,7 +292,7 @@ namespace Flabbergast.Expressions {
 			return this;
 		}
 	}
-	internal class FunctionCall : Expression {
+	internal class FunctionCall : InstantiateLike {
 		internal class FunctionArg : Object {
 			public Name? name {
 				get;
@@ -293,19 +303,27 @@ namespace Flabbergast.Expressions {
 				set;
 			}
 		}
-		public Expression function {
-			get;
-			set;
-		}
 		public Gee.List<FunctionArg> args {
 			get;
 			set;
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			var context = engine.environment.create ();
-			var args_tuple = new Data.Tuple (context);
+			/* Start constructing the instantiated template, but go back to our original environment. */
+			var original_state = engine.state;
+			Data.Tuple tuple;
+			uint context;
+			Data.Template template;
+			prepare_tuple(engine, out tuple, out context, out template, false);
+			var attr_names = new Gee.HashSet<string> ();
+			var inside_state = engine.state;
+
+			engine.state = original_state;
+
+			/* Create a tuple for args */
+			var args_context = engine.environment.create ();
+			var args_tuple = new Data.Tuple (args_context);
 			args_tuple.source = source;
-			var overrides = new Gee.ArrayList<TuplePart> ();
+
 			var it = 0;
 			var has_args = false;
 			var passed_args = false;
@@ -315,7 +333,7 @@ namespace Flabbergast.Expressions {
 					var id = make_id (it++);
 					var @value = engine.create_closure (arg.parameter);
 					args_tuple.attributes[id] = @value;
-					engine.environment[context, id] = @value;
+					engine.environment[args_context, id] = @value;
 				} else {
 					if (arg.name.name == "value") {
 						throw new EvaluationError.OVERRIDE ("Function call has an argument named “value”, which break the function.");
@@ -323,34 +341,31 @@ namespace Flabbergast.Expressions {
 					if (arg.name.name == "args") {
 						passed_args = true;
 					}
-					var attr = new Attribute ();
-					attr.name = arg.name;
-					attr.expression = engine.create_closure (arg.parameter);
-					overrides.add (attr);
+					var attr_value = engine.create_closure (arg.parameter);
+					tuple.attributes[arg.name.name] = attr_value;
+					engine.environment[context, arg.name.name] = attr_value;
+					attr_names.add (arg.name.name);
 				}
 			}
 			if (passed_args && has_args) {
 				throw new EvaluationError.OVERRIDE ("Function call has both unnamed arguments and a named argument “args”.");
 			}
 			if (!passed_args) {
-				var attr = new Attribute ();
-				attr.name = new Name ("args");
-				attr.expression = new ReturnLiteral (args_tuple);
-				overrides.add (attr);
+				var args_expr = new ReturnLiteral(args_tuple);
+				tuple.attributes["args"] = args_expr;
+				engine.environment[context, "args"] = args_expr;
+				attr_names.add ("args");
 			}
-
-			var instantiation = new Instantiate ();
-			instantiation.attributes = overrides;
-			instantiation.source_expr = function;
-			var lookup = new DirectLookup ();
-			lookup.expression = instantiation;
+			/* Move back inside the nascent tuple and continue expansion. */
+			engine.state = inside_state;
+			finish_tuple(engine, tuple, template, attr_names, context);
+			/* Then do the lookup. */
 			var names = new Gee.ArrayList<Name> ();
 			names.add (new Name ("value"));
-			lookup.names = names;
-			engine.call (lookup);
+			engine.call(engine.lookup_direct(names, this ));
 		}
 		public override Expression transform () {
-			function = function.transform ();
+			source_expr = source_expr.transform ();
 			foreach (var arg in args) {
 				arg.parameter = arg.parameter.transform ();
 			}

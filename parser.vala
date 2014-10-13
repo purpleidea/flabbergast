@@ -110,7 +110,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<GenerateId> ("generate identifier", precedence, "GenerateId% %P{expr}");
 
 		precedence++;
-		register<FunctionCall> ("function call", precedence, "%P{+function}%-(%!% %l{args}{% ,%-}% )", new Type[] { typeof (FunctionCall.FunctionArg) });
+		register<FunctionCall> ("function call", precedence, "%P{+source_expr}%-(%!% %l{args}{% ,%-}% )", new Type[] { typeof (FunctionCall.FunctionArg) });
 
 		precedence++;
 		register<File.Import> ("import", 0, "From%! %P{uri}");
