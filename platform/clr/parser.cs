@@ -56,8 +56,8 @@ public class Parser {
 		Index += word.Length;
 		return result;
 	}
-	public static bool ParseIntoList<T, U>(ref Parser parser, List<T> result, ParseRule<U> rule) where U : T {
-		U obj;
+	public static bool ParseIntoList<T>(ref Parser parser, List<T> result, ParseRule<T> rule) {
+		T obj;
 		if (rule(ref parser, out obj)) {
 			result.Add(obj);
 			return true;
@@ -66,6 +66,4 @@ public class Parser {
 		}
 	}
 }
-internal class ParseOptionalFailure : Exception { }
-internal class ParseAlternateComplete : Exception { }
 }
