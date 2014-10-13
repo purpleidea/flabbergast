@@ -990,7 +990,7 @@ language_tmpl : Template {
 					}
 				}
 
-				insantiation : Template expression_tmpl {
+				instantiation : Template expression_tmpl {
 					level : 14
 					pattern : parser.sequence {
 						of : [
