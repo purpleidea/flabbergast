@@ -1,3 +1,17 @@
+vim-flabbergast (1.2~ppa0) trusty; urgency=medium
+
+  * Add %: to syntax highlighting
+  * Highlight strings and interpolations more clearly.
+  * Only highlight FIXME/TODO/XXX in comments
+  * Highlight URLs
+  * Highlight invalid keywords
+  * Update syntax for GenerateId and Id
+  * Do not highlight all the identifiers (only `args` and `value` because they
+    are special.)
+  * Add trailing whitespace notification
+   
+ -- Andre Masella <andre@masella.name>  Wed, 15 Oct 2014 08:29:14 -0400
+
 vim-flabbergast (1.1~ppa0) trusty; urgency=medium
 
   * Complain about end-of-line whitespace
