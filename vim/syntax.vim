@@ -21,7 +21,8 @@ syn region flabbergastInterpolation contained contains=TOP matchgroup=flabbergas
 
 syn match flabbergastTrailingWhite "[ \t]\+$"
 syn match flabbergastTrailingWhite "[ \t]\+$" containedin=ALL
-syn match flabbergastAttribute "[+?%-]\?:" display
+syn match flabbergastAttribute "[+?%-]\?:" display contained
+syn match flabbergastIdentifier "\<[a-z][A-Za-z0-9_]*\>[ \t\n]*[+?%-]\?:" display contains=flabbergastAttribute
 syn match flabbergastComment "#.*$" contains=flabbergastTodo,@Spell display
 syn keyword flabbergastInt IntMax IntMin
 syn keyword flabbergastFloat FloatMax FloatMin Infinity NaN
