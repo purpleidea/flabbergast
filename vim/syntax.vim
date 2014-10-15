@@ -13,11 +13,11 @@ set cpo&vim
 
 syn case match
 
-syn region flabbergastString start='"' end='"' contains=flabbergastEscape,flabbergastEscapeError,@Spell
+syn region flabbergastString matchgroup=flabbergastDelimiter start='"' end='"' skip='\\"' contains=flabbergastEscape,flabbergastEscapeError,flabbergastInterpolation,@Spell
 syn match flabbergastEscapeError contained "\\." display
-syn match flabbergastEscape contained '\\[abfnvrt"\\]' display
-syn match flabbergastEscape contained "\\\(\o\{3}\|x\x\{2}\|u\x\{4}\)" display
-syn region flabbergastEscape contained start="\\(" end=")" contains=TOP
+syn match flabbergastEscape contained containedin=flabbergastString '\\[abfnvrt"\\]' display
+syn match flabbergastEscape contained containedin=flabbergastString "\\\(\o\{3}\|x\x\{2}\|u\x\{4}\)" display
+syn region flabbergastInterpolation contained contains=TOP matchgroup=flabbergastDelimiter start="\\(" end=")"
 
 syn match flabbergastTrailingWhite "[ \t]\+$"
 syn match flabbergastTrailingWhite "[ \t]\+$" containedin=ALL
@@ -47,6 +47,7 @@ hi def link flabbergastBool		Boolean
 hi def link flabbergastComment		Comment
 hi def link flabbergastConditional	Conditional
 hi def link flabbergastConstant		Constant
+hi def link flabbergastDelimiter	Delimiter
 hi def link flabbergastEscape		SpecialChar
 hi def link flabbergastEscapeError	Error
 hi def link flabbergastFloat		Float
