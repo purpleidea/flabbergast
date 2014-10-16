@@ -341,15 +341,14 @@ language_tmpl : Template {
 	int_with_unit_tmpl : Template syntax_element {
 		symbol ?:
 		unit ?:
-		pattern : parser.optional {
-			of : parser.sequence {
-				of : [
-					parser.accumulate_integer {
-						in : valid_number {}
-						field : $count
-					}, parser.exact { word : symbol }
-				]
-			}
+		pattern : parser.sequence {
+			of : [
+				parser.accumulate_integer {
+					in : valid_number {}
+					field : $count
+				},
+				parser.exact { word : symbol }
+			]
 		}
 	}
 
@@ -1211,6 +1210,7 @@ language_tmpl : Template {
 								field : Null
 							}
 							separator_word : "."
+							nonempty : True
 						}
 					}
 				}
@@ -1268,6 +1268,7 @@ language_tmpl : Template {
 										field : Null
 									}
 									separator_word : "."
+									nonempty : True
 								}
 							}
 						]
@@ -1335,6 +1336,7 @@ language_tmpl : Template {
 							accumulate : True
 							field : Null
 						}
+						nonempty : True
 					}
 				}
 				integer_literal : Template expression_tmpl {
