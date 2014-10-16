@@ -503,7 +503,7 @@ language_tmpl : Template {
 			}
 		}
 
-		ordering : Template syntax_group {
+		fricassee_ordering : Template syntax_group {
 			common +: {
 				comment : common_fields.str
 			}
@@ -527,7 +527,7 @@ language_tmpl : Template {
 			}
 		}
 
-		result : Template syntax_group {
+		fricassee_result : Template syntax_group {
 			common +: {
 				comment : common_fields.str
 			}
@@ -536,10 +536,10 @@ language_tmpl : Template {
 					pattern : parser.sequence {
 						of : [
 							parser.accumulate_list {
-								type : $ordering
+								type : $fricassee_ordering
 								field : $orderings
 								in : parser.many {
-									of : parser.other { type: $ordering  field : Null }
+									of : parser.other { type: $fricassee_ordering  field : Null }
 								}
 							},
 							space { mandatory : True },
@@ -581,7 +581,7 @@ language_tmpl : Template {
 			}
 		}
 
-		selector : Template syntax_group {
+		fricassee_selector : Template syntax_group {
 			common +: {
 				comment : common_fields.str
 			}
@@ -822,7 +822,7 @@ language_tmpl : Template {
 							space { mandatory : True },
 							parser.other {
 								field : $selector
-								type : $selector
+								type : $fricassee_selector
 							},
 							parser.optional {
 								of : parser.sequence {
@@ -840,8 +840,8 @@ language_tmpl : Template {
 							},
 							space { mandatory : True },
 							parser.other {
-								field : $result
-								type : $result
+								field : $fricassee_result
+								type : $fricassee_result
 							}
 						]
 					}
