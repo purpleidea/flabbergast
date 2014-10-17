@@ -28,6 +28,7 @@ public class Parser {
 	internal string Input;
 	internal int Index = -1;
 	internal Dictionary<int, Dictionary<Type, Memory>> Cache = new Dictionary<int, Dictionary<Type, Memory>>();
+	internal Dictionary<int, Dictionary<string, Memory>> AlternateCache = new Dictionary<int, Dictionary<string, Memory>>();
 	public string Message { get; internal set; }
 	public string FileName { get; private set; }
 	public bool Trace { get; set; }
@@ -82,11 +83,34 @@ public class ParserPosition {
 		result = default(T);
 		return false;
 	}
+	public bool CheckCache<T>(string name, out T result) {
+		if (Parser.AlternateCache.ContainsKey(Index) && Parser.AlternateCache[Index].ContainsKey(name)) {
+			var memory = Parser.AlternateCache[Index][name];
+			result = (T) memory.Result;
+			Index = memory.Index;
+			if (Parser.Trace) {
+				for (var it = 1; it < TraceDepth; it++) {
+					System.Console.Write(" ");
+				}
+				System.Console.WriteLine(Row + ":" + Column + (result == null ? " M " : " H ") + name);
+				TraceDepth++;
+			}
+			return true;
+		}
+		result = default(T);
+		return false;
+	}
 	public void Cache<T>(int start_index, T result) {
 		if (!Parser.Cache.ContainsKey(start_index)) {
 			Parser.Cache[start_index] = new Dictionary<Type, Parser.Memory>();
 		}
 		Parser.Cache[start_index][typeof(T)] = new Parser.Memory() { Result = result, Index = Index };
+	}
+	public void Cache<T>(string name, int start_index, T result) {
+		if (!Parser.AlternateCache.ContainsKey(start_index)) {
+			Parser.AlternateCache[start_index] = new Dictionary<string, Parser.Memory>();
+		}
+		Parser.AlternateCache[start_index][name] = new Parser.Memory() { Result = result, Index = Index };
 	}
 	public ParserPosition Clone() {
 		var child = new ParserPosition(Parser);

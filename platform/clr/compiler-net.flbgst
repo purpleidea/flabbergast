@@ -330,7 +330,9 @@ compiler : compiler_lib.language_tmpl {
 		parse_base :
 			"\tpublic static bool ParseRule_Base(ref ParserPosition position, out \(group_name) result) {\n" &
 			"\t\tposition.TraceEnter(\"\(group_name)\");\n" &
+			"\t\tif(position.CheckCache<\(group_name)>(\"\(group_name)\", out result)) return result != null;\n" &
 			"\t\tParserPosition slave_position;\n" &
+			"\t\tvar start_index = position.Index;\n" &
 			"\t\tposition.Update(\"any \(group_name)\", \"\(group_name)\");" &
 			(For rule : expanded_rules, rule_name : Name
 				Reduce acc &
@@ -338,10 +340,12 @@ compiler : compiler_lib.language_tmpl {
 					"\t\tif (ParseRule_\(rule_name)(ref slave_position, out result)) {\n" &
 					"\t\t\tposition = slave_position;\n" &
 					"\t\t\tposition.TraceExit(\"\(group_name)\", true);\n" &
+					"\t\t\tposition.Cache<\(group_name)>(\"\(group_name)\", start_index, result);\n" &
 					"\t\t\treturn true;\n\t\t}\n"
 				With acc : "") &
 			"\t\tresult = null;\n" &
 			"\t\tposition.TraceExit(\"\(group_name)\", false);\n" &
+			"\t\tposition.Cache<\(group_name)>(\"\(group_name)\", start_index, null);\n" &
 			"\t\treturn false;\n\t}\n"
 
 		parse_alternates : For alternate_rules : expanded_alts, alternate_name : Name
@@ -349,7 +353,9 @@ compiler : compiler_lib.language_tmpl {
 				outer_acc &
 				"\tpublic static bool ParseRule_\(alternate_name)(ref ParserPosition position, out \(group_name) result) {\n" &
 				"\t\tposition.TraceEnter(\"\(alternate_name)\");\n" &
+				"\t\tif(position.CheckCache<\(group_name)>(\"\(group_name).\(alternate_name)\", out result)) return result != null;\n" &
 				"\t\tParserPosition slave_position;\n" &
+				"\t\tvar start_index = position.Index;\n" &
 				"\t\tposition.Update(\"\(alternate_name)\", \"\(group_name)\");\n" &
 				(For rule_name : alternate_rules
 					Reduce acc &
@@ -357,10 +363,12 @@ compiler : compiler_lib.language_tmpl {
 						"\t\tif (ParseRule_\(rule_name)(ref slave_position, out result)) {\n" &
 						"\t\t\tposition = slave_position;\n" &
 						"\t\t\tposition.TraceExit(\"\(group_name):\(alternate_name)\", true);\n" &
+						"\t\t\tposition.Cache<\(group_name)>(\"\(group_name).\(alternate_name)\", start_index, result);\n" &
 						"\t\t\treturn true;\n\t\t}\n"
 					With acc : "") &
 				"\t\tresult = null;\n" &
 				"\t\tposition.TraceExit(\"\(group_name):\(alternate_name)\", false);\n" &
+				"\t\tposition.Cache<\(group_name)>(\"\(group_name).\(alternate_name)\", start_index, null);\n" &
 				"\t\treturn false;\n\t}\n"
 			With outer_acc : ""
 
