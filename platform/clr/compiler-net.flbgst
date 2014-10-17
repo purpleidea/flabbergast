@@ -4,23 +4,34 @@ parser : compiler_lib.parser_tmpl {
 	exact +: {
 		class_gen : ""
 		copy_instance : ""
-		pok : parse_complete(ok : True, indent : indent & "\t")
-		perr : parse_complete(ok : False, indent : indent & "\t")
-		parser_gen : "\(indent)if (_parser.Match(\"\(word)\")) {\(pok)\(indent)} else {\(perr)\(indent)}"
+		parser_gen :
+			"\(indent)if (_position.Match(\"\(word)\")) {" &
+			parse_complete(ok : True, indent : indent & "\t") &
+			"\(indent)} else {" &
+			"\(indent)\t_position.Update(\"\\\"\(word)\\\"\", \"\(rule_name)\");" &
+			parse_complete(ok : False, indent : indent & "\t") &
+			"\(indent)}"
 	}
 	optional +: {
 		id : Id
 		class_gen : of.class_gen
 		copy_instance : of.copy_instance
 
-		pok : (Lookup parse_complete In Container)(ok : True, indent : indent)
 		parse_complete : Template {
 			ok ?:
 			value : If ok
 				Then "\(indent)goto optional_exit_\(id);"
-				Else "\(indent)_obj = _optional_obj_\(id);\(indent)_parser = _optional_parser_\(id);\(indent)goto optional_exit_\(id);"
+				Else
+					"\(indent)_obj = _optional_obj_\(id);" &
+					"\(indent)_position = _optional_position_\(id);" &
+					"\(indent)goto optional_exit_\(id);"
 		}
-		parser_gen : "\(indent)var _optional_obj_\(id) = _obj.Clone();\(indent)Parser _optional_parser_\(id) = _parser.Clone();\(of.parser_gen)\(indent)optional_exit_\(id):\(pok)"
+		parser_gen :
+			"\(indent)var _optional_obj_\(id) = _obj.Clone();" &
+			"\(indent)ParserPosition _optional_position_\(id) = _position.Clone();" &
+			of.parser_gen &
+			"\(indent)optional_exit_\(id):" &
+			(Lookup parse_complete In Container)(ok : True, indent : indent)
 	}
 	sequence +: {
 		id : Id
@@ -28,13 +39,19 @@ parser : compiler_lib.parser_tmpl {
 		copy_instance : For x : of Reduce acc & x.copy_instance With acc : ""
 
 		parent_parse_complete : Lookup parse_complete In Container
-		pok : parent_parse_complete(ok : True, indent : indent & "\t")
-		perr : parent_parse_complete(ok : False, indent : indent & "\t")
 		parse_complete : Template {
 			ok ?:
 			value : If ok Then "" Else "\(indent)_sequence_fail_\(id) = true;\(indent)goto _sequence_end_\(id);"
 		}
-		parser_gen : "\(indent)bool _sequence_fail_\(id) = false;" & (For x : of Reduce acc & x.parser_gen With acc : "") & "\(indent)_sequence_end_\(id):\(indent)if (_sequence_fail_\(id)) {\(perr)\(indent)} else {\(pok)\(indent)}"
+		parser_gen :
+			"\(indent)bool _sequence_fail_\(id) = false;" &
+			(For x : of Reduce acc & x.parser_gen With acc : "") &
+			"\(indent)_sequence_end_\(id):" &
+			"\(indent)if (_sequence_fail_\(id)) {"&
+			parent_parse_complete(ok : False, indent : indent & "\t") &
+			"\(indent)} else {" &
+			parent_parse_complete(ok : True, indent : indent & "\t") &
+			"\(indent)}"
 	}
 	many +: {
 		id : Id
@@ -49,15 +66,26 @@ parser : compiler_lib.parser_tmpl {
 		perr : parent_parse_complete(ok : False, indent : indent)
 		parse_complete : Template {
 			ok ?:
-			value: If ok Then "" Else "\(indent)_parser = _many_parser_\(id);\(indent)_obj = _many_obj_\(id);\(indent)break;"
+			value: If ok Then "" Else "\(indent)_position = _many_position_\(id);\(indent)_obj = _many_obj_\(id);\(indent)break;"
 		}
 		need_first : nonempty || !(separator Is Null)
-		parser_gen : (If need_first Then "\(parent_indent)bool _first_\(id) = true;" Else "") &
-			"\(parent_indent)while(true) {\(indent)Parser _many_parser_\(id) = _parser.Clone();\(indent)var _many_obj_\(id) = _obj.Clone();" &
+		parser_gen :
+			(If need_first Then "\(parent_indent)bool _first_\(id) = true;" Else "") &
+			"\(parent_indent)while(true) {" &
+			"\(indent)ParserPosition _many_position_\(id) = _position.Clone();" &
+			"\(indent)var _many_obj_\(id) = _obj.Clone();" &
 			(If separator Is Null Then "" Else "\(indent)if (!_first_\(id)) {\(separator.parser_gen)\(indent)}") &
-			of.parser_gen & (If need_first Then "\(indent)_first_\(id) = false;" Else "") &
+			of.parser_gen &
+			(If need_first Then "\(indent)_first_\(id) = false;" Else "") &
 			"\(parent_indent)}" &
-			(If nonempty Then "\(parent_indent)if (_first_\(id)) {\(perr)\(parent_indent)} else {\(pok)\(parent_indent)}" Else pok)
+			(If nonempty
+				Then
+					"\(parent_indent)if (_first_\(id)) {" &
+					perr &
+					"\(parent_indent)} else {" &
+					pok &
+					"\(parent_indent)}"
+				Else pok)
 	}
 	alternate +: {
 		id : Id
@@ -74,33 +102,62 @@ parser : compiler_lib.parser_tmpl {
 			ok ?:
 			value : If ok
 				Then "\(indent)_alternate_success_\(id) = true;"
-				Else "\(indent)_parser = _alt_parser_\(id);\(indent)_obj = _alt_obj_\(id);"
+				Else "\(indent)_position = _alt_position_\(id);\(indent)_obj = _alt_obj_\(id);"
 		}
-		parser_gen : "\(parent_indent)bool _alternate_success_\(id) = false;\(parent_indent)Parser _alt_parser_\(id) = _parser.Clone();\(parent_indent)var _alt_obj_\(id) = _obj.Clone();" &
+		parser_gen :
+			"\(parent_indent)bool _alternate_success_\(id) = false;" &
+			"\(parent_indent)ParserPosition _alt_position_\(id) = _position;" &
+			"\(parent_indent)var _alt_obj_\(id) = _obj;" &
 			(For x : of
-			Reduce acc & "\(parent_indent)if (!_alternate_success_\(id)) {\(x.parser_gen)\(parent_indent)}"
-			With acc : "") &
-			"\(parent_indent)if (_alternate_success_\(id)) {\(pok)\(parent_indent)} else {\(perr)\(parent_indent)}"
+				Reduce acc &
+					"\(parent_indent)if (!_alternate_success_\(id)) {" &
+					"\(indent)_position = _alt_position_\(id).Clone();" &
+					"\(indent)_obj = _alt_obj_\(id).Clone();" &
+					x.parser_gen &
+					"\(parent_indent)}"
+				With acc : "") &
+			"\(parent_indent)if (_alternate_success_\(id)) {" &
+			pok &
+			"\(parent_indent)} else {" &
+			perr &
+			"\(parent_indent)}"
 	}
 	range +: {
 		class_gen : ""
 		copy_instance : ""
 		pok : parse_complete(ok : True, indent : indent & "\t")
-		perr : parse_complete(ok : False, indent : indent & "\t")
-		acc : If accumulate Then (accumulate_char { input : "_parser.PeekLast()" }).value Else ""
-		parser_gen : "\(indent)if (_parser.Next() >= '\(from)' && _parser.PeekLast() <= '\(to)') {\(acc)\(pok)\(indent)} else {\(perr)\(indent)}"
+		perr :
+			"\(indent)\t_position.Update(\"character between \\\"\(from)\\\" and \\\"\(to)\\\"\", \"\(rule_name)\");" &
+			parse_complete(ok : False, indent : indent & "\t")
+		acc : If accumulate
+			Then (accumulate_char { input : "_position.PeekLast()" }).value
+			Else ""
+		parser_gen :
+			"\(indent)if (_position.Next() >= '\(from)' && _position.PeekLast() <= '\(to)') {" &
+			acc & pok &
+			"\(indent)} else {" &
+			perr &
+			"\(indent)}"
 	}
 	single +: {
 		class_gen : ""
 		copy_instance : ""
-		pok : parse_complete(ok : True, indent : indent & "\t")
-		perr : parse_complete(ok : False, indent : indent & "\t")
-		acc : If accumulate Then (accumulate_char { input : "_parser.PeekLast()" }).value Else ""
-		parser_gen : "\(indent)if (\"\(char)\".IndexOf(_parser.Next()) \(If invert_match Then "==" Else "!=") -1) {\(acc)\(pok)\(indent)} else {\(perr)\(indent)}"
+		acc : If accumulate
+			Then (accumulate_char { input : "_position.PeekLast()"  indent : Lookup indent In Container & "\t"}).value
+			Else ""
+		parser_gen : "\(indent)if (\"\(char)\".IndexOf(_position.Next()) \(If invert_match Then "==" Else "!=") -1) {" &
+		acc & parse_complete(ok : True, indent : indent & "\t") &
+		"\(indent)} else {" &
+		"\(indent)\t_position.Update(Parser.ToLiteral(\"\(char)\"), \"\(rule_name)\");" &
+		parse_complete(ok : False, indent : indent & "\t") &
+		"\(indent)}"
 	}
 	accumulate_integer +: {
-		require_definition : If field Is Null Then False Else
-			(For common_field : Name, common_type : expanded_common Where common_field == field Reduce False With acc : True)
+		require_definition :
+				For common_field : Name, common_type : expanded_common
+				Where common_field == field
+				Reduce False
+				With acc : True
 		class_gen : If require_definition Then "\tinternal long " & field & ";\n" & in.class_gen Else ""
 		copy_instance : If require_definition Then "\t\t_obj.\(field) = \(field);\n" & in.copy_instance Else ""
 
@@ -131,8 +188,11 @@ parser : compiler_lib.parser_tmpl {
 		parser_gen : "\(indent)int \(unicode_accumulate_char) = \(initial);" & in.parser_gen
 	}
 	accumulate_float +: {
-		require_definition : If field Is Null Then False Else
-			(For common_field : Name, common_type : expanded_common Where common_field == field Reduce False With acc : True)
+		require_definition :
+			For common_field : Name, common_type : expanded_common
+			Where common_field == field
+			Reduce False
+			With acc : True
 		class_gen : If require_definition Then "\tinternal double " & field & ";\n" & in.class_gen Else ""
 		copy_instance : If require_definition Then "\t\t_obj.\(field) = \(field);\n" & in.copy_instance Else ""
 
@@ -145,7 +205,12 @@ parser : compiler_lib.parser_tmpl {
 		parse_complete : Template {
 			ok ?:
 			value : If ok
-				Then indent & "if (System.Double.TryParse(\(float_accumulate_buffer).ToString(), out _obj.\(field))) {\(pok)\(indent)} else {\(perr)\(indent)}"
+				Then
+					"\(indent)if (System.Double.TryParse(\(float_accumulate_buffer).ToString(), out _obj.\(field))) {" &
+					pok &
+					"\(indent)} else {" &
+					perr &
+					"\(indent)}"
 				Else perr
 			pok : parent_parse_complete(ok : True, indent : indent & "\t")
 			perr : parent_parse_complete(ok : False, indent : indent & "\t")
@@ -163,7 +228,9 @@ parser : compiler_lib.parser_tmpl {
 		require_definition : If field Is Null Then False Else
 			(For common_field : Name, common_type : expanded_common Where common_field == field Reduce False With acc : True)
 		class_gen : If require_definition Then "\tinternal System.Text.StringBuilder " & field & " = new System.Text.StringBuilder();\n" & in.class_gen Else ""
-		copy_instance : If require_definition Then "\t\t_obj.\(field).Append(\(field).ToString());\n" & in.copy_instance Else ""
+		copy_instance : If require_definition
+			Then "\t\t_obj.\(field).Append(\(field).ToString());\n" & in.copy_instance
+			Else ""
 
 		accumulate_char : Template {
 			input ?:
@@ -186,8 +253,8 @@ parser : compiler_lib.parser_tmpl {
 		perr : ((Lookup parse_complete In Container) { ok : False }).value
 		target_rule : "\(type).ParseRule_\(alternate ?? "Base")"
 		parse_call : If field Is Null
-			Then "Parser.ParseIntoList(ref _parser, _obj.\(Lookup field In Container), \(target_rule))"
-			Else "\(target_rule)(ref _parser, out _obj.\(field))"
+			Then "ParserPosition.ParseIntoList(ref _position, _obj.\(Lookup field In Container), \(target_rule))"
+			Else "\(target_rule)(ref _position, out _obj.\(field))"
 		parser_gen : "\(indent)if (\(parse_call)) {\(pok)\(indent)} else {\(perr)\(indent)}"
 	}
 }
@@ -218,13 +285,30 @@ compiler : compiler_lib.language_tmpl {
 	syntax_element +: {
 		indent : "\n\t\t"
 		class_name : group_name & "_" & rule_name
-		parser_gen : "\tpublic static bool ParseRule_\(rule_name)(ref Parser _parser, out \(group_name) _result) {\n\t\tvar _obj = new \(class_name)();\n\(pattern.parser_gen)\n\t}\n"
+		parser_gen :
+			"\tpublic static bool ParseRule_\(rule_name)(ref ParserPosition _position, out \(group_name) _result) {\n" &
+			"\t\tif(_position.CheckCache<\(class_name), \(group_name)>(out _result)) return _result != null;\n" &
+			"\t\tint _start_index = _position.Index;\n" &
+			"\t\tvar _obj = new \(class_name)();\n" &
+			"\t\t_position.TraceEnter(\"\(group_name):\(rule_name)\");\n" &
+			pattern.parser_gen & "\n\t}\n"
 
-		class_gen : "public class \(class_name) : \(group_name) {\n\(pattern.class_gen)\tpublic \(class_name) Clone() {\n\t\tvar _obj = new \(class_name)();\n\(static_copy_instance)\(common_field_copy_instance)\(pattern.copy_instance)\t\treturn _obj;\n\t}\n}\n"
+		class_gen :
+			"public class \(class_name) : \(group_name) {\n" &
+			pattern.class_gen &
+			"\tpublic \(class_name) Clone() {\n" &
+			"\t\tvar _obj = new \(class_name)();\n" &
+			static_copy_instance & common_field_copy_instance & pattern.copy_instance &
+			"\t\treturn _obj;\n\t}\n}\n"
 
 		parse_complete : Template {
 			ok ?:
-			value : If ok Then "\(indent)_result = (\(group_name))_obj;\(indent)return true;" Else "\(indent)_result = null;\(indent)return false;"
+			value :
+				"\(indent)_position.Cache<\(class_name)>(_start_index, \(If ok Then "_obj" Else "null"));" &
+				"\(indent)_position.TraceExit(\"\(group_name):\(rule_name)\", \(If ok Then "true" Else "false"));" &
+				(If ok
+					Then "\(indent)_result = (\(group_name))_obj;\(indent)return true;"
+					Else "\(indent)_result = null;\(indent)return false;")
 		}
 	}
 	syntax_group +: {
@@ -233,20 +317,41 @@ compiler : compiler_lib.language_tmpl {
 
 		parser_gen : For rule : expanded_rules Reduce acc & rule.parser_gen With acc : ""
 
-		parse_base : "\tpublic static bool ParseRule_Base(ref Parser parser, out \(group_name) result) {\n\t\tParser slave_parser;" &
-		(For rule : expanded_rules, rule_name : Name
-			Reduce acc & "\t\tslave_parser = parser.Clone();\n\t\tif (ParseRule_\(rule_name)(ref slave_parser, out result)) {\n\t\t\tparser = slave_parser;\n\t\t\treturn true;\n\t\t}\n"
-			With acc : "")
-		& "\tresult = null;\n\t\treturn false;\n\t}\n"
+		parse_base :
+			"\tpublic static bool ParseRule_Base(ref ParserPosition position, out \(group_name) result) {\n" &
+			"\t\tposition.TraceEnter(\"\(group_name)\");\n" &
+			"\t\tParserPosition slave_position;\n" &
+			"\t\tposition.Update(\"any \(group_name)\", \"\(group_name)\");" &
+			(For rule : expanded_rules, rule_name : Name
+				Reduce acc &
+					"\t\tslave_position = position.Clone();\n" &
+					"\t\tif (ParseRule_\(rule_name)(ref slave_position, out result)) {\n" &
+					"\t\t\tposition = slave_position;\n" &
+					"\t\t\tposition.TraceExit(\"\(group_name)\", true);\n" &
+					"\t\t\treturn true;\n\t\t}\n"
+				With acc : "") &
+			"\t\tresult = null;\n" &
+			"\t\tposition.TraceExit(\"\(group_name)\", false);\n" &
+			"\t\treturn false;\n\t}\n"
 
 		parse_alternates : For alternate_rules : expanded_alts, alternate_name : Name
 			Reduce
 				outer_acc &
-				"\tpublic static bool ParseRule_\(alternate_name)(ref Parser parser, out \(group_name) result) {\n\t\tParser slave_parser;\n" &
+				"\tpublic static bool ParseRule_\(alternate_name)(ref ParserPosition position, out \(group_name) result) {\n" &
+				"\t\tposition.TraceEnter(\"\(alternate_name)\");\n" &
+				"\t\tParserPosition slave_position;\n" &
+				"\t\tposition.Update(\"\(alternate_name)\", \"\(group_name)\");\n" &
 				(For rule_name : alternate_rules
-					Reduce acc & "\t\tslave_parser = parser.Clone();\n\t\tif (ParseRule_\(rule_name)(ref slave_parser, out result)) {\n\t\t\tparser = slave_parser;\n\t\t\treturn true;\n\t\t}\n"
-					With acc : "")
-				& "\t\tresult = null;\n\t\treturn false;\n\t}\n"
+					Reduce acc &
+						"\t\tslave_position = position.Clone();\n" &
+						"\t\tif (ParseRule_\(rule_name)(ref slave_position, out result)) {\n" &
+						"\t\t\tposition = slave_position;\n" &
+						"\t\t\tposition.TraceExit(\"\(group_name):\(alternate_name)\", true);\n" &
+						"\t\t\treturn true;\n\t\t}\n"
+					With acc : "") &
+				"\t\tresult = null;\n" &
+				"\t\tposition.TraceExit(\"\(group_name):\(alternate_name)\", false);\n" &
+				"\t\treturn false;\n\t}\n"
 			With outer_acc : ""
 
 		value : For rule : expanded_rules
