@@ -239,9 +239,19 @@ parser : compiler_lib.parser_tmpl {
 		parser_gen : in.parser_gen
 	}
 	collect_codepoint +: {
-		class_gen : ""
-		copy_instance : ""
-		parser_gen : (accumulate_char { input : "System.Char.ConvertFromUtf32(" & codepoint & ")" }).value & parse_complete(ok : True, indent : indent)
+		class_gen : in.class_gen
+		copy_instance : in.copy_instance
+
+		parent_parse_complete : Lookup parse_complete In Container
+		parse_complete : Template {
+			ok ?:
+			value : If ok
+				Then
+					(accumulate_char { input : "System.Char.ConvertFromUtf32(" & codepoint & ")" }).value &
+					parent_parse_complete(ok : True, indent : indent)
+				Else parent_parse_complete(ok : False, indent : indent)
+		}
+		parser_gen : in.parser_gen
 	}
 	other +: {
 		require_definition : If field Is Null Then False Else
