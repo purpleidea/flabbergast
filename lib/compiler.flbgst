@@ -32,6 +32,45 @@ parser_tmpl : Template {
 		# string defined in `char`.
 		invert_match : False
 	}
+	# Matches any character by Unicode class.
+	char_class : Template {
+		# A list of character classes to match
+		classes ?:
+		# If true, parsing will succeed if the current character is not in the
+		# any of the character classes enabled.
+		invert_match : False
+
+		letter_lower %:
+		letter_modifier %:
+		letter_other %:
+		letter_title %:
+		letter_upper %:
+		mark_combining %:
+		mark_enclosing %:
+		mark_nonspace %:
+		number_decimal %:
+		number_letter %:
+		number_other %:
+		other_control %:
+		other_format %:
+		other_private %:
+		other_surrogate %:
+		other_unassigned %:
+		punctuation_connector %:
+		punctuation_dash %:
+		punctuation_end %:
+		punctuation_final_quote %:
+		punctuation_initial_quote %:
+		punctuation_other %:
+		punctuation_start %:
+		separator_line %:
+		separator_paragraph %:
+		separator_space %:
+		symbol_currency %:
+		symbol_math %:
+		symbol_modifier %:
+		symbol_other %:
+	}
 	# Parses sub rules and uses their values to compute an integer.
 	accumulate_integer : Template {
 		# Each successful rule where `accumulate` is true will have the current

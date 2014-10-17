@@ -146,11 +146,75 @@ parser : compiler_lib.parser_tmpl {
 			Then (accumulate_char { input : "_position.PeekLast()"  indent : Lookup indent In Container & "\t"}).value
 			Else ""
 		parser_gen : "\(indent)if (\"\(char)\".IndexOf(_position.Next()) \(If invert_match Then "==" Else "!=") -1) {" &
-		acc & parse_complete(ok : True, indent : indent & "\t") &
-		"\(indent)} else {" &
-		"\(indent)\t_position.Update(Parser.ToLiteral(\"\(char)\"), \"\(rule_name)\");" &
-		parse_complete(ok : False, indent : indent & "\t") &
-		"\(indent)}"
+			acc & parse_complete(ok : True, indent : indent & "\t") &
+			"\(indent)} else {" &
+			"\(indent)\t_position.Update(Parser.ToLiteral(\"\(char)\"), \"\(rule_name)\");" &
+			parse_complete(ok : False, indent : indent & "\t") &
+			"\(indent)}"
+	}
+	char_class +: {
+		class_gen : ""
+		copy_instance : ""
+
+		acc : If accumulate
+			Then (accumulate_char { input : "_position.PeekLast()"  indent : Lookup indent In Container & "\t"}).value
+			Else ""
+
+		match_expr :
+			For class : classes
+			Reduce
+				(If acc Is Null Then "" Else acc & " || ") &
+				"char_class_\(Id) == System.Globalization.UnicodeCategory.\(class.enum)"
+			With acc : Null
+
+		accepted_names :
+			For class : classes
+			Reduce
+				If acc Is Null
+					Then class.name
+					Else (acc & " or " & class.name)
+			With acc : Null
+
+		parser_gen :
+			"\(indent)var char_class_\(Id) = System.Char.GetUnicodeCategory(_position.Next());" &
+			"\(indent)if (" &
+			(If invert_match Then "!(\(match_expr))" Else match_expr) &
+			") {" &
+			acc & parse_complete(ok : True, indent : indent & "\t") &
+			"\(indent)} else {" &
+			"\(indent)\t_position.Update(\"character \(If invert_match Then "not " Else "")of type \(accepted_names)\", \"\(rule_name)\");" &
+			parse_complete(ok : False, indent : indent & "\t") &
+			"\(indent)}"
+
+		letter_lower : { name : "lower-case letter"  enum : "LowercaseLetter" }
+		letter_modifier : { name : "modifier letter"  enum : "ModifierLetter" }
+		letter_other : { name : "other letter"  enum : "OtherLetter" }
+		letter_title : { name : "title-case letter"  enum : "TitlecaseLetter" }
+		letter_upper : { name : "upper-case letter"  enum : "UppercaseLetter" }
+		mark_combining : { name : "spacing combining mark"  enum : "SpacingCombiningMark" }
+		mark_enclosing : { name : "enclosing mark"  enum : "EnclosingMark" }
+		mark_nonspace : { name : "non-spaching modification mark"  enum : "NonSpacingMark" }
+		number_decimal : { name : "decimal numeral"  enum : "DecimalDigitNumber" }
+		number_letter : { name : "letter-like numeral"  enum : "LetterNumber" }
+		number_other : { name : "other number"  enum : "iOtherNumber" }
+		other_control : { name : "control code"  enum : "Control" }
+		other_format : { name : "format layout"  enum : "Format" }
+		other_private : { name : "private use"  enum : "PrivateUse" }
+		other_surrogate : { name : "surrogate"  enum : "Surrogate" }
+		other_unassigned : { name : "unassigned"  enum : "OtherNotAssigned" }
+		punctuation_connector : { name : "connecting punctuation"  enum : "ConnectorPunctuation" }
+		punctuation_dash : { name : "dash"  enum : "DashPunctuation" }
+		punctuation_final_quote : { name : "closing qutation mark"  enum : "FinalQuotePunctuation" }
+		punctuation_initial_quote : { name : "opening quotation mark"  enum : "InitialQuotePunctuation" }
+		punctuation_other : { name : "miscellaneous punctuation"  enum : "OtherPunctuation" }
+		punctuation_start : { name : "starting punctuation"  enum : "OpenPunctuation" }
+		separator_line : { name : "line separator"  enum : "LineSeparator" }
+		separator_paragraph : { name : "paragraph separator"  enum : "ParagraphSeparator" }
+		separator_space : { name : "space"  enum : "SpaceSeparator" }
+		symbol_currency : { name : "currency"  enum : "CurrencySymbol" }
+		symbol_math : { name : "mathematical operator"  enum : "MathSymbol" }
+		symbol_modifier : { name : "modifier symbol"  enum : "ModifierSymbol" }
+		symbol_other : { name : "miscellanous symbol"  enum : "OtherSymbol" }
 	}
 	accumulate_integer +: {
 		require_definition :
