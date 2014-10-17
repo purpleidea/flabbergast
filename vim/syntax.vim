@@ -15,6 +15,7 @@ syn case match
 
 syn region flabbergastString matchgroup=flabbergastDelimiter start='"' end='"' skip='\\"' contains=flabbergastEscape,flabbergastEscapeError,flabbergastInterpolation,@Spell
 syn match flabbergastEscapeError contained "\\." display
+syn match flabbergastEscapeError "\\)" display
 syn match flabbergastEscape contained containedin=flabbergastString '\\[abfnvrt"\\]' display
 syn match flabbergastEscape contained containedin=flabbergastString "\\\(\o\{3}\|x\x\{2}\|u\x\{4}\)" display
 syn region flabbergastInterpolation contained contains=TOP matchgroup=flabbergastDelimiter start="\\(" end=")"
