@@ -391,7 +391,7 @@ compiler : compiler_lib.language_tmpl {
 
 		parser_gen : For rule : expanded_rules Reduce acc & rule.parser_gen With acc : ""
 
-		parse_base :
+		parse_base : If include_base_parser Then
 			"\tpublic static bool ParseRule_Base(ref ParserPosition position, out \(group_name) result) {\n" &
 			"\t\tposition.TraceEnter(\"\(group_name)\");\n" &
 			"\t\tif(position.CheckCache<\(group_name)>(\"\(group_name)\", out result)) return result != null;\n" &
@@ -411,6 +411,7 @@ compiler : compiler_lib.language_tmpl {
 			"\t\tposition.TraceExit(\"\(group_name)\", false);\n" &
 			"\t\tposition.Cache<\(group_name)>(\"\(group_name)\", start_index, null);\n" &
 			"\t\treturn false;\n\t}\n"
+			Else ""
 
 		parse_alternates : For alternate_rules : expanded_alts, alternate_name : Name
 			Reduce
