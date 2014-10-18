@@ -441,5 +441,13 @@ compiler : compiler_lib.language_tmpl {
 			Reduce acc & rule.class_gen
 			With acc : "public abstract class \(group_name) : AstNode {\n" & common_field_class_gen & parse_base & parse_alternates & parser_gen & "}\n"
 	}
+
+	rule_groups +: {
+		expression +: {
+			rules +: {
+				zzzz_up +: { parser_gen : "" }
+			}
+		}
+	}
 	value : "namespace Flabbergast {\n" & (For group : expanded_groups Reduce acc & group.value With acc : "") & "}"
 }

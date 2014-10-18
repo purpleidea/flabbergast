@@ -805,32 +805,26 @@ language_tmpl : Template {
 
 		expression : Template syntax_group {
 			include_base_parser : False
-			alternatives +: {
-				expression0 : [ $let, $expression1 ]
-				expression1 : [ $for, $expression2 ]
-				expression2 : [ $if, $expression3 ]
-				expression3 : [ $concatenate, $expression4 ]
-				expression4 : [ $disjunction, $expression5 ]
-				expression5 : [ $conjunction, $expression6 ]
-				expression6 : [ $equality, $inequality, $greater, $greater_or_equality, $lesser, $lesser_or_equality, $expression7 ]
-				expression7 : [ $compare, $expression8 ]
-				expression8 : [ $arithmetic_disjunction, $expression9 ]
-				expression9 : [ $arithmetic_conjunction, $expression10 ]
-				expression10 : [ $range, $expression11 ]
-				expression11 : [ $coerce, $enforce, $check, $is_finite, $is_nan, $is_null, $expression12 ]
-				expression12 : [ $error, $length, $expression13 ]
-				expression13 : [ $remote_lookup, $expression14 ]
-				expression14 : [ $instantiation, $expression15 ]
-				expression15 : [ $coalesce, $expression16 ]
-				expression16 : [ $literal_tuple, $not, $negation, $template_new, $template_extend, $expression17 ]
-				expression17 : [ $function_anonymous, $function_named, $function_mixed, $expression18 ]
-				expression18 : [ $contextual_lookup, $from, $expression19 ]
-				expression19 : [ $subexpression, $literal_list, $null, $int_max, $int_min, $float_max, $float_min, $infinity, $nan, $continue, $this, $true, $false, $time_literal, $int_k, $int_m, $int_g, $int_ki, $int_mi, $int_gi, $integer_literal, $hex_integer_literal, $float_max, $string_identifier, $string_literal ]
-			}
+			alternatives -:
+			expanded_alts : For alt_level : 0 Through 19
+				Select "expression\(alt_level)" :
+					For rule : expanded_rules, rule_name : Name
+					Where If rule.level Is Null Then alt_level < 19 Else rule.level == alt_level
+					Select If rule.level Is Null Then "expression\(alt_level + 1)" Else rule_name
+
 			common +: {
 				comment : common_fields.str
 			}
 			rules +: {
+				# This is a special rule for expression generation. Since every
+				# expression belongs to a precedence level, this rule causes generation
+				# of the call to search th enext precedence level. The compiler
+				# implementation must supress it to not generate real code and the
+				# `expanded_alts` uses it to generate the expression call.
+				zzzz_up : Template expression_tmpl {
+					level : Null
+					pattern : parser.exact { word : "X" }
+				}
 				let : Template expression_tmpl {
 					level : 0
 					pattern : parser.sequence {
