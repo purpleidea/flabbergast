@@ -20,6 +20,7 @@ datarootdir="@datarootdir@"
 datadir="@datadir@"
 pkgdatadir="${datadir}/@PACKAGE@"
 
+EXIT_CODE="0"
 IFS=":"
 DIRECTORIES="${FLABBERGAST_PATH:-}:${libdir}/flabbergast:/usr/lib/flabbergast:/usr/local/lib/flabbergast:$HOME/.local/lib/flabbergast"
 for DIRECTORY in ${@:-$DIRECTORIES}
@@ -30,9 +31,16 @@ do
 		true
 	elif [ -d "$DIRECTORY" -a -w "$DIRECTORY" ]
 	then
-		make -C "$DIRECTORY" -f "$pkgdatadir/update.makefile" -s -k || true
-	else
-		echo "$DIRECTORY: no write permission" 1>&2
+		make -C "$DIRECTORY" -f "$pkgdatadir/update.makefile" -s -k || EXIT_CODE="1"
+	elif [ -e "$DIRECTORY" ]
+	then
+		echo "$DIRECTORY: cannot update" 1>&2
+		EXIT_CODE="1"
+	elif [ $# -gt 0 ]
+	then
+		echo "$DIRECTORY: no such directory" 1>&2
+		EXIT_CODE="1"
 	fi
 done
 unset IFS
+exit $EXIT_CODE
