@@ -441,11 +441,87 @@ compiler : compiler_lib.language_tmpl {
 			Reduce acc & rule.class_gen
 			With acc : "public abstract class \(group_name) : AstNode {\n" & common_field_class_gen & parse_base & parse_alternates & parser_gen & "}\n"
 	}
+	clr_identifier : Template parser.sequence {
+		of : [
+			parser.char_class {
+				classes : [
+					letter_lower,
+					letter_modifier,
+					letter_other,
+					letter_title,
+					letter_upper,
+					number_letter
+				]
+			},
+			parser.many {
+				of : parser.char_class {
+					classes : [
+						letter_lower,
+						letter_modifier,
+						letter_other,
+						letter_title,
+						letter_upper,
+						mark_combining,
+						mark_nonspace,
+						number_decimal,
+						number_letter,
+						other_format,
+						punctuation_connector
+					]
+				}
+			}
+		]
+	}
 
 	rule_groups +: {
 		expression +: {
 			rules +: {
 				zzzz_up +: { parser_gen : "" }
+				xinvoke : Template expression_tmpl {
+					level : 19
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "XInvoke" },
+							space { mandatory : True },
+							parser.accumulate_string {
+								field : "type_name"
+								in : parser.many {
+									nonempty : True
+									accumulate : True
+									separator : parser.single { char : "." }
+									of : clr_identifier { }
+								}
+							},
+							space { mandatory : True },
+							parser.accumulate_string {
+								field : "method_name"
+								accumulate: True
+								in : clr_identifier { }
+							},
+							space { },
+							parser.exact { word : "(" },
+							parser.accumulate_list {
+								type : "expression"
+								field : "arguments"
+								in : parser.many_word {
+									separator_word : ","
+									of : parser.sequence {
+										of : [
+											space { preferred : True },
+											parser.other {
+												type : "expression"
+												alternate : "expression0"
+												field : Null
+											},
+											space { }
+										]
+									}
+								}
+							},
+							parser.exact { word : ")" }
+						]
+					}
+				}
 			}
 		}
 	}
