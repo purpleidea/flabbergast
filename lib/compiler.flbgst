@@ -397,17 +397,22 @@ language_tmpl : Template {
 		file : Template syntax_group {
 			rules +: {
 				file : Template syntax_element {
-					pattern : parser.accumulate_list {
-						field : $attributes
-						type : $attribute
-						in : parser.many {
-							of : parser.other {
+					pattern : parser.sequence {
+						of : [
+							parser.accumulate_list {
+								field : $attributes
 								type : $attribute
-								alternate : $plain_attribute
-								field : Null
-							}
-							nonempty : True
-						}
+								in : parser.many {
+									of : parser.other {
+										type : $attribute
+										alternate : $plain_attribute
+										field : Null
+									}
+									nonempty : True
+								}
+							},
+							space { }
+						]
 					}
 				}
 			}
