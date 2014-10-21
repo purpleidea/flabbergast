@@ -143,9 +143,12 @@ public class ParserPosition {
 		}		
 	}
 	public bool Match(string word) {
-		bool result = String.Compare(Parser.Input, Index, word, 0, word.Length) == 0;
-		Index += word.Length;
-		return result;
+		for (var it = 0; it < word.Length; it++) {
+			if (word[it] != Next()) {
+				return false;
+			}
+		}
+		return true;
 	}
 	public static bool ParseIntoList<T>(ref ParserPosition position, List<T> result, ParseRule<T> rule) {
 		T obj;
