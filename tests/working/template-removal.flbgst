@@ -1,0 +1,10 @@
+x : 2
+t : Template {
+	x: 5
+	y : x + 1
+}
+v: t {
+ x -: 
+}
+w: t {}
+value : w.y == 3

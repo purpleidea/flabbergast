@@ -1,0 +1,1 @@
+value : (For x : 1 Through 3, y : [ 1, 2, 3 ] Reduce If x == y Then acc + 1 Else acc With acc : 0) == 3

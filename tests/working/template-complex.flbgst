@@ -1,0 +1,13 @@
+t : Template {
+	x : Template {
+		q : y + z
+		z ?:
+	}
+ y ?:
+}
+v : t {
+	y : 3
+	x +: { z : 4 }
+	q : x { }
+}
+value : v.q.q == 7 

@@ -1,0 +1,4 @@
+t: Template { x : y + 2  y ?: }
+s: Template t { y : 2 * z  z ?: }
+v: s { z: 1 }
+value : v.x  == 4

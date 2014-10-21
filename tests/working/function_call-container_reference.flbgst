@@ -1,0 +1,7 @@
+a : True
+x : Template { value : Container.a }
+y : {
+ a : False
+ v : x()
+}
+value : y.v

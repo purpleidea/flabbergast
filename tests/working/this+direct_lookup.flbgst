@@ -1,0 +1,6 @@
+x : {
+	a : 3
+	b: This.a
+}
+
+value : x.a == 3

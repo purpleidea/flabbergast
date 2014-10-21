@@ -1,0 +1,7 @@
+x : Template { value : y }
+y : 1
+z : {
+	y : 2
+	v : x()
+}
+value : z.v == y
