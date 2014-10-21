@@ -1171,7 +1171,8 @@ language_tmpl : Template {
 									of : parser.sequence {
 										of : [
 											space { preferred : True },
-											top_expression { field : Null }
+											top_expression { field : Null },
+											space { }
 										]
 									}
 									separator_word : ","
@@ -1195,18 +1196,17 @@ language_tmpl : Template {
 								in : parser.many_word {
 									of : parser.sequence {
 										of : [
-											space { preferred : True },
 											parser.other {
 												type : $attribute
 												alternate : $plain_attribute
 												field : Null
-											}
+											},
+											space { }
 										]
 									}
 									separator_word : ","
 								}
 							},
-							space { },
 							parser.exact { word : ")" }
 						]
 					}
@@ -1222,10 +1222,13 @@ language_tmpl : Template {
 								field : $anon_args
 								type : $expression
 								in : parser.many_word {
+									nonempty : True
 									of : parser.sequence {
 										of : [
 											space { preferred : True },
-											top_expression { field : Null }
+											top_expression { field : Null },
+											space { },
+											parser.except { char : ":" }
 										]
 									}
 									separator_word : ","
@@ -1236,20 +1239,20 @@ language_tmpl : Template {
 								field : $named_args
 								type : $attribute
 								in : parser.many_word {
+									nonempty : True
 									of : parser.sequence {
 										of : [
-											space { preferred : True },
 											parser.other {
 												type : $attribute
 												alternate : $plain_attribute
 												field : Null
-											}
+											},
+											space { }
 										]
 									}
 									separator_word : ","
 								}
 							},
-							space { },
 							parser.exact { word : ")" }
 						]
 					}
