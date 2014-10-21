@@ -564,11 +564,16 @@ language_tmpl : Template {
 								type: $expression
 								alternate: $expression0
 								field : $expression
-							}
+							},
+							space { mandatory : True }
 						]
 					}
 				}
-				reverse : Template literal_tmpl { name : "Reverse" }
+				reverse : Template syntax_element {
+					pattern : parser.sequence {
+						of : [ parser.exact { word : "Reverse" }, space { mandatory : True } ]
+					}
+				}
 			}
 		}
 
@@ -587,9 +592,9 @@ language_tmpl : Template {
 									of : parser.other { type: $fricassee_ordering  field : Null }
 								}
 							},
-							space { mandatory : True },
 							parser.exact { word : "Reduce" },
-							parser.other { type: $expression  alternate : $expression0 field : $reduce_expr },
+							space { mandatory : True },
+							parser.other { type: $expression  alternate : $expression0  field : $reduce_expr },
 							space { mandatory : True },
 							parser.exact { word : "With" },
 							space { mandatory : True },
@@ -597,13 +602,20 @@ language_tmpl : Template {
 							space { preferred : True },
 							parser.exact { word : ":" },
 							space { preferred : True },
-							parser.other { type: $expression  alternate : $expression2 field : $initial_expr }
+							parser.other { type: $expression  alternate : $expression2  field : $initial_expr }
 						]
 					}
 				}
 				anonymous_select : Template syntax_element {
 					pattern : parser.sequence {
 						of : [
+							parser.accumulate_list {
+								type : $fricassee_ordering
+								field : $orderings
+								in : parser.many {
+									of : parser.other { type: $fricassee_ordering  field : Null }
+								}
+							},
 							parser.exact { word : "Select" },
 							space { preferred : True },
 							parser.other { type: $expression  alternate : $expression2 field : $expression }
