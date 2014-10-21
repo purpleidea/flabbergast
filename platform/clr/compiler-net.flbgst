@@ -216,6 +216,16 @@ parser : compiler_lib.parser_tmpl {
 		symbol_modifier : { name : "modifier symbol"  enum : "ModifierSymbol" }
 		symbol_other : { name : "miscellanous symbol"  enum : "OtherSymbol" }
 	}
+	except +: {
+		class_gen : ""
+		copy_instance : ""
+		parser_gen : "\(indent)if (_position.Index >= _position.Parser.Input.Length || \"\(char)\".IndexOf(_position.Parser.Input[_position.Index]) == -1) {" &
+			parse_complete(ok : True, indent : indent & "\t") &
+			"\(indent)} else {" &
+			"\(indent)\t_position.Update(\"anything except \" + Parser.ToLiteral(\"\(char)\"), \"\(rule_name)\");" &
+			parse_complete(ok : False, indent : indent & "\t") &
+			"\(indent)}"
+	}
 	accumulate_integer +: {
 		require_definition :
 				For common_field : Name, common_type : expanded_common

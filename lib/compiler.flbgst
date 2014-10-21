@@ -71,6 +71,11 @@ parser_tmpl : Template {
 		symbol_modifier %:
 		symbol_other %:
 	}
+	# Checks that the next character is not one of the specified characters, but does not consume it.
+	except : Template {
+		# A string with characters to match
+		char ?:
+	}
 	# Parses sub rules and uses their values to compute an integer.
 	accumulate_integer : Template {
 		# Each successful rule where `accumulate` is true will have the current
