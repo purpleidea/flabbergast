@@ -24,6 +24,8 @@ public class Parser {
 	internal struct Memory {
 		internal Object Result;
 		internal int Index;
+		internal int Row;
+		internal int Column;
 	}
 	internal string Input;
 	internal int Index = -1;
@@ -64,7 +66,7 @@ public class ParserPosition {
 		Parser = parser;
 		Index = 0;
 		Row = 1;
-		Column = 0;
+		Column = 1;
 		TraceDepth = 0;
 	}
 	public bool CheckCache<T, U>(out U result) where T: U {
@@ -72,6 +74,8 @@ public class ParserPosition {
 			var memory = Parser.Cache[Index][typeof(T)];
 			result = (U) memory.Result;
 			Index = memory.Index;
+			Row = memory.Row;
+			Column = memory.Column;
 			if (Parser.Trace) {
 				for (var it = 1; it < TraceDepth; it++) {
 					System.Console.Write(" ");
@@ -89,6 +93,8 @@ public class ParserPosition {
 			var memory = Parser.AlternateCache[Index][name];
 			result = (T) memory.Result;
 			Index = memory.Index;
+			Row = memory.Row;
+			Column = memory.Column;
 			if (Parser.Trace) {
 				for (var it = 1; it < TraceDepth; it++) {
 					System.Console.Write(" ");
@@ -105,13 +111,13 @@ public class ParserPosition {
 		if (!Parser.Cache.ContainsKey(start_index)) {
 			Parser.Cache[start_index] = new Dictionary<Type, Parser.Memory>();
 		}
-		Parser.Cache[start_index][typeof(T)] = new Parser.Memory() { Result = result, Index = Index };
+		Parser.Cache[start_index][typeof(T)] = new Parser.Memory() { Result = result, Index = Index, Row = Row, Column = Column };
 	}
 	public void Cache<T>(string name, int start_index, T result) {
 		if (!Parser.AlternateCache.ContainsKey(start_index)) {
 			Parser.AlternateCache[start_index] = new Dictionary<string, Parser.Memory>();
 		}
-		Parser.AlternateCache[start_index][name] = new Parser.Memory() { Result = result, Index = Index };
+		Parser.AlternateCache[start_index][name] = new Parser.Memory() { Result = result, Index = Index, Row = Row, Column = Column };
 	}
 	public ParserPosition Clone() {
 		var child = new ParserPosition(Parser);
