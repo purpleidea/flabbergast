@@ -13,10 +13,10 @@ public abstract class AstNode {
 	public static AstNode ParseFile(Parser parser) {
 		file result;
 		var position = new ParserPosition(parser);
-		if (Flabbergast.file.ParseRule_Base(ref position, out result)) {
+		if (Flabbergast.file.ParseRule_Base(ref position, out result) && position.Finished) {
 			return result;
 		} else {
-			throw new System.Exception(parser.Message);
+			return null;
 		}
 	}
 }
@@ -58,6 +58,7 @@ public class ParserPosition {
 	public int Index { get; private set; }
 	public int Row { get; private set; }
 	public int Column { get; private set; }
+	public bool Finished { get { return Index >= Parser.Input.Length; } }
 	private int TraceDepth;
 	public ParserPosition(Parser parser) {
 		Parser = parser;
