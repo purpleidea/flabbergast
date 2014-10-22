@@ -789,6 +789,41 @@ Finally, the `indent` definition is an contextual lookup trap. If the user of th
 
 In most other languages, this effect would be achieved by passing the indentation value as a parameter to every function (plumbing) while Flabbergast can use contextual lookup to do the heavy lifting.
 
+### Layered Overriding
+
+In some cases, it is desirable to combine templates. There is no direct template merge operation, but is is possible to create a mixin that extends a template. For instance:
+
+    a_tmpl : Template { x : 3  y : 4 }
+    b_tmpl : Template a_tmpl { z : x + y }
+
+Here, `b_tmpl` extends `a_tmpl`. If the changes that `b_tmpl` are general, it might be nice to have a higher-order way to apply those changes to any template, not just `a_tmpl`. This could be accomplished in the following way:
+
+    b_ifier : Template { base ?:  value : Template base { z : x + y } }
+    a_tmpl : Template { x : 3  y : 4 }
+    b_tmpl : b_ifier(base : a_tmpl)
+
+The `b_ifier` function-like template can apply the same changes to any desired template; it is a mixin, capable of extending the behaviour of a template. The overriding mixins can be layered on top of one another:
+
+    overrides : [
+      Template { base?:  value : Template base { x : 4 } },
+      Template { base?:  value : Template base { y : 3 } },
+      Template { base?:  value : Template base { z : 2 } }
+    ]
+    foo_tmpl : Template { a : 1 }
+    derived_tmpl :
+      For override : overrides
+      Reduce override(base : tmpl)
+      With tmpl : foo_tmpl
+    tuple : derived_tmpl { }
+
+Here `derived_tmpl` is the combination of all the layered overrides in the `overrides` tuple. It's also possible to compose two overriding mixins:
+
+    a_ifier : Template { base ?:  value : Template base { x : 2 * y } }
+    b_ifier : Template { base ?:  value : Template base { z : x + y } }
+    ab_ifier : Template b_ifier { value +original: b_ifier(base : original) }
+
+This will compose `a_ifier` and `b_ifier` into `ab_ifier`.
+
 ## The Standard Library
 Because Flabbergast is meant to render data, it has a rather lean standard library. Most languages have the following major elements in their standard libraries:
 
