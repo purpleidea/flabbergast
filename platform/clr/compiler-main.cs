@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Flabbergast;
 using NDesk.Options;
-
+namespace Flabbergast {
 public class Compiler {
 	public static void Main(string[] args) {
 		bool trace = false;
@@ -42,4 +42,5 @@ public class Compiler {
 			}
 		}
 	}
+}
 }

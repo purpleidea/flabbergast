@@ -7,8 +7,8 @@ public class Compiler {
 	public static void Main(string[] args) {
 		var uri = new Uri(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase);
 		var directory = Path.GetDirectoryName(uri.LocalPath);
+		DoTests(Path.Combine(directory, "..", "..", "..", "..", "tests"));
 		DoTests(Path.Combine(directory, "..", "..", "tests"));
-		DoTests(Path.Combine(directory, "tests"));
 	}
 	public static List<string> GetFiles(string root, string child) {
 		var files = new List<string>();
