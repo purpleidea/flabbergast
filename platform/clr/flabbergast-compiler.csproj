@@ -8,7 +8,7 @@
     <ProjectGuid>{783B3823-24B2-46D5-8A47-F98A39CE54CF}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>Flabbergast</RootNamespace>
-    <AssemblyName>Flabbergast-compiler</AssemblyName>
+    <AssemblyName>flabbergast-compiler</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
