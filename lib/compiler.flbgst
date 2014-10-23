@@ -303,6 +303,12 @@ language_tmpl : Template {
 		name ?:
 		pattern : parser.exact { word : name }
 	}
+	int_with_unit_expr_tmpl : Template expression_tmpl {
+		level : 19
+		unit ?:
+		symbol ?:
+		pattern : int_with_unit_tmpl {}
+	}
 	# A “long” expression (i.e., one containing many terms)
 	long_expression_tmpl : Template expression_tmpl {
 		# The type of the terms to collect
@@ -382,19 +388,16 @@ language_tmpl : Template {
 			}
 		]
 	}
-	int_with_unit_tmpl : Template syntax_element {
-		symbol ?:
-		unit ?:
-		level : 19
-		pattern : parser.sequence {
-			of : [
-				parser.accumulate_integer {
-					in : valid_number {}
-					field : $count
-				},
-				parser.exact { word : symbol }
-			]
-		}
+	int_with_unit_tmpl : Template parser.sequence {
+		symbol %:
+		unit %:
+		of : [
+			parser.accumulate_integer {
+				in : valid_number {}
+				field : $count
+			},
+			parser.exact { word : symbol }
+		]
 	}
 
 	# All the groups in the language. For details, see the specification.
@@ -690,11 +693,16 @@ language_tmpl : Template {
 		}
 
 		time : Template syntax_group {
+			time_chunk : Template syntax_element {
+				unit ?:
+				symbol ?:
+				pattern : int_with_unit_tmpl {}
+			}
 			rules +: {
-				days : Template int_with_unit_tmpl { symbol : "d"  unit : 60 * 60 * 24 }
-				hours : Template int_with_unit_tmpl { symbol : "h"  unit : 60 * 60 }
-				minutes : Template int_with_unit_tmpl { symbol : "m"  unit : 60 }
-				seconds : Template int_with_unit_tmpl { symbol : "s"  unit : 1 }
+				days : Template time_chunk { symbol : "d"  unit : 60 * 60 * 24 }
+				hours : Template time_chunk { symbol : "h"  unit : 60 * 60 }
+				minutes : Template time_chunk { symbol : "m"  unit : 60 }
+				seconds : Template time_chunk { symbol : "s"  unit : 1 }
 			}
 		}
 
@@ -1390,19 +1398,26 @@ language_tmpl : Template {
 					pattern : parser.accumulate_list {
 						field : $parts
 						type : $time
-						in : parser.other {
-							type : $time
-							accumulate : True
-							field : Null
+						in : parser.many {
+							of : parser.other {
+								type : $time
+								accumulate : True
+								field : Null
+							}
+							nonempty : True
 						}
-						nonempty : True
 					}
 				}
 				integer_literal : Template expression_tmpl {
 					level : 19
 					pattern : parser.accumulate_integer {
 						field : $amount
-						in : valid_number {}
+						in : parser.sequence {
+							of : [
+								valid_number {},
+								parser.except { char : ".eGMkdhms" }
+							]
+						}
 					}
 				}
 				hex_integer_literal : Template expression_tmpl {
@@ -1420,12 +1435,12 @@ language_tmpl : Template {
 						}
 					}
 				}
-				int_k : Template int_with_unit_tmpl { symbol : "k"  unit : 1000 }
-				int_m : Template int_with_unit_tmpl { symbol : "M"  unit : 1000 * 1000 }
-				int_g : Template int_with_unit_tmpl { symbol : "G"  unit : 1000 * 1000 * 1000 }
-				int_ki : Template int_with_unit_tmpl { symbol : "ki"  unit : 1024 }
-				int_mi : Template int_with_unit_tmpl { symbol : "Mi"  unit : 1024 * 1024 }
-				int_gi : Template int_with_unit_tmpl { symbol : "Gi"  unit : 1024 * 1024 * 1024 }
+				int_k : Template int_with_unit_expr_tmpl { symbol : "k"  unit : 1000 }
+				int_m : Template int_with_unit_expr_tmpl { symbol : "M"  unit : 1000 * 1000 }
+				int_g : Template int_with_unit_expr_tmpl { symbol : "G"  unit : 1000 * 1000 * 1000 }
+				int_ki : Template int_with_unit_expr_tmpl { symbol : "ki"  unit : 1024 }
+				int_mi : Template int_with_unit_expr_tmpl { symbol : "Mi"  unit : 1024 * 1024 }
+				int_gi : Template int_with_unit_expr_tmpl { symbol : "Gi"  unit : 1024 * 1024 * 1024 }
 				float_literal : Template expression_tmpl {
 					level : 19
 					pattern : parser.accumulate_float {
