@@ -187,7 +187,7 @@ public class ParserPosition {
 
 	public void Update(string message, string syntax_name) {
 		if (Index > Parser.Index + 1) {
-			Parser.Message = Parser.FileName + ":" + Row + ":" + Column + ": Expected " + message + " while parsing " + syntax_name + " but got `" + PeekLast() + "' instead.";
+			Parser.Message = Parser.FileName + ":" + Row + ":" + Column + ": Expected " + message + " while parsing " + syntax_name + " but got " + Parser.ToLiteral(PeekLast().ToString()) + " instead.";
 			Parser.Index = Index;
 		}
 	}
