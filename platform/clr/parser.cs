@@ -29,7 +29,7 @@ public class Parser {
 	}
 	internal string Input;
 	internal int Index = -1;
-	internal Dictionary<int, Dictionary<Type, Memory>> Cache = new Dictionary<int, Dictionary<Type, Memory>>();
+	internal Dictionary<int, Dictionary<System.Type, Memory>> Cache = new Dictionary<int, Dictionary<System.Type, Memory>>();
 	internal Dictionary<int, Dictionary<string, Memory>> AlternateCache = new Dictionary<int, Dictionary<string, Memory>>();
 	public string Message { get; internal set; }
 	public string FileName { get; private set; }
@@ -109,7 +109,7 @@ public class ParserPosition {
 	}
 	public void Cache<T>(int start_index, T result) {
 		if (!Parser.Cache.ContainsKey(start_index)) {
-			Parser.Cache[start_index] = new Dictionary<Type, Parser.Memory>();
+			Parser.Cache[start_index] = new Dictionary<System.Type, Parser.Memory>();
 		}
 		Parser.Cache[start_index][typeof(T)] = new Parser.Memory() { Result = result, Index = Index, Row = Row, Column = Column };
 	}
