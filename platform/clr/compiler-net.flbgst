@@ -371,7 +371,7 @@ compiler : compiler_lib.language_tmpl {
 		indent : "\n\t\t"
 		class_name : group_name & "_" & rule_name
 		parser_gen :
-			"\tpublic static bool ParseRule_\(rule_name)(ref ParserPosition _position, out \(group_name) _result) {\n" &
+			"\tinternal static bool ParseRule_\(rule_name)(ref ParserPosition _position, out \(group_name) _result) {\n" &
 			"\t\tif(_position.CheckCache<\(class_name), \(group_name)>(out _result)) return _result != null;\n" &
 			"\t\tint _start_index = _position.Index;\n" &
 			"\t\tvar _obj = new \(class_name)();\n" &
@@ -379,10 +379,10 @@ compiler : compiler_lib.language_tmpl {
 			pattern.parser_gen & "\n\t}\n"
 
 		class_gen :
-			"public class \(class_name) : \(group_name) {\n" &
+			"internal class \(class_name) : \(group_name) {\n" &
 			pattern.class_gen &
 			class_extra &
-			"\tpublic \(class_name) Clone() {\n" &
+			"\tinternal \(class_name) Clone() {\n" &
 			"\t\tvar _obj = new \(class_name)();\n" &
 			static_copy_instance & common_field_copy_instance & pattern.copy_instance &
 			"\t\treturn _obj;\n\t}\n}\n"
@@ -405,7 +405,7 @@ compiler : compiler_lib.language_tmpl {
 		parser_gen : For rule : expanded_rules Reduce acc & rule.parser_gen With acc : ""
 
 		parse_base : If include_base_parser Then
-			"\tpublic static bool ParseRule_Base(ref ParserPosition position, out \(group_name) result) {\n" &
+			"\tinternal static bool ParseRule_Base(ref ParserPosition position, out \(group_name) result) {\n" &
 			"\t\tposition.TraceEnter(\"\(group_name)\");\n" &
 			"\t\tif(position.CheckCache<\(group_name)>(\"\(group_name)\", out result)) return result != null;\n" &
 			"\t\tParserPosition slave_position;\n" &
@@ -429,7 +429,7 @@ compiler : compiler_lib.language_tmpl {
 		parse_alternates : For alternate_rules : expanded_alts, alternate_name : Name
 			Reduce
 				outer_acc &
-				"\tpublic static bool ParseRule_\(alternate_name)(ref ParserPosition position, out \(group_name) result) {\n" &
+				"\tinternal static bool ParseRule_\(alternate_name)(ref ParserPosition position, out \(group_name) result) {\n" &
 				"\t\tposition.TraceEnter(\"\(alternate_name)\");\n" &
 				"\t\tif(position.CheckCache<\(group_name)>(\"\(group_name).\(alternate_name)\", out result)) return result != null;\n" &
 				"\t\tParserPosition slave_position;\n" &
@@ -452,7 +452,7 @@ compiler : compiler_lib.language_tmpl {
 
 		value : For rule : expanded_rules
 			Reduce acc & rule.class_gen
-			With acc : "public abstract class \(group_name) : AstNode {\n" & common_field_class_gen & super_class_extra & parse_base & parse_alternates & parser_gen & "}\n"
+			With acc : "internal abstract class \(group_name) : AstNode {\n" & common_field_class_gen & super_class_extra & parse_base & parse_alternates & parser_gen & "}\n"
 	}
 	clr_identifier : Template parser.sequence {
 		of : [
@@ -488,9 +488,9 @@ compiler : compiler_lib.language_tmpl {
 
 	rule_groups +: {
 		time +: {
-			super_class_extra : "\tpublic abstract long Seconds { get; }\n"
+			super_class_extra : "\tinternal abstract long Seconds { get; }\n"
 			time_chunk +: {
-				class_extra : "\tpublic override long Seconds { get { return count * \(unit); } }\n"
+				class_extra : "\tinternal override long Seconds { get { return count * \(unit); } }\n"
 			}
 		}
 		expression +: {
