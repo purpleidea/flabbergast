@@ -379,7 +379,7 @@ Produce a list of integers that counts from the value of \fIstart\fR up to and i
 
 .TP
 Coerce a value to the same type
-.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ v :: t
+.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR t ↓ v :: t
 Γ ⊢ expr ↓ v :: t
 .SEME
 
@@ -399,16 +399,16 @@ See IEEE 754 for semantics of ROUND_TOWARD_ZERO (a.k.a., truncation).
 
 .TP
 Coerce a value to an string
-.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ PRINTF(\(dq%d\(dq, v) :: Str
+.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBStr\fR ↓ PRINTF(\(dq%d\(dq, v) :: Str
 Γ ⊢ expr ↓ v :: Int
 .SEME
-.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ PRINTF(\(dq%f\(dq, v) :: Str
+.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBStr\fR ↓ PRINTF(\(dq%f\(dq, v) :: Str
 Γ ⊢ expr ↓ v :: Float
 .SEME
-.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ \(dqTrue\(dq :: Str
+.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBStr\fR ↓ \(dqTrue\(dq :: Str
 Γ ⊢ expr ↓ True
 .SEME
-.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBFloat\fR ↓ \(dqFalse\(dq :: Str
+.SEM Γ ⊢ expr:E\*<+\*> \fBTo\fR \fBStr\fR ↓ \(dqFalse\(dq :: Str
 Γ ⊢ expr ↓ False
 .SEME
 
