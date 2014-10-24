@@ -487,6 +487,12 @@ compiler : compiler_lib.language_tmpl {
 	}
 
 	rule_groups +: {
+		time +: {
+			super_class_extra : "\tpublic abstract long Seconds { get; }\n"
+			time_chunk +: {
+				class_extra : "\tpublic override long Seconds { get { return count * \(unit); } }\n"
+			}
+		}
 		expression +: {
 			rules +: {
 				zzzz_up +: { parser_gen : "" }
