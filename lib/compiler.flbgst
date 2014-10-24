@@ -1393,7 +1393,7 @@ language_tmpl : Template {
 				this : Template literal_tmpl { name : "This" }
 				true : Template literal_tmpl { name : "True" }
 
-				time_literal : Template syntax_element {
+				time_literal : Template expression_tmpl {
 					level : 19
 					pattern : parser.accumulate_list {
 						field : $parts

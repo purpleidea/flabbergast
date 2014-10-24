@@ -367,6 +367,7 @@ static_copy_instance : For field : [ "StartRow", "EndRow", "StartColumn", "EndCo
 
 compiler : compiler_lib.language_tmpl {
 	syntax_element +: {
+		class_extra : ""
 		indent : "\n\t\t"
 		class_name : group_name & "_" & rule_name
 		parser_gen :
@@ -380,6 +381,7 @@ compiler : compiler_lib.language_tmpl {
 		class_gen :
 			"public class \(class_name) : \(group_name) {\n" &
 			pattern.class_gen &
+			class_extra &
 			"\tpublic \(class_name) Clone() {\n" &
 			"\t\tvar _obj = new \(class_name)();\n" &
 			static_copy_instance & common_field_copy_instance & pattern.copy_instance &
@@ -396,6 +398,7 @@ compiler : compiler_lib.language_tmpl {
 		}
 	}
 	syntax_group +: {
+		super_class_extra : ""
 		common_field_class_gen : For field : expanded_common Reduce acc & field.class_gen With acc : ""
 		common_field_copy_instance : For field : expanded_common Reduce acc & field.copy_instance With acc : static_copy_instance
 
@@ -449,7 +452,7 @@ compiler : compiler_lib.language_tmpl {
 
 		value : For rule : expanded_rules
 			Reduce acc & rule.class_gen
-			With acc : "public abstract class \(group_name) : AstNode {\n" & common_field_class_gen & parse_base & parse_alternates & parser_gen & "}\n"
+			With acc : "public abstract class \(group_name) : AstNode {\n" & common_field_class_gen & super_class_extra & parse_base & parse_alternates & parser_gen & "}\n"
 	}
 	clr_identifier : Template parser.sequence {
 		of : [
