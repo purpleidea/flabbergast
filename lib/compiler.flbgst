@@ -21,7 +21,7 @@ parser_tmpl : Template {
 	# Parses the elements provided in succession, succeeding if any one succeeds
 	# and failing if all fail.
 	alternate : Template { of ?: }
-	# Parses a single character in the range of characters provided. 
+	# Parses a single character in the range of characters provided.
 	range : Template { from ?:  to ?: }
 	# Parses a single character, as indicated.
 	single : Template {
@@ -134,6 +134,108 @@ parser_tmpl : Template {
 	}
 
 }
+# Environments are domains in which lookups always yield the same value. They
+# are used to break generated code into chunks where lookups occur only in the
+# boundaries between chunks. Each syntax element inherits an environment from
+# the containing element and then applies it to its children, if any.
+#
+# Different parts of the code have different semantics, so there are different
+# flavours of environment application.
+environment_tmpl : Template {
+	# A template for all the actions (i.e., things which can be done with an
+	# environment).
+	application_action : Template {
+		# The flavour for which this action should be applied. If the flavour is
+		# not matched, this action is ignored.
+		flavour : flavour_simple
+	}
+	# Apply environment to other syntax elements that support environments.
+	other_elements : Template application_action {
+		# A list of fields to absorb the current environment
+		fields ?:
+		# The flavour that should be applied. Normally the current flavour.
+		target_flavour : flavour
+	}
+	# Apply environment to all the other syntax elements in a list.
+	list_of : Template application_action {
+		# The field containing the list.
+		field ?:
+		# The flavour that should be applied. Normally the current flavour.
+		target_flavour : flavour
+	}
+	# Apply an *independent* environment for each of the other syntax elements in
+	# a list.
+	list_independent : Template application_action {
+		# The field containing the list of elements.
+		field ?:
+		# Whether to start with a blank environment or derive from the current environment.
+		inherit : False
+		# The flavour that should be applied. Normally the current flavour.
+		target_flavour : flavour
+	}
+	# Create an empty environment that does not inherit from the current environment.
+	blank_environment : Template application_action {
+		# A list of actions to perform using this new environment.
+		apply_to ?:
+	}
+	modified_environment : Template application_action {
+		# A list of actions to perform using this new environment.
+		apply_to ?:
+		# If true, unmasked lookups are done in the parent environment. This is
+		# used for Let-like behaviour. Normally, lookups in a child environment are
+		# independent, so anything “learnt” in the child environment does not apply
+		# to the parent. In certain cases, including Let, things learnt about
+		# masked names is not applicable, but things learnt about other names is
+		# applicable to the parent, so this copies that information back into the
+		# parent.
+		force_back : False
+		# A list of mask collectors that extract names to be changed in the new
+		# environment. Masks are backed by real expressions, so information about
+		# them can translate to the rest of the syntax tree.
+		masks : []
+		# A list of free name collectors to be changed in the new environment. Free
+		# names, like masks, are different in the child from the parent, but unlike
+		# masks, they are not backed by real syntax elements.
+		free_names : []
+
+		# Create masks for all the attributes in a list.
+		masks_from_attributes : Template {
+			# The field containing the list of attributes.
+			field ?:
+		}
+		# Create mask from a name and expression.
+		mask_from_fields : Template {
+			# The field containing the name to mask.
+			name_field ?:
+			# The field containing the expression to mask.
+			expr_field ?:
+		}
+		# Create free names from the names of attributes in a list.
+		free_names_from_attributes : Template {
+			# The field containing the list of attributes.
+			field ?:
+		}
+		# Create a free name from a name.
+		free_name_from_field : Template {
+			# The field containing the name.
+			field ?:
+		}
+	}
+	# Template for the “flavours” of environment.
+	flavour_tmpl : Template {
+		# Whether this flavour needs to propagate environments.
+		enabled ?:
+	}
+	# An environment flavour that does nothing. It has no environment and does
+	# not propagate them.
+	flavour_none ?:
+	# An environment flavour that causes syntax groups to have an environment and
+	# participate in environment propagation and type checking.
+	flavour_simple ?:
+	# An environment flavour that extends `flavour_simple`, but propagates a
+	# second type of environment.
+	flavour_double ?:
+}
 # Templates for making common fields in syntax elements. This is so that some parse rules accumulate results in a single field, such as comments.
 common_fields_tmpl : Template {
 	str : Template { field_name %: }
@@ -159,6 +261,11 @@ language_tmpl : Template {
 		group_name %:
 		# The parser generator structure, made from `parser` templates.
 		pattern ?:
+		# If the syntax group has environment propagation support, this element
+		# contains a list of actions to perform, using templates from the
+		# `environment` tuple, when the environment is being configured.
+		apply_envrionment_to : environment_flavour.enabled &&
+			Error "apply_envrionment_to attribute must be overridden in \(rule_name)."
 	}
 	# A group of syntax rules that form a logical group of syntax elements. These
 	# should correspond to the single-letter production rules in the
@@ -176,6 +283,9 @@ language_tmpl : Template {
 		# alphabetical order. Otherwise, only individual rules and alternatives
 		# will be avilable for parsing.
 		include_base_parser : True
+		# The type of syntax checking and name resolution environment associated
+		# with this group.
+		environment_flavour : environment.flavour_none
 		expanded_rules :
 			For rule_tmpl : rules {}, rule_name : Name
 			Select rule_name : rule_tmpl {}
@@ -263,6 +373,7 @@ language_tmpl : Template {
 		operator ?:
 		# A template for the right-hand operand, normally a child expression.
 		right_operand : Template child_expression { }
+		apply_envrionment_to : [ environment.other_elements { fields : [ $left, $right ] } ]
 		pattern : parser.sequence {
 			of : [
 				child_expression { field : $left },
@@ -275,6 +386,7 @@ language_tmpl : Template {
 	}
 	# A binary operator where the right operand is a type.
 	type_operator : Template binary_operator {
+		apply_envrionment_to : [ environment.other_elements { fields : [ $left ] } ]
 		right_operand : Template parser.other {
 			type : $type
 		}
@@ -283,12 +395,14 @@ language_tmpl : Template {
 	is_suffix_operator : Template binary_operator {
 		suffix ?:
 		operator : "Is"
+		apply_envrionment_to : [ environment.other_elements { fields : [ $left ] } ]
 		right_operand : Template parser.exact { word : suffix }
 	}
 	# A unary expression preceded by a token
 	unary_tmpl : Template expression_tmpl  {
 		# A string which precedes the expression
 		operator ?:
+		apply_envrionment_to : [ environment.other_elements { fields : [ $expr ] } ]
 		pattern : parser.sequence {
 			of : [
 				parser.exact { word : operator },
@@ -300,6 +414,7 @@ language_tmpl : Template {
 	# A expression which is a single word
 	literal_tmpl : Template expression_tmpl {
 		level : 19
+		apply_envrionment_to : []
 		name ?:
 		pattern : parser.exact { word : name }
 	}
@@ -308,6 +423,7 @@ language_tmpl : Template {
 		unit ?:
 		symbol ?:
 		pattern : int_with_unit_tmpl {}
+		apply_envrionment_to : [ ]
 	}
 	# A “long” expression (i.e., one containing many terms)
 	long_expression_tmpl : Template expression_tmpl {
@@ -329,6 +445,10 @@ language_tmpl : Template {
 				}
 			]
 		}
+		apply_envrionment_to : [
+			environment.other_elements { fields : [ $start_expr ] },
+			environment.list_of { field : $terms }
+		]
 	}
 	# A right-hand term in “long” expression
 	long_term_tmpl : Template syntax_element {
@@ -336,6 +456,7 @@ language_tmpl : Template {
 		level %:
 		# The symbol that separates the term.
 		symbol ?:
+		apply_envrionment_to : [ environment.other_elements { fields : [ $expression ] } ]
 		pattern : parser.sequence {
 			of : [
 				space { preferred : True },
@@ -399,10 +520,38 @@ language_tmpl : Template {
 			parser.exact { word : symbol }
 		]
 	}
+	for_pattern : Template parser.sequence {
+		selector ?:
+		of : [
+			parser.exact { word : "For" },
+			space { mandatory : True },
+			selector { },
+			parser.optional {
+				of : parser.sequence {
+					of : [
+						space { mandatory : True },
+						parser.exact { word : "Where" },
+						space { mandatory : True },
+						parser.other {
+							type : $expression
+							alternate : $expression0
+							field : $where_expr
+						}
+					]
+				}
+			},
+			space { mandatory : True },
+			parser.other {
+				field : $result_builder
+				type : $fricassee_result
+			}
+		]
+	}
 
 	# All the groups in the language. For details, see the specification.
 	rule_groups : Template {
 		file : Template syntax_group {
+			environment_flavour : environment.flavour_simple
 			rules +: {
 				file : Template syntax_element {
 					pattern : parser.sequence {
@@ -422,12 +571,14 @@ language_tmpl : Template {
 							space { }
 						]
 					}
+					apply_envrionment_to : [ environment.list_independent { field : $attributes } ]
 				}
 			}
 		}
 
 		attribute : Template syntax_group {
 			include_base_parser : False
+			environment_flavour : environment.flavour_simple
 			common +: {
 				comment : common_fields.str
 				name : common_fields.str
@@ -454,6 +605,7 @@ language_tmpl : Template {
 							}
 						]
 					}
+					apply_envrionment_to : [ environment.other_elements { fields : [ $expression ] } ]
 				}
 				named_override : Template syntax_element {
 					pattern : parser.sequence {
@@ -472,6 +624,10 @@ language_tmpl : Template {
 							}
 						]
 					}
+					apply_envrionment_to : [ environment.modified_environment {
+						apply_to : [ environment.other_elements { fields : [ $expression ] } ]
+						free_names : [ free_name_from_field { field : $name } ]
+					} ]
 				}
 				template_override : Template syntax_element {
 					pattern : parser.sequence {
@@ -498,6 +654,8 @@ language_tmpl : Template {
 							space { preferred : True }
 						]
 					}
+					# TODO new environment for attributes
+					apply_envrionment_to : [ ]
 				}
 				missing_attribute : Template syntax_element {
 					pattern : parser.sequence {
@@ -508,6 +666,7 @@ language_tmpl : Template {
 							parser.exact { word : "?:" }
 						]
 					}
+					apply_envrionment_to : [ ]
 				}
 				informative_attribute : Template syntax_element {
 					pattern : parser.sequence {
@@ -518,6 +677,7 @@ language_tmpl : Template {
 							parser.exact { word : "%:" }
 						]
 					}
+					apply_envrionment_to : [ ]
 				}
 				remove_attribute : Template syntax_element {
 					pattern : parser.sequence {
@@ -528,6 +688,7 @@ language_tmpl : Template {
 							parser.exact { word : "-:" }
 						]
 					}
+					apply_envrionment_to : [ ]
 				}
 				name_attribute : Template syntax_element {
 					pattern : parser.sequence {
@@ -540,6 +701,7 @@ language_tmpl : Template {
 							parser.exact { word : "Name" }
 						]
 					}
+					apply_envrionment_to : [ ]
 				}
 				ordinal_attribute : Template syntax_element {
 					pattern : parser.sequence {
@@ -552,11 +714,13 @@ language_tmpl : Template {
 							parser.exact { word : "Ordinal" }
 						]
 					}
+					apply_envrionment_to : [ ]
 				}
 			}
 		}
 
 		fricassee_ordering : Template syntax_group {
+			environment_flavour : environment.flavour_simple
 			common +: {
 				comment : common_fields.str
 			}
@@ -576,16 +740,19 @@ language_tmpl : Template {
 							space { mandatory : True }
 						]
 					}
+					apply_envrionment_to : [ environment.other_elements { fields : [ $expression ] } ]
 				}
 				reverse : Template syntax_element {
 					pattern : parser.sequence {
 						of : [ parser.exact { word : "Reverse" }, space { mandatory : True } ]
 					}
+					apply_envrionment_to : []
 				}
 			}
 		}
 
 		fricassee_result : Template syntax_group {
+			environment_flavour : environment.flavour_double
 			common +: {
 				comment : common_fields.str
 			}
@@ -613,6 +780,18 @@ language_tmpl : Template {
 							parser.other { type: $expression  alternate : $expression2  field : $initial_expr }
 						]
 					}
+					apply_envrionment_to : [
+						environment.other_elements {
+							fields : [ $initial_expr ]
+							flavour : environment.flavour_double
+							target_flavour : environment.flavour_simple
+						},
+						environment.list_of { field : $orderings },
+						environment.modified_environment {
+							masks : [ mask_from_fields { name_field : $initial_name  expr_field : $initial_expr } ]
+							apply_to : [ environment.other_elements { fields : [ $reduce_expr ] } ]
+						}
+					]
 				}
 				anonymous_select : Template syntax_element {
 					pattern : parser.sequence {
@@ -626,9 +805,14 @@ language_tmpl : Template {
 							},
 							parser.exact { word : "Select" },
 							space { preferred : True },
-							parser.other { type: $expression  alternate : $expression2 field : $expression }
+							parser.other { type: $expression  alternate : $expression2 field : $expression },
+							parser.except { char : ":" }
 						]
 					}
+					apply_envrionment_to : [
+							environment.list_of { field : $orderings },
+							environment.other_elements { fields : [ $expression ] }
+						]
 				}
 				named_select : Template syntax_element {
 					pattern : parser.sequence {
@@ -642,37 +826,9 @@ language_tmpl : Template {
 							parser.other { type: $expression  alternate : $expression2 field : $value_expr }
 						]
 					}
-				}
-			}
-		}
-
-		fricassee_selector : Template syntax_group {
-			common +: {
-				comment : common_fields.str
-			}
-			rules +: {
-				each : Template syntax_element {
-					pattern : parser.sequence {
-						of : [
-							parser.exact { word : "Each" },
-							space { preferred : True },
-							parser.other { type: $expression  alternate : $expression0 field : $expression }
-						]
-					}
-				}
-				attr_merge : Template syntax_element {
-					pattern : parser.accumulate_list {
-						field : $inputs
-						type : $attribute
-						in : parser.many_word {
-							of : parser.other {
-								type : $attribute
-								alternate : $fricasee_attributes
-								field : Null
-							}
-							separator_word : ","
-						}
-					}
+					apply_envrionment_to : [
+						environment.other_elements { fields : [ $name_expr, $value_expr ] }
+					]
 				}
 			}
 		}
@@ -707,6 +863,7 @@ language_tmpl : Template {
 		}
 
 		string_piece : Template syntax_group {
+			environment_flavour : environment.flavour_simple
 			common +: {
 				comment : common_fields.str
 			}
@@ -765,6 +922,7 @@ language_tmpl : Template {
 							]
 						}
 					}
+					apply_envrionment_to : [ ]
 				}
 				expression_escape : Template syntax_element {
 					pattern : parser.sequence {
@@ -780,6 +938,7 @@ language_tmpl : Template {
 							parser.exact { word : ")" }
 						]
 					}
+					apply_envrionment_to : [ environment.other_elements { fields : [ $expression ] } ]
 				}
 			}
 		}
@@ -802,6 +961,7 @@ language_tmpl : Template {
 
 		arithmetic_disjunction_term : Template syntax_group {
 			level : 8
+			environment_flavour : environment.flavour_simple
 			common +: {
 				comment : common_fields.str
 			}
@@ -817,6 +977,7 @@ language_tmpl : Template {
 
 		arithmetic_conjunction_term : Template syntax_group {
 			level : 9
+			environment_flavour : environment.flavour_simple
 			common +: {
 				comment : common_fields.str
 			}
@@ -835,6 +996,7 @@ language_tmpl : Template {
 
 		expression : Template syntax_group {
 			include_base_parser : False
+			environment_flavour : environment.flavour_simple
 			alternatives -:
 			expanded_alts : For alt_level : 0 Through 19
 				Select "expression\(alt_level)" :
@@ -853,6 +1015,7 @@ language_tmpl : Template {
 				# `expanded_alts` uses it to generate the expression call.
 				zzzz_up : Template expression_tmpl {
 					level : Null
+					apply_envrionment_to : []
 					pattern : parser.exact { word : "X" }
 				}
 				let : Template expression_tmpl {
@@ -875,42 +1038,72 @@ language_tmpl : Template {
 							sibling_expression { field : $expression }
 						]
 					}
+					apply_envrionment_to : [
+						environment.list_of { field : $definitions },
+						environment.modified_environment {
+							force_back : True
+							masks : [ masks_from_attributes { field : $definitions } ]
+							apply_to : [ environment.other_elements { fields : [ $expression ] } ]
+						}
+					]
 				}
 
 
-				for : Template expression_tmpl {
+				for_each : Template expression_tmpl {
 					level : 1
-					pattern : parser.sequence {
+					pattern : for_pattern {
+						selector : Template parser.sequence {
 						of : [
-							parser.exact { word : "For" },
-							space { mandatory : True },
-							parser.other {
-								field : $selector
-								type : $fricassee_selector
-							},
-							parser.optional {
-								of : parser.sequence {
-									of : [
-										space { mandatory : True },
-										parser.exact { word : "Where" },
-										space { mandatory : True },
-										parser.other {
-											type : $expression
-											alternate : $expression0
-											field : $where_expr
-										}
-									]
-								}
-							},
-							space { mandatory : True },
-							parser.other {
-								field : $fricassee_result
-								type : $fricassee_result
-							}
+							parser.exact { word : "Each" },
+							space { preferred : True },
+							parser.other { type: $expression  alternate : $expression0 field : $each_expr }
 						]
 					}
-				}
 
+					}
+					apply_envrionment_to : [
+						environment.other_elements { fields : [ $each_expr ] },
+						environment.other_elements { fields : [ $result_builder ]  target_flavour : environment.flavour_double },
+						environment.blank_environment {
+							apply_to : [
+								environment.other_elements { fields : [ $where_expr ] },
+								environment.modified_environment {
+									apply_to : [ environment.other_elements { fields : [ $result_builder ] } ]
+								}
+							]
+						}
+					]
+				}
+				for_merge : Template expression_tmpl {
+					level : 1
+					pattern : for_pattern {
+						selector : Template parser.accumulate_list {
+							field : $inputs
+							type : $attribute
+							in : parser.many_word {
+								of : parser.other {
+									type : $attribute
+									alternate : $fricasee_attributes
+									field : Null
+								}
+								separator_word : ","
+							}
+						}
+					}
+					apply_envrionment_to : [
+						environment.list_of { field : $inputs },
+						environment.other_elements { fields : [ $result_builder ]  target_flavour : environment.flavour_double },
+						environment.modified_environment {
+							apply_to : [
+								environment.other_elements { fields : [ $where_expr ] },
+								environment.modified_environment {
+									apply_to : [ environment.other_elements { fields : [ $result_builder ] } ]
+								}
+							]
+							free_names : [ free_names_from_attributes { field : $inputs } ]
+						}
+					]
+				}
 
 				if : Template expression_tmpl {
 					level : 2
@@ -929,6 +1122,15 @@ language_tmpl : Template {
 							sibling_expression { field : $else_expr }
 						]
 					}
+					apply_envrionment_to : [
+						environment.other_elements { fields : [ $cond_expr ] },
+						environment.modified_environment {
+							apply_to : [ environment.other_elements { fields : [ $then_expr ] } ]
+						},
+						environment.modified_environment {
+							apply_to : [ environment.other_elements { fields : [ $else_expr ] } ]
+						}
+					]
 				}
 
 				concatenate : Template binary_operator {
@@ -941,12 +1143,24 @@ language_tmpl : Template {
 					level : 4
 					operator : "||"
 					right_operand : Template sibling_expression {}
+					apply_envrionment_to : [
+						environment.other_elements { fields : [ $left ] },
+						environment.modified_environment {
+							apply_to : [ environment.other_elements { fields : [ $right ] } ]
+						}
+					]
 				}
 
 				conjunction : Template binary_operator {
 					level : 5
 					operator : "&&"
 					right_operand : Template sibling_expression {}
+					apply_envrionment_to : [
+						environment.other_elements { fields : [ $left ] },
+						environment.modified_environment {
+							apply_to : [ environment.other_elements { fields : [ $right ] } ]
+						}
+					]
 				}
 
 				equality : Template binary_operator {
@@ -1051,6 +1265,7 @@ language_tmpl : Template {
 							sibling_expression { field : $expression }
 						]
 					}
+					apply_envrionment_to : [ environment.other_elements { fields : [ $expression ] } ]
 				}
 
 				instantiation : Template expression_tmpl {
@@ -1075,11 +1290,21 @@ language_tmpl : Template {
 							parser.exact { word : "}" }
 						]
 					}
+					apply_envrionment_to : [
+						environment.other_elements { fields : [ $source ] },
+						environment.list_independent { field : $attributes }
+					]
 				}
 
 				coalesce : Template binary_operator {
 					level : 15
 					operator : "??"
+					apply_envrionment_to : [
+						environment.other_elements { fields : [ $left ] },
+						environment.modified_environment {
+							apply_to : [ environment.other_elements { fields : [ $right ] } ]
+						}
+					]
 				}
 
 				literal_tuple : Template expression_tmpl {
@@ -1103,6 +1328,7 @@ language_tmpl : Template {
 							parser.exact { word : "}" }
 						]
 					}
+					apply_envrionment_to : [ environment.list_of { field : $attributes } ]
 				}
 				not : Template unary_tmpl {
 					level : 16
@@ -1138,6 +1364,7 @@ language_tmpl : Template {
 							parser.exact { word : "}" }
 						]
 					}
+					apply_envrionment_to : [ environment.list_independent { field : $attributes } ]
 				}
 				template_extend : Template expression_tmpl {
 					level : 16
@@ -1163,6 +1390,10 @@ language_tmpl : Template {
 							parser.exact { word : "}" }
 						]
 					}
+					apply_envrionment_to : [
+						environment.other_elements { fields : [ $source ] },
+						environment.list_independent { field : $attributes }
+					]
 				}
 
 				function_anonymous : Template expression_tmpl {
@@ -1190,6 +1421,10 @@ language_tmpl : Template {
 							parser.exact { word : ")" }
 						]
 					}
+					apply_envrionment_to : [
+						environment.other_elements { fields : [ $func_expr ] },
+						environment.list_of { field : $args }
+					]
 				}
 				function_named : Template expression_tmpl {
 					level : 17
@@ -1218,6 +1453,10 @@ language_tmpl : Template {
 							parser.exact { word : ")" }
 						]
 					}
+					apply_envrionment_to : [
+						environment.other_elements { fields : [ $func_expr ] },
+						environment.list_of { field : $args }
+					]
 				}
 				function_mixed : Template expression_tmpl {
 					level : 17
@@ -1264,6 +1503,11 @@ language_tmpl : Template {
 							parser.exact { word : ")" }
 						]
 					}
+					apply_envrionment_to : [
+						environment.other_elements { fields : [ $func_expr ] },
+						environment.list_of { field : $anon_args },
+						environment.list_of { field : $named_args }
+					]
 				}
 
 				contextual_lookup : Template expression_tmpl {
@@ -1280,6 +1524,7 @@ language_tmpl : Template {
 							nonempty : True
 						}
 					}
+					apply_envrionment_to : []
 				}
 				from : Template expression_tmpl {
 					level : 18
@@ -1318,6 +1563,7 @@ language_tmpl : Template {
 							}
 						]
 					}
+					apply_envrionment_to : []
 				}
 				direct_lookup : Template expression_tmpl {
 					level : 18
@@ -1340,6 +1586,7 @@ language_tmpl : Template {
 							}
 						]
 					}
+					apply_envrionment_to : [ environment.other_elements { fields : [ $expr ] } ]
 				}
 
 				subexpression : Template expression_tmpl {
@@ -1353,6 +1600,7 @@ language_tmpl : Template {
 							parser.exact { word : ")" }
 						]
 					}
+					apply_envrionment_to : [ environment.other_elements { fields : [ $expression ] } ]
 				}
 				literal_list : Template expression_tmpl {
 					level : 19
@@ -1377,6 +1625,7 @@ language_tmpl : Template {
 							parser.exact { word : "]" }
 						]
 					}
+					apply_envrionment_to : [ environment.list_of { field : $items } ]
 				}
 
 				container : Template literal_tmpl { name : "Container" }
@@ -1407,6 +1656,7 @@ language_tmpl : Template {
 							nonempty : True
 						}
 					}
+					apply_envrionment_to : [ ]
 				}
 				integer_literal : Template expression_tmpl {
 					level : 19
@@ -1419,6 +1669,7 @@ language_tmpl : Template {
 							]
 						}
 					}
+					apply_envrionment_to : [ ]
 				}
 				hex_integer_literal : Template expression_tmpl {
 					level : 19
@@ -1434,6 +1685,7 @@ language_tmpl : Template {
 								]
 						}
 					}
+					apply_envrionment_to : [ ]
 				}
 				int_k : Template int_with_unit_expr_tmpl { symbol : "k"  unit : 1000 }
 				int_m : Template int_with_unit_expr_tmpl { symbol : "M"  unit : 1000 * 1000 }
@@ -1467,6 +1719,7 @@ language_tmpl : Template {
 							]
 						}
 					}
+					apply_envrionment_to : [ ]
 				}
 
 				string_identifier : Template expression_tmpl {
@@ -1477,6 +1730,7 @@ language_tmpl : Template {
 							valid_identifier { field : $name }
 						]
 					}
+					apply_envrionment_to : [ ]
 				}
 				string_literal : Template expression_tmpl {
 					level : 19
@@ -1496,6 +1750,7 @@ language_tmpl : Template {
 							parser.exact { word : "\\\"" }
 						]
 					}
+					apply_envrionment_to : [ environment.list_of { field : $parts } ]
 				}
 			}
 		}

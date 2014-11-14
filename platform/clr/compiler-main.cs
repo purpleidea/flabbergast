@@ -37,8 +37,11 @@ public class Compiler {
 		foreach (var filename in files) {
 			var parser = Parser.Open(filename);
 			parser.Trace = trace;
-			if (AstNode.ParseFile(parser) == null) {
+			var ast_node = AstNode.ParseFile(parser);
+			if (ast_node == null) {
 				System.Console.WriteLine(parser.Message);
+			} else {
+				((AstTypeableNode)ast_node).Analyse ();
 			}
 		}
 	}

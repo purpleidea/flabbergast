@@ -36,13 +36,25 @@ public class Compiler {
 			System.Console.Write(Path.GetFileNameWithoutExtension(file) + "... ");
 			var parser = Parser.Open(file);
 			var ast = AstNode.ParseFile(parser);
-			System.Console.WriteLine(ast != null ? "ok" : "FAIL");
+			var success = true;
+			if (ast == null) {
+				success = false;
+			} else {
+				((AstTypeableNode) ast).Analyse();
+			}
+			System.Console.WriteLine(success ? "ok" : "FAIL");
 		}
 		foreach (var file in GetFiles(root, "working")) {
 			System.Console.Write(Path.GetFileNameWithoutExtension(file) + "... ");
 			var parser = Parser.Open(file);
 			var ast = AstNode.ParseFile(parser);
-			System.Console.WriteLine(ast != null ? "ok" : "FAIL");
+			var success = true;
+			if (ast == null) {
+				success = false;
+			} else {
+				((AstTypeableNode) ast).Analyse();
+			}
+			System.Console.WriteLine(success ? "ok" : "FAIL");
 		}
 	}
 }
