@@ -296,10 +296,18 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 			var result = engine.operands.pop ();
-			if (result is Data.String) {
-				throw new EvaluationError.USER_DEFINED (((Data.String)result).value);
+			var src_ref = @"$(source.source):$(source.line):$(source.offset)";
+			var tuple = engine.state.this_tuple;
+			string tuple_ref;
+			if (tuple != null) {
+				tuple_ref = @"$(tuple.source.source):$(tuple.source.line):$(tuple.source.offset) ";
 			} else {
-				throw new EvaluationError.TYPE_MISMATCH (@"Expected string in error. $(source.source):$(source.line):$(source.offset)");
+				tuple_ref = "";
+			}
+			if (result is Data.String) {
+				throw new EvaluationError.USER_DEFINED (@"$(((Data.String)result).value) $(tuple_ref)$(src_ref)");
+			} else {
+				throw new EvaluationError.TYPE_MISMATCH (@"Expected string in error. $(tuple_ref)$(src_ref)");
 			}
 		}
 		public override Expression transform () {
