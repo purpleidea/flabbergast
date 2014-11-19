@@ -604,6 +604,13 @@ compiler : compiler_lib.language_tmpl {
 				}
 			}
 		}
+		identifier +: {
+			rules +: {
+				literal_identifier +: {
+					class_extra : "\tpublic override string ToString() { return name.ToString(); }\n"
+				}
+			}
+		}
 		time +: {
 			super_class_extra : "\tinternal abstract long Seconds { get; }\n"
 			time_chunk +: {
