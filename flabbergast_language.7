@@ -331,7 +331,7 @@ w = O(x, y),
 
 .SS EXPRESSION SYNTAX (E) – ARITHMETIC CONJUNCTION
 .TP
-Multiplication and Division
+Multiplication, Division and Modulus
 
 .SEM Γ ⊢ a:E\*<+\*> o:(\fB*\fR / \fB/\fR) b:E\*<+\*> (p:(\fB*\fR / \fB/\fR) c:E\*<+\*>)+ ↓ z :: Int
 Γ ⊢ a ↓ x :: Int,
@@ -343,7 +343,7 @@ w = O(x, y),
 Γ ⊢ w p c ↓ z
 .SEME
 
-.SEM Γ ⊢ a:E\*<+\*> o:(\fB*\fR / \fB/\fR) b:E\*<+\*> (p:(\fB*\fR / \fB/\fR) c:E\*<+\*>)+ ↓ z :: Float
+.SEM Γ ⊢ a:E\*<+\*> o:(\fB*\fR / \fB/\fR / \fB%\fR) b:E\*<+\*> (p:(\fB*\fR / \fB/\fR / \fB%\fR) c:E\*<+\*>)+ ↓ z :: Float
 Γ ⊢ a ↓ x :: Int ∨ Γ ⊢ a ↓ x :: Float,
 
 Γ ⊢ b ↓ y :: Int ∨ Γ ⊢ b ↓ x :: Float,
@@ -352,18 +352,7 @@ w = O(x, y),
 Γ ⊢ w p c ↓ z
 .SEME
 
-.TP
-Modulus
-
-.SEM Γ ⊢ a:E\*<+\*> \fB%\fR b:E\*<+\*> (\fB%\fR c:E\*<+\*>)+ ↓ z :: Int
-Γ ⊢ a ↓ x :: Int,
-
-Γ ⊢ b ↓ y :: Int,
-
-w = x - floor(x / y) × y
-
-Γ ⊢ w \fB%\fR c ↓ z
-.SEME
+Where the \fIO\fR is multiplication for \fB*\fR, division for \fB/\fR, and modulus for \fB%\fR. In the integer case, these operations are carried out per C semantics. For the floating point case, these are carried out using IEE-754, where modulus is equivalent to the C function \fBfmod\fR.
 
 .SS EXPRESSION SYNTAX (E) – RANGE
 .TP
