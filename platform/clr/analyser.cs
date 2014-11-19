@@ -234,7 +234,7 @@ public class Environment {
 		EndColumn = end_column;
 		ForceBack = force_back;
 		Parent = parent;
-		Priority = parent == null ? 0 : parent.Priority + 1;
+		Priority = (parent == null ? 0 : parent.Priority) + (force_back ? 1 : 2);
 	}
 
 	internal NameInfo AddMask(string name, ITypeableElement expression) {
