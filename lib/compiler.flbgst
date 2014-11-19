@@ -236,6 +236,15 @@ environment_tmpl : Template {
 	# second type of environment.
 	flavour_double ?:
 }
+known_types_tmpl : Template {
+	bool ?:
+	float ?:
+	int ?:
+	str ?:
+	template ?:
+	tuple ?:
+	unit ?:
+}
 # Templates for making common fields in syntax elements. This is so that some parse rules accumulate results in a single field, such as comments.
 common_fields_tmpl : Template {
 	str : Template { field_name %: }
@@ -845,15 +854,41 @@ language_tmpl : Template {
 		type : Template syntax_group {
 			type_element : Template syntax_element {
 				friendly_name ?:
+				castable_from ?:
+				type ?:
 				pattern : parser.exact { word : friendly_name }
 			}
 			rules +: {
-				bool : Template type_element { friendly_name : "Bool" }
-				float : Template type_element { friendly_name : "Float" }
-				int : Template type_element { friendly_name : "Int" }
-				str : Template type_element { friendly_name : "Str" }
-				tmpl : Template type_element { friendly_name : "Template" }
-				tuple : Template type_element { friendly_name : "Tuple" }
+				bool : Template type_element {
+					friendly_name : "Bool"
+					type : known_types.bool
+					castable_from : [ ]
+				}
+				float : Template type_element {
+					friendly_name : "Float"
+					type : known_types.float
+					castable_from : [ known_types.int ]
+				}
+				int : Template type_element {
+					friendly_name : "Int"
+					type : known_types.int
+					castable_from : [ known_types.float ]
+				}
+				str : Template type_element {
+					friendly_name : "Str"
+					type : known_types.str
+					castable_from : [ known_types.bool, known_types.float, known_types.int ]
+				}
+				tmpl : Template type_element {
+					friendly_name : "Template"
+					type : known_types.template
+					castable_from : [ ]
+				}
+				tuple : Template type_element {
+					friendly_name : "Tuple"
+					type : known_types.tuple
+					castable_from : [ ]
+				}
 			}
 		}
 

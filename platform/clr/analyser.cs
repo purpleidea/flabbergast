@@ -34,6 +34,21 @@ public abstract class AstTypeableNode : AstNode {
 	}
 	// TODO implement
 	internal virtual void EnsureType(Type type) { }
+	public static Type TypeFromClrType(System.Type clr_type) {
+		if (clr_type == typeof(bool) || clr_type == typeof(Boolean)) {
+				return Type.Bool;
+		} else if ( clr_type == typeof(sbyte) || clr_type == typeof(short) || clr_type == typeof(int) || clr_type == typeof(long) || clr_type == typeof(SByte) || clr_type == typeof(Int16) || clr_type == typeof(Int32) || clr_type == typeof(Int64)) {
+			return Type.Int;
+		} else if (clr_type == typeof(float) || clr_type == typeof(double) || clr_type == typeof(Single) || clr_type == typeof(Double)) {
+			return Type.Float;
+		} else if (clr_type == typeof(string) || clr_type == typeof(String)) {
+			return Type.Str;
+		// TODO: Template and tuple
+		} else {
+			return 0;
+		}
+	}
+}
 public interface ErrorCollector {
 	void ReportTypeError(AstNode where, Type new_type, Type existing_type);
 	void ReportTypeError(Environment environment, string name, Type new_type, Type existing_type);
