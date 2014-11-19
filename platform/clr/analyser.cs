@@ -16,8 +16,6 @@ public enum Type {
 public abstract class AstTypeableNode : AstNode {
 	protected Environment Environment;
 	internal virtual int EnvironmentPriority { get { return Environment.Priority; } }
-	// TODO implement
-	internal virtual Type Type { get { return 0; } }
 	internal abstract void PropagateEnvironment(ErrorCollector collector, List<AstTypeableNode> queue, Environment environment);
 	public void Analyse(ErrorCollector collector) {
 		var environment = new Environment (FileName, StartRow, StartColumn, EndRow, EndColumn, null, false);
@@ -32,8 +30,42 @@ public abstract class AstTypeableNode : AstNode {
 			sorted_nodes[element.Environment.Priority][element] = true;
 		}
 	}
-	// TODO implement
-	internal virtual void EnsureType(Type type) { }
+	internal static void ReflectMethod(ErrorCollector collector, AstNode where, string type_name, string method_name, out System.Type reflected_type, out System.Reflection.MethodInfo method_info) {
+		reflected_type = System.Type.GetType(type_name, false);
+		if (reflected_type == null) {
+			collector.RawError(where, "No such type " + type_name + " found. Perhaps you are missing an assembly reference.");
+			method_info = null;
+		} else {
+			method_info = reflected_type.GetMethod(method_name);
+			if (method_info == null) {
+				collector.RawError(where, "The type " + type_name + " has no method named " + method_name + ".");
+			}
+		}
+	}
+	internal static void CheckReflectedMethod(ErrorCollector collector, AstNode where, System.Reflection.MethodInfo method, List<expression> arguments, Type return_type) {
+		if (!method.IsPublic) {
+			collector.RawError(where, "The method " + method + " is not public.");
+		}
+		if (method.IsGenericMethod || method.IsGenericMethodDefinition) {
+			collector.RawError(where, "The method " + method + " is generic. This is not supported.");
+		}
+		var real_return_type = TypeFromClrType(method.ReturnType);
+		if ((real_return_type & return_type) == 0) {
+			collector.ReportTypeError(where, return_type, real_return_type);
+		}
+		var parameters = method.GetParameters();
+		if (parameters.Length != arguments.Count) {
+			collector.RawError(where, "The method " + method + " takes " + parameters.Length + " but " + arguments.Count + " are given.");
+		} else {
+			foreach(var parameter in parameters) {
+				if (!parameter.IsIn) {
+					collector.RawError(where, "The parameter " + parameter.Position + " of method " + method + " is not an `in' parameter.");
+				} else {
+					arguments[parameter.Position].EnsureType(collector, TypeFromClrType(parameter.ParameterType));
+				}
+			}
+		}
+	}
 	public static Type TypeFromClrType(System.Type clr_type) {
 		if (clr_type == typeof(bool) || clr_type == typeof(Boolean)) {
 				return Type.Bool;
@@ -54,6 +86,9 @@ public interface ErrorCollector {
 	void ReportTypeError(Environment environment, string name, Type new_type, Type existing_type);
 	void RawError(AstNode where, string message);
 }
+public interface ITypeableElement {
+	void EnsureType(ErrorCollector collector, Type type);
+}
 internal abstract class AstTypeableSpecialNode : AstTypeableNode {
 	protected Environment SpecialEnvironment;
 	internal override int EnvironmentPriority {
@@ -73,7 +108,6 @@ internal class EnvironmentPrioritySorter : IComparer<AstTypeableNode> {
 public abstract class NameInfo {
 	protected Dictionary<string, NameInfo> Children = new Dictionary<string, NameInfo>();
 	public string Name { get; protected set; }
-	public abstract Type Type { get; }
 	internal NameInfo Lookup(ErrorCollector collector, string name) {
 		EnsureType(collector, Type.Tuple);
 		if (!Children.ContainsKey(name)) {
@@ -128,12 +162,12 @@ public class OpenNameInfo : NameInfo {
 	}
 }
 internal class BoundNameInfo : NameInfo {
-	AstTypeableNode Expression;
 	private Environment Environment;
-	public BoundNameInfo(Environment environment, string name, AstTypeableNode expression) {
+	ITypeableElement Target;
+	public BoundNameInfo(Environment environment, string name, ITypeableElement target) {
 		Environment = environment;
 		Name = name;
-		Expression = expression;
+		Target = target;
 	}
 	public override void EnsureType(ErrorCollector collector, Type type) {
 		Target.EnsureType(collector, type);
@@ -203,7 +237,7 @@ public class Environment {
 		Priority = parent == null ? 0 : parent.Priority + 1;
 	}
 
-	internal NameInfo AddMask(string name, AstTypeableNode expression) {
+	internal NameInfo AddMask(string name, ITypeableElement expression) {
 		if (Children.ContainsKey(name)) {
 			throw new InvalidOperationException("The name " + name + " already exists in the environment.");
 		}

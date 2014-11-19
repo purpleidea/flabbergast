@@ -245,6 +245,40 @@ known_types_tmpl : Template {
 	tuple ?:
 	unit ?:
 }
+ensure_type_tmpl : Template {
+	any : Template filter {
+		types : known_types
+	}
+	number : Template filter {
+		types : [ known_types.float, known_types.int ]
+	}
+	bool : Template filter {
+		types : [ known_types.bool ]
+	}
+	tuple : Template filter {
+		types : [ known_types.tuple ]
+	}
+	filter : Template {
+		types ?:
+		ensure_type_of : stop {}
+	}
+	propagate : Template {
+		fields ?:
+		extra_types : []
+	}
+	dynamic : Template {
+		field ?:
+		propagate_castable : False
+		ensure_type_of : stop {}
+	}
+	stored : Template {
+		field ?:
+	}
+	stop : Template {}
+	multiple : Template {
+		actions ?:
+	}
+}
 # Templates for making common fields in syntax elements. This is so that some parse rules accumulate results in a single field, such as comments.
 common_fields_tmpl : Template {
 	str : Template { field_name %: }
@@ -275,6 +309,8 @@ language_tmpl : Template {
 		# `environment` tuple, when the environment is being configured.
 		apply_environment_to : environment_flavour.enabled &&
 			Error "apply_environment_to attribute must be overridden in \(rule_name)."
+		ensure_type_is : is_typeable &&
+			Error "ensure_type_is attribute must be overridden in \(rule_name)."
 	}
 	# A group of syntax rules that form a logical group of syntax elements. These
 	# should correspond to the single-letter production rules in the
@@ -295,6 +331,9 @@ language_tmpl : Template {
 		# The type of syntax checking and name resolution environment associated
 		# with this group.
 		environment_flavour : environment.flavour_none
+		# If true, this syntax group has a type and can be the target of type
+		# assurances.
+		is_typeable : False
 		expanded_rules :
 			For rule_tmpl : rules {}, rule_name : Name
 			Select rule_name : rule_tmpl {}
@@ -441,6 +480,7 @@ language_tmpl : Template {
 		symbol ?:
 		pattern : int_with_unit_tmpl {}
 		apply_environment_to : [ ]
+		ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
 	}
 	# A “long” expression (i.e., one containing many terms)
 	long_expression_tmpl : Template expression_tmpl {
@@ -467,6 +507,7 @@ language_tmpl : Template {
 			environment.other_elements { fields : [ $start_expr ] },
 			environment.list_of { field : $terms }
 		]
+		ensure_type_is : ensure_type.number { }
 	}
 	# A right-hand term in “long” expression
 	long_term_tmpl : Template syntax_element {
@@ -597,6 +638,7 @@ language_tmpl : Template {
 		attribute : Template syntax_group {
 			include_base_parser : False
 			environment_flavour : environment.flavour_simple
+			is_typeable : True
 			common +: {
 				comment : common_fields.str
 				name : common_fields.str
@@ -624,6 +666,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
+					ensure_type_is : ensure_type.any { ensure_type_of : propagate { fields : [ $expression ] } }
 				}
 				named_override : Template syntax_element {
 					pattern : parser.sequence {
@@ -646,6 +689,7 @@ language_tmpl : Template {
 						apply_to : [ environment.other_elements { fields : [ $expression ] } ]
 						free_names : [ free_name_from_field { field : $name } ]
 					} ]
+					ensure_type_is : ensure_type.stop {}
 				}
 				template_override : Template syntax_element {
 					pattern : parser.sequence {
@@ -673,6 +717,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.list_independent { field : $overrides } ]
+					ensure_type_is : ensure_type.filter { types : [ known_types.template ] }
 				}
 				missing_attribute : Template syntax_element {
 					pattern : parser.sequence {
@@ -684,6 +729,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ ]
+					ensure_type_is : ensure_type.stop {}
 				}
 				informative_attribute : Template syntax_element {
 					pattern : parser.sequence {
@@ -695,6 +741,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ ]
+					ensure_type_is : ensure_type.stop {}
 				}
 				remove_attribute : Template syntax_element {
 					pattern : parser.sequence {
@@ -706,6 +753,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ ]
+					ensure_type_is : ensure_type.stop {}
 				}
 				name_attribute : Template syntax_element {
 					pattern : parser.sequence {
@@ -719,6 +767,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ ]
+					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
 				}
 				ordinal_attribute : Template syntax_element {
 					pattern : parser.sequence {
@@ -732,6 +781,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ ]
+					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
 				}
 			}
 		}
@@ -770,6 +820,7 @@ language_tmpl : Template {
 
 		fricassee_result : Template syntax_group {
 			environment_flavour : environment.flavour_double
+			is_typeable : True
 			common +: {
 				comment : common_fields.str
 			}
@@ -809,6 +860,7 @@ language_tmpl : Template {
 							apply_to : [ environment.other_elements { fields : [ $reduce_expr ] } ]
 						}
 					]
+					ensure_type_is : ensure_type.propagate { fields : [ $reduce_expr, $initial_expr ] }
 				}
 				anonymous_select : Template syntax_element {
 					pattern : parser.sequence {
@@ -831,6 +883,7 @@ language_tmpl : Template {
 							environment.list_of { field : $orderings },
 							environment.other_elements { fields : [ $expression ] }
 						]
+					ensure_type_is : ensure_type.tuple { }
 				}
 				named_select : Template syntax_element {
 					pattern : parser.sequence {
@@ -847,6 +900,7 @@ language_tmpl : Template {
 					apply_environment_to : [
 						environment.other_elements { fields : [ $name_expr, $value_expr ] }
 					]
+					ensure_type_is : ensure_type.tuple { }
 				}
 			}
 		}
@@ -1040,6 +1094,7 @@ language_tmpl : Template {
 
 		expression : Template syntax_group {
 			include_base_parser : False
+			is_typeable : True
 			environment_flavour : environment.flavour_simple
 			alternatives -:
 			expanded_alts : For alt_level : 0 Through 19
@@ -1060,6 +1115,7 @@ language_tmpl : Template {
 				zzzz_up : Template expression_tmpl {
 					level : Null
 					apply_environment_to : []
+					ensure_type_is : Null
 					pattern : parser.exact { word : "X" }
 				}
 				let : Template expression_tmpl {
@@ -1090,6 +1146,7 @@ language_tmpl : Template {
 							apply_to : [ environment.other_elements { fields : [ $expression ] } ]
 						}
 					]
+					ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
 				}
 
 
@@ -1116,6 +1173,7 @@ language_tmpl : Template {
 							]
 						}
 					]
+					ensure_type_is : ensure_type.propagate { fields : [ $result_builder ] }
 				}
 				for_merge : Template expression_tmpl {
 					level : 1
@@ -1146,6 +1204,7 @@ language_tmpl : Template {
 							free_names : [ free_names_from_attributes { field : $inputs } ]
 						}
 					]
+					ensure_type_is : ensure_type.propagate { fields : [ $result_builder ] }
 				}
 
 				if : Template expression_tmpl {
@@ -1174,12 +1233,14 @@ language_tmpl : Template {
 							apply_to : [ environment.other_elements { fields : [ $else_expr ] } ]
 						}
 					]
+					ensure_type_is : ensure_type.propagate { fields : [ $then_expr, $else_expr ] }
 				}
 
 				concatenate : Template binary_operator {
 					level : 3
 					operator : "&"
 					right_operand : Template sibling_expression {}
+					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
 				}
 
 				disjunction : Template binary_operator {
@@ -1192,6 +1253,7 @@ language_tmpl : Template {
 							apply_to : [ environment.other_elements { fields : [ $right ] } ]
 						}
 					]
+					ensure_type_is : ensure_type.bool {}
 				}
 
 				conjunction : Template binary_operator {
@@ -1204,6 +1266,7 @@ language_tmpl : Template {
 							apply_to : [ environment.other_elements { fields : [ $right ] } ]
 						}
 					]
+					ensure_type_is : ensure_type.bool {}
 				}
 
 				equality : Template compare_operator {
@@ -1234,6 +1297,7 @@ language_tmpl : Template {
 				compare : Template compare_operator {
 					level : 7
 					operator : "<=>"
+					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
 				}
 
 				arithmetic_disjunction : Template long_expression_tmpl {
@@ -1249,40 +1313,56 @@ language_tmpl : Template {
 				range : Template binary_operator {
 					level : 10
 					operator : "Through"
+					ensure_type_is : ensure_type.tuple { }
 				}
 
 				coerce : Template type_operator {
 					level : 11
 					operator : "To"
+					ensure_type_is : ensure_type.dynamic {
+						field : $right
+						propagate_castable : True
+						ensure_type_of : propagate { fields : [ $left ] }
+					}
 				}
 				enforce : Template type_operator {
 					level : 11
 					operator : "As"
+					ensure_type_is : ensure_type.dynamic {
+						field : $right
+						ensure_type_of : ensure_type.propagate { fields : [ $left ] }
+					}
 				}
 				check : Template type_operator {
 					level : 11
 					operator : "Is"
+					ensure_type_is : ensure_type.bool {}
 				}
 				is_finite : Template is_suffix_operator {
 					level : 11
 					suffix : "Finite"
+					ensure_type_is : ensure_type.bool {}
 				}
 				is_nan : Template is_suffix_operator {
 					level : 11
 					suffix : "NaN"
+					ensure_type_is : ensure_type.bool {}
 				}
 				is_null : Template is_suffix_operator {
 					level : 11
 					suffix : "Null"
+					ensure_type_is : ensure_type.bool {}
 				}
 
 				error : Template unary_tmpl {
 					level : 12
 					operator : "Error"
+					ensure_type_is : ensure_type.stop {}
 				}
 				length : Template unary_tmpl {
 					level : 12
 					operator : "Length"
+					ensure_type_is : ensure_type.stop {}
 				}
 
 				remote_lookup : Template expression_tmpl {
@@ -1309,6 +1389,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
+					ensure_type_is : ensure_type.any {}
 				}
 
 				instantiation : Template expression_tmpl {
@@ -1337,6 +1418,7 @@ language_tmpl : Template {
 						environment.other_elements { fields : [ $source ] },
 						environment.list_independent { field : $attributes }
 					]
+					ensure_type_is : ensure_type.tuple {}
 				}
 
 				coalesce : Template binary_operator {
@@ -1348,6 +1430,15 @@ language_tmpl : Template {
 							apply_to : [ environment.other_elements { fields : [ $right ] } ]
 						}
 					]
+					ensure_type_is : ensure_type.multiple {
+						actions : [
+							ensure_type.propagate { fields : [ $right ] },
+							ensure_type.propagate {
+								extra_types : [ known_types.unit ]
+								fields : [ $left ]
+							}
+						]
+					}
 				}
 
 				literal_tuple : Template expression_tmpl {
@@ -1372,18 +1463,22 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.list_of { field : $attributes } ]
+					ensure_type_is : ensure_type.tuple {}
 				}
 				not : Template unary_tmpl {
 					level : 16
 					operator : "!"
+					ensure_type_is : ensure_type.bool { ensure_type_of : propagate { fields : [ $expr ] } }
 				}
 				negation : Template unary_tmpl {
 					level : 16
 					operator : "-"
+					ensure_type_is : ensure_type.number { ensure_type_of : propagate { fields : [ $expr ] } }
 				}
 				generate_id : Template unary_tmpl {
 					level : 16
 					operator : "GenerateId"
+					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
 				}
 				template_new : Template expression_tmpl {
 					level : 16
@@ -1408,6 +1503,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.list_independent { field : $attributes } ]
+					ensure_type_is : ensure_type.filter { types : [ known_types.template ] }
 				}
 				template_extend : Template expression_tmpl {
 					level : 16
@@ -1437,6 +1533,10 @@ language_tmpl : Template {
 						environment.other_elements { fields : [ $source ] },
 						environment.list_independent { field : $attributes }
 					]
+					ensure_type_is : ensure_type.filter {
+						types : [ known_types.template ]
+						ensure_type_of : propagate { fields : [ $source ] }
+					}
 				}
 
 				function_anonymous : Template expression_tmpl {
@@ -1468,6 +1568,7 @@ language_tmpl : Template {
 						environment.other_elements { fields : [ $func_expr ] },
 						environment.list_of { field : $args }
 					]
+					ensure_type_is : ensure_type.any { }
 				}
 				function_named : Template expression_tmpl {
 					level : 17
@@ -1500,6 +1601,7 @@ language_tmpl : Template {
 						environment.other_elements { fields : [ $func_expr ] },
 						environment.list_of { field : $args }
 					]
+					ensure_type_is : ensure_type.any { }
 				}
 				function_mixed : Template expression_tmpl {
 					level : 17
@@ -1551,6 +1653,7 @@ language_tmpl : Template {
 						environment.list_of { field : $anon_args },
 						environment.list_of { field : $named_args }
 					]
+					ensure_type_is : ensure_type.any { }
 				}
 
 				contextual_lookup : Template expression_tmpl {
@@ -1568,6 +1671,9 @@ language_tmpl : Template {
 						}
 					}
 					apply_environment_to : []
+					ensure_type_is : ensure_type.stored {
+						field : $parts
+					}
 				}
 				from : Template expression_tmpl {
 					level : 18
@@ -1607,6 +1713,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : []
+					ensure_type_is : ensure_type.any {}
 				}
 				direct_lookup : Template expression_tmpl {
 					level : 18
@@ -1630,6 +1737,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expr ] } ]
+					ensure_type_is : ensure_type.any {}
 				}
 
 				subexpression : Template expression_tmpl {
@@ -1644,6 +1752,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
+					ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
 				}
 				literal_list : Template expression_tmpl {
 					level : 19
@@ -1669,20 +1778,57 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.list_of { field : $items } ]
+					ensure_type_is : ensure_type.tuple { }
 				}
 
-				container : Template literal_tmpl { name : "Container" }
-				false : Template literal_tmpl { name : "False" }
-				float_max : Template literal_tmpl { name : "FloatMax" }
-				float_min : Template literal_tmpl { name : "FloatMin" }
-				id : Template literal_tmpl { name : "Id" }
-				infinity : Template literal_tmpl { name : "Infinity" }
-				int_max : Template literal_tmpl { name : "IntMax" }
-				int_min : Template literal_tmpl { name : "IntMin" }
-				nan : Template literal_tmpl { name : "NaN" }
-				null : Template literal_tmpl { name : "Null" }
-				this : Template literal_tmpl { name : "This" }
-				true : Template literal_tmpl { name : "True" }
+				container : Template literal_tmpl {
+					name : "Container"
+					ensure_type_is : ensure_type.tuple { }
+				}
+				false : Template literal_tmpl {
+					name : "False"
+					ensure_type_is : ensure_type.bool { }
+				}
+				float_max : Template literal_tmpl {
+					name : "FloatMax"
+					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
+				}
+				float_min : Template literal_tmpl {
+					name : "FloatMin"
+					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
+				}
+				id : Template literal_tmpl {
+					name : "Id"
+					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
+				}
+				infinity : Template literal_tmpl {
+					name : "Infinity"
+					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
+				}
+				int_max : Template literal_tmpl {
+					name : "IntMax"
+					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+				}
+				int_min : Template literal_tmpl {
+					name : "IntMin"
+					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+				}
+				nan : Template literal_tmpl {
+					name : "NaN"
+					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
+				}
+				null : Template literal_tmpl {
+					name : "Null"
+					ensure_type_is : ensure_type.filter { types : [ known_types.unit ] }
+				}
+				this : Template literal_tmpl {
+					name : "This"
+					ensure_type_is : ensure_type.tuple { }
+				}
+				true : Template literal_tmpl {
+					name : "True"
+					ensure_type_is : ensure_type.bool { }
+				}
 
 				time_literal : Template expression_tmpl {
 					level : 19
@@ -1699,6 +1845,7 @@ language_tmpl : Template {
 						}
 					}
 					apply_environment_to : [ ]
+					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
 				}
 				integer_literal : Template expression_tmpl {
 					level : 19
@@ -1712,6 +1859,7 @@ language_tmpl : Template {
 						}
 					}
 					apply_environment_to : [ ]
+					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
 				}
 				hex_integer_literal : Template expression_tmpl {
 					level : 19
@@ -1728,6 +1876,7 @@ language_tmpl : Template {
 						}
 					}
 					apply_environment_to : [ ]
+					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
 				}
 				int_k : Template int_with_unit_expr_tmpl { symbol : "k"  unit : 1000 }
 				int_m : Template int_with_unit_expr_tmpl { symbol : "M"  unit : 1000 * 1000 }
@@ -1762,6 +1911,7 @@ language_tmpl : Template {
 						}
 					}
 					apply_environment_to : [ ]
+					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
 				}
 
 				string_identifier : Template expression_tmpl {
@@ -1773,6 +1923,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ ]
+					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
 				}
 				string_literal : Template expression_tmpl {
 					level : 19
@@ -1793,6 +1944,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.list_of { field : $parts } ]
+					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
 				}
 			}
 		}

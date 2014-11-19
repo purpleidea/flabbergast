@@ -455,6 +455,50 @@ known_types : compiler_lib.known_types_tmpl {
 	tuple : { clr_type : "Flabbergast.Type.Tuple" }
 	unit : { clr_type : "Flabbergast.Type.Unit" }
 }
+ensure_type : compiler_lib.ensure_type_tmpl {
+	filter +: {
+		type_bits : For t : types Reduce acc & " | " & t.clr_type With acc : "0"
+
+		parent_indent : Lookup indent In Container
+		indent : parent_indent & "\t"
+
+		parent_type : Lookup current_type In Container
+		current_type : Id
+
+		value : "\(parent_indent)var \(Id) = \(parent_type) & (\(type_bits));" &
+			"\(parent_indent)if (\(Id) == 0) {" &
+			"\(indent)collector.ReportTypeError(this, \(type_bits), \(parent_type));" &
+			"\(parent_indent)} else {" &
+			ensure_type_of.value &
+			"\(parent_indent)}"
+	}
+	propagate +: {
+		allowed_type_bits : For t : extra_types Reduce acc & " | " & t.clr_type With acc : current_type
+		value : For field : fields Reduce acc & "\(indent)if (\(field) != null) \(field).EnsureType(collector, \(allowed_type_bits));" With acc : ""
+	}
+	dynamic +: {
+		parent_indent : Lookup indent In Container
+		indent : parent_indent & "\t"
+
+		parent_type : Lookup current_type In Container
+		current_type : Id
+
+		type_bits : "\(field).\(If propagate_castable Then "CastableFrom" Else "TypeId")"
+		value : "\(parent_indent)var \(Id) = \(parent_type) & \(type_bits);" &
+			"\(parent_indent)if (\(Id) == 0) {" &
+			"\(indent)collector.ReportTypeError(this, \(type_bits), \(parent_type));" &
+			"\(parent_indent)} else {" &
+			ensure_type_of.value &
+			"\(parent_indent)}"
+	}
+	stored +: {
+		value : "\(indent)Environment.Lookup(collector, \(field).Select((s) => s.ToString())).EnsureType(collector, \(current_type));"
+	}
+	stop +: { value : "" }
+	multiple +: {
+		value : For action : actions Reduce acc & action.value With acc : ""
+	}
+}
 
 compiler : compiler_lib.language_tmpl {
 	syntax_element +: {
@@ -475,10 +519,16 @@ compiler : compiler_lib.language_tmpl {
 		current_environment : "_environment"
 		environment_methods : environment_flavour.method_gen {}
 
+		current_type : "_type"
+		type_assurance : If is_typeable
+			Then "\tpublic override void EnsureType(ErrorCollector collector, Type _type) {\(ensure_type_is.value)\n\t}\n"
+			Else ""
+
 		class_gen :
 			"internal class \(class_name) : \(group_name) {\n" &
 			pattern.class_gen &
 			environment_methods.value &
+			type_assurance &
 			class_extra &
 			"\tinternal \(class_name) Clone() {\n" &
 			"\t\tvar _obj = new \(class_name)();\n" &
@@ -550,6 +600,7 @@ compiler : compiler_lib.language_tmpl {
 		value : For rule : expanded_rules
 			Reduce acc & rule.class_gen
 			With acc : "internal abstract class \(group_name) : \(environment_flavour.class_name)\(If is_typeable Then ", ITypeableElement" Else "") {\n" &
+				(If is_typeable Then "\tpublic abstract void EnsureType(ErrorCollector collector, Type _type);\n" Else "") &
 				common_field_class_gen &
 				super_class_extra &
 				parse_base &
@@ -626,7 +677,11 @@ compiler : compiler_lib.language_tmpl {
 		}
 		expression +: {
 			rules +: {
-				zzzz_up +: { parser_gen : ""  class_gen : ""}
+				zzzz_up +: {
+					parser_gen : ""
+					class_gen : ""
+					type_assurance : ""
+				}
 				xinvoke : Template expression_tmpl {
 					level : 19
 					pattern : parser.sequence {
@@ -671,12 +726,20 @@ compiler : compiler_lib.language_tmpl {
 							parser.exact { word : ")" }
 						]
 					}
+					class_extra : "\tprivate System.Type ReflectedType;\n\tprivate System.Reflection.MethodInfo Method;\n"
 					apply_environment_to : [
-						environment.list_of { field : "arguments" }
+						environment.list_of { field : "arguments" },
+						environment.application_action {
+							value :
+								"\(indent)ReflectMethod(_collector, this, type_name.ToString(), method_name.ToString(), out ReflectedType, out Method);"
+						}
 					]
+					ensure_type_is : {
+						value : "\(indent)CheckReflectedMethod(collector, this, Method, arguments, \(current_type));\n"
+					}
 				}
 			}
 		}
 	}
-	value : "namespace Flabbergast {\n" & (For group : expanded_groups Reduce acc & group.value With acc : "") & "}"
+	value : "using System.Linq;\nnamespace Flabbergast {\n" & (For group : expanded_groups Reduce acc & group.value With acc : "") & "}"
 }
