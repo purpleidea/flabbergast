@@ -416,7 +416,7 @@ environment : compiler_lib.environment_tmpl {
 					"\tinternal override void Propagate\(current_flavour.name)Environment(System.Collections.Generic.SortedDictionary<AstTypeableNode, bool> _queue, Environment _environment) {\n" &
 					"\t\t\(current_flavour.target_field) = _environment;\n" &
 					(If current_flavour.queued Then "\t\t_queue[this] = true;\n" Else "") &
-					(For application : apply_envrionment_to
+					(For application : apply_environment_to
 						Where application.flavour.id == current_flavour.id
 						Reduce acc & application.value
 						With acc : "")
@@ -639,7 +639,9 @@ compiler : compiler_lib.language_tmpl {
 							parser.exact { word : ")" }
 						]
 					}
-					apply_envrionment_to : [ environment.list_of { field : "arguments" } ]
+					apply_environment_to : [
+						environment.list_of { field : "arguments" }
+					]
 				}
 			}
 		}
