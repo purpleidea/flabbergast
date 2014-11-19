@@ -632,23 +632,16 @@ The interpreter may process all \fBFrom\fR expressions first, outside of normal 
 .TP
 Contextual lookup
 .SEM (t, s, ...) ⊢ names:N names:(\fB.\fR N)* ↓ v
-names ⊢ t ↓ v ≠ ∅*
+names ⊢ t ↓ v
 .SEME
 .SEM (t, s, ...) ⊢ names:N names:(\fB.\fR N)* ↓ v
-names ⊢ t ↓ ∅*
 (s, ...) ⊢ names ↓ v
 .SEME
-.SEM (n, ...) ⊢ t ↓ ∅*
-n → ∅* ∈ t
+.SEM (n) ⊢ t :: Tuple ↓ v
+< n → v > ∈ t
 .SEME
-.SEM (n, ...) ⊢ t ↓ ∅*
-¬ n → x ∈ t
-.SEME
-.SEM (n) ⊢ t ↓ v
-n → v ∈ t
-.SEME
-.SEM (n, m, ...) ⊢ t ↓ v
-n → s :: Tuple ∈ t
+.SEM (n, m, ...) ⊢ t :: Tuple ↓ v
+< n → s > ∈ t
 (m, ...) ⊢ s ↓ v
 .SEME
 
@@ -698,13 +691,6 @@ Access containing tuple
 .SEME
 
 Return the tuple containing current tuple. This is the second tuple in the environment not marked with a *.
-
-.TP
-Continue literal
-.SEM \fBContinue\fR ↓ ∅*
-.SEME
-
-The null-like value that change lookup behaviour.
 
 .TP
 Boolean false literal
@@ -978,7 +964,7 @@ Merged attribute selector
 .SEM (t, ...) ⊢ value:I \fB:\fR input:(\fBName\fR / \fBOrdinal\fR /E\*<0\*>) (\fB,\fR value:I \fB:\fR input:(\fBName\fR / \fBOrdinal\fR /E\*<0\*>))* ↓ W
 ∀ i ∈ input:E : (t, ...) ⊢ i ↓ < u\*<i\*>; Δ\*<i\*>; kk\*<ij\*> → vv\*<ij\*> >,
 
-V(j) = ∀ i ∈ input : (∃ vv\*<ij\*> ≠ ∅ : value\*<i\*> → vv\*<ij\*>) ∪ (¬∃ v\*<ij\*> ≠ ∅* : value\*<i\*> → ∅ >)
+V(j) = ∀ i ∈ input : value\*<i\*> → vv\*<ij\*>
 
 A(j) = ∀ i ∈ input:\fBName\fR : value\*<i\*> → j,
 
@@ -986,7 +972,7 @@ K = ∀ i ∈ input:E : ∪ k\*<ij\*>,
 
 O(j) = ∀ i ∈ input:\fBOrdinal\fR : value\*<i\*> → |{ k ∈ K : k\*<j\*> < j }| :: Int
 
-W = { ∀ j : w\*<j\*> = < u; (w\*<j\*>, t, ...); M(j) ∪ A(j) ∪ O(j) > }
+W = { ∀ j : w\*<j\*> = < u; (w\*<j\*>, t, ...); V(j) ∪ A(j) ∪ O(j) > }
 .SEME
 
 Produce a list of witnesses where each \fIvalue\fR identifier matches the value of the current attribute in each of the tuple inputs, or null, if not in the matching tuple. The special input \fBName\fR is the name of the current attribute and the special input \fBOrdinal\fR is the position of the current attribute.

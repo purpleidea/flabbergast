@@ -28,7 +28,7 @@ syn match flabbergastComment "#.*$" contains=flabbergastTodo,@Spell display
 syn keyword flabbergastInt IntMax IntMin
 syn keyword flabbergastFloat FloatMax FloatMin Infinity NaN
 syn keyword flabbergastBool False True
-syn keyword flabbergastConstant Continue Null
+syn keyword flabbergastConstant Null
 syn match flabbergastIdentifier "\<args\>" display
 syn match flabbergastIdentifier "\<value\>" display
 syn match flabbergastBadKeyword "\<[A-WYZ][^ \t#]*" display
