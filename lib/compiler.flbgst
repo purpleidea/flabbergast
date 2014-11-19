@@ -444,6 +444,7 @@ language_tmpl : Template {
 					field : $terms
 					type : term_type
 					in : parser.many {
+						nonempty : True
 						of : parser.other {
 							type : term_type
 							accumulate : True
@@ -813,6 +814,7 @@ language_tmpl : Template {
 							parser.exact { word : "Select" },
 							space { preferred : True },
 							parser.other { type: $expression  alternate : $expression2 field : $expression },
+							space { },
 							parser.except { char : ":" }
 						]
 					}
