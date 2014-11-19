@@ -311,6 +311,8 @@ language_tmpl : Template {
 			Error "apply_environment_to attribute must be overridden in \(rule_name)."
 		ensure_type_is : is_typeable &&
 			Error "ensure_type_is attribute must be overridden in \(rule_name)."
+		type_demand : []
+		type_demand_all : []
 	}
 	# A group of syntax rules that form a logical group of syntax elements. These
 	# should correspond to the single-letter production rules in the
@@ -508,6 +510,7 @@ language_tmpl : Template {
 			environment.list_of { field : $terms }
 		]
 		ensure_type_is : ensure_type.number { }
+		type_demand : { start_expr : [ known_types.float, known_types.int ] }
 	}
 	# A right-hand term in “long” expression
 	long_term_tmpl : Template syntax_element {
@@ -516,6 +519,7 @@ language_tmpl : Template {
 		# The symbol that separates the term.
 		symbol ?:
 		apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
+		type_demand : { expression : [ known_types.float, known_types.int ] }
 		pattern : parser.sequence {
 			of : [
 				space { preferred : True },
@@ -808,6 +812,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
+					type_demand : { expression : [ known_types.int, known_types.float, known_types.str ] }
 				}
 				reverse : Template syntax_element {
 					pattern : parser.sequence {
@@ -901,6 +906,10 @@ language_tmpl : Template {
 						environment.other_elements { fields : [ $name_expr, $value_expr ] }
 					]
 					ensure_type_is : ensure_type.tuple { }
+					type_demand : {
+						name_expr : [ known_types.int, known_types.str ]
+						value_expr : known_types
+					}
 				}
 			}
 		}
@@ -1037,6 +1046,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
+					type_demand : { expression : [ known_types.bool, known_types.float, known_types.int, known_types.str ] }
 				}
 			}
 		}
@@ -1147,6 +1157,7 @@ language_tmpl : Template {
 						}
 					]
 					ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
+					type_demand_all : { definitions : known_types }
 				}
 
 
@@ -1174,6 +1185,10 @@ language_tmpl : Template {
 						}
 					]
 					ensure_type_is : ensure_type.propagate { fields : [ $result_builder ] }
+					type_demand : {
+						where_expr : [ known_types.bool ]
+						each_expr : [ known_types.tuple ]
+					}
 				}
 				for_merge : Template expression_tmpl {
 					level : 1
@@ -1205,6 +1220,12 @@ language_tmpl : Template {
 						}
 					]
 					ensure_type_is : ensure_type.propagate { fields : [ $result_builder ] }
+					type_demand : {
+						where_expr : [ known_types.bool ]
+					}
+					type_demand_all : {
+						inputs : [ known_types.tuple ]
+					}
 				}
 
 				if : Template expression_tmpl {
@@ -1234,6 +1255,7 @@ language_tmpl : Template {
 						}
 					]
 					ensure_type_is : ensure_type.propagate { fields : [ $then_expr, $else_expr ] }
+					type_demand : { cond_expr : [ known_types.bool ] }
 				}
 
 				concatenate : Template binary_operator {
@@ -1241,6 +1263,10 @@ language_tmpl : Template {
 					operator : "&"
 					right_operand : Template sibling_expression {}
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
+					type_demand : {
+						left : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
+						right : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
+					}
 				}
 
 				disjunction : Template binary_operator {
@@ -1254,6 +1280,10 @@ language_tmpl : Template {
 						}
 					]
 					ensure_type_is : ensure_type.bool {}
+					type_demand : {
+						left : [ known_types.bool ]
+						right : [ known_types.bool ]
+					}
 				}
 
 				conjunction : Template binary_operator {
@@ -1267,6 +1297,10 @@ language_tmpl : Template {
 						}
 					]
 					ensure_type_is : ensure_type.bool {}
+					type_demand : {
+						left : [ known_types.bool ]
+						right : [ known_types.bool ]
+					}
 				}
 
 				equality : Template compare_operator {
@@ -1314,6 +1348,10 @@ language_tmpl : Template {
 					level : 10
 					operator : "Through"
 					ensure_type_is : ensure_type.tuple { }
+					type_demand : {
+						left : [ known_types.int ]
+						right : [ known_types.int ]
+					}
 				}
 
 				coerce : Template type_operator {
@@ -1337,32 +1375,38 @@ language_tmpl : Template {
 					level : 11
 					operator : "Is"
 					ensure_type_is : ensure_type.bool {}
+					type_demand : { left : known_types }
 				}
 				is_finite : Template is_suffix_operator {
 					level : 11
 					suffix : "Finite"
 					ensure_type_is : ensure_type.bool {}
+					type_demand : { left : [ known_types.float, known_types.int ] }
 				}
 				is_nan : Template is_suffix_operator {
 					level : 11
 					suffix : "NaN"
 					ensure_type_is : ensure_type.bool {}
+					type_demand : { left : [ known_types.float, known_types.int ] }
 				}
 				is_null : Template is_suffix_operator {
 					level : 11
 					suffix : "Null"
 					ensure_type_is : ensure_type.bool {}
+					type_demand : { left : known_types }
 				}
 
 				error : Template unary_tmpl {
 					level : 12
 					operator : "Error"
 					ensure_type_is : ensure_type.stop {}
+					type_demand : { expr : [ known_types.bool, known_types.float, known_types.int, known_types.str ] }
 				}
 				length : Template unary_tmpl {
 					level : 12
 					operator : "Length"
 					ensure_type_is : ensure_type.stop {}
+					type_demand : { expr : [ known_types.bool, known_types.float, known_types.int, known_types.str ] }
 				}
 
 				remote_lookup : Template expression_tmpl {
@@ -1390,6 +1434,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.any {}
+					type_demand : { expression : [ known_types.tuple ] }
 				}
 
 				instantiation : Template expression_tmpl {
@@ -1419,6 +1464,8 @@ language_tmpl : Template {
 						environment.list_independent { field : $attributes }
 					]
 					ensure_type_is : ensure_type.tuple {}
+					type_demand : { source : [ known_types.template ] }
+					type_demand_all : { attributes : known_types }
 				}
 
 				coalesce : Template binary_operator {
@@ -1464,6 +1511,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.list_of { field : $attributes } ]
 					ensure_type_is : ensure_type.tuple {}
+					type_demand_all : { attributes : known_types }
 				}
 				not : Template unary_tmpl {
 					level : 16
@@ -1479,6 +1527,7 @@ language_tmpl : Template {
 					level : 16
 					operator : "GenerateId"
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
+					type_demand : { expr : [ known_types.tuple ] }
 				}
 				template_new : Template expression_tmpl {
 					level : 16
@@ -1504,6 +1553,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.list_independent { field : $attributes } ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.template ] }
+					type_demand_all : { attributes : known_types }
 				}
 				template_extend : Template expression_tmpl {
 					level : 16
@@ -1537,6 +1587,7 @@ language_tmpl : Template {
 						types : [ known_types.template ]
 						ensure_type_of : propagate { fields : [ $source ] }
 					}
+					type_demand_all : { attributes : known_types }
 				}
 
 				function_anonymous : Template expression_tmpl {
@@ -1569,6 +1620,8 @@ language_tmpl : Template {
 						environment.list_of { field : $args }
 					]
 					ensure_type_is : ensure_type.any { }
+					type_demand : { func_expr : [ known_types.template ] }
+					type_demand_all : { args : known_types }
 				}
 				function_named : Template expression_tmpl {
 					level : 17
@@ -1602,6 +1655,8 @@ language_tmpl : Template {
 						environment.list_of { field : $args }
 					]
 					ensure_type_is : ensure_type.any { }
+					type_demand : { func_expr : [ known_types.template ] }
+					type_demand_all : { args : known_types }
 				}
 				function_mixed : Template expression_tmpl {
 					level : 17
@@ -1654,6 +1709,11 @@ language_tmpl : Template {
 						environment.list_of { field : $named_args }
 					]
 					ensure_type_is : ensure_type.any { }
+					type_demand : { func_expr : [ known_types.template ] }
+					type_demand_all : {
+						anon_args : known_types
+						named_args : known_types
+					}
 				}
 
 				contextual_lookup : Template expression_tmpl {
@@ -1738,6 +1798,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expr ] } ]
 					ensure_type_is : ensure_type.any {}
+					type_demand : { expr : [ known_types.tuple ] }
 				}
 
 				subexpression : Template expression_tmpl {
@@ -1779,6 +1840,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.list_of { field : $items } ]
 					ensure_type_is : ensure_type.tuple { }
+					type_demand_all : { items : known_types }
 				}
 
 				container : Template literal_tmpl {

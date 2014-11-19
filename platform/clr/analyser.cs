@@ -17,6 +17,7 @@ public abstract class AstTypeableNode : AstNode {
 	protected Environment Environment;
 	internal virtual int EnvironmentPriority { get { return Environment.Priority; } }
 	internal abstract void PropagateEnvironment(ErrorCollector collector, List<AstTypeableNode> queue, Environment environment);
+	internal abstract void MakeTypeDemands(ErrorCollector collector);
 	public void Analyse(ErrorCollector collector) {
 		var environment = new Environment (FileName, StartRow, StartColumn, EndRow, EndColumn, null, false);
 		var queue = new List<AstTypeableNode>();
@@ -28,6 +29,11 @@ public abstract class AstTypeableNode : AstNode {
 				sorted_nodes[element.Environment.Priority] = new Dictionary<AstTypeableNode, bool>();
 			}
 			sorted_nodes[element.Environment.Priority][element] = true;
+		}
+		foreach (var items in sorted_nodes.Values) {
+			foreach (var element in items.Keys) {
+				element.MakeTypeDemands(collector);
+			}
 		}
 	}
 	internal static void ReflectMethod(ErrorCollector collector, AstNode where, string type_name, string method_name, out System.Type reflected_type, out System.Reflection.MethodInfo method_info) {
