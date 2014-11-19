@@ -163,9 +163,8 @@ parser : compiler_lib.parser_tmpl {
 		match_expr :
 			For class : classes
 			Reduce
-				(If acc Is Null Then "" Else acc & " || ") &
-				"char_class_\(Id) == System.Globalization.UnicodeCategory.\(class.enum)"
-			With acc : Null
+				"\(acc) || char_class_\(Id) == System.Globalization.UnicodeCategory.\(class.enum)"
+			With acc : "false"
 
 		accepted_names :
 			For class : classes
@@ -182,7 +181,7 @@ parser : compiler_lib.parser_tmpl {
 			") {" &
 			acc & parse_complete(ok : True, indent : indent & "\t") &
 			"\(indent)} else {" &
-			"\(indent)\t_position.Update(\"character \(If invert_match Then "not " Else "")of type \(accepted_names)\", \"\(rule_name)\");" &
+			"\(indent)\t_position.Update(\"character \(If invert_match Then "not " Else "")of type \(accepted_names ?? "unknown")\", \"\(rule_name)\");" &
 			parse_complete(ok : False, indent : indent & "\t") &
 			"\(indent)}"
 
@@ -426,7 +425,7 @@ environment : compiler_lib.environment_tmpl {
 	}
 	flavour_none : flavour_tmpl {
 		id : Null
-		enabled : "False"
+		enabled : False
 		class_name : "AstNode"
 		method_gen : Template { value : "" }
 	}
@@ -457,6 +456,9 @@ compiler : compiler_lib.language_tmpl {
 			"\t\tif(_position.CheckCache<\(class_name), \(group_name)>(out _result)) return _result != null;\n" &
 			"\t\tint _start_index = _position.Index;\n" &
 			"\t\tvar _obj = new \(class_name)();\n" &
+			"\t\t_obj.FileName = _position.Parser.FileName;\n" &
+			"\t\t_obj.StartRow = _position.Row;\n" &
+			"\t\t_obj.StartColumn = _position.Column;\n" &
 			"\t\t_position.TraceEnter(\"\(group_name):\(rule_name)\");\n" &
 			pattern.parser_gen & "\n\t}\n"
 
@@ -470,7 +472,7 @@ compiler : compiler_lib.language_tmpl {
 			class_extra &
 			"\tinternal \(class_name) Clone() {\n" &
 			"\t\tvar _obj = new \(class_name)();\n" &
-			static_copy_instance & common_field_copy_instance & pattern.copy_instance &
+			common_field_copy_instance & pattern.copy_instance &
 			"\t\treturn _obj;\n\t}\n}\n"
 
 		parse_complete : Template {
@@ -479,7 +481,7 @@ compiler : compiler_lib.language_tmpl {
 				"\(indent)_position.Cache<\(class_name)>(_start_index, \(If ok Then "_obj" Else "null"));" &
 				"\(indent)_position.TraceExit(\"\(group_name):\(rule_name)\", \(If ok Then "true" Else "false"));" &
 				(If ok
-					Then "\(indent)_result = (\(group_name))_obj;\(indent)return true;"
+					Then "\(indent)_obj.EndRow = _position.Row;\(indent)_obj.EndColumn = _position.Column;\(indent)_result = (\(group_name))_obj;\(indent)return true;"
 					Else "\(indent)_result = null;\(indent)return false;")
 		}
 	}
@@ -537,7 +539,13 @@ compiler : compiler_lib.language_tmpl {
 
 		value : For rule : expanded_rules
 			Reduce acc & rule.class_gen
-			With acc : "internal abstract class \(group_name) : \(environment_flavour.class_name) {\n" & common_field_class_gen & super_class_extra & parse_base & parse_alternates & parser_gen & "}\n"
+			With acc : "internal abstract class \(group_name) : \(environment_flavour.class_name)\(If is_typeable Then ", ITypeableElement" Else "") {\n" &
+				common_field_class_gen &
+				super_class_extra &
+				parse_base &
+				parse_alternates &
+				parser_gen &
+				"}\n"
 	}
 	clr_identifier : Template parser.sequence {
 		of : [
