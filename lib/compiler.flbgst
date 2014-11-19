@@ -384,6 +384,14 @@ language_tmpl : Template {
 				]
 		}
 	}
+	# A binary operator that compare results
+	compare_operator : Template binary_operator {
+		ensure_type_is : ensure_type.filter { types : [ known_types.bool ] }
+		type_demand : {
+			left : [ known_types.bool, known_types.float, known_types.int, known_types.str  ]
+			right : left
+		}
+	}
 	# A binary operator where the right operand is a type.
 	type_operator : Template binary_operator {
 		apply_environment_to : [ environment.other_elements { fields : [ $left ] } ]
@@ -1161,32 +1169,32 @@ language_tmpl : Template {
 					]
 				}
 
-				equality : Template binary_operator {
+				equality : Template compare_operator {
 					level : 6
 					operator : "=="
 				}
-				inequality : Template binary_operator {
+				inequality : Template compare_operator {
 					level : 6
 					operator : "!="
 				}
-				greater : Template binary_operator {
+				greater : Template compare_operator {
 					level : 6
 					operator : ">"
 				}
-				greater_or_equality : Template binary_operator {
+				greater_or_equality : Template compare_operator {
 					level : 6
 					operator : ">="
 				}
-				lesser : Template binary_operator {
+				lesser : Template compare_operator {
 					level : 6
 					operator : "<"
 				}
-				lesser_or_equality : Template binary_operator {
+				lesser_or_equality : Template compare_operator {
 					level : 6
 					operator : "<="
 				}
 
-				compare : Template binary_operator {
+				compare : Template compare_operator {
 					level : 7
 					operator : "<=>"
 				}
