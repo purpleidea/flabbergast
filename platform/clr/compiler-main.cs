@@ -3,6 +3,17 @@ using System.Collections.Generic;
 using Flabbergast;
 using NDesk.Options;
 namespace Flabbergast {
+public class ConsoleCollector : ErrorCollector {
+	public void ReportTypeError(AstNode where, Type new_type, Type existing_type) {
+		Console.WriteLine("{0}:{1}:{2}-{3}:{4}: Expression has conflicting types: {5} versus {6}.", where.FileName, where.StartRow, where.StartColumn, where.EndRow, where.EndColumn, new_type, existing_type);
+	}
+	public void ReportTypeError(Environment environment, string name, Type new_type, Type existing_type) {
+		Console.WriteLine("{0}:{1}:{2}-{3}:{4}: Lookup for `{5}' has conflicting types: {6} versus {7}.", environment.FileName, environment.StartRow, environment.StartColumn, environment.EndRow, environment.EndColumn, name, new_type, existing_type);
+	}
+	public void RawError(AstNode where, string message) {
+		Console.WriteLine("{0}:{1}:{2}-{3}:{4}: {5}", where.FileName, where.StartRow, where.StartColumn, where.EndRow, where.EndColumn, message);
+	}
+}
 public class Compiler {
 	public static void Main(string[] args) {
 		bool trace = false;
@@ -34,6 +45,7 @@ public class Compiler {
 			Console.WriteLine ("Perhaps you wish to compile some source files?");
 			return;
 		}
+		var collector = new ConsoleCollector();
 		foreach (var filename in files) {
 			var parser = Parser.Open(filename);
 			parser.Trace = trace;
@@ -41,7 +53,7 @@ public class Compiler {
 			if (ast_node == null) {
 				System.Console.WriteLine(parser.Message);
 			} else {
-				((AstTypeableNode)ast_node).Analyse ();
+				((AstTypeableNode)ast_node).Analyse (collector);
 			}
 		}
 	}

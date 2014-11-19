@@ -366,14 +366,14 @@ static_copy_instance : For field : [ "StartRow", "EndRow", "StartColumn", "EndCo
 environment : compiler_lib.environment_tmpl {
 	other_elements +: {
 		value : For field : fields
-			Reduce acc & "\t\tif (\(field) != null) { \(field).Propagate\(target_flavour.name)Environment(_queue, \(current_environment)); }\n"
+			Reduce acc & "\t\tif (\(field) != null) { \(field).Propagate\(target_flavour.name)Environment(_collector, _queue, \(current_environment)); }\n"
 			With acc : ""
 	}
 	list_of +: {
-		value : "\t\tif (\(field) != null) { foreach (var \(Id) in \(field)) \(Id).Propagate\(target_flavour.name)Environment(_queue, \(current_environment)); }\n"
+		value : "\t\tif (\(field) != null) { foreach (var \(Id) in \(field)) \(Id).Propagate\(target_flavour.name)Environment(_collector, _queue, \(current_environment)); }\n"
 	}
 	list_independent +: {
-		value : "\t\tif (\(field) != null) { foreach (var \(Id) in \(field)) \(Id).Propagate\(target_flavour.name)Environment(_queue, new Environment(\(Id).FileName, \(Id).StartRow, \(Id).StartColumn, \(Id).EndRow, \(Id).EndColumn, \(If inherit Then current_environment Else "null"), false)); }\n"
+		value : "\t\tif (\(field) != null) { foreach (var \(Id) in \(field)) \(Id).Propagate\(target_flavour.name)Environment(_collector, _queue, new Environment(\(Id).FileName, \(Id).StartRow, \(Id).StartColumn, \(Id).EndRow, \(Id).EndColumn, \(If inherit Then current_environment Else "null"), false)); }\n"
 	}
 	blank_environment +: {
 		current_environment : Id
@@ -391,7 +391,7 @@ environment : compiler_lib.environment_tmpl {
 
 		masks_from_attributes +: {
 			value : "\t\tif (\(field) != null) foreach (var \(Id) in \(field)) {\n" &
-				"\t\t\t\(Id).AddMask(\(current_environment));\n" &
+				"\t\t\t\(Id).AddMask(_collector, \(current_environment));\n" &
 				"\t\t}\n"
 		}
 		mask_from_fields +: {
@@ -412,9 +412,9 @@ environment : compiler_lib.environment_tmpl {
 				For current_flavour : known_flavours
 				Reduce
 					method_acc &
-					"\tinternal override void Propagate\(current_flavour.name)Environment(System.Collections.Generic.SortedDictionary<AstTypeableNode, bool> _queue, Environment _environment) {\n" &
+					"\tinternal override void Propagate\(current_flavour.name)Environment(ErrorCollector _collector, System.Collections.Generic.List<AstTypeableNode> _queue, Environment _environment) {\n" &
 					"\t\t\(current_flavour.target_field) = _environment;\n" &
-					(If current_flavour.queued Then "\t\t_queue[this] = true;\n" Else "") &
+					(If current_flavour.queued Then "\t\t_queue.Add(this);\n" Else "") &
 					(For application : apply_environment_to
 						Where application.flavour.id == current_flavour.id
 						Reduce acc & application.value
@@ -581,16 +581,16 @@ compiler : compiler_lib.language_tmpl {
 
 	rule_groups +: {
 		attribute +: {
-			super_class_extra : "\tinternal virtual void AddMask(Environment environment) {}\n"
+			super_class_extra : "\tinternal virtual void AddMask(ErrorCollector collector, Environment environment) {}\n"
 			rules +: {
 				plain_attribute +: {
-					class_extra : "\tinternal override void AddMask(Environment environment) { environment.AddMask(name.ToString(), expression); }\n"
+					class_extra : "\tinternal override void AddMask(ErrorCollector collector, Environment environment) { environment.AddMask(name.ToString(), expression); }\n"
 				}
 				name_attribute +: {
-					class_extra : "\tinternal override void AddMask(Environment environment) { environment.AddFreeName(name.ToString()).EnsureType(Type.Str); }\n"
+					class_extra : "\tinternal override void AddMask(ErrorCollector collector, Environment environment) { environment.AddFreeName(name.ToString()).EnsureType(collector, Type.Str); }\n"
 				}
 				ordinal_attribute +: {
-					class_extra : "\tinternal override void AddMask(Environment environment) { environment.AddFreeName(name.ToString()).EnsureType(Type.Int); }\n"
+					class_extra : "\tinternal override void AddMask(ErrorCollector collector, Environment environment) { environment.AddFreeName(name.ToString()).EnsureType(collector, Type.Int); }\n"
 				}
 			}
 		}

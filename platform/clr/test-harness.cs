@@ -3,6 +3,18 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
+public class DirtyCollector : ErrorCollector {
+	public bool Dirty { get; set;}
+	public void ReportTypeError(AstNode where, Flabbergast.Type new_type, Flabbergast.Type existing_type) {
+		Dirty = true;
+	}
+	public void ReportTypeError(Flabbergast.Environment environment, string name, Flabbergast.Type new_type, Flabbergast.Type existing_type) {
+		Dirty = true;
+	}
+	public void RawError(AstNode where, string message) {
+		Dirty = true;
+	}
+}
 public class Compiler {
 	public static void Main(string[] args) {
 		var uri = new Uri(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase);
@@ -32,6 +44,7 @@ public class Compiler {
 			var parser = Parser.Open(file);
 			System.Console.WriteLine(AstNode.ParseFile(parser) == null ? "ok" : "FAIL");
 		}
+		var collector = new DirtyCollector();
 		foreach (var file in GetFiles(root, "errors")) {
 			System.Console.Write(Path.GetFileNameWithoutExtension(file) + "... ");
 			var parser = Parser.Open(file);
@@ -40,7 +53,9 @@ public class Compiler {
 			if (ast == null) {
 				success = false;
 			} else {
-				((AstTypeableNode) ast).Analyse();
+				collector.Dirty = false;
+				((AstTypeableNode) ast).Analyse(collector);
+				success = collector.Dirty;
 			}
 			System.Console.WriteLine(success ? "ok" : "FAIL");
 		}
@@ -52,7 +67,9 @@ public class Compiler {
 			if (ast == null) {
 				success = false;
 			} else {
-				((AstTypeableNode) ast).Analyse();
+				collector.Dirty = false;
+				((AstTypeableNode) ast).Analyse(collector);
+				success = !collector.Dirty;
 			}
 			System.Console.WriteLine(success ? "ok" : "FAIL");
 		}

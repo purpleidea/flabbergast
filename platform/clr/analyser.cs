@@ -13,23 +13,31 @@ public enum Type {
 	Unit = 64,
 	Any = 127
 }
-public class TypeConflictException : Exception {
-	public TypeConflictException(string name, Type type1, Type type2) : base(name + " has type " + type1 + " which is not compatible with type " + type2) {
-	}
-}
 public abstract class AstTypeableNode : AstNode {
 	protected Environment Environment;
 	internal virtual int EnvironmentPriority { get { return Environment.Priority; } }
 	// TODO implement
 	internal virtual Type Type { get { return 0; } }
-	internal abstract void PropagateEnvironment(SortedDictionary<AstTypeableNode, bool> queue, Environment environment);
-	public void Analyse() {
+	internal abstract void PropagateEnvironment(ErrorCollector collector, List<AstTypeableNode> queue, Environment environment);
+	public void Analyse(ErrorCollector collector) {
 		var environment = new Environment (FileName, StartRow, StartColumn, EndRow, EndColumn, null, false);
-		var queue = new SortedDictionary<AstTypeableNode, bool>(new EnvironmentPrioritySorter ());
-		PropagateEnvironment(queue, environment);
+		var queue = new List<AstTypeableNode>();
+		PropagateEnvironment(collector, queue, environment);
+		var sorted_nodes = new SortedDictionary<int, Dictionary<AstTypeableNode, bool>>();
+
+		foreach (var element in queue) {
+			if (!sorted_nodes.ContainsKey(element.Environment.Priority)) {
+				sorted_nodes[element.Environment.Priority] = new Dictionary<AstTypeableNode, bool>();
+			}
+			sorted_nodes[element.Environment.Priority][element] = true;
+		}
 	}
 	// TODO implement
 	internal virtual void EnsureType(Type type) { }
+public interface ErrorCollector {
+	void ReportTypeError(AstNode where, Type new_type, Type existing_type);
+	void ReportTypeError(Environment environment, string name, Type new_type, Type existing_type);
+	void RawError(AstNode where, string message);
 }
 internal abstract class AstTypeableSpecialNode : AstTypeableNode {
 	protected Environment SpecialEnvironment;
@@ -40,7 +48,7 @@ internal abstract class AstTypeableSpecialNode : AstTypeableNode {
 			return Math.Max(ep, esp);
 		}
 	}
-	internal abstract void PropagateSpecialEnvironment(SortedDictionary<AstTypeableNode, bool> queue, Environment special_environment);
+	internal abstract void PropagateSpecialEnvironment(ErrorCollector collector, List<AstTypeableNode> queue, Environment special_environment);
 }
 internal class EnvironmentPrioritySorter : IComparer<AstTypeableNode> {
 	public int Compare(AstTypeableNode x, AstTypeableNode y) {
@@ -51,19 +59,19 @@ public abstract class NameInfo {
 	protected Dictionary<string, NameInfo> Children = new Dictionary<string, NameInfo>();
 	public string Name { get; protected set; }
 	public abstract Type Type { get; }
-	internal NameInfo Lookup(string name) {
-		EnsureType(Type.Tuple);
+	internal NameInfo Lookup(ErrorCollector collector, string name) {
+		EnsureType(collector, Type.Tuple);
 		if (!Children.ContainsKey(name)) {
-			CreateChild(name, Name);
+			CreateChild(collector, name, Name);
 		}
 		return Children[name];
 	}
-	internal NameInfo Lookup(IEnumerator<string> names) {
+	internal NameInfo Lookup(ErrorCollector collector, IEnumerator<string> names) {
 		var info = this;
 		while (names.MoveNext()) {
-			info.EnsureType(Type.Tuple);
+			info.EnsureType(collector, Type.Tuple);
 			if (!info.Children.ContainsKey(names.Current)) {
-				info.CreateChild(names.Current, this.Name);
+				info.CreateChild(collector, names.Current, this.Name);
 			}
 			info = info.Children[names.Current];
 		}
@@ -72,8 +80,8 @@ public abstract class NameInfo {
 	public virtual bool HasName(string name) {
 		return Children.ContainsKey(name);
 	}
-	public abstract void EnsureType(Type type);
-	public abstract void CreateChild(string name, string root);
+	public abstract void EnsureType(ErrorCollector collector, Type type);
+	public abstract void CreateChild(ErrorCollector collector, string name, string root);
 	public virtual bool NeedsToBreakFlow() {
 		foreach (var info in Children.Values) {
 			if (info.NeedsToBreakFlow()) {
@@ -84,19 +92,21 @@ public abstract class NameInfo {
 	}
 }
 public class OpenNameInfo : NameInfo {
+	private Environment Environment;
 	Type RealType = Type.Any;
-	public override Type Type { get { return RealType; } }
-	public OpenNameInfo(string name) {
+	public OpenNameInfo(Environment environment, string name) {
+		Environment = environment;
 		Name = name;
 	}
-	public override void EnsureType(Type type) {
+	public override void EnsureType(ErrorCollector collector, Type type) {
 		if ((RealType & type) == 0) {
-			throw new TypeConflictException(Name, RealType, type);
+			collector.ReportTypeError(Environment, Name, RealType, type);
+		} else {
+			RealType &= type;
 		}
-		RealType &= type;
 	}
-	public override void CreateChild(string name, string root) {
-		Children[name] = new OpenNameInfo(root + "." + name);
+	public override void CreateChild(ErrorCollector collector, string name, string root) {
+		Children[name] = new OpenNameInfo(Environment, root + "." + name);
 	}
 	public override bool NeedsToBreakFlow() {
 		return true;
@@ -104,47 +114,49 @@ public class OpenNameInfo : NameInfo {
 }
 internal class BoundNameInfo : NameInfo {
 	AstTypeableNode Expression;
-	public override Type Type { get { return Expression.Type; } }
-	public BoundNameInfo(string name, AstTypeableNode expression) {
+	private Environment Environment;
+	public BoundNameInfo(Environment environment, string name, AstTypeableNode expression) {
+		Environment = environment;
 		Name = name;
 		Expression = expression;
 	}
-	public override void EnsureType(Type type) {
-		Expression.EnsureType(type);
+	public override void EnsureType(ErrorCollector collector, Type type) {
+		Target.EnsureType(collector, type);
 	}
-	public override void CreateChild(string name, string root) {
-		Children[name] = new OpenNameInfo(root + "." + name);
+	public override void CreateChild(ErrorCollector collector, string name, string root) {
+		Children[name] = new OpenNameInfo(Environment, root + "." + name);
 	}
 }
 internal class CopyFromParentInfo : NameInfo {
+	Environment Environment;
 	NameInfo Source;
 	Type Mask = Type.Any;
 	bool ForceBack;
 
-	public override Type Type { get { return Source.Type & Mask; } }
-	public CopyFromParentInfo(string name, NameInfo source, bool force_back) {
+	public CopyFromParentInfo(Environment environment, string name, NameInfo source, bool force_back) {
+		Environment = environment;
 		Name = name;
 		Source = source;
 		ForceBack = force_back;
 	}
-	public override void EnsureType(Type type) {
+	public override void EnsureType(ErrorCollector collector, Type type) {
 		if (ForceBack) {
-			Source.EnsureType(type);
+			Source.EnsureType(collector, type);
 		} else {
-			if ((Type & type) == 0) {
-				throw new TypeConflictException(Name, Type, type);
+			if ((Mask & type) == 0) {
+				collector.ReportTypeError(Environment, Name, Mask, type);
 			}
 			Mask &= type;
 		}
 	}
-	public override void CreateChild(string name, string root) {
+	public override void CreateChild(ErrorCollector collector, string name, string root) {
 		if (ForceBack) {
-			Source.CreateChild(name, root);
+			Source.CreateChild(collector, name, root);
 		}
 		if (Source.HasName(name)) {
-			Children[name] = new CopyFromParentInfo(root + "." + name, Source.Lookup(name), ForceBack);
+			Children[name] = new CopyFromParentInfo(Environment, root + "." + name, Source.Lookup(collector, name), ForceBack);
 		} else {
-			Children[name] = new OpenNameInfo(root + "." + name);
+			Children[name] = new OpenNameInfo(Environment, root + "." + name);
 		}
 	}
 	public override bool HasName(string name) {
@@ -180,28 +192,28 @@ public class Environment {
 		if (Children.ContainsKey(name)) {
 			throw new InvalidOperationException("The name " + name + " already exists in the environment.");
 		}
-		return Children[name] = new BoundNameInfo(name, expression);
+		return Children[name] = new BoundNameInfo(this, name, expression);
 	}
 	public NameInfo AddFreeName(string name) {
-		return Children[name] = new OpenNameInfo(name);
+		return Children[name] = new OpenNameInfo(this, name);
 	}
-	public NameInfo Lookup(IEnumerable<string> names) {
+	public NameInfo Lookup(ErrorCollector collector, IEnumerable<string> names) {
 		IEnumerator<string> enumerator = names.GetEnumerator();
 		if (!enumerator.MoveNext()) {
 			throw new ArgumentOutOfRangeException("List of names cannot be empty.");
 		}
 		if (Children.ContainsKey(enumerator.Current)) {
-			return Children[enumerator.Current].Lookup(enumerator);
+			return Children[enumerator.Current].Lookup(collector, enumerator);
 		}
 		if (ForceBack) {
-			Parent.Lookup(names);
+			Parent.Lookup(collector, names);
 		}
 		if (Parent != null && Parent.HasName(enumerator.Current)) {
-			return Lookback(enumerator.Current).Lookup(enumerator);
+			return Lookback(enumerator.Current).Lookup(collector, enumerator);
 		}
-		var info = new OpenNameInfo(enumerator.Current);
+		var info = new OpenNameInfo(this, enumerator.Current);
 		Children[enumerator.Current] = info;
-		return info.Lookup(enumerator);
+		return info.Lookup(collector, enumerator);
 	}
 	public bool HasName(string name) {
 		return Children.ContainsKey(name) || Parent != null && Parent.HasName(name);
@@ -210,7 +222,7 @@ public class Environment {
 		if (Children.ContainsKey(name)) {
 			return Children[name];
 		}
-		var copy_info = new CopyFromParentInfo(name, Parent.Lookback(name), ForceBack);
+		var copy_info = new CopyFromParentInfo(this, name, Parent.Lookback(name), ForceBack);
 		Children[name] = copy_info;
 		return copy_info;
 	}
