@@ -40,13 +40,13 @@ public class Compiler {
 			return;
 		}
 		foreach (var file in GetFiles(root, "malformed")) {
-			System.Console.Write(Path.GetFileNameWithoutExtension(file) + "... ");
+			System.Console.Write("malformed: " + Path.GetFileNameWithoutExtension(file) + "... ");
 			var parser = Parser.Open(file);
 			System.Console.WriteLine(AstNode.ParseFile(parser) == null ? "ok" : "FAIL");
 		}
 		var collector = new DirtyCollector();
 		foreach (var file in GetFiles(root, "errors")) {
-			System.Console.Write(Path.GetFileNameWithoutExtension(file) + "... ");
+			System.Console.Write("errors: " + Path.GetFileNameWithoutExtension(file) + "... ");
 			var parser = Parser.Open(file);
 			var ast = AstNode.ParseFile(parser);
 			var success = true;
@@ -60,7 +60,7 @@ public class Compiler {
 			System.Console.WriteLine(success ? "ok" : "FAIL");
 		}
 		foreach (var file in GetFiles(root, "working")) {
-			System.Console.Write(Path.GetFileNameWithoutExtension(file) + "... ");
+			System.Console.Write("working: " + Path.GetFileNameWithoutExtension(file) + "... ");
 			var parser = Parser.Open(file);
 			var ast = AstNode.ParseFile(parser);
 			var success = true;
