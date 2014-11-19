@@ -51,7 +51,7 @@ namespace Flabbergast.Expressions {
 				engine.call (((Data.Boolean)condition_result).value ? truepart : falsepart);
 				return;
 			}
-			throw new EvaluationError.TYPE_MISMATCH (@"Expected boolean value for condition. $(source.source):$(source.line):$(source.offset)");
+			throw new EvaluationError.TYPE_MISMATCH (@"Expected boolean value for condition, got $(condition_result.get_type().name()). $(source.source):$(source.line):$(source.offset)");
 		}
 		public override Expression transform () {
 			condition = condition.transform (); truepart = truepart.transform (); falsepart = falsepart.transform (); return this;
