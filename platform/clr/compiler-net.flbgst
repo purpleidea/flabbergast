@@ -746,16 +746,16 @@ compiler : compiler_lib.language_tmpl {
 							parser.exact { word : ")" }
 						]
 					}
-					class_extra : "\tprivate System.Type ReflectedType;\n\tprivate System.Reflection.MethodInfo Method;\n"
+					class_extra : "\tprivate System.Collections.Generic.List<System.Reflection.MethodInfo> Methods = new System.Collections.Generic.List<System.Reflection.MethodInfo>();\n"
 					apply_environment_to : [
 						environment.list_of { field : "arguments" },
 						environment.application_action {
 							value :
-								"\(indent)ReflectMethod(_collector, this, type_name.ToString(), method_name.ToString(), out ReflectedType, out Method);"
+								"\t\tReflectMethod(_collector, this, type_name.ToString(), method_name.ToString(), arguments.Count, Methods);\n"
 						}
 					]
 					ensure_type_is : {
-						value : "\(indent)CheckReflectedMethod(collector, this, Method, arguments, \(current_type));\n"
+						value : "\(indent)CheckReflectedMethod(collector, this, Methods, arguments, \(current_type));"
 					}
 				}
 			}

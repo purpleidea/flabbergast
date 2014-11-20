@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Flabbergast {
 [Flags]
@@ -36,40 +37,55 @@ public abstract class AstTypeableNode : AstNode {
 			}
 		}
 	}
-	internal static void ReflectMethod(ErrorCollector collector, AstNode where, string type_name, string method_name, out System.Type reflected_type, out System.Reflection.MethodInfo method_info) {
-		reflected_type = System.Type.GetType(type_name, false);
+	internal static void ReflectMethod(ErrorCollector collector, AstNode where, string type_name, string method_name, int arity, List<System.Reflection.MethodInfo> methods) {
+		var reflected_type = System.Type.GetType(type_name, false);
 		if (reflected_type == null) {
 			collector.RawError(where, "No such type " + type_name + " found. Perhaps you are missing an assembly reference.");
-			method_info = null;
 		} else {
-			method_info = reflected_type.GetMethod(method_name);
-			if (method_info == null) {
-				collector.RawError(where, "The type " + type_name + " has no method named " + method_name + ".");
+			foreach (var method in reflected_type.GetMethods()) {
+				var adjusted_arity = method.GetParameters().Length + (method.IsStatic ? 0 : 1);
+				if (method.Name == method_name && adjusted_arity == arity && !method.IsGenericMethod && !method.IsGenericMethodDefinition && AllInParameteres(method)) {
+					methods.Add(method);
+				}
+			}
+			if (methods.Count == 0) {
+				collector.RawError(where, "The type " + type_name + " has no public method named " + method_name + " which takes " + arity + " parameters.");
 			}
 		}
 	}
-	internal static void CheckReflectedMethod(ErrorCollector collector, AstNode where, System.Reflection.MethodInfo method, List<expression> arguments, Type return_type) {
-		if (!method.IsPublic) {
-			collector.RawError(where, "The method " + method + " is not public.");
-		}
-		if (method.IsGenericMethod || method.IsGenericMethodDefinition) {
-			collector.RawError(where, "The method " + method + " is generic. This is not supported.");
-		}
-		var real_return_type = TypeFromClrType(method.ReturnType);
-		if ((real_return_type & return_type) == 0) {
-			collector.ReportTypeError(where, return_type, real_return_type);
-		}
-		var parameters = method.GetParameters();
-		if (parameters.Length != arguments.Count) {
-			collector.RawError(where, "The method " + method + " takes " + parameters.Length + " but " + arguments.Count + " are given.");
-		} else {
-			foreach(var parameter in parameters) {
-				if (!parameter.IsIn) {
-					collector.RawError(where, "The parameter " + parameter.Position + " of method " + method + " is not an `in' parameter.");
-				} else {
-					arguments[parameter.Position].EnsureType(collector, TypeFromClrType(parameter.ParameterType));
-				}
+	internal static bool AllInParameteres (System.Reflection.MethodInfo method) {
+		foreach(var parameter in method.GetParameters()) {
+			if (parameter.IsOut) {
+				return false;
 			}
+		}
+		return true;
+	}
+	internal static void CheckReflectedMethod(ErrorCollector collector, AstNode where, List<System.Reflection.MethodInfo> methods, List<expression> arguments, Type return_type) {
+		/* If there are no candidate methods, don't bother checking the types. */
+		if (methods.Count == 0)
+			return;
+		/* Find all the methods that match the needed type. */
+		var candidate_methods = from method in methods
+			where (TypeFromClrType(method.ReturnType) & return_type) != 0
+			select method;
+		if (candidate_methods.Count() == 0) {
+			/* Produce an error for the union of all the types. */
+			Type candiate_return = 0;
+			foreach (var method in methods) {
+				candiate_return |= TypeFromClrType(method.ReturnType);
+			}
+			collector.ReportTypeError(where, return_type, candiate_return);
+			return;
+		}
+		/* Check that the arguments match the union of the parameters of all the methods. This means that we might still not have a valid method, but we can check again during codegen. */
+		for (var it = 0; it < arguments.Count; it++) {
+			Type candidate_parameter_type = 0;
+			foreach (var method in methods) {
+				var param_type = method.IsStatic ? method.GetParameters()[it].ParameterType : (it == 0 ? method.ReflectedType : method.GetParameters()[it - 1].ParameterType);
+					candidate_parameter_type |= TypeFromClrType(param_type);
+			}
+			arguments[it].EnsureType(collector, candidate_parameter_type);
 		}
 	}
 	public static Type TypeFromClrType(System.Type clr_type) {
