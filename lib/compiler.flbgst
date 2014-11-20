@@ -539,8 +539,20 @@ language_tmpl : Template {
 			environment.other_elements { fields : [ $start_expr ] },
 			environment.list_of { field : $terms }
 		]
-		ensure_type_is : ensure_type.number { }
-		type_demand : { start_expr : [ known_types.float, known_types.int ] }
+		ensure_type_is : ensure_type.number {
+			ensure_type_of : ensure_type.multiple {
+				actions: [
+					ensure_type.propagate {
+						fields : [ $start_expr ]
+						extra_types : [ known_types.int ]
+					},
+					ensure_type.propagate_all {
+						field : $terms
+						extra_types : [ known_types.int ]
+					}
+				]
+			}
+		}
 	}
 	# A right-hand term in “long” expression
 	long_term_tmpl : Template syntax_element {
@@ -549,7 +561,7 @@ language_tmpl : Template {
 		# The symbol that separates the term.
 		symbol ?:
 		apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
-		type_demand : { expression : [ known_types.float, known_types.int ] }
+		ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
 		pattern : parser.sequence {
 			of : [
 				space { preferred : True },
@@ -665,6 +677,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.list_independent { field : $attributes } ]
+					type_demand_all : { attributes : known_types }
 				}
 			}
 		}
@@ -1100,6 +1113,7 @@ language_tmpl : Template {
 		arithmetic_disjunction_term : Template syntax_group {
 			level : 8
 			environment_flavour : environment.flavour_simple
+			is_typeable : True
 			common +: {
 				comment : common_fields.str
 			}
@@ -1116,6 +1130,7 @@ language_tmpl : Template {
 		arithmetic_conjunction_term : Template syntax_group {
 			level : 9
 			environment_flavour : environment.flavour_simple
+			is_typeable : True
 			common +: {
 				comment : common_fields.str
 			}
