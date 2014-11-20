@@ -51,6 +51,17 @@ Second, after environments are created, type checking is performed; this
 indirectly fill the environments with the names needed by the program (and the
 possible types of those names).
 
+Type checking uses a kind of type inference. Hindley-Milner algorithm W is not
+appropriate for Flabbergast, mostly due to the fact that Flabbergast does not
+have composite or polymorphic types. Instead, each expression must return some
+subset of the primitive types. A containing AST node can make _demands_ that an
+expression must return a particular set of types. Each expression, in turn,
+_ensures_ that it can return a subset of the required types. The assurances
+bubble from the outermost AST node (attributes) through the expressions to the
+constants and lookups. Each lookup is given a type variable, initially the
+union of all types, and every assurance intersects that set with the imposed
+set. If any lookup has an empty set of allowed types, an error occurs.
+
 Finally, environments are determined to be dirty or clean. A dirty environment
 is one which requires lookups and non-local flow. For instance, in the case of
 `Let` above, if `x` is determined to be a string, then the program does not
