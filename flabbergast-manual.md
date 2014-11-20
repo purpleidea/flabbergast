@@ -143,7 +143,7 @@ Notice that `a_tmpl` does not produce an error for lacking `y`, because the attr
     z : 3
     b : b_tmpl { } # Yields { x : 7  y : 6 }
 
-When instantiated, the new tuple can perform lookups into the _containers_ of the location where it was instantiated and into the _containers_ of its _ancestors_, that is, the containers of the template that defined it, and any ancestors of that templates. This is described in great detail in the more advanced sections. This feature, coupled with contextual lookup, is the useful basis to the Flabbergast language.
+When instantiated, the new tuple can perform lookups into the _containers_ of the location where it was instantiated and into the _containers_ of its _ancestors_, that is, the containers of the template that defined it, and any ancestors of that template. This is described in great detail in the more advanced sections. This feature, coupled with contextual lookup, is the useful basis to the Flabbergast language.
 
 Like Java and C#, templates can only inherit a single parent. In Java and C#, this is mostly a concern over how to handle methods with the same name inherited from both parents. Flabbergast has an additional reason not to encourage this: how to combine the ancestry of the two templates. Java and C# work around their lack of multiple inheritance issues using interfaces. In Flabbergast, there is no need for interfaces, since those are a by-product of a type system that Flabbergast doesn't have. The consumer of a tuple can simply pluck the attributes it needs out of that tuple; it doesn't need to define a type. Tuples also don't have methods, as attributes can perform computation, so there are no type signatures to “get right”.
 
@@ -557,24 +557,19 @@ Often, the caller has some driver to convert code. For instance, this is a compl
 Indeed, this could be translated into Flabbergast as follows:
 
     strs : For item : items
-      Reduce
-        (If acc Is Null
-          Then ""
-          Else (acc & "\n"))
-        & "name: \(item.name) country: \(item.country)"
+      Reduce "\(acc)name: \(item.name) country: \(item.country)\n"
+			With acc : ""
 
 However, it is often simpler to make items self-rendering:
 
     item_tmpl : Template {
       name ?:
       country ?:
-      value : "name: \(name) country: \(country)"
+      value : "name: \(name) country: \(country)\n"
     }
     strs : For item : items
-      Reduce
-        If acc Is Null
-          Then item.value
-          Else "\(acc)\n\(item.value)"
+      Reduce "\(acc)\(item.value)"
+			With acc : ""
 
 This has two advantage: the rendering logic can be overridden and the interface is simpler. As a disadvantage, there is now an inheritance implication for the values of `items`. However, because the template `item_tmpl` can be overridden and replaced, the inheritance implication is flexible. In fact, it would be reasonable to have:
 
@@ -586,12 +581,13 @@ This has two advantage: the rendering logic can be overridden and the interface 
       value : "<person><name>\(name)</name><country>\(country)</country></person>"
     }
     item_pretty_tmpl : Template item_base_tmpl {
-      value : "name: \(name) country: \(country)"
+      value : "name: \(name) country: \(country)\n"
     }
     item_tmpl : If xml_output Then item_xml_tmpl Else item_pretty_tmpl
     items : [
       item_tmpl { name : "Andre"  country : "Canada" },
-      item_tmpl { name : "Gráinne"  country : "Ireland" } ]
+      item_tmpl { name : "Gráinne"  country : "Ireland" }
+    ]
 
 By changing the definition for `item_tmpl`, we can re-ancestor the tuples using it. Effectively, Flabbergast has a kind of multiple inheritance: there can be only one ancestor at a time, but the choice of ancestor can be varied at run time.
 
@@ -676,7 +672,7 @@ Now, tuples inheriting from `foo_tmpl` can easily change the `args`.
 The attribute names, if useful, can be included in the template instantiation.
 
     arg_tmpl : Template {
-      name ?:
+      name %:
       value ?:
       spec : "--" & name & " " & value
     }
@@ -685,8 +681,8 @@ The attribute names, if useful, can be included in the template instantiation.
       input : Template arg_tmpl { value : "~/input.txt" }
       compression : Template arg_tmpl { value : 8 }
     }
-    arg_str : For arg : args {}, name_ : Name
-      Reduce acc & " " & (arg { name : name_ }).spec
+    arg_str : For arg : args {}, name : Name
+      Reduce acc & " " & (arg {}).spec
       With acc : binary
 
 ### Enabled Items
@@ -760,8 +756,8 @@ While the `spec` attribute is extremely useful, sometimes, it can be helpful to 
       implementation_spec : signature & "{\n" & body & "\n}\n"
     }
     functions : ...
-    signatures : For function : functions Reduce acc & function.prototype_spec : With acc : ""
-    implementations : For function : functions Reduce acc & function.implementation_spec : With acc : ""
+    signatures : For function : functions Reduce acc & function.prototype_spec With acc : ""
+    implementations : For function : functions Reduce acc & function.implementation_spec With acc : ""
     c_file : signatures & "\n" & implementations
 
 ### Contextual Accumulation
@@ -778,7 +774,7 @@ There are situations where it is desirable to have an accumulator that is not co
       indent : parent_indent & "\t"
       statements ?:
       spec : For statement : statements
-        Reduce acc & statement & "\n"
+        Reduce acc & statement.spec & "\n"
         With acc : (parent_indent & line & "\n")
     }
     indent : ""
@@ -820,7 +816,7 @@ Here `derived_tmpl` is the combination of all the layered overrides in the `over
 
     a_ifier : Template { base ?:  value : Template base { x : 2 * y } }
     b_ifier : Template { base ?:  value : Template base { z : x + y } }
-    ab_ifier : Template b_ifier { value +original: b_ifier(base : original) }
+    ab_ifier : Template a_ifier { value +original: b_ifier(base : original) }
 
 This will compose `a_ifier` and `b_ifier` into `ab_ifier`.
 
