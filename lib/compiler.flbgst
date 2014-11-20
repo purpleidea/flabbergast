@@ -266,6 +266,14 @@ ensure_type_tmpl : Template {
 		fields ?:
 		extra_types : []
 	}
+	# Apply the current return type to the return type of a collection of other AST nodes.
+	propagate_all : Template {
+		# The field containing the list.
+		field ?:
+		# Any types listed here are added to the return type before propagation.
+		# See `propagate.extra_types`.
+		extra_types : []
+	}
 	dynamic : Template {
 		field ?:
 		propagate_castable : False

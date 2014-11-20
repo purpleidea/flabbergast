@@ -476,6 +476,10 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 		allowed_type_bits : For t : extra_types Reduce acc & " | " & t.clr_type With acc : current_type
 		value : For field : fields Reduce acc & "\(indent)if (\(field) != null) \(field).EnsureType(collector, \(allowed_type_bits));" With acc : ""
 	}
+	propagate_all +: {
+		allowed_type_bits : For t : extra_types Reduce acc & " | " & t.clr_type With acc : current_type
+		value : "\(indent)if (\(field) != null) foreach (var \(Id) in \(field)) \(Id).EnsureType(collector, \(allowed_type_bits));"
+	}
 	dynamic +: {
 		parent_indent : Lookup indent In Container
 		indent : parent_indent & "\t"
