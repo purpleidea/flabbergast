@@ -236,6 +236,7 @@ environment_tmpl : Template {
 	# second type of environment.
 	flavour_double ?:
 }
+# The definitions for all the types in the Flabbergast language.
 known_types_tmpl : Template {
 	bool ?:
 	float ?:
@@ -245,6 +246,8 @@ known_types_tmpl : Template {
 	tuple ?:
 	unit ?:
 }
+# The actions that can be performed to check that the required return type is
+# correct.
 ensure_type_tmpl : Template {
 	any : Template filter {
 		types : known_types
@@ -258,12 +261,21 @@ ensure_type_tmpl : Template {
 	tuple : Template filter {
 		types : [ known_types.tuple ]
 	}
+	# Check that the return type is one of the supplied types.
 	filter : Template {
+		# The set of types to restrict the return type. If the return type is not
+		# in this set, a type mismatch error will be reported.
 		types ?:
+		# The action to carry forward with the restricted type.
 		ensure_type_of : stop {}
 	}
+	# Apply the current return type to the return type of other AST nodes.
 	propagate : Template {
+		# A list of field names that should be restricted to this type.
 		fields ?:
+		# Any types listed here are added to the return type before propagation.
+		# Effectively, this enlarges the return type set. For insight, look at the
+		# coalesce operator.
 		extra_types : []
 	}
 	# Apply the current return type to the return type of a collection of other AST nodes.
@@ -274,16 +286,26 @@ ensure_type_tmpl : Template {
 		# See `propagate.extra_types`.
 		extra_types : []
 	}
+	# Restrict the type based on an AST node containing a type literal (e.g., `As` operator).
 	dynamic : Template {
+		# The field containing the type AST node.
 		field ?:
+		# Rather than restrict to the type specified, restrict to any type which
+		# may be casted to that type.
 		propagate_castable : False
+		# The action to perform with the restricted type.
 		ensure_type_of : stop {}
 	}
+	# Store the type in a type variable.
 	stored : Template {
+		# The field containing a list of identifiers with the lookup pieces.
 		field ?:
 	}
+	# Perform no further action.
 	stop : Template {}
+	# Perform multiple independent actions.
 	multiple : Template {
+		# A list of actions to perform.
 		actions ?:
 	}
 }
