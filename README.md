@@ -26,3 +26,6 @@ Each platform also contains an implementation of the runtime library and non-por
 The Flabbergast langauge would not be possible without the help of [Kyle](https://github.com/edarc) and Jonathan.
 
 The logo is the worst symbolic representation of contextual lookup, previously called inside-out lookup.
+
+## Alternatives
+You may be interested in [Jsonnet](http://google.github.io/jsonnet), which is inspired by the same forces, but takes design decisions in very different ways.
