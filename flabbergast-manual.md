@@ -11,7 +11,7 @@ Another way to think about that language is that it is a system where dependency
 
 ## Getting Started
 
-As general background, this guide assumes some previous experience programming. Familiarity with one functional language, including Scheme, LISP, Haskell, or ML, and one object-oriented language is almost essential or experience with R, as it has elements of both. A deeper understanding of a dynamically typed object-oriented language like Python, Perl, Ruby, or JavaScript can be extremely helpful, though not necessary. Use of a macro processor, such as the C Pre-Processor or M4 might provide some extra insights.
+As general background, this guide assumes some previous experience programming. Familiarity with one functional language, including Scheme, LISP, Haskell, or ML, and one object-oriented language is almost essential or experience with R, as it has elements of both. A deeper understanding of a dynamically-typed object-oriented language like Python, Perl, Ruby, or JavaScript can be extremely helpful, though not necessary. Use of a macro processor, such as the C Pre-Processor or M4 might provide some extra insights.
 
 Flabbergast has many of the same data types as many other languages: Booleans, integers, floating-point numbers, and strings; which look and act much like they do in other languages. It also has two special data types: tuples and templates. Note that there are no functions (first class or otherwise); templates can do some of the work of functions. Flabbergast is purely functional: everything is an expression and no expression can have indirect consequences on another expression.
 
@@ -545,7 +545,7 @@ The most important feature of Flabbergast is overriding. When starting out with 
 ### Interfaces
 In object-oriented languages, there is typically some convention surround how to tell if an object is consumable in a particular situation. Statically-typed object-oriented languages typically have “interfaces”, in the Java or C# sense. These are functions of the type system: since each expression needs a type and multiple inheritance is not permitted, an interface provides a type that any object can fulfill outside of the inheritance hierarchy. Dynamically-typed object-oriented languages, particularly Python, JavaScript, and Ruby, eschew this and proudly extol the benefits of “duck” typing: that is, simply call a method and expect it to work.
 
-Flabbergast is necessarily dynamically-typed by virtually of being dynamically scoped. Therefore, interfaces are definitely of the duck-typing variety. Since methods aren't present, the interface is still simpler: it is just the attributes that a tuple is expected to have and, possibly, expected types for those attributes. Using the `As` operator is a polite way of insisting that certain types are provided from an interface.
+Flabbergast is necessarily dynamically-typed by virtually of being dynamically-scoped. Therefore, interfaces are definitely of the duck-typing variety. Since methods aren't present, the interface is still simpler: it is just the attributes that a tuple is expected to have and, possibly, expected types for those attributes. Using the `As` operator is a polite way of insisting that certain types are provided from an interface.
 
 Often, the caller has some driver to convert code. For instance, this is a completely reasonable block of Python:
 
@@ -571,7 +571,7 @@ However, it is often simpler to make items self-rendering:
       Reduce "\(acc)\(item.value)"
 			With acc : ""
 
-This has two advantage: the rendering logic can be overridden and the interface is simpler. As a disadvantage, there is now an inheritance implication for the values of `items`. However, because the template `item_tmpl` can be overridden and replaced, the inheritance implication is flexible. In fact, it would be reasonable to have:
+This has two advantages: the rendering logic can be overridden and the interface is simpler. As a disadvantage, there is now an inheritance implication for the values of `items`. However, because the template `item_tmpl` can be overridden and replaced, the inheritance implication is flexible. In fact, it would be reasonable to have:
 
     item_base_tmpl : Template {
       name ?:
