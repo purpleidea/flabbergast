@@ -237,6 +237,7 @@ internal class CopyFromParentInfo : NameInfo {
 public class Environment {
 	Environment Parent;
 	Dictionary<string, NameInfo> Children = new Dictionary<string, NameInfo>();
+	Dictionary<ITypeableElement, Type> IntrinsicTypes = new Dictionary<ITypeableElement, Type>();
 	public string FileName { get; private set; }
 	public int StartRow { get; private set; }
 	public int StartColumn { get; private set; }
@@ -296,6 +297,19 @@ public class Environment {
 		var copy_info = new CopyFromParentInfo(this, name, Parent.Lookback(name), ForceBack);
 		Children[name] = copy_info;
 		return copy_info;
+	}
+	internal void EnsureIntrinsic<T>(ErrorCollector collector, T node, Type type) where T:AstNode, ITypeableElement {
+		if (IntrinsicTypes.ContainsKey(node)) {
+			var original_type = IntrinsicTypes[node];
+			var result = original_type & type;
+			if (result == 0) {
+				collector.ReportTypeError(node, original_type, type);
+			} else {
+				IntrinsicTypes[node] = result;
+			}
+		} else {
+			IntrinsicTypes[node] = type;
+		}
 	}
 }
 }

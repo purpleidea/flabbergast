@@ -301,6 +301,8 @@ ensure_type_tmpl : Template {
 		# The field containing a list of identifiers with the lookup pieces.
 		field ?:
 	}
+	# Stored associated with the node.
+	intrinsic : Template {}
 	# Perform no further action.
 	stop : Template {}
 	# Perform multiple independent actions.

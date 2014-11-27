@@ -498,6 +498,9 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 	stored +: {
 		value : "\(indent)Environment.Lookup(collector, \(field).Select((s) => s.ToString())).EnsureType(collector, \(current_type));"
 	}
+	intrinsic +: {
+		value : "\(indent)Environment.EnsureIntrinsic(collector, this, \(current_type));"
+	}
 	stop +: { value : "" }
 	multiple +: {
 		value : For action : actions Reduce acc & action.value With acc : ""
