@@ -1154,9 +1154,9 @@ language_tmpl : Template {
 			alternatives -:
 			expanded_alts : For alt_level : 0 Through 19
 				Select "expression\(alt_level)" :
-					For rule : expanded_rules, rule_name : Name
+					(For rule : expanded_rules, rule_name : Name
 					Where If rule.level Is Null Then alt_level < 19 Else rule.level == alt_level
-					Select If rule.level Is Null Then "expression\(alt_level + 1)" Else rule_name
+					Select If rule.level Is Null Then "expression\(alt_level + 1)" Else rule_name)
 
 			common +: {
 				comment : common_fields.str
