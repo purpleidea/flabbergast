@@ -669,13 +669,10 @@ compiler : compiler_lib.language_tmpl {
 				plain_attribute +: {
 					class_extra : "\tinternal override void AddMask(ErrorCollector collector, Environment environment) { environment.AddMask(name.ToString(), expression); }\n"
 				}
-				name_attribute +: {
-					class_extra : "\tinternal override void AddMask(ErrorCollector collector, Environment environment) { environment.AddFreeName(name.ToString()).EnsureType(collector, Type.Str); }\n"
-				}
-				ordinal_attribute +: {
-					class_extra : "\tinternal override void AddMask(ErrorCollector collector, Environment environment) { environment.AddFreeName(name.ToString()).EnsureType(collector, Type.Int); }\n"
-				}
 			}
+		}
+		fricassee_merge_input +: {
+			super_class_extra : "\tinternal void AddMask(ErrorCollector collector, Environment environment) { environment.AddMask(name.ToString(), this); }\n"
 		}
 		identifier +: {
 			rules +: {

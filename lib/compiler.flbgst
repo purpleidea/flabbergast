@@ -696,7 +696,6 @@ language_tmpl : Template {
 				new_tmpl_attributes : [ $plain_attribute, $informative_attribute, $missing_attribute ]
 				extend_tmpl_attributes : [ $plain_attribute, $informative_attribute, $missing_attribute, $named_override, $template_override, $remove_attribute ]
 				instantiate_tmpl_attributes : [ $plain_attribute, $informative_attribute, $named_override, $template_override, $remove_attribute ]
-				fricasee_attributes :  [ $plain_attribute, $ordinal_attribute, $name_attribute ]
 			}
 			rules +: {
 				plain_attribute : Template syntax_element {
@@ -804,7 +803,36 @@ language_tmpl : Template {
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.stop {}
 				}
-				name_attribute : Template syntax_element {
+			}
+		}
+		fricassee_merge_input : Template syntax_group {
+			environment_flavour : environment.flavour_simple
+			is_typeable : True
+			common +: {
+				comment : common_fields.str
+				name : common_fields.str
+			}
+			rules +: {
+				expr_input : Template syntax_element {
+					pattern : parser.sequence {
+						of : [
+							space { preferred : True },
+							valid_identifier { field : $name },
+							space { preferred : True },
+							parser.exact { word : ":" },
+							space { preferred : True },
+							parser.other {
+								type : $expression
+								alternate : $expression0
+								field : $expression
+							}
+						]
+					}
+					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
+					ensure_type_is : ensure_type.intrinsic { }
+					type_demand : { expression : [ known_types.tuple ] }
+				}
+				name_input : Template syntax_element {
 					pattern : parser.sequence {
 						of : [
 							space { preferred : True },
@@ -816,9 +844,9 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ ]
-					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
+					ensure_type_is : ensure_type.tuple { types : [ known_types.str ] }
 				}
-				ordinal_attribute : Template syntax_element {
+				ordinal_input : Template syntax_element {
 					pattern : parser.sequence {
 						of : [
 							space { preferred : True },
@@ -1242,11 +1270,10 @@ language_tmpl : Template {
 					pattern : for_pattern {
 						selector : Template parser.accumulate_list {
 							field : $inputs
-							type : $attribute
+							type : $fricassee_merge_input
 							in : parser.many_word {
 								of : parser.other {
-									type : $attribute
-									alternate : $fricasee_attributes
+									type : $fricassee_merge_input
 									field : Null
 								}
 								separator_word : ","
@@ -1263,15 +1290,12 @@ language_tmpl : Template {
 									apply_to : [ environment.other_elements { fields : [ $result_builder ] } ]
 								}
 							]
-							free_names : [ free_names_from_attributes { field : $inputs } ]
+							masks : [ masks_from_attributes { field : $inputs } ]
 						}
 					]
 					ensure_type_is : ensure_type.propagate { fields : [ $result_builder ] }
 					type_demand : {
 						where_expr : [ known_types.bool ]
-					}
-					type_demand_all : {
-						inputs : [ known_types.tuple ]
 					}
 				}
 
