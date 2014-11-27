@@ -397,9 +397,6 @@ environment : compiler_lib.environment_tmpl {
 		mask_from_fields +: {
 			value : "\t\t\tif(\(name_field).Length > 0) { \(current_environment).AddMask(\(name_field).ToString(), \(expr_field)); }\n"
 		}
-		free_names_from_attributes +: {
-			value : "\t\tif (\(field) != null) foreach (var \(Id) in \(field)) {\n\t\t\t\(current_environment).AddFreeName(\(Id).name.ToString());\n\t\t}\n"
-		}
 		free_name_from_field +: {
 			value : "\t\t\tif(\(field).Length > 0) { \(current_environment).AddFreeName(\(field).ToString()); }\n"
 		}

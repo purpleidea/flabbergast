@@ -210,11 +210,6 @@ environment_tmpl : Template {
 			# The field containing the expression to mask.
 			expr_field ?:
 		}
-		# Create free names from the names of attributes in a list.
-		free_names_from_attributes : Template {
-			# The field containing the list of attributes.
-			field ?:
-		}
 		# Create a free name from a name.
 		free_name_from_field : Template {
 			# The field containing the name.
