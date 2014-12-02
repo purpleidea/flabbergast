@@ -385,9 +385,7 @@ environment : compiler_lib.environment_tmpl {
 		current_environment : Id
 		value :
 			"\t\tvar \(Id) = new Environment(FileName, StartRow, StartColumn, EndRow, EndColumn, \(Lookup current_environment In Container), \(If force_back Then "true" Else "false"));\n" &
-			(For mask : masks Reduce acc & mask.value With acc : "") &
-			(For forbidden_name : forbidden_names Reduce acc & forbidden_name.value With acc : "") &
-			(For free_name : free_names Reduce acc & free_name.value With acc : "") &
+			(For special_name : special_names Reduce acc & special_name.value With acc : "") &
 			(For application : apply_to Reduce acc & application.value With acc : "")
 
 		masks_from_attributes +: {

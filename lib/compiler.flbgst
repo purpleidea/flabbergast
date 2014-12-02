@@ -189,37 +189,35 @@ environment_tmpl : Template {
 		# applicable to the parent, so this copies that information back into the
 		# parent.
 		force_back : False
-		# A list of mask collectors that extract names to be changed in the new
-		# environment. Masks are backed by real expressions, so information about
-		# them can translate to the rest of the syntax tree.
-		masks : []
-		# A list of free name collectors to be changed in the new environment. Free
-		# names, like masks, are different in the child from the parent, but unlike
-		# masks, they are not backed by real syntax elements.
-		free_names : []
+		# A list of special names. These are names that have different bindings
+		# in the child environment than the parent.
+		special_names : []
 
-		# A list of names which must not be used in the new environment. These
-		# are used mostly to detect potential circular evaluation.
-		forbidden_names : []
-
-		# Create masks for all the attributes in a list.
+		# Create masks for all the attributes in a list. Masks are names backed
+		# by real expressions, so information about them can translate to the
+		# rest of the syntax tree.
 		masks_from_attributes : Template {
 			# The field containing the list of attributes.
 			field ?:
 		}
-		# Create mask from a name and expression.
+		# Create mask from a name and expression. Masks are names backed by real
+		# expressions, so information about them can translate to the rest of the
+		# syntax tree.
 		mask_from_fields : Template {
 			# The field containing the name to mask.
 			name_field ?:
 			# The field containing the expression to mask.
 			expr_field ?:
 		}
-		# Create a free name from a name.
+		# Create a free name from a name. A free name is one which is present in
+		# the new environment, but not backed by a syntax element.
 		free_name_from_field : Template {
 			# The field containing the name.
 			field ?:
 		}
-		# Create a forbidden name from a field.
+		# Create a name from a field where the name must not be used in the new
+		# environment. These are used mostly to detect potential circular
+		# evaluation.
 		forbidden_name_from_field : Template {
 			# The field containing the name.
 			field ?:
@@ -720,7 +718,7 @@ language_tmpl : Template {
 					apply_environment_to : [
 						environment.modified_environment {
 							apply_to : [ environment.other_elements { fields : [ $expression ] } ]
-							forbidden_names : [ forbidden_name_from_field { field : $name } ]
+							special_names : [ forbidden_name_from_field { field : $name } ]
 						}
 					]
 					ensure_type_is : ensure_type.any { ensure_type_of : propagate { fields : [ $expression ] } }
@@ -744,8 +742,10 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.modified_environment {
 						apply_to : [ environment.other_elements { fields : [ $expression ] } ]
-						free_names : [ free_name_from_field { field : $temporary_name } ]
-						forbidden_names : [ forbidden_name_from_field { field : $name } ]
+						special_names : [
+							free_name_from_field { field : $temporary_name },
+							forbidden_name_from_field { field : $name }
+						]
 					} ]
 					ensure_type_is : ensure_type.stop {}
 				}
@@ -944,7 +944,7 @@ language_tmpl : Template {
 						},
 						environment.list_of { field : $orderings },
 						environment.modified_environment {
-							masks : [ mask_from_fields { name_field : $initial_name  expr_field : $initial_expr } ]
+							special_names : [ mask_from_fields { name_field : $initial_name  expr_field : $initial_expr } ]
 							apply_to : [ environment.other_elements { fields : [ $reduce_expr ] } ]
 						}
 					]
@@ -1237,7 +1237,7 @@ language_tmpl : Template {
 						environment.list_of { field : $definitions },
 						environment.modified_environment {
 							force_back : True
-							masks : [ masks_from_attributes { field : $definitions } ]
+							special_names : [ masks_from_attributes { field : $definitions } ]
 							apply_to : [ environment.other_elements { fields : [ $expression ] } ]
 						}
 					]
@@ -1300,7 +1300,7 @@ language_tmpl : Template {
 									apply_to : [ environment.other_elements { fields : [ $result_builder ] } ]
 								}
 							]
-							masks : [ masks_from_attributes { field : $inputs } ]
+							special_names : [ masks_from_attributes { field : $inputs } ]
 						}
 					]
 					ensure_type_is : ensure_type.propagate { fields : [ $result_builder ] }
