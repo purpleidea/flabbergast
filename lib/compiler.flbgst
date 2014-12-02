@@ -198,6 +198,10 @@ environment_tmpl : Template {
 		# masks, they are not backed by real syntax elements.
 		free_names : []
 
+		# A list of names which must not be used in the new environment. These
+		# are used mostly to detect potential circular evaluation.
+		forbidden_names : []
+
 		# Create masks for all the attributes in a list.
 		masks_from_attributes : Template {
 			# The field containing the list of attributes.
@@ -212,6 +216,11 @@ environment_tmpl : Template {
 		}
 		# Create a free name from a name.
 		free_name_from_field : Template {
+			# The field containing the name.
+			field ?:
+		}
+		# Create a forbidden name from a field.
+		forbidden_name_from_field : Template {
 			# The field containing the name.
 			field ?:
 		}
@@ -708,7 +717,12 @@ language_tmpl : Template {
 							}
 						]
 					}
-					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
+					apply_environment_to : [
+						environment.modified_environment {
+							apply_to : [ environment.other_elements { fields : [ $expression ] } ]
+							forbidden_names : [ forbidden_name_from_field { field : $name } ]
+						}
+					]
 					ensure_type_is : ensure_type.any { ensure_type_of : propagate { fields : [ $expression ] } }
 				}
 				named_override : Template syntax_element {
@@ -730,7 +744,8 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.modified_environment {
 						apply_to : [ environment.other_elements { fields : [ $expression ] } ]
-						free_names : [ free_name_from_field { field : $name } ]
+						free_names : [ free_name_from_field { field : $temporary_name } ]
+						forbidden_names : [ forbidden_name_from_field { field : $name } ]
 					} ]
 					ensure_type_is : ensure_type.stop {}
 				}

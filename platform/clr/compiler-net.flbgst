@@ -386,6 +386,7 @@ environment : compiler_lib.environment_tmpl {
 		value :
 			"\t\tvar \(Id) = new Environment(FileName, StartRow, StartColumn, EndRow, EndColumn, \(Lookup current_environment In Container), \(If force_back Then "true" Else "false"));\n" &
 			(For mask : masks Reduce acc & mask.value With acc : "") &
+			(For forbidden_name : forbidden_names Reduce acc & forbidden_name.value With acc : "") &
 			(For free_name : free_names Reduce acc & free_name.value With acc : "") &
 			(For application : apply_to Reduce acc & application.value With acc : "")
 
@@ -399,6 +400,9 @@ environment : compiler_lib.environment_tmpl {
 		}
 		free_name_from_field +: {
 			value : "\t\t\tif(\(field).Length > 0) { \(current_environment).AddFreeName(\(field).ToString()); }\n"
+		}
+		forbidden_name_from_field : Template {
+			value : "\t\t\tif(\(field).Length > 0) { \(current_environment).AddForbiddenName(\(field).ToString()); }\n"
 		}
 	}
 	complex_flavour_tmpl : Template flavour_tmpl {

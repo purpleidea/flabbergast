@@ -106,6 +106,7 @@ public abstract class AstTypeableNode : AstNode {
 public interface ErrorCollector {
 	void ReportTypeError(AstNode where, Type new_type, Type existing_type);
 	void ReportTypeError(Environment environment, string name, Type new_type, Type existing_type);
+	void ReportForbiddenNameAccess(Environment environment, string name);
 	void RawError(AstNode where, string message);
 }
 public interface ITypeableElement {
@@ -181,6 +182,15 @@ public class OpenNameInfo : NameInfo {
 	}
 	public override bool NeedsToBreakFlow() {
 		return true;
+	}
+}
+public class JunkInfo : NameInfo {
+	public JunkInfo() {
+	}
+	public override void EnsureType(ErrorCollector collector, Type type) {
+	}
+	public override void CreateChild(ErrorCollector collector, string name, string root) {
+		Children[name] = new JunkInfo();
 	}
 }
 internal class BoundNameInfo : NameInfo {
@@ -269,12 +279,19 @@ public class Environment {
 	public NameInfo AddFreeName(string name) {
 		return Children[name] = new OpenNameInfo(this, name);
 	}
+	internal void AddForbiddenName(string name) {
+		Children[name] = null;
+	}
 	public NameInfo Lookup(ErrorCollector collector, IEnumerable<string> names) {
 		IEnumerator<string> enumerator = names.GetEnumerator();
 		if (!enumerator.MoveNext()) {
 			throw new ArgumentOutOfRangeException("List of names cannot be empty.");
 		}
 		if (Children.ContainsKey(enumerator.Current)) {
+			if (Children[enumerator.Current] == null) {
+				collector.ReportForbiddenNameAccess(this, enumerator.Current);
+				return new JunkInfo();
+			}
 			return Children[enumerator.Current].Lookup(collector, enumerator);
 		}
 		if (ForceBack) {

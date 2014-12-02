@@ -10,6 +10,9 @@ public class ConsoleCollector : ErrorCollector {
 	public void ReportTypeError(Environment environment, string name, Type new_type, Type existing_type) {
 		Console.WriteLine("{0}:{1}:{2}-{3}:{4}: Lookup for `{5}' has conflicting types: {6} versus {7}.", environment.FileName, environment.StartRow, environment.StartColumn, environment.EndRow, environment.EndColumn, name, new_type, existing_type);
 	}
+	public void ReportForbiddenNameAccess(Environment environment, string name) {
+		Console.WriteLine("{0}:{1}:{2}-{3}:{4}: Lookup for `{5}' is forbidden.", environment.FileName, environment.StartRow, environment.StartColumn, environment.EndRow, environment.EndColumn, name);
+	}
 	public void RawError(AstNode where, string message) {
 		Console.WriteLine("{0}:{1}:{2}-{3}:{4}: {5}", where.FileName, where.StartRow, where.StartColumn, where.EndRow, where.EndColumn, message);
 	}

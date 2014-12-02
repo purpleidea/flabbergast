@@ -11,6 +11,9 @@ public class DirtyCollector : ErrorCollector {
 	public void ReportTypeError(Flabbergast.Environment environment, string name, Flabbergast.Type new_type, Flabbergast.Type existing_type) {
 		Dirty = true;
 	}
+	public void ReportForbiddenNameAccess(Flabbergast.Environment environment, string name) {
+		Dirty = true;
+	}
 	public void RawError(AstNode where, string message) {
 		Dirty = true;
 	}
