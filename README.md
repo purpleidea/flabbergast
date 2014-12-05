@@ -5,6 +5,8 @@ Flabbergast is a object-oriented macro system that uses contextual lookup (dynam
 
 In most languages, afterthoughts are not appreciated. However, most configurations are nothing but afterthoughts and exceptions. “I want the test version of the webserver to be the same as the production except for the database connection.” “I want the videos SMB share to be the same as the documents SMB share with a few extra users.” Flabbergast is built to service “except”, “and”, and “but”.
 
+View the [User Community](https://plus.google.com/communities/103010827049942376743).
+
 ## Documentation
 
 There are two important pieces of documentation: the rather dry [language spec man page](flabbergast_language.7) and the friendly [manual](flabbergast-manual.md).
