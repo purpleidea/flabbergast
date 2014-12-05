@@ -1,0 +1,9 @@
+fn : Template {
+	v ?:
+	value : v
+}
+x : {
+	v : True
+	value : fn(v : v)
+}
+value : x.value

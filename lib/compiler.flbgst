@@ -819,6 +819,25 @@ language_tmpl : Template {
 				}
 			}
 		}
+		named_function_argument : Template syntax_group {
+			environment_flavour : environment.flavour_simple
+			is_typeable : True
+			common +: {
+				comment : common_fields.str
+				name : common_fields.str
+			}
+			rules +: {
+				plain_attribute : Template syntax_element {
+					pattern : attribute_pattern {}
+					apply_environment_to : [
+						environment.modified_environment {
+							apply_to : [ environment.other_elements { fields : [ $expression ] } ]
+						}
+					]
+					ensure_type_is : ensure_type.any { ensure_type_of : propagate { fields : [ $expression ] } }
+				}
+			}
+		}
 		fricassee_merge_input : Template syntax_group {
 			environment_flavour : environment.flavour_simple
 			is_typeable : True
@@ -1690,13 +1709,12 @@ language_tmpl : Template {
 							parser.exact { word : "(" },
 							parser.accumulate_list {
 								field : $args
-								type : $attribute
+								type : $named_function_argument
 								in : parser.many_word {
 									of : parser.sequence {
 										of : [
 											parser.other {
-												type : $attribute
-												alternate : $plain_attribute
+												type : $named_function_argument
 												field : Null
 											},
 											space { }
@@ -1742,14 +1760,13 @@ language_tmpl : Template {
 							parser.exact { word : "," },
 							parser.accumulate_list {
 								field : $named_args
-								type : $attribute
+								type : $named_function_argument
 								in : parser.many_word {
 									nonempty : True
 									of : parser.sequence {
 										of : [
 											parser.other {
-												type : $attribute
-												alternate : $plain_attribute
+												type : $named_function_argument
 												field : Null
 											},
 											space { }
