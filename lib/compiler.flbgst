@@ -629,6 +629,7 @@ language_tmpl : Template {
 			parser.exact { word : symbol }
 		]
 	}
+	# The general syntax for fricassée expressions (excluding the selector).
 	for_pattern : Template parser.sequence {
 		selector ?:
 		of : [
@@ -654,6 +655,22 @@ language_tmpl : Template {
 				field : $result_builder
 				type : $fricassee_result
 			}
+		]
+	}
+	# The general pattern for normal attribute definitions
+	attribute_pattern : Template parser.sequence {
+		value_pattern : Template parser.other {
+			type : $expression
+			alternate : $expression0
+			field : $expression
+		}
+		of : [
+			space { preferred : True },
+			valid_identifier { field : $name },
+			space { preferred : True },
+			parser.exact { word : ":" },
+			space { preferred : True },
+			value_pattern { }
 		]
 	}
 
@@ -701,20 +718,7 @@ language_tmpl : Template {
 			}
 			rules +: {
 				plain_attribute : Template syntax_element {
-					pattern : parser.sequence {
-						of : [
-							space { preferred : True },
-							valid_identifier { field : $name },
-							space { preferred : True },
-							parser.exact { word : ":" },
-							space { preferred : True },
-							parser.other {
-								type : $expression
-								alternate : $expression0
-								field : $expression
-							}
-						]
-					}
+					pattern : attribute_pattern { }
 					apply_environment_to : [
 						environment.modified_environment {
 							apply_to : [ environment.other_elements { fields : [ $expression ] } ]
@@ -824,48 +828,21 @@ language_tmpl : Template {
 			}
 			rules +: {
 				expr_input : Template syntax_element {
-					pattern : parser.sequence {
-						of : [
-							space { preferred : True },
-							valid_identifier { field : $name },
-							space { preferred : True },
-							parser.exact { word : ":" },
-							space { preferred : True },
-							parser.other {
-								type : $expression
-								alternate : $expression0
-								field : $expression
-							}
-						]
-					}
+					pattern : attribute_pattern { }
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.intrinsic { }
 					type_demand : { expression : [ known_types.tuple ] }
 				}
 				name_input : Template syntax_element {
-					pattern : parser.sequence {
-						of : [
-							space { preferred : True },
-							valid_identifier { field : $name },
-							space { preferred : True },
-							parser.exact { word : ":" },
-							space { preferred : True },
-							parser.exact { word : "Name" }
-						]
+					pattern : attribute_pattern {
+						value_pattern : Template parser.exact { word : "Name" }
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.tuple { types : [ known_types.str ] }
 				}
 				ordinal_input : Template syntax_element {
-					pattern : parser.sequence {
-						of : [
-							space { preferred : True },
-							valid_identifier { field : $name },
-							space { preferred : True },
-							parser.exact { word : ":" },
-							space { preferred : True },
-							parser.exact { word : "Ordinal" }
-						]
+					pattern : attribute_pattern {
+						value_pattern : Template parser.exact { word : "Ordinal" }
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
