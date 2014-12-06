@@ -571,7 +571,11 @@ compiler : compiler_lib.language_tmpl {
 		common_field_class_gen : For field : expanded_common Reduce acc & field.class_gen With acc : ""
 		common_field_copy_instance : For field : expanded_common Reduce acc & field.copy_instance With acc : static_copy_instance
 
-		parser_gen : For rule : expanded_rules Reduce acc & rule.parser_gen With acc : ""
+		parser_gen :
+			For rule : expanded_rules
+			Where rule.is_real_element
+			Reduce acc & rule.parser_gen
+			With acc : ""
 		parse_base : If include_base_parser Then
 			"\tinternal static bool ParseRule_Base(ref ParserPosition position, out \(group_name) result) {\n" &
 			"\t\tposition.TraceEnter(\"\(group_name)\");\n" &
@@ -580,6 +584,7 @@ compiler : compiler_lib.language_tmpl {
 			"\t\tvar start_index = position.Index;\n" &
 			"\t\tposition.Update(\"any \(group_name)\", \"\(group_name)\");" &
 			(For rule : expanded_rules, rule_name : Name
+				Where rule.is_real_element
 				Reduce acc &
 					"\t\tslave_position = position.Clone();\n" &
 					"\t\tif (ParseRule_\(rule_name)(ref slave_position, out result)) {\n" &
@@ -594,7 +599,7 @@ compiler : compiler_lib.language_tmpl {
 			"\t\treturn false;\n\t}\n"
 			Else ""
 
-		parse_alternates : For alternate_rules : expanded_alts, alternate_name : Name
+		parse_alternates : For alternate_rules : alternatives, alternate_name : Name
 			Reduce
 				outer_acc &
 				"\tinternal static bool ParseRule_\(alternate_name)(ref ParserPosition position, out \(group_name) result) {\n" &
@@ -603,10 +608,13 @@ compiler : compiler_lib.language_tmpl {
 				"\t\tParserPosition slave_position;\n" &
 				"\t\tvar start_index = position.Index;\n" &
 				"\t\tposition.Update(\"\(alternate_name)\", \"\(group_name)\");\n" &
-				(For rule_name : alternate_rules
+				(For rule_name : Name, rule : expanded_rules
+					Where (For rule_alts : rule.alternatives, rule_alt_name : Name Where rule_alt_name == alternate_name Reduce True With junk_acc : False)
 					Reduce acc &
 						"\t\tslave_position = position.Clone();\n" &
-						"\t\tif (ParseRule_\(rule_name)(ref slave_position, out result)) {\n" &
+						"\t\tif (ParseRule_" &
+						(If rule.is_real_element Then rule_name Else rule.alternate_name) &
+						"(ref slave_position, out result)) {\n" &
 						"\t\t\tposition = slave_position;\n" &
 						"\t\t\tposition.TraceExit(\"\(group_name):\(alternate_name)\", true);\n" &
 						"\t\t\tposition.Cache<\(group_name)>(\"\(group_name).\(alternate_name)\", start_index, result);\n" &
@@ -619,6 +627,7 @@ compiler : compiler_lib.language_tmpl {
 			With outer_acc : ""
 
 		value : For rule : expanded_rules
+			Where rule.is_real_element
 			Reduce acc & rule.class_gen
 			With acc : "internal abstract class \(group_name) : \(environment_flavour.class_name)\(If is_typeable Then ", ITypeableElement" Else "") {\n" &
 				(If is_typeable Then "\tpublic abstract void EnsureType(ErrorCollector collector, Type _type);\n" Else "") &
@@ -695,12 +704,6 @@ compiler : compiler_lib.language_tmpl {
 		}
 		expression +: {
 			rules +: {
-				zzzz_up +: {
-					parser_gen : ""
-					class_gen : ""
-					type_assurance : ""
-					type_demands : ""
-				}
 				xinvoke : Template expression_tmpl {
 					level : 19
 					pattern : parser.sequence {

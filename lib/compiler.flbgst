@@ -336,6 +336,11 @@ language_tmpl : Template {
 		# object-oriented language, this would be the abstract super-class of a
 		# collection of rules.
 		group_name %:
+		# A tuple where the names are the names of the “alternative” rules where
+		# this syntax element should be included. The values are ignored. In
+		# certain cases, for instance, attributes, it is useful to repackage the
+		# available syntax elements into different groups that have the same type.
+		alternatives : {}
 		# The parser generator structure, made from `parser` templates.
 		pattern ?:
 		# If the syntax group has environment propagation support, this element
@@ -347,16 +352,24 @@ language_tmpl : Template {
 			Error "ensure_type_is attribute must be overridden in \(rule_name)."
 		type_demand : []
 		type_demand_all : []
+		is_real_element : True
+	}
+	# This is a special rule that does not define real syntax, but instead,
+	# introduce deflection into alternate parsing.
+	meandering_element : Template {
+		# The name of the rule to be parsed instead.
+		alternate_name ?:
+		# A tuple where the names are the of the “alternative” rules where this
+		# element should be included.
+		alternatives : {}
+		is_real_element : False
 	}
 	# A group of syntax rules that form a logical group of syntax elements. These
 	# should correspond to the single-letter production rules in the
 	# specification.
 	syntax_group : Template {
+		# The `syntax_element` templates to instantiate.
 		rules : Template {}
-		# For the attribute rules, some times, we need to package the same rules in
-		# different ways. The alternatives provide names for parsing different
-		# groups with the same type as the syntax group.
-		alternatives : Template {}
 		# This moves fields from the individual AST nodes to the superclass. Each
 		# entry is the name of the field and its type (e.g., `name : $str`).
 		common : Template {}
@@ -370,10 +383,18 @@ language_tmpl : Template {
 		# If true, this syntax group has a type and can be the target of type
 		# assurances.
 		is_typeable : False
+		# These are rules that have already been expanded, rather than `rules`
+		# where they are templates.
+		static_rules : []
+		alternatives :
+			For rule : expanded_rules
+			Reduce
+				(For alternative_name : Name, acc_value : acc, rule_value : rule.alternatives
+				Select alternative_name : Null)
+			With acc : {}
 		expanded_rules :
-			For rule_tmpl : rules {}, rule_name : Name
-			Select rule_name : rule_tmpl {}
-		expanded_alts : alternatives {}
+			For rule_tmpl : rules {}, static_rule : static_rules, rule_name : Name
+			Select rule_name : static_rule ?? (rule_tmpl {})
 		expanded_common : For common_tmpl : common {}, field_name : Name
 			Select field_name : common_tmpl {}
 	}
@@ -432,6 +453,7 @@ language_tmpl : Template {
 		# The depth/precedence in the expression nesting system, as inferred from
 		# the specification.
 		level ?:
+		alternatives : For x : [ level ] Select "expression\(x)" : Null
 		# A parser for a top-level expression
 		top_expression : Template parser.other {
 			accumulate : True
@@ -711,13 +733,9 @@ language_tmpl : Template {
 				comment : common_fields.str
 				name : common_fields.str
 			}
-			alternatives +: {
-				new_tmpl_attributes : [ $plain_attribute, $informative_attribute, $missing_attribute ]
-				extend_tmpl_attributes : [ $plain_attribute, $informative_attribute, $missing_attribute, $named_override, $template_override, $remove_attribute ]
-				instantiate_tmpl_attributes : [ $plain_attribute, $informative_attribute, $named_override, $template_override, $remove_attribute ]
-			}
 			rules +: {
 				plain_attribute : Template syntax_element {
+					alternatives : { new_tmpl_attributes : Null  extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
 					pattern : attribute_pattern { }
 					apply_environment_to : [
 						environment.modified_environment {
@@ -728,6 +746,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.any { ensure_type_of : propagate { fields : [ $expression ] } }
 				}
 				named_override : Template syntax_element {
+					alternatives : { extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
 					pattern : parser.sequence {
 						of : [
 							space { preferred : True },
@@ -754,6 +773,8 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.stop {}
 				}
 				template_override : Template syntax_element {
+					alternatives : { extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
+
 					pattern : parser.sequence {
 						of : [
 							space { preferred : True },
@@ -782,6 +803,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.filter { types : [ known_types.template ] }
 				}
 				missing_attribute : Template syntax_element {
+					alternatives : { new_tmpl_attributes : Null  extend_tmpl_attributes : Null }
 					pattern : parser.sequence {
 						of : [
 							space { preferred : True },
@@ -794,6 +816,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.stop {}
 				}
 				informative_attribute : Template syntax_element {
+					alternatives : { new_tmpl_attributes : Null  extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
 					pattern : parser.sequence {
 						of : [
 							space { preferred : True },
@@ -806,6 +829,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.stop {}
 				}
 				remove_attribute : Template syntax_element {
+					alternatives : { extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
 					pattern : parser.sequence {
 						of : [
 							space { preferred : True },
@@ -1187,29 +1211,17 @@ language_tmpl : Template {
 			include_base_parser : False
 			is_typeable : True
 			environment_flavour : environment.flavour_simple
-			alternatives -:
-			expanded_alts : For alt_level : 0 Through 19
-				Select "expression\(alt_level)" :
-					(For rule : expanded_rules, rule_name : Name
-					Where If rule.level Is Null Then alt_level < 19 Else rule.level == alt_level
-					Select If rule.level Is Null Then "expression\(alt_level + 1)" Else rule_name)
 
 			common +: {
 				comment : common_fields.str
 			}
 			max_level : 19
-			rules +: {
-				# This is a special rule for expression generation. Since every
-				# expression belongs to a precedence level, this rule causes generation
-				# of the call to search the next precedence level. The compiler
-				# implementation must suppress it to not generate real code and the
-				# `expanded_alts` uses it to generate the expression call.
-				zzzz_up : Template expression_tmpl {
-					level : Null
-					apply_environment_to : []
-					ensure_type_is : Null
-					pattern : parser.exact { word : "X" }
+			static_rules : For level : 0 Through (max_level - 1)
+				Select "zzzz_up_\(level)" : meandering_element {
+					alternate_name : "expression\(level + 1)"
+					alternatives : For x : [level] Select "expression\(x)" : Null
 				}
+			rules +: {
 				let : Template expression_tmpl {
 					level : 0
 					pattern : parser.sequence {
