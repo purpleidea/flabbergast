@@ -505,13 +505,13 @@ language_tmpl : Template {
 	}
 	# A expression which is a single word
 	literal_tmpl : Template expression_tmpl {
-		level : 19
+		level : max_level
 		apply_environment_to : []
 		name ?:
 		pattern : parser.exact { word : name }
 	}
 	int_with_unit_expr_tmpl : Template expression_tmpl {
-		level : 19
+		level : max_level
 		unit ?:
 		symbol ?:
 		pattern : int_with_unit_tmpl {}
@@ -1197,6 +1197,7 @@ language_tmpl : Template {
 			common +: {
 				comment : common_fields.str
 			}
+			max_level : 19
 			rules +: {
 				# This is a special rule for expression generation. Since every
 				# expression belongs to a precedence level, this rule causes generation
@@ -1877,7 +1878,7 @@ language_tmpl : Template {
 				}
 
 				subexpression : Template expression_tmpl {
-					level : 19
+					level : max_level
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "(" },
@@ -1891,7 +1892,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
 				}
 				literal_list : Template expression_tmpl {
-					level : 19
+					level : max_level
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "[" },
@@ -1968,7 +1969,7 @@ language_tmpl : Template {
 				}
 
 				time_literal : Template expression_tmpl {
-					level : 19
+					level : max_level
 					pattern : parser.accumulate_list {
 						field : $parts
 						type : $time
@@ -1985,7 +1986,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
 				}
 				integer_literal : Template expression_tmpl {
-					level : 19
+					level : max_level
 					pattern : parser.accumulate_integer {
 						field : $amount
 						in : parser.sequence {
@@ -1999,7 +2000,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
 				}
 				hex_integer_literal : Template expression_tmpl {
-					level : 19
+					level : max_level
 					pattern : parser.accumulate_integer {
 						field : $amount
 						in : parser.sequence {
@@ -2022,7 +2023,7 @@ language_tmpl : Template {
 				int_mi : Template int_with_unit_expr_tmpl { symbol : "Mi"  unit : 1024 * 1024 }
 				int_gi : Template int_with_unit_expr_tmpl { symbol : "Gi"  unit : 1024 * 1024 * 1024 }
 				float_literal : Template expression_tmpl {
-					level : 19
+					level : max_level
 					pattern : parser.accumulate_float {
 						field : $value
 						in : parser.sequence {
@@ -2052,7 +2053,7 @@ language_tmpl : Template {
 				}
 
 				string_identifier : Template expression_tmpl {
-					level : 19
+					level : max_level
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "$" },
@@ -2063,7 +2064,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
 				}
 				string_literal : Template expression_tmpl {
-					level : 19
+					level : max_level
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "\\\"" },
