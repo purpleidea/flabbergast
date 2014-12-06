@@ -35,7 +35,7 @@ syn match flabbergastBadKeyword "\<[A-WYZ][^ \t#]*" display
 syn match flabbergastIdentifierString "\$[a-z][a-zA-Z0-9_]*\>" display
 syn match flabbergastFrom "[A-Za-z0-9.+-]\+:[A-Za-z0-9~!*'();@&=+$,/?%#.+-]\+" display
 syn keyword flabbergastFrom From
-syn keyword flabbergastFricassee By Each For Name Order Ordinal Reduce Select With
+syn keyword flabbergastFricassee By Each For Name Order Ordinal Reduce Reverse Select With
 syn keyword flabbergastConditional If Then Else
 syn keyword flabbergastKeyword As Container Error Finite GenerateId Id In Is Length Let Lookup Template This Through To Where
 syn match flabbergastOperators '\(<=\?\|<\=>\|>=\?\|==\|||\|-\|!\|!=\|/\|\*\|&\|&&\|%\|+\)' display
