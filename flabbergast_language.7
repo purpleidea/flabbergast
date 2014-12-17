@@ -494,10 +494,10 @@ Instantiate a template
 Γ ⊢ \fB(Template\fR source \fB{\fR a \fB}) { }\fR ↓ v
 .SEME
 
-.SEM (t, ...) ⊢ source:E\*<+\*> \fB{ }\fR ↓ r = < u; r, t, ...; ∀ x: k\*<x\*> → v\*<x\*>, \fBContext\fR → (r, t, ..., s, ...) >
+.SEM (t, ...) ⊢ source:E\*<+\*> \fB{ }\fR ↓ r = < u; r, t, ..., s, ...; ∀ x : k\*<x\*> → v\*<x\*> >
 (t, ...) ⊢ source ↓ S = < (s, ...); k\*<s\*> → e\*<s\*>, ... >,
 
-∀ k\*<x\*> → e\*<x\*> ∈ S : (r, t, ..., s, ...) ⊢ e\*<s\*> ↓ v\*<x\*>
+∀ k\*<x\*> → e\*<x\*> ∈ S : (r, t, ..., s, ...) ⊢ e\*<x\*> ↓ v\*<x\*>
 .SEME
 
 Creates a new tuple, based on a template, grounded in the current scope. If source is a template, instantiate that template setting the provided attributes and inheriting any others. If source is not a template, an error occurs. If any attribute is external but not overridden, it will cause an error.
@@ -518,9 +518,11 @@ Null coalescence
 .SS EXPRESSION SYNTAX (E) – TUPLE CREATION AND UNARY OPERATORS
 .TP
 Literal tuple
-.SEM (t, ...) ⊢ \fB{\fR (a:A)* \fB}\fR ↓ r = < u; r, t, ...;  ∀ x ∈ aa : k\*<x\*> → v\*<x\*>, \fBContext\fR → (r, t, ...) >
+.SEM (t, ...) ⊢ \fB{\fR (a:A)* \fB}\fR ↓ r = < u; r, t, ...;  ∀ x ∈ a : k\*<x\*> → v\*<x\*> >
 
-∀ aa ∈ a : (r, t, ...) ⊢ aa ↓ v\*<aa\*>
+∀ x ∈ a : (r, t, ...) ⊢ x ↓ k\*<x\*> → v\*<x\*>,
+
+¬∃ k\*<y\*> = k\*<x\*>
 .SEME
 Construct a new literal tuple.
 
@@ -537,15 +539,15 @@ Create a new template, not based on any current template.
 
 .TP
 Extend a template
-.SEM(t, ...) ⊢ \fBTemplate\fR source:E\*<+\*> \fB{\fR a:(A / O / X)* \fB}\fR ↓ < (t, ..., s, ...); k\*<x\*> → k\*<x\*> >
+.SEM (t, ...) ⊢ \fBTemplate\fR source:E\*<+\*> \fB{\fR a:(A / O / X)* \fB}\fR ↓ < (t, ..., s, ...); ∀ m : k\*<m\*> → e\*<m\*> >
 
 (t, ...) ⊢ source ↓ S = < (s, ...); k\*<s\*> → e\*<s\*>, ... >,
 
-∀ aa ∈ a, (∃ k\*<s\*> : k\*<x\*> = k\*<s\*>) : e\*<s\*> ⊢ aa ↓ k\*<x\*> e\*<x\*>,
+∀ x ∈ a, (∃ k\*<s\*> : k\*<x\*> = k\*<s\*>) : e\*<s\*> ⊢ x ↓ k\*<m\*> → e\*<m\*>,
 
-∀ aa ∈ a, (¬∃ k\*<s\*> : k\*<x\*> = k\*<s\*>) : aa ↓ k\*<x\*> e\*<x\*>,
+∀ x ∈ a, (¬∃ k\*<s\*> : k\*<x\*> = k\*<s\*>) : x ↓ k\*<m\*> → e\*<m\*>,
 
-∀ k\*<x\*> → e\*<x\*> : ¬∃ k\*<s\*> : k\*<x\*> = k\*<s\*>
+∀ k\*<s\*> → e\*<s\*> : ¬∃ k\*<s\*> : k\*<x\*> = k\*<s\*> : k\*<m\*> → e\*<m\*> = k\*<s\*> → e\*<s\*>
 .SEME
 
 Create a template that inherits from an existing template. It contains all the attributes of the existing template unless amended by the specified attributes. The specified attributes can add, replace, amend, or remove attributes from the existing template. Any unmentioned attributes are inherited directly. The new template has the lookup context of the context where the modification was performed followed by the context of the existing template.
@@ -656,8 +658,8 @@ Subexpression
 
 .TP
 Literal list
-.SEM (s, ...) ⊢ \fB[\fR (arg:E\*<0\*> (\fB,\fR arg:E\*<0\*>)*)? \fB]\fR ↓ t = < u; (t, s, ...); ORD(x) → v\*<x\*> >
-(s, ...) ⊢ arg\*<x\*> ↓ v\*<x\*>
+.SEM (s, ...) ⊢ \fB[\fR (arg:E\*<0\*> (\fB,\fR arg:E\*<0\*>)*)? \fB]\fR ↓ t = < u; (t, s, ...); ∀ x ∈ arg : ORD(x) → v\*<x\*> >
+∀ x ∈ arg : (s, ...) ⊢ x ↓ v\*<x\*>
 .SEME
 
 This creates a list-like tuple. Names are selected by the ORD function such that the tuple will have the same order of items as the original list when collated. Indexing is 1-based.
