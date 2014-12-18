@@ -287,5 +287,11 @@ internal class ParserPosition {
 			Parser.Index = Index;
 		}
 	}
+
+	internal void NameConstraint(string name) {
+		Parser.Message = Parser.FileName + ":" + Row + ":" + Column + ": The name " + name + " is already in use in this context.";
+		Parser.Index = Parser.Input.Length;
+
+	}
 }
 }

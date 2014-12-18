@@ -112,7 +112,17 @@ parser_tmpl : Template {
 		in ?:
 	}
 	accumulate_float : Template { accumulate : False  field ?:  in ?: }
-	accumulate_list : Template { accumulate : False  field ?:  type ?:  in ?: }
+	accumulate_list : Template {
+		accumulate : False
+		field ?:
+		type ?:
+		in ?:
+		# Remove duplicates using the field name provided. It must be common to
+		# all the children.
+		deduplicate : Null
+		# Field values which are not permitted at all.
+		forbid : []
+	}
 	accumulate_string : Template { accumulate : False  field ?:  in ?: }
 	# Adds a Unicode literal, by codepoint, to the currently accumulating string
 	# after successfully parsing the child parse expression.
@@ -707,6 +717,7 @@ language_tmpl : Template {
 							parser.accumulate_list {
 								field : $attributes
 								type : $attribute
+								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
 									of : parser.other {
 										type : $attribute
@@ -1537,6 +1548,7 @@ language_tmpl : Template {
 							parser.accumulate_list {
 								field : $attributes
 								type : $attribute
+								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
 									of : parser.other {
 										type : $attribute
@@ -1587,6 +1599,7 @@ language_tmpl : Template {
 							parser.accumulate_list {
 								field : $attributes
 								type : $attribute
+								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
 									of : parser.other {
 										type : $attribute
@@ -1629,6 +1642,7 @@ language_tmpl : Template {
 							parser.accumulate_list {
 								field : $attributes
 								type : $attribute
+								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
 									of : parser.other {
 										type : $attribute
@@ -1657,6 +1671,7 @@ language_tmpl : Template {
 								parser.accumulate_list {
 								field : $attributes
 								type : $attribute
+								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
 									of : parser.other {
 										type : $attribute
@@ -1723,6 +1738,8 @@ language_tmpl : Template {
 							parser.accumulate_list {
 								field : $args
 								type : $named_function_argument
+								deduplicate : expanded_groups.named_function_argument.expanded_common.name
+								forbid : [ $value ]
 								in : parser.many_word {
 									of : parser.sequence {
 										of : [
@@ -1774,6 +1791,8 @@ language_tmpl : Template {
 							parser.accumulate_list {
 								field : $named_args
 								type : $named_function_argument
+								deduplicate : expanded_groups.named_function_argument.expanded_common.name
+								forbid : [ $args, $value ]
 								in : parser.many_word {
 									nonempty : True
 									of : parser.sequence {

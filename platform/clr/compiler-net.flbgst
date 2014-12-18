@@ -293,8 +293,22 @@ parser : compiler_lib.parser_tmpl {
 	accumulate_list +: {
 		require_definition : If field Is Null Then False Else
 			(For common_field : Name, common_type : expanded_common Where common_field == field Reduce False With acc : True)
-		class_gen : If require_definition Then "\tinternal System.Collections.Generic.List<\(type)> \(field) = new System.Collections.Generic.List<\(type)>();\n" & in.class_gen Else ""
-		copy_instance : If require_definition Then "\t\t_obj.\(field).AddRange(\(field));\n" & in.copy_instance Else ""
+		forbidden_pairs : For f : forbid Reduce acc & "{ " & (If f Is Str Then "\"\(f)\"" Else f) & ", true}," With acc : ""
+		class_gen :
+			(If require_definition
+				Then
+					"\tinternal System.Collections.Generic.List<\(type)> \(field) = new System.Collections.Generic.List<\(type)>();\n" &
+					(If deduplicate Is Null
+						Then ""
+						Else "\tinternal System.Collections.Generic.Dictionary<\(deduplicate.dedup_type), bool> \(field)_dedup = new System.Collections.Generic.Dictionary<\(deduplicate.dedup_type), bool>{\(forbidden_pairs)};\n")
+				Else "") & in.class_gen
+		copy_instance :
+			(If require_definition
+				Then
+					"\t\t_obj.\(field).AddRange(\(field));\n" &
+					(If deduplicate Is Null Then "" Else "\t\tforeach(var _element in \(field)_dedup.Keys) _obj.\(field)_dedup[_element] = true;\n")
+				Else "")
+				& in.copy_instance
 		parser_gen : in.parser_gen
 	}
 	accumulate_string +: {
@@ -334,7 +348,14 @@ parser : compiler_lib.parser_tmpl {
 
 		pok : ((Lookup parse_complete In Container) { ok : True }).value
 		perr : ((Lookup parse_complete In Container) { ok : False }).value
-		target_rule : "\(type).ParseRule_\(alternate ?? "Base")"
+		target_rule :
+			Let base : "\(type).ParseRule_\(alternate ?? "Base")"
+			In
+				If field Is Null && !(deduplicate Is Null)
+				Then
+					Let dedup_container : "_obj." & Lookup field In Container & "_dedup"
+					In "(ref ParserPosition _iposition, out \(type) _iresult) => { if (\(base)(ref _iposition, out _iresult)) { if (\(dedup_container).ContainsKey(_iresult.\(deduplicate.dedup_key))) { _iposition.NameConstraint(_iresult.\(deduplicate.dedup_key)); return false; } else { \(dedup_container)[_iresult.\(deduplicate.dedup_key)] = true; return true; } } else { return false; } }"
+				Else base
 		parse_call : If field Is Null
 			Then "ParserPosition.ParseIntoList(ref _position, _obj.\(Lookup field In Container), \(target_rule))"
 			Else "\(target_rule)(ref _position, out _obj.\(field))"
@@ -345,18 +366,26 @@ common_fields : compiler_lib.common_fields_tmpl {
 	str +: {
 		class_gen : "\tinternal System.Text.StringBuilder \(field_name) = new System.Text.StringBuilder();\n"
 		copy_instance : "\t\t_obj.\(field_name).Append(\(field_name).ToString());\n"
+		dedup_type : "string"
+		dedup_key : "\(field_name).ToString()"
 	}
 	int +: {
 		class_gen : "\tinternal long \(field_name);\n"
 		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
+		dedup_type : "int"
+		dedup_key : field_name
 	}
 	float +: {
 		class_gen : "\tinternal double \(field_name);\n"
 		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
+		dedup_type : "float"
+		dedup_key : field_name
 	}
 	other +: {
 		class_gen : "\tinternal \(type) \(field_name);\n"
 		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
+		dedup_type : type
+		dedup_key : field_name
 	}
 }
 
