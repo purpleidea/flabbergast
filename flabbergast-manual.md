@@ -3,7 +3,7 @@
 
 Flabbergast is a rather unique programming language. It is best-described as an object-oriented macro system, though it's best not to associate it too much with object-oriented programming. Conceptually, it is based on a proprietary programming language used at Google for creating configurations. At Google, this language is much despised because it is difficult to debug and has many design flaws. However, it is special in that it is a member of a unique language family. It has features from other languages: particularly functional languages and object-oriented languages. Flabbergast aims to be the second in that family of languages and, hopefully, be more loved by being easier to debug, easier to understand, and more semantically sturdy.
 
-It is important to understand the niche for Flabbergast: it is a configuration language. The configuration of some systems is rather trivial: `fstab` and `resolv.conf` have remained virtually unchanged over many years. More complex programs, such as Apache, BIND, Samba, and CUPS have significantly more complicated configurations. The complexity is not a function of the configuration itself; indeed `smb.conf` is just an INI file. Complexity comes because there's a desire to share common configuration between elements (e.g., the list of privileged users among SMB shares). Configuration files start to grow awkward macro systems, get preprocessed using M4 or the like, or get evermore specific configuration operations to migrate the complexity into the binary.
+It is important to understand the niche for Flabbergast: it is a configuration language. The configuration of some systems is rather trivial: `fstab` and `resolv.conf` have remained virtually unchanged over many years. More complex programs, such as Apache, BIND, Samba, and CUPS have significantly more complicated configurations. The complexity is not a function of the configuration itself; indeed `smb.conf` is just an INI file. Complexity comes because there's a desire to share common configuration between elements (_e.g._, the list of privileged users among SMB shares). Configuration files start to grow awkward macro systems, get preprocessed using M4 or the like, or get evermore specific configuration operations to migrate the complexity into the binary.
 
 Flabbergast, in some ways, is like a macro system. However, macro systems, such as M4 and the CPP, operate by manipulating text or tokens and can only ever output more text or tokens. Flabbergast is a language meant to manipulate structured configuration: frames. Frames can behave somewhat like objects: they can have inheritance relations, they can be extended, and, finally, rendered into a standard configuration format, which might be the frames themselves or it could be text. Either way, the needs of the configuration remain in the Flabbergast language; not the binary consuming the configuration. Moreover, Flabbergast makes it possible to write libraries of utilities and templates for configurations.
 
@@ -81,7 +81,7 @@ On to frames, the core data structure of the language. Frames are arranged in a 
       x : a + 1 # Yields 6
     }
 
-If there are multiple candidates, the closest one is the one chosen (i.e., the one which is found first traversing starting with the immediate container):
+If there are multiple candidates, the closest one is the one chosen (_i.e._, the one which is found first traversing starting with the immediate container):
 
     a : 5
     b : {
@@ -208,17 +208,17 @@ These are the essential features of the language. Many other built-in expression
 
 There are two core concepts in Flabbergast: contextual (dynamic) lookup and inheritance. Both of these exist in the context of frames, which are the primary data structure. They somewhat resemble objects in Python, Perl and JavaScript.
 
-A frame is a map of names to values, including other frames. Each frame is immutable upon creation. The values in the frame can be expressions (i.e., dynamically computed when the frame is created); there are no methods as there are in other object-oriented languages. Expressions can reference each other and the Flabbergast interpreter will determine the correct evaluation order. Although frames cannot be modified, new frames can be created from existing frames using fricassée (`For`) expressions that allow generation of frames based on the values in existing frames, much like SQL or XQuery statements produce new tables or trees from existing tables or trees, respectively. Frames can also be instantiated from templates, which are essentially unevaluated frames (i.e., the values of the attributes have not yet been computed).
+A frame is a map of names to values, including other frames. Each frame is immutable upon creation. The values in the frame can be expressions (_i.e._, dynamically computed when the frame is created); there are no methods as there are in other object-oriented languages. Expressions can reference each other and the Flabbergast interpreter will determine the correct evaluation order. Although frames cannot be modified, new frames can be created from existing frames using fricassée (`For`) expressions that allow generation of frames based on the values in existing frames, much like SQL or XQuery statements produce new tables or trees from existing tables or trees, respectively. Frames can also be instantiated from templates, which are essentially unevaluated frames (_i.e._, the values of the attributes have not yet been computed).
 
 Each frame also has an evaluation context. In most languages, there are multiple scopes in which variables can be found. For instance, in C, the compiler tries to resolve a variable in the current block and proceeds through each containing block, then checks the function parameters, and finally global variables. Java is considerably more complicated as it needs to check not only the enclosing blocks and the function parameters, but also the fields of the class, and it has to make a distinction between static and instantiated fields, and inner classes are even more involved as the containing classes have to be checked. Flabbergast's algorithm for resolution is very simple, but can yield very complicated results.
 
-Flabbergast uses contextual lookup. It is easiest to think of resolution as having two dimensions: containment and inheritance. When resolving a variable, the language will first look for an attribute of the same name in the current frame; if none exists, it will look in the containing frame (i.e., the frame in which the current frame is an attribute) and will continue to examine containers until a matching frame is found. If there is no match, resolution will continue in the parents of the template; that is, it will go to the context in which the template was defined and search through the containing frames there. If that yields no matches, resolution will proceed back through the template's template's containers and back until there are no more contexts.
+Flabbergast uses contextual lookup. It is easiest to think of resolution as having two dimensions: containment and inheritance. When resolving a variable, the language will first look for an attribute of the same name in the current frame; if none exists, it will look in the containing frame (_i.e._, the frame in which the current frame is an attribute) and will continue to examine containers until a matching frame is found. If there is no match, resolution will continue in the parents of the template; that is, it will go to the context in which the template was defined and search through the containing frames there. If that yields no matches, resolution will proceed back through the template's template's containers and back until there are no more contexts.
 
 ![Resolution order diagram](https://rawgithub.com/apmasell/flabbergast/master/flabbergast-resolution.svg "The order in which resolution occurs")
 
 In the figure, there are two templates, shown in colour, and frames, shown in grey. The frame containment is indicated by physical containment and inheritance is shown by arrows. When resolution inside of the frame marked 1 is needed, resolution begins in the frame itself, then proceeds through the frames, as indicated by their numbers. Note that some frames are considered multiple times due to the template and the frame sharing some containment; this is inconsequential, as it will either be found the first time, or fail every time. Note that templates themselves are not checked: only the frames in which they were defined or amended.
 
-Resolution has an extra complexity: chained accesses. Since frames can be nested, it is desirable to access the attributes of an inner frame using the `x.y` syntax. In most languages, resolution stops when the first name match is met (e.g., in Java, if there is a parameter `int foo` and a class field `String foo`, then `foo.charAt(3)` will fail to compile because `foo` has been resolved to the parameter, which is an `int` and so does not have the `charAt` method) while Flabbergast will attempt to find “the one you meant”. In the case of `x.y`, if a frame `x` is found but it does not contain an attribute `y`, then the language assumes that this was not the `x` intended and _continues_ looking for an `x` does _does_ contain an attribute `y`. This means that the expression `x.y * x.z` can have two different frames referenced for the first and second `x`! For instance, below, `b.z` will be 12 and the `a` in the `a.x` reference will be the top-level `a` while the `a` in the `a.y` reference will be `b.a`:
+Resolution has an extra complexity: chained accesses. Since frames can be nested, it is desirable to access the attributes of an inner frame using the `x.y` syntax. In most languages, resolution stops when the first name match is met (_e.g._, in Java, if there is a parameter `int foo` and a class field `String foo`, then `foo.charAt(3)` will fail to compile because `foo` has been resolved to the parameter, which is an `int` and so does not have the `charAt` method) while Flabbergast will attempt to find “the one you meant”. In the case of `x.y`, if a frame `x` is found but it does not contain an attribute `y`, then the language assumes that this was not the `x` intended and _continues_ looking for an `x` does _does_ contain an attribute `y`. This means that the expression `x.y * x.z` can have two different frames referenced for the first and second `x`! For instance, below, `b.z` will be 12 and the `a` in the `a.x` reference will be the top-level `a` while the `a` in the `a.y` reference will be `b.a`:
 
     a : { x : 3 }
     b : {
@@ -232,9 +232,9 @@ In general-purpose programming languages, this idea sounds like madness, but Fla
 
 In the last sentence, to whom does _her_ refer? While _my mum_ is the closest noun that could match _her_, it has been previously established that my mum does not have a cat, so _my mum's cat_ wouldn't make sense. Because we treat _her cat_ as a unit, we contextually keep looking for a _her_ that does have a cat, which would be _my sister_. Conceptually, this is how Flabbergast's resolution algorithm works: it finds the match that makes the most contextual sense.
 
-Inheritance allows creation of attributes, in addition to providing a history for contextual lookup. A frame or template is a collection of key-value pairs, where each key is a valid identifier and a value can be any expression. A template can be _amended_ at the time of instantiation or through the `Template` expression, which creates a new template that copies all the existing attributes, less the amended ones. In most object-oriented languages, fields and methods can be overridden (i.e., replaced with new code). Similarly, attributes can be overridden with new expressions. Some languages allow access the overridden method through special keywords (e.g., Java's `super`, C#'s `base`, or Python's `super()`). Flabbergast permits accessing the original attribute, but a new name must be specified; there is no default name like `super`. Unlike most languages, Flabbergast permits deletion of an attribute. Because of contextual lookup, any other attributes referencing the deleted attribute will simply look elsewhere.
+Inheritance allows creation of attributes, in addition to providing a history for contextual lookup. A frame or template is a collection of key-value pairs, where each key is a valid identifier and a value can be any expression. A template can be _amended_ at the time of instantiation or through the `Template` expression, which creates a new template that copies all the existing attributes, less the amended ones. In most object-oriented languages, fields and methods can be overridden (_i.e._, replaced with new code). Similarly, attributes can be overridden with new expressions. Some languages allow access the overridden method through special keywords (_e.g._, Java's `super`, C#'s `base`, or Python's `super()`). Flabbergast permits accessing the original attribute, but a new name must be specified; there is no default name like `super`. Unlike most languages, Flabbergast permits deletion of an attribute. Because of contextual lookup, any other attributes referencing the deleted attribute will simply look elsewhere.
 
-Since attributes can refer to each other, it is the interpreter's duty to determine the order to evaluate the expressions. This means that attributes can be specified in any order (unlike C and C++). In fact, contextual lookup makes it impossible to determine to what attributes references refer until evaluation time. One unusual effect is that the inheritance path of a frame can be changed at runtime (i.e., the “class” hierarchy is not determined at compile-time)! In fact, since templates can be instantiated in different contexts, it is possible for the same declaration to be used in different contexts that create two different frame inheritance paths. Obviously, this is the kind of stuff that can be used for good or evil–there are legitimate reasons to re-parent frames, but it can be very confusing and cause unexpected behaviour.
+Since attributes can refer to each other, it is the interpreter's duty to determine the order to evaluate the expressions. This means that attributes can be specified in any order (unlike C and C++). In fact, contextual lookup makes it impossible to determine to what attributes references refer until evaluation time. One unusual effect is that the inheritance path of a frame can be changed at runtime (_i.e._, the “class” hierarchy is not determined at compile-time)! In fact, since templates can be instantiated in different contexts, it is possible for the same declaration to be used in different contexts that create two different frame inheritance paths. Obviously, this is the kind of stuff that can be used for good or evil–there are legitimate reasons to re-parent frames, but it can be very confusing and cause unexpected behaviour.
 
 The interpreter must be able to linearise the order in which it will perform evaluations. If the expression evaluation contains a cycle, then it is not possible to evaluate any of the expressions in the cycle. This is called _circular evaluation_. While theoretically possible, determining a fixed point is a rather impractical proposition. There are pseudo-cycles that are acceptable: the expressions can refer to one-another circularly so long as they don't need the value. This happens mostly during contextual lookup:
 
@@ -349,7 +349,7 @@ A period-separated list of identifiers forms a free variable to be resolved by c
 
 Here, in `b.c`, lookup will start in the current frame, which does not contain `a`, so lookup will continue to the containing frame, which does have `a`. For `x`, it will look for a frame `b` which contains an attribute `c`.
 
-A period-separated list of identifiers can also be appened to any expression, in which case it will do exact matching starting from the expression supplied; this is called a direct lookup. The keyword `This` gives access to the frame where the expression is being evaluated, effectively forcing direct lookup. Using parentheses or the result of an expression will also result in direct lookup.
+A period-separated list of identifiers can also be appended to any expression, in which case it will do exact matching starting from the expression supplied; this is called a direct lookup. The keyword `This` gives access to the frame where the expression is being evaluated, effectively forcing direct lookup. Using parentheses or the result of an expression will also result in direct lookup.
 
      x : 1
      a : {
@@ -482,7 +482,8 @@ There are several amendment attributes, not all of which can be used in all cont
  - `?:` creates an attribute that is always an error. This can be thought of as an _abstract_ attribute, in the C++/Java/C# terminology. This is not permitted during instantiation.
  - `-:` deletes an attribute. The attribute must already exist, so this is not valid when declaring a new template.
  - `+`, followed by an identifier, then `:`, followed by an expression, will replace an attribute but allows the previous value to be bound to the identifier supplied. The attribute must already exist, so this is not valid when declaring a new template.
- - `+: {`, followed by a list of amendments, terminated by `}`, performs template derivation. It is short-hand for `+oldtemplate: Template oldtemplate { ... }` with the convenience of not having to choose a name.
+ - `+: {`, followed by a list of amendments, terminated by `}`, performs template amendment. It is short-hand for `+oldtemplate: Template oldtemplate { ... }` with the convenience of not having to choose a name.
+ - `%:` indicates that a value is expected to be available through lookup. It does not actually *do* anything; it is merely a way to explain intentions to others and provide a place to hang documentation. It can be thought of as a weak version of `?:` attributes, and is usually preferable.
 
 There is also a function call convenience syntax. In their own way, templates can act as lambdas. In frame instantiation, the expressions are evaluated in the context of the frame created. In a function call, expressions provided are evaluated in the current (parent) context, then placed into the instantiated template. A list of unnamed expressions can be provided and these are collected into an `args` frame. Finally, instead of simply returning the entire frame, the `value` attribute is returned from the instantiated frame. For instance, the function call:
 
@@ -509,13 +510,13 @@ In this example, `c` would be circular evaluation when using normal evaluation s
 
 ### Miscellaneous
 
-The `Let` expression allows binding a value to a new name. For example, `Let a: 3 In a * a`. This is a convenient way to eliminate common subexpressions. Be advised that the normal short-circuiting rules do not apply: all the values in the expression must be evaluated first. Multiple attributes can be bound at once (e.g., `Let a: 3, b: 4 In a * a + b * b`).
+The `Let` expression allows binding a value to a new name. For example, `Let a: 3 In a * a`. This is a convenient way to eliminate common subexpressions. Be advised that the normal short-circuiting rules do not apply: all the values in the expression must be evaluated first. Multiple attributes can be bound at once (_e.g._, `Let a: 3, b: 4 In a * a + b * b`).
 
 The `From` expression allows importing external content into the program. This does two jobs: allows accessing libraries and allows access information for the program being configured. The `From` keyword is always followed by a URI. The `lib:` URI is  used for the standard library. The `file:` URI may also be supported. By convention, it is best to do all the importing at the start of a file:
 
     foo_lib : From lib:foo
 
-Supposing this was CUPS, it might be perfectly reasonable for CUPS to provide a list of backends (e.g., parallel port, USB, IPP):
+Supposing this was CUPS, it might be perfectly reasonable for CUPS to provide a list of backends (_e.g._, parallel port, USB, IPP):
 
     known_backends : From cups:backends
     # Function-like template to determine if a backend is supported by CUPS
@@ -538,7 +539,7 @@ In most languages, afterthoughts are not appreciated. However, most configuratio
 
 Most languages, particularly object-oriented languages, have a lot of plumbing: taking data from one place and copying it to another. Most constructors in object-oriented languages spend their time stuffing parameters into fields. There is a push in multi-paradigm object-oriented languages, including Python, Scala, Ruby, Groovy, Boo, and Nemerle, to have the compiler write the plumbing, freeing the programmer to work on the real logic. Flabbergast has a different approach: don't have plumbing at all. Define the data where it should be defined and use contextual lookup to pull data from the wherever. Copying data is generally a sign that contextual lookup is not being used effectively.
 
-Although Flabbergast has the `?:` attribute definition, it should almost never be used. This is one of the most frequent mistakes of novice programmers. If there's a value needed, just use it; there's no need force the consumer of a template to fill in the blank. The real use case is for things that must be provided and unique. For instance, the name of an SMB share is probably best defined with `?:`, but the users certainly are not. It's okay that this will cause a definition error: failure to provide an appropriately name value is a failure to consume that API correctly and, indeed, this was noted by an error being produced. There's no need to make this some how “more” explicit.
+Although Flabbergast has the `?:` attribute definition, it should almost never be used. This is one of the most frequent mistakes of novice programmers. If there's a value needed, just use it; there's no need force the consumer of a template to fill in the blank. The real use case is for things that must be provided and unique. For instance, the name of an SMB share is probably best defined with `?:`, but the users certainly are not. It's okay that this will cause a definition error: failure to provide an appropriately name value is a failure to consume that API correctly and, indeed, this was noted by an error being produced. There's no need to make this some how “more” explicit. The `%:` attribute definition provides an advisory version of `?:` that indicates that a value should be supplied, but does not stipulate that it needs to be included directly.
 
 The most important feature of Flabbergast is overriding. When starting out with Java or C#, understanding how to divide things up into objects is the hard part. When starting out with ML or Haskell, understanding how to make things stateless is the hard part. When starting out with Flabbergast, understanding  how to make things easy to override is the hard part.
 
@@ -593,7 +594,7 @@ By changing the definition for `item_tmpl`, we can re-ancestor the frames using 
 
 ### Subexpressions and Encapsulation
 
-In complicated subexpressions, it is often useful to migrate common subexpressions to a `Let` expression. In general, `Let` is less preferred to creating a new attribute in the current frame. There are places where that is not possible (e.g., inside a fricassée expression).
+In complicated subexpressions, it is often useful to migrate common subexpressions to a `Let` expression. In general, `Let` is less preferred to creating a new attribute in the current frame. There are places where that is not possible (_e.g._, inside a fricassée expression).
 
 There are two reasons that is preferred: debugging and overriding. Since there is no way to see the value bound in a let, it is much better if intermediate values can be seen if the entire output is dumped. It is also possible that a user would like to override this value. That violates all the usual object-oriented mindset about data encapsulation, but this isn't a usual object-oriented language.
 
@@ -607,10 +608,10 @@ When writing templates, it is good style to separate attributes into blocks: the
 
 Naming things is difficult. Very difficult. The major disadvantage to dynamic scoping is that names can collide and have unintended consequences. There are several ways to address the problems:
 
-1. Name things well. That might sound glib, but it isn't. The traditional loop variables `i`, `j`, and `k` are a heap of trouble in Flabbergast. The opposite end of the spectrum `where_super_explicit_names_that_no_one_can_confuse` are used is equally unpleasant. If the name is semantically meaningful and the same term isn't overloaded (e.g., `mu` can be the magnetic field permeability of free space and the coefficient of friction), then it is probably a good choice and collisions will be intentional.
+1. Name things well. That might sound glib, but it isn't. The traditional loop variables `i`, `j`, and `k` are a heap of trouble in Flabbergast. The opposite end of the spectrum `where_super_explicit_names_that_no_one_can_confuse` are used is equally unpleasant. If the name is semantically meaningful and the same term isn't overloaded (_e.g._, `mu` can be the magnetic field permeability of free space and the coefficient of friction), then it is probably a good choice and collisions will be intentional (making `mu` unfortunate, but `magnetic_perm` quite reasonable).
 2. Use frames as name spaces. While frames are _not_ name spaces, contextual lookup can be used to help the situation. Using `parser.space` can provide more information than simply `space`.
 3. Name library imports with `_lib`. It is good hygiene to import libraries using `foo_lib : From lib:foo` as if there is a collision, the values will be the same anyway.
-4. Use lookup traps when needed. If lookup should stop beyond a certain point, define the name to `Null` to stop lookup from continuing. In templates, if the value needs to be provided or the name is common (e.g., `name` or `enabled`) use the `?:` definition to trap lookup.
+4. Use lookup traps when needed. If lookup should stop beyond a certain point, define the name to `Null` to stop lookup from continuing. In templates, if the value needs to be provided or the name is common (_e.g._, `name` or `enabled`) use the `?:` definition to trap lookup.
 
 ## Patterns
 In all languages, having common design patterns that introduce intent are important and this is especially true in languages that are more flexible, since they serve the added duty of communicating intent.
@@ -625,18 +626,20 @@ If a list of items is generated, it can be useful to give each an attribute that
     }
     switch_tmpl : Template {
       name ?:
-      value ?:
-      spec : If value Then "--" & name Else ""
+      active : True
+      spec : If active Then "--" & name Else ""
     }
     binary : "foo"
     args : {
       input : arg_tmpl { name : "input"  value : "~/input.txt" }
       compression : arg_tmpl { name : "c"  value : 8 }
-      log : switch_tmpl { name : "log"  value : True }
+      log : switch_tmpl { name : "log" }
     }
     arg_str : For arg : args Reduce acc & " " & arg.spec With acc : binary
 
-This will allow each argument to choose how to render itself as a string and provide a uniform way to aggregate the results, free of the rendering logic itself. It is convention to use `spec` (i.e., specification) as the name for rendered results.
+This will allow each argument to choose how to render itself as a string and provide a uniform way to aggregate the results, free of the rendering logic itself. It is convention to use `spec` (_i.e._, specification) or `value` as the name for rendered results.
+
+Notice that `switch_tmpl` has a sane default for `active`. Since users can always override, it is best to specify a default if one is reasonable.
 
 ### Modifiable Inputs
 In the previous example, an argument list is created for an executable binary. The problem with this design is that it becomes impossible to modify. It would be better to keep it as a template:
@@ -649,14 +652,14 @@ In the previous example, an argument list is created for an executable binary. T
       }
       switch_tmpl : Template {
         name ?:
-        value ?:
-        spec : If value Then "--" & name Else ""
+        active : True
+        spec : If active Then "--" & name Else ""
       }
       binary : "foo"
       args : Template {
         input : Template arg_tmpl { name : "input"  value : "~/input.txt" }
         compression : Template arg_tmpl { name : "c"  value : 8 }
-        log : Template switch_tmpl { name : "log"  value : True }
+        log : Template switch_tmpl { name : "log" }
       }
       arg_str : For arg : args {} Reduce acc & " " & (arg {}).spec With acc : binary
     }
@@ -747,7 +750,7 @@ This uses frame re-parenting to create multiple ways of rendering the same data:
 Here, the data is specified separate and the renders are provided as a template allowing different parts of the program to use different rendering methods.
 
 ### Multi-part Rendering
-While the `spec` attribute is extremely useful, sometimes, it can be helpful to have more than one. Consider generating C code: there need to be prototypes and implementations for each function.
+While `spec` or `value` attributes are extremely useful, sometimes, it can be helpful to have more than one. Consider generating C code: there need to be prototypes and implementations for each function.
 
     c_function_tmpl : Template {
       signature ?:
@@ -763,16 +766,17 @@ While the `spec` attribute is extremely useful, sometimes, it can be helpful to 
 ### Contextual Accumulation
 There are situations where it is desirable to have an accumulator that is not common to all cases. For instance, suppose Python code was being generated and the indentation must be correct:
 
-    python_stmt_tmpl : Template { line ?:  spec : indent & line }
-    python_group_tmpl : Template {
+    python_stmt : Template { line ?:  spec : indent & line }
+    python_group : Template {
       statements ?:
-      spec : For statement : statements Reduce acc & statement & "\n" With acc : ""
+      spec : For statement : statements Reduce acc & statement.spec & "\n" With acc : ""
     }
-    python_block_tmpl : Template {
+    python_block : Template {
       line ?:
+      statements ?:
+
       parent_indent : Lookup indent In Container
       indent : parent_indent & "\t"
-      statements ?:
       spec : For statement : statements
         Reduce acc & statement.spec & "\n"
         With acc : (parent_indent & line & "\n")
@@ -783,7 +787,39 @@ These templates can now be nested and the resulting `spec` will have correct ind
 
 Finally, the `indent` definition is an contextual lookup trap. If the user of these templates did not define an `indent` value at the top level, contextual lookup would continue until it found this one.
 
-In most other languages, this effect would be achieved by passing the indentation value as a parameter to every function (plumbing) while Flabbergast can use contextual lookup to do the heavy lifting.
+So, the following would produce correctly indented, if not pointless, Python:
+
+    transform_var : Template python_group {
+        var %:
+        statements : [
+            python_stmt { line : "\(var) = bar(\(var))" },
+            python_block {
+                line : "if \(var) < 10:"
+                statements : [
+                    python_stmt { line : "return \(var)" }
+                ]
+            }
+        ]
+		}
+    pycode : python_group {
+        statements : [
+            python_block {
+                line : "def foo(x):"
+                statements : [
+                    python_stmt { line : "return 3 * x" }
+								]
+						},
+            python_block {
+                line : "def foo2(x):"
+                statements : [
+                    transform_var { var : "x" },
+                    python_stmt { line : "return 3 * x" }
+								]
+						}
+         ]
+     }
+
+In most other languages, this effect would be achieved by passing the indentation value as a parameter to every function (plumbing) while Flabbergast can use contextual lookup to do the heavy lifting. It's also unusual to pass the value rather than a proxy in other languages; for example, most programmers would pass an indentation number rather than the indentation prefix.
 
 ### Layered Overriding
 
@@ -825,7 +861,7 @@ Because Flabbergast is meant to render data, it has a rather lean standard libra
 
  - data structures. These are rather unnecessary once frames have been accepted as the one true data structure.
  - search and sort algorithms. These are built into the language via the fricassée expression.
- - I/O. This is highly discouraged as configurations should be hermetic and the controlling program may have security reasons to restrict access to the world. Since there is no way to control the order of operations, output that cause side-effects in the program is discouraged. In particular, if writing is permitted, should it happen immediately on evaluation or after success of the whole program (i.e., can a program which produces an error still write).
+ - I/O. This is highly discouraged as configurations should be hermetic and the controlling program may have security reasons to restrict access to the world. Since there is no way to control the order of operations, output that cause side-effects in the program is discouraged. In particular, if writing is permitted, should it happen immediately on evaluation or after success of the whole program (_i.e._, can a program which produces an error still write).
    - files. Traditional file I/O has too much state to be practical. The best compromise would be operations to read and write whole files. The write issue still applies.
    - GUIs. This is entirely mutable state.
    - databases. Read-only queries of databases are probably reasonable as the results can be converted to frames. Writing can also be done transactionally, dependent on the success of the whole program.
@@ -903,13 +939,13 @@ The following answers are universally discouraging of certain ideas as these ide
 
 ### How do I use a string as the URI in `From`?
 
-This is intentionally not possible. For various embedding reasons, it's important that the dependencies of a file are known at compile. Importing new files can lead to all kinds of misery for doing any analysis of the code, and might represent a security problem for the host application.
+This is intentionally not possible. For various embedding reasons, it's important that the dependencies of a file are known during compilation. Importing new files can lead to all kinds of misery for doing any analysis of the code, and might represent a security problem for the host application.
 
 If the goal is to read from a configuration specific file, then invert the inheritance structure:
 
     global_config : Template {
       name ?:
-      machine_info : From "info:machine/\(name)"
+      machine_info : From "info:machine/\(name)" # Desired, but unreal syntax
     }
     local_config : global_config { name : "foo" }
 
@@ -952,15 +988,49 @@ Many languages have restricted value sets: enumerations (C, C++, Java, C#) or sy
 
     my_enum : For x : [$a, $b, $c] Select x : x
 
-It would also be completely reasonable to provide a frame:
+The value of enumerations is mostly that they are cheap to compare and use in `switch` statements. Since none of that really translates to Flabbergast, this isn't so pressing. Rather than have dispatch logic, put the results in the frames or templates.
+
+Again, the way to think of this is to invert where the data is stored, rather than:
+
+    my_enum : For x : [$a, $b, $c] Select x : x
+    tmpl : Template {
+        enumish ?:
+        name ?:
+        value : name & " = " & (
+            If enumish == $a Then "0" Else
+            If enumish == $b Then "1" Else
+            If enumish == $c Then "2" Else
+            Error "Bad enum.")
+    }
+    x : tmpl { name : "foo" enumish : $a }
+
+It would also be completely reasonable to provide a frame with all the needs:
 
     my_enum : {
-      a : { spec : "a"  id : 0 }
-      b : { spec : "b"  id : 1 }
-      c : { spec : "c"  id : 2 }
+      a : { id : 0 }
+      b : { id : 1 }
+      c : { id : 2 }
     }
+    tmpl : Template {
+        enumish ?:
+        name ?:
+        value : name & " = " & enumish.id
+    }
+    x : tmpl { name : "foo" enumish : my_enum.a }
 
-The value of enumerations is mostly that they are cheap to compare and use in `switch` statements. Since none of that really translates to Flabbergast, this isn't so pressing. Rather than have dispatch logic, put the results in the frames or templates.
+That can be taken further by making the enumeration values as templates:
+
+    my_enum : {
+      a : Template { value : "0 \(name) 0" }
+      b : Template { value : "1 \(name) 0" }
+      c : Template { value : "0 \(name) 1" }
+    }
+    tmpl : Template {
+        enumish ?:
+        name ?:
+        value : name & " = " & (enumish {}).value
+    }
+    x : tmpl { name : "foo" enumish : my_enum.a }
 
 ### How do I do reflection/evaluation?
 
@@ -968,7 +1038,7 @@ This isn't supported and isn't likely to be.
 
 The language is sufficiently flexible that most of the things that would need reflection can be done using features of the language. Since frames can be introspected, there's no need to have Java/C#-style reflection of classes. Reflecting on templates is rather unhelpful since they contain the attribute expressions can't be converted into callable functions.
 
-Converting strings to executable code is a rather undesirable prospect. Again, since the language is meant to be embedded in other systems, there may be security implications to loading code from untrusted sources.
+Converting strings to executable code is a rather undesirable prospect (_i.e._, `eval`). Again, since the language is meant to be embedded in other systems, there may be security implications to loading code from untrusted sources.
 
 The more restricted version of this is allowing strings to be used for lookup. In some situations, this is useful, but the desired behaviour can usually be accomplished with:
 
