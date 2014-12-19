@@ -54,7 +54,7 @@ int main (string[] args) {
 		}
 	}
 	var engine = new ExecutionEngine ();
-	Data.Tuple? root_tuple = null;
+	Data.Frame? root_frame = null;
 	var parser = GTeonoma.StreamParser.open (rules, filename?? "/dev/stdin");
 	if (parser == null) {
 		stderr.printf ("Failed to open input file.\n");
@@ -73,7 +73,7 @@ int main (string[] args) {
 		}
 		var file = (File) result.get_object ();
 		file.transform ();
-		root_tuple = engine.start_from (file);
+		root_frame = engine.start_from (file);
 	} catch (EvaluationError e) {
 		stderr.printf ("%s: %s\n", filename ?? "stdin", e.message);
 		return 1;

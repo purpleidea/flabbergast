@@ -5,7 +5,7 @@
 .TH flabbergast 7 "Jan 2015" "1.0" "MISCELLANEOUS"
 Flabbergast is a language for creating configuration structures that can be rendered to a final configuration. Each expression is side-effect free. It has unusual look-up semantics, explained below.
 
-This document is the formal specification for the language. Fundamentally, there are three important types of values in the language: tuples, key-value pairs; templates, key-template pairs; and scalar values. There is an import mechanism that functions are the foreign function interface of the language. Each tuple and template has an associated lookup environment, which is an ordered list of tuples.
+This document is the formal specification for the language. Fundamentally, there are three important types of values in the language: frames, key-value pairs; templates, key-template pairs; and scalar values. There is an import mechanism that functions are the foreign function interface of the language. Each frame and template has an associated lookup environment, which is an ordered list of frames.
 
 There are several important features of the language:
 .IP \[bu]
@@ -13,7 +13,7 @@ contextual lookup creates dynamic scoping
 .IP \[bu]
 values have scope, expressions do not. This an effect of contextual lookup.
 .IP \[bu]
-inheritance can be changed. That is, a tuple can extend another tuple, but this cannot be known at compile-time. This an effect of contextual lookup.
+inheritance can be changed. That is, a frame can extend another frame, but this cannot be known at compile-time. This an effect of contextual lookup.
 
 .SH GENERAL NOTES ON SYNTAX
 In the language, language-defined names, a.k.a. keywords, are of the format [\fBA\fR-\fBZ\fR][\fBA\fR-\fBZa\fR-\fBz\fR]*. All user-defined names, a.k.a. identifiers, are of the form [\fBa\fR-\fBz\fR][\fBA\fR-\fBZa\fR-\fBz0\fR-\fB9_\fR]*. There are other symbols in the language, all of them ASCII. Strings and comments may contain Unicode data.
@@ -36,7 +36,7 @@ IEEE floating point number
 Str
 a Unicode text string
 .TP
-Tuple
+Frame
 a collection of pairs from identifiers to values are value of the types mentioned in this section. No duplicate identifiers are permitted (i.e., the identifier space is a set).
 .TP
 Template
@@ -76,12 +76,12 @@ For the semantics, they are written as a Horn clause of the form:
 (\fIT\fR\*<0\*>*, \fIT\fR\*<1\*>, ...) ⊢ \fIexpr\fR ↓ value :: type :- ...
 .RE
 
-where \fIT\fR is a tuples used for lookup. Some tuples are marked with an * to change lookup semantics. If the lookup environment is unused, it is elided. If the type is implied, it is elided.
+where \fIT\fR is a frames used for lookup. Some frames are marked with an * to change lookup semantics. If the lookup environment is unused, it is elided. If the type is implied, it is elided.
 
-Since tuples and templates are manipulated by the language, their values have special representation. A tuple is written < u; Γ; k\*<a\*> → v\*<a\*>, k\*<b\*> → v\*<b\*>, ... >. It is implied that there are no two values of \fIk\fR that exist in the same tuple. A template is written < Γ; k\*<a\*> → e\*<a\*>, k\*<b\*> → e\*<b\*>, ... >. Again, it is implied that there are no duplicate \fIk\fR. Since both tuples and templates have a key space that is a set, it is reasonable to allow all normal set operations over them. Since the contents of a tuple or template indicate what it it is, the type can be elided. Both have context information, Γ, which is a list of tuples for resolution. Tuples also contain a unique identifier, \fIu\fR, which is a string containing valid Flabbergast identifier such that no two tuples in the program have the same identifier.
+Since frames and templates are manipulated by the language, their values have special representation. A frame is written < u; Γ; k\*<a\*> → v\*<a\*>, k\*<b\*> → v\*<b\*>, ... >. It is implied that there are no two values of \fIk\fR that exist in the same frame. A template is written < Γ; k\*<a\*> → e\*<a\*>, k\*<b\*> → e\*<b\*>, ... >. Again, it is implied that there are no duplicate \fIk\fR. Since both frames and templates have a key space that is a set, it is reasonable to allow all normal set operations over them. Since the contents of a frame or template indicate what it it is, the type can be elided. Both have context information, Γ, which is a list of frames for resolution. Frames also contain a unique identifier, \fIu\fR, which is a string containing valid Flabbergast identifier such that no two frames in the program have the same identifier.
 
-.SS FILE TUPLE (START)
-The top-level entity is a file tuple.
+.SS FILE FRAME (START)
+The top-level entity is a file frame.
 
 .SEM a:(A*) ↓ x
 () ⊢  \fB{\fR a \fB}\fR ↓ x
@@ -99,7 +99,7 @@ Bind a new name
 
 .SS EXPRESSION SYNTAX (E) – FRICASSÉE
 .TP
-Fricassée a tuple (a.k.a. \fBFor\fR expressions)
+Fricassée a frame (a.k.a. \fBFor\fR expressions)
 
 .SEM Γ ⊢ \fBFor\fR s:FS r:FR ↓ v
 Γ ⊢ s ↓ W = ( < u\*<1\*>; Γ\*<1\*>; k\*<x\*> → v\*<x1\*>, k\*<y\*> → v\*<y1\*>, ... >, < u\*<2\*>; Γ\*<2\*>; k\*<x\*> → v\*<x2\*>, k\*<y\*> → v\*<y2\*>, ... >, ... ),
@@ -116,7 +116,7 @@ X = { w\*<i\*> ∈ W | v\*<i\*> = True }
 Γ; X ⊢ r ↓ v
 .SEME
 
-This operator allows iterating over the values in a tuple to produce some new result. The syntax is handled in two pieces: a selection component (FS) that creates a list of tuples, each being an environment in which the relevant values from the input are defined (i.e., it is a list of whitnesses), a results component that evaluates expressions using the witnesses and produces a result. Optionally, a filter expression can be provided to exclude certain witnesses.
+This operator allows iterating over the values in a frame to produce some new result. The syntax is handled in two pieces: a selection component (FS) that creates a list of frames, each being an environment in which the relevant values from the input are defined (i.e., it is a list of whitnesses), a results component that evaluates expressions using the witnesses and produces a result. Optionally, a filter expression can be provided to exclude certain witnesses.
 
 .SS EXPRESSION SYNTAX (E) – CONDITITONAL
 .TP
@@ -500,7 +500,7 @@ Instantiate a template
 ∀ k\*<x\*> → e\*<x\*> ∈ S : (r, t, ..., s, ...) ⊢ e\*<x\*> ↓ v\*<x\*>
 .SEME
 
-Creates a new tuple, based on a template, grounded in the current scope. If source is a template, instantiate that template setting the provided attributes and inheriting any others. If source is not a template, an error occurs. If any attribute is external but not overridden, it will cause an error.
+Creates a new frame, based on a template, grounded in the current scope. If source is a template, instantiate that template setting the provided attributes and inheriting any others. If source is not a template, an error occurs. If any attribute is external but not overridden, it will cause an error.
 
 .SS EXPRESSION SYNTAX (E) – COALESCENCE
 .TP
@@ -515,16 +515,16 @@ Null coalescence
 Γ ⊢ default ↓ v
 .SEME
 
-.SS EXPRESSION SYNTAX (E) – TUPLE CREATION AND UNARY OPERATORS
+.SS EXPRESSION SYNTAX (E) – FRAME CREATION AND UNARY OPERATORS
 .TP
-Literal tuple
+Literal frame
 .SEM (t, ...) ⊢ \fB{\fR (a:A)* \fB}\fR ↓ r = < u; r, t, ...;  ∀ x ∈ a : k\*<x\*> → v\*<x\*> >
 
 ∀ x ∈ a : (r, t, ...) ⊢ x ↓ k\*<x\*> → v\*<x\*>,
 
 ¬∃ k\*<y\*> = k\*<x\*>
 .SEME
-Construct a new literal tuple.
+Construct a new literal frame.
 
 .TP
 Create a new template
@@ -577,9 +577,9 @@ Unique identifier generation
 .SEM Γ ⊢ \fBGenerateId\fR expr:E\*<+\*> ↓ i :: Str
 .SEM Γ ⊢ expr ↓ < i; Δ; ... >
 
-Extracts the unique identifier from a tuple. The implementation makes no guarantees about the format of these identifiers, other than they are valid Flabbergast identifiers.
+Extracts the unique identifier from a frame. The implementation makes no guarantees about the format of these identifiers, other than they are valid Flabbergast identifiers.
 
-This expression is meant to have a similar function to LISP's \fIgensym\fR or XPath's \fIgenerate-id\fR. It is intended to allow generating unique, though unhelpfully opaque, identifiers in generated code. For instance, to generate temporary variable names when generating the compiler. The \fBId\fR function is similar Clojure's auto-\fIgensym\fR syntax; with the scope of a tuple, the same identifier is available.
+This expression is meant to have a similar function to LISP's \fIgensym\fR or XPath's \fIgenerate-id\fR. It is intended to allow generating unique, though unhelpfully opaque, identifiers in generated code. For instance, to generate temporary variable names when generating the compiler. The \fBId\fR function is similar Clojure's auto-\fIgensym\fR syntax; with the scope of a frame, the same identifier is available.
 
 .SS EXPRESSION SYNTAX (E) – FUNCTION-LIKE TEMPLATE INSTANTIATION
 
@@ -616,7 +616,7 @@ Access external data
 
 This expression returns data external to the program, described by the URI provided. This expression access as library access, input of user data, and a foreign data interface. The exact semantics of the command are implementation-defined, however, the same URI must yield the same data during the execution of the program and the current context must be irrelevant to the import mechanism (i.e., the return value must not depend lookup expressions, however, it can return a template which does).
 
-Evaluate an expression, which must be a tuple, then begin lookup of the names provided from that context.
+Evaluate an expression, which must be a frame, then begin lookup of the names provided from that context.
 
 The interpreter may process all \fBFrom\fR expressions first, outside of normal program flow. That is, \fBFalse && From foo:\fR may evaluate the \fBFrom\fR expression.
 
@@ -628,15 +628,15 @@ names ⊢ t ↓ v
 .SEM (t, s, ...) ⊢ names:N names:(\fB.\fR N)* ↓ v
 (s, ...) ⊢ names ↓ v
 .SEME
-.SEM (n) ⊢ t :: Tuple ↓ v
+.SEM (n) ⊢ t :: Frame ↓ v
 < n → v > ∈ t
 .SEME
-.SEM (n, m, ...) ⊢ t :: Tuple ↓ v
+.SEM (n, m, ...) ⊢ t :: Frame ↓ v
 < n → s > ∈ t
 (m, ...) ⊢ s ↓ v
 .SEME
 
-This does a dynamically-scoped lookup. It searches all the existing tuple contexts for a matching name. If the value in any tuple is not a tuple, this is not an error. Any tuple that does not match the complete path of names is simply ignored. It is an error if there are no more contexts in which to search and there are still unsatisfied names.
+This does a dynamically-scoped lookup. It searches all the existing frame contexts for a matching name. If the value in any frame is not a frame, this is not an error. Any frame that does not match the complete path of names is simply ignored. It is an error if there are no more contexts in which to search and there are still unsatisfied names.
 
 It is not an error if any value is not defined so long as it is not the first item in an Γ\*<n\*>. See EVALUATION SEMANTICS for more details.
 
@@ -647,7 +647,7 @@ Perform direct lookup
 
 Γ ⊢ v (\fB.\fR other:I)* ↓ u
 .SEME
-Get values from inside of a tuple. Do not perform contextual lookup.
+Get values from inside of a frame. Do not perform contextual lookup.
 
 .SS EXPRESSION SYNTAX (E) – TERMINAL
 .TP
@@ -662,7 +662,7 @@ Literal list
 ∀ x ∈ arg : (s, ...) ⊢ x ↓ v\*<x\*>
 .SEME
 
-This creates a list-like tuple. Names are selected by the ORD function such that the tuple will have the same order of items as the original list when collated. Indexing is 1-based.
+This creates a list-like frame. Names are selected by the ORD function such that the frame will have the same order of items as the original list when collated. Indexing is 1-based.
 
 .TP
 Identifier-like string
@@ -672,7 +672,7 @@ Identifier-like string
 Produce a string that is parsed as an identifier, so it is necessarily a valid identifier.
 
 .TP
-Access containing tuple
+Access containing frame
 .SEM (a, ...) ⊢ \fBContainer\fR ↓ v
 (...) ⊢ \fBThis\fR ↓ v
 .SEME
@@ -681,7 +681,7 @@ Access containing tuple
 (...) ⊢ \fBContainer\fR ↓ v
 .SEME
 
-Return the tuple containing current tuple. This is the second tuple in the environment not marked with a *.
+Return the frame containing current frame. This is the second frame in the environment not marked with a *.
 
 .TP
 Boolean false literal
@@ -705,12 +705,12 @@ Smallest floating literal
 The value of \fIx\fR is the implementation-defined smallest value representable as a floating point number.
 
 .TP
-Create unique identifier for the current tuple
+Create unique identifier for the current frame
 .SEM Γ ⊢ \fBId\fR ↓ v
 Γ ⊢ \fBGenerateId This\fR ↓ v
 .SEME
 
-This is syntactic sugar for generating an identifier for the current tuple. See \fBGenerateId\fR for details.
+This is syntactic sugar for generating an identifier for the current frame. See \fBGenerateId\fR for details.
 
 .TP
 Infinity literal
@@ -746,7 +746,7 @@ Null literal
 .SEME
 
 .TP
-Access current tuple
+Access current frame
 .SEM (a, ...) ⊢ \fBThis\fR ↓ a
 .SEME
 
@@ -754,7 +754,7 @@ Access current tuple
 (...) ⊢ \fBThis\fR ↓ v
 .SEME
 
-Return the current tuple. This is the first tuple in the environment not marked with a *.
+Return the current frame. This is the first frame in the environment not marked with a *.
 
 .TP
 Boolean true literal
@@ -879,14 +879,14 @@ Embedded expression
 .SEM [\fBa\fR-\fBz\fR][\fBa\fR-\fBzA\fR-\fBZ0\fR-\fB9_\fR]*
 .SEME
 
-.SH TUPLE PARTS
+.SH FRAME PARTS
 .TP
-Tuple attribute definition (A)
+Frame attribute definition (A)
 .SEM name:I \fB:\fR expr:E ↓ name → expr
 .SEME
 .SEM R ⊢ name:I \fB:\fR expr:E ↓ name → expr
 .SEME
-Define a new attribute in a tuple, equal to some expression.
+Define a new attribute in a frame, equal to some expression.
 
 .TP
 In a template, define an attribute that must be overridden. (X)
@@ -923,7 +923,7 @@ Remove definition for an attribute. (O)
 .SEM R ⊢ name \fB-:\fR ↓
 .SEME
 
-The name must be present in the existing tuple or an error occurs.
+The name must be present in the existing frame or an error occurs.
 
 .SH TYPE DEFINITIONS (T)
 .SEM \fBBool\fR ↓ Bool
@@ -936,7 +936,7 @@ The name must be present in the existing tuple or an error occurs.
 .SEME
 .SEM \fBTemplate\fR ↓ Template
 .SEME
-.SEM \fBTuple\fR ↓ Tuple
+.SEM \fBFrame\fR ↓ Frame
 .SEME
 
 
@@ -945,10 +945,10 @@ The name must be present in the existing tuple or an error occurs.
 .TP
 Pass-through selector
 .SEM Γ ⊢ \fBEach\fR input:E\*<0\*> ↓ { ∀ i :  v\*<i\*> }
-Γ ⊢ input ↓ < u; Δ; k\*<i\*> → v\*<i\*> :: Tuple >
+Γ ⊢ input ↓ < u; Δ; k\*<i\*> → v\*<i\*> :: Frame >
 .SEME
 
-Passes-though a list of witnesses provided as a tuple of tuples.
+Passes-though a list of witnesses provided as a frame of frames.
 
 .TP
 Merged attribute selector
@@ -966,7 +966,7 @@ O(j) = ∀ i ∈ input:\fBOrdinal\fR : value\*<i\*> → |{ k ∈ K : k\*<j\*> < 
 W = { ∀ j : w\*<j\*> = < u; (w\*<j\*>, t, ...); V(j) ∪ A(j) ∪ O(j) > }
 .SEME
 
-Produce a list of witnesses where each \fIvalue\fR identifier matches the value of the current attribute in each of the tuple inputs, or null, if not in the matching tuple. The special input \fBName\fR is the name of the current attribute and the special input \fBOrdinal\fR is the position of the current attribute.
+Produce a list of witnesses where each \fIvalue\fR identifier matches the value of the current attribute in each of the frame inputs, or null, if not in the matching frame. The special input \fBName\fR is the name of the current attribute and the special input \fBOrdinal\fR is the position of the current attribute.
 
 .SH FRICASSÉE RESULTS (FR)
 
@@ -1004,10 +1004,10 @@ Anonymous value generator
 ∀ w\*<x\*> : (w\*<x\*>*, t, ...) ⊢ expr ↓ v\*<x\*>
 .SEME
 
-This produces a list-like tuple by evaluating the supplied expression on each tuple of witnesses.
+This produces a list-like frame by evaluating the supplied expression on each frame of witnesses.
 
 .TP
-Named attribute tuple generator
+Named attribute frame generator
 .SEM (t, ...); ( w\*<0\*>, w\*<1\*>, ... ) ⊢ \fBSelect\fR attr:E\*<0\*> \fB:\fR expr:E\*<+\*> ↓ r = < u; r, t, ...; k\*<x\*> → v\*<x\*> >
 
 (w\*<x\*>*, t, ...) ⊢ attr ↓ k\*<x\*> :: Str ∨ (w\*<x\*>*, t, ...) ⊢ attr ↓ v :: Int ∧ k\*<x\*> = ORD(v),
@@ -1015,7 +1015,7 @@ Named attribute tuple generator
 (w\*<x\*>*, t, ...) ⊢ expr ↓ v\*<x\*>
 .SEME
 
-This produces a tuple with named attributes from strings or integers. Since tuples cannot have duplicate keys, any duplicate keys produce an error. Similarly, since not all strings are valid keys, any string which is not a valid key is an error.
+This produces a frame with named attributes from strings or integers. Since frames cannot have duplicate keys, any duplicate keys produce an error. Similarly, since not all strings are valid keys, any string which is not a valid key is an error.
 
 .SH FRICASSÉE ORDERING (FO)
 
@@ -1066,7 +1066,7 @@ t ↓ u :: Int
 .SH EVALUATION SEMANTICS
 In the semantics defined above, it is possible for a value to depend on its own value. Such situation are errors with one notable exception: the contextual lookup operator.
 
-During contextual lookup, a list of candidate tuples is whittled down to a list of tuples containing a matching name. Since only the first name is selected, the values of the other tuples are immaterial. It is therefore possible for one of these values to be circular, or an error, and the result still be correct.
+During contextual lookup, a list of candidate frames is whittled down to a list of frames containing a matching name. Since only the first name is selected, the values of the other frames are immaterial. It is therefore possible for one of these values to be circular, or an error, and the result still be correct.
 
 .SH URI NAME-SPACES AND THE STANDARD LIBRARY
 The URIs understood by the importer is implementation defined with one exception: the \fBlib:\fR schema holds the standard (installed) library. An implementation is free to fail to include this schema, but it may not be used with other semantics.
@@ -1077,6 +1077,6 @@ The directories specified in the \fBFLABBERGAST_PATH\fR environment variable.
 The directories matching {$PREFIX,/usr,/usr/local}/share/flabbergast/lib where $PREFIX is the installation prefix.
 
 .SH COLLATED NAMES FROM NUMBERS
-Tuple keys are always strings, but some instances use integers as inputs. The ORD function is an implementation-defined method to convert numbers to names such that total ordering of the numbers is preserved as total collation of the names.
+Frame keys are always strings, but some instances use integers as inputs. The ORD function is an implementation-defined method to convert numbers to names such that total ordering of the numbers is preserved as total collation of the names.
 
 Since collation is locale-dependent, this function may also be locale-dependent.

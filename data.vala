@@ -64,7 +64,7 @@ namespace Flabbergast.Data {
 		}
 	}
 
-	public abstract class Tupleish : Datum, GTeonoma.SourceInfo {
+	public abstract class Frameish : Datum, GTeonoma.SourceInfo {
 		internal Gee.SortedMap<string, Expression> attributes = new Gee.TreeMap<string, Expression> ();
 		public Utils.ContainerReference? containers {
 			get;
@@ -76,7 +76,7 @@ namespace Flabbergast.Data {
 		}
 	}
 
-	public class Template : Tupleish {
+	public class Template : Frameish {
 		internal Gee.SortedSet<string> externals = new Gee.TreeSet<string> ();
 		private class TemplateExternal : Gee.Map.Entry<string, Expression ? > {
 			private string name;
@@ -110,12 +110,12 @@ namespace Flabbergast.Data {
 		}
 	}
 
-	public class Tuple : Tupleish {
+	public class Frame : Frameish {
 		public uint context {
 			get;
 			private set;
 		}
-		public Tuple (uint context) {
+		public Frame (uint context) {
 			this.context = context;
 		}
 		public Gee.Iterator<Gee.Map.Entry<string, Expression> > iterator () {
@@ -125,7 +125,7 @@ namespace Flabbergast.Data {
 			return attributes.has_key (name) ? attributes[name] : null;
 		}
 		public override string to_string () {
-			return "tuple";
+			return "frame";
 		}
 	}
 
@@ -135,7 +135,7 @@ namespace Flabbergast.Data {
 		INT,
 		STR,
 		TEMPLATE,
-		TUPLE;
+		FRAME;
 		public Type get_real_type () {
 			switch (this) {
 			 case BOOL :
@@ -153,8 +153,8 @@ namespace Flabbergast.Data {
 			 case TEMPLATE :
 				 return typeof (Template);
 
-			 case TUPLE :
-				 return typeof (Tuple);
+			 case FRAME :
+				 return typeof (Frame);
 
 			 default :
 				 assert_not_reached ();

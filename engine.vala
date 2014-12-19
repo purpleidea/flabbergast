@@ -86,8 +86,8 @@ namespace Flabbergast {
 	internal struct MachineState {
 		internal uint context;
 		internal Utils.ContainerReference? containers;
-		internal unowned Data.Tuple? this_tuple;
-		internal unowned Data.Tuple? container_tuple;
+		internal unowned Data.Frame? this_frame;
+		internal unowned Data.Frame? container_frame;
 	}
 
 	public class Utils.DataStack {
@@ -305,8 +305,8 @@ namespace Flabbergast {
 		private Expression? lookup_direct_internal (Gee.List<Name> names, ref int it, out bool exists = null) throws EvaluationError {
 			var start = operands.pop ();
 			for (; it < names.size - 1; it++) {
-				if (start is Data.Tuple) {
-					var promise = ((Data.Tuple)start)[names[it].name];
+				if (start is Data.Frame) {
+					var promise = ((Data.Frame)start)[names[it].name];
 					if (promise == null) {
 						exists = false;
 						return null;
@@ -318,9 +318,9 @@ namespace Flabbergast {
 					return null;
 				}
 			}
-			if (start is Data.Tuple) {
+			if (start is Data.Frame) {
 				exists = false;
-				return ((Data.Tuple)start)[names[names.size - 1].name];
+				return ((Data.Frame)start)[names[names.size - 1].name];
 			} else {
 				exists = true;
 				return null;
@@ -334,7 +334,7 @@ namespace Flabbergast {
 			if (result == null) {
 				var source_ref = reference == null ? "" : @" $(reference.source.source):$(reference.source.line):$(reference.source.offset)";
 				if (exists) {
-					throw new EvaluationError.TYPE_MISMATCH (@"Tried to do a direct lookup inside a non-tuple $(names[it].name).$(source_ref)");
+					throw new EvaluationError.TYPE_MISMATCH (@"Tried to do a direct lookup inside a non-frame $(names[it].name).$(source_ref)");
 				} else {
 					throw new EvaluationError.RESOLUTION (@"Could not find matching element $(names[it].name).$(source_ref)");
 				}
@@ -359,17 +359,17 @@ namespace Flabbergast {
 			}
 		}
 
-		public Data.Tuple start_from (File file) throws EvaluationError {
+		public Data.Frame start_from (File file) throws EvaluationError {
 			if (call_stack.length != 0) {
 				call_stack.length = 0;
 			}
 			var state = MachineState ();
 			call_stack += StackFrame (state, file);
-			var tuple = file.evaluate (this);
-			state.this_tuple = tuple;
-			state.context = state.this_tuple.context;
+			var frame = file.evaluate (this);
+			state.this_frame = frame;
+			state.context = state.this_frame.context;
 			this.state = state;
-			return tuple;
+			return frame;
 		}
 
 		private Gee.Map<string, Data.Datum> imports = new Gee.HashMap<string, Data.Datum> ();
@@ -405,10 +405,10 @@ namespace Flabbergast {
 					var file = ((File) result.get_object ());
 					var state = MachineState ();
 					call_stack += StackFrame (state, file);
-					var tuple = file.evaluate (this);
+					var frame = file.evaluate (this);
 					call_stack[call_stack.length - 1] = {};
 					call_stack.length--;
-					return tuple;
+					return frame;
 				} else {
 					throw new EvaluationError.IMPORT (@"Failed to parse file $(file_name).");
 				}

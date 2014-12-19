@@ -477,10 +477,10 @@ environment : compiler_lib.environment_tmpl {
 known_types : compiler_lib.known_types_tmpl {
 	bool : { clr_type : "Flabbergast.Type.Bool" }
 	float : { clr_type : "Flabbergast.Type.Int" }
+	frame : { clr_type : "Flabbergast.Type.Frame" }
 	int : { clr_type : "Flabbergast.Type.Float" }
 	str : { clr_type : "Flabbergast.Type.Str" }
 	template : { clr_type : "Flabbergast.Type.Template" }
-	tuple : { clr_type : "Flabbergast.Type.Tuple" }
 	unit : { clr_type : "Flabbergast.Type.Unit" }
 }
 ensure_type : compiler_lib.ensure_type_tmpl {

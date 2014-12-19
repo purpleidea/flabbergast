@@ -8,26 +8,26 @@ namespace Flabbergast {
 			get;
 			set;
 		}
-		public Data.Tuple evaluate (ExecutionEngine engine) throws EvaluationError {
+		public Data.Frame evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
-			var tuple = new Data.Tuple (context);
-			tuple.source = source;
+			var frame = new Data.Frame (context);
+			frame.source = source;
 
 			var state = engine.state;
 			state.context = context;
-			state.this_tuple = tuple;
+			state.this_frame = frame;
 			state.containers = new Utils.ContainerReference (context, null);
 			engine.state = state;
 
 			foreach (var attribute in attributes) {
-				if (tuple.attributes.has_key (attribute.name.name)) {
+				if (frame.attributes.has_key (attribute.name.name)) {
 					throw new EvaluationError.NAME (@"Duplicate attribute name $(attribute.name.name). $(attribute.source.source):$(attribute.source.line):$(attribute.source.offset)");
 				}
 				var attr_value = engine.create_closure (attribute.expression);
-				tuple.attributes[attribute.name.name] = attr_value;
+				frame.attributes[attribute.name.name] = attr_value;
 				engine.environment[context, attribute.name.name] = attr_value;
 			}
-			return tuple;
+			return frame;
 		}
 		public void transform () {
 			foreach (var attribute in attributes) {

@@ -6,11 +6,11 @@ namespace Flabbergast {
 [Flags]
 public enum Type {
 	Bool = 1,
-	Int = 2,
-	Float = 4,
-	Str = 8,
-	Template = 16,
-	Tuple = 32,
+	Float = 2,
+	Frame = 4,
+	Int = 8,
+	Str = 16,
+	Template = 32,
 	Unit = 64,
 	Any = 127
 }
@@ -97,7 +97,7 @@ public abstract class AstTypeableNode : AstNode {
 			return Type.Float;
 		} else if (clr_type == typeof(string) || clr_type == typeof(String)) {
 			return Type.Str;
-		// TODO: Template and tuple
+		// TODO: Template and frame
 		} else {
 			return 0;
 		}
@@ -132,7 +132,7 @@ public abstract class NameInfo {
 	protected Dictionary<string, NameInfo> Children = new Dictionary<string, NameInfo>();
 	public string Name { get; protected set; }
 	internal NameInfo Lookup(ErrorCollector collector, string name) {
-		EnsureType(collector, Type.Tuple);
+		EnsureType(collector, Type.Frame);
 		if (!Children.ContainsKey(name)) {
 			CreateChild(collector, name, Name);
 		}
@@ -141,7 +141,7 @@ public abstract class NameInfo {
 	internal NameInfo Lookup(ErrorCollector collector, IEnumerator<string> names) {
 		var info = this;
 		while (names.MoveNext()) {
-			info.EnsureType(collector, Type.Tuple);
+			info.EnsureType(collector, Type.Frame);
 			if (!info.Children.ContainsKey(names.Current)) {
 				info.CreateChild(collector, names.Current, this.Name);
 			}

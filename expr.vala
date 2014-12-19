@@ -102,11 +102,11 @@ namespace Flabbergast.Expressions {
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expr);
-			var tuple = engine.operands.pop ();
-			if (tuple is Data.Tuple) {
-				engine.operands.push (new Data.String (make_id ((int) ((Data.Tuple)tuple).context)));
+			var frame = engine.operands.pop ();
+			if (frame is Data.Frame) {
+				engine.operands.push (new Data.String (make_id ((int) ((Data.Frame)frame).context)));
 			} else {
-				throw new EvaluationError.TYPE_MISMATCH (@"Expected tuple in generate id. $(source.source):$(source.line):$(source.offset)");
+				throw new EvaluationError.TYPE_MISMATCH (@"Expected frame in generate id. $(source.source):$(source.line):$(source.offset)");
 			}
 		}
 		public override Expression transform () {
@@ -116,11 +116,11 @@ namespace Flabbergast.Expressions {
 	}
 	internal class Id : Expression {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			var tuple = engine.state.this_tuple;
-			if (tuple != null) {
-				engine.operands.push (new Data.String (make_id ((int) tuple.context)));
+			var frame = engine.state.this_frame;
+			if (frame != null) {
+				engine.operands.push (new Data.String (make_id ((int) frame.context)));
 			} else {
-				throw new EvaluationError.INTERNAL (@"This tuple is null in generate id. $(source.source):$(source.line):$(source.offset)");
+				throw new EvaluationError.INTERNAL (@"This frame is null in generate id. $(source.source):$(source.line):$(source.offset)");
 			}
 		}
 		public override Expression transform () {
@@ -297,17 +297,17 @@ namespace Flabbergast.Expressions {
 			engine.call (expression);
 			var result = engine.operands.pop ();
 			var src_ref = @"$(source.source):$(source.line):$(source.offset)";
-			var tuple = engine.state.this_tuple;
-			string tuple_ref;
-			if (tuple != null) {
-				tuple_ref = @"$(tuple.source.source):$(tuple.source.line):$(tuple.source.offset) ";
+			var frame = engine.state.this_frame;
+			string frame_ref;
+			if (frame != null) {
+				frame_ref = @"$(frame.source.source):$(frame.source.line):$(frame.source.offset) ";
 			} else {
-				tuple_ref = "";
+				frame_ref = "";
 			}
 			if (result is Data.String) {
-				throw new EvaluationError.USER_DEFINED (@"$(((Data.String)result).value) $(tuple_ref)$(src_ref)");
+				throw new EvaluationError.USER_DEFINED (@"$(((Data.String)result).value) $(frame_ref)$(src_ref)");
 			} else {
-				throw new EvaluationError.TYPE_MISMATCH (@"Expected string in error. $(tuple_ref)$(src_ref)");
+				throw new EvaluationError.TYPE_MISMATCH (@"Expected string in error. $(frame_ref)$(src_ref)");
 			}
 		}
 		public override Expression transform () {

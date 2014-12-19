@@ -59,7 +59,7 @@ namespace Flabbergast {
 				return iterator.@foreach ((x) => f (new ListEntry (it++, transform (x))));
 			}
 		}
-		public Data.Tuple result {
+		public Data.Frame result {
 			get;
 			private set;
 		}
@@ -67,7 +67,7 @@ namespace Flabbergast {
 
 		public void add (string name, Data.Datum @value) throws EvaluationError {
 			if (result.attributes.has_key (name)) {
-				throw new EvaluationError.NAME (@"Duplicate attribute name $(name) during tuple synthesis.");
+				throw new EvaluationError.NAME (@"Duplicate attribute name $(name) during frame synthesis.");
 			}
 			var attr_value = new Expressions.ReturnOwnedLiteral (@value);
 			result.attributes[name] = attr_value;
@@ -92,7 +92,7 @@ namespace Flabbergast {
 				add (entry.key, entry.value);
 			}
 		}
-		public void add_tuple (string name, Gee.Iterable<Gee.Map.Entry<string, Data.Datum> > list) throws EvaluationError {
+		public void add_frame (string name, Gee.Iterable<Gee.Map.Entry<string, Data.Datum> > list) throws EvaluationError {
 			add_iterable (name, list.iterator ());
 		}
 
@@ -114,7 +114,7 @@ namespace Flabbergast {
 
 		public void add_function (string name, bool has_args, Gee.Set<string>? named_args, owned EvaluateFunc function) throws EvaluationError {
 			if (result.attributes.has_key (name)) {
-				throw new EvaluationError.NAME (@"Duplicate attribute name $(name) during tuple synthesis.");
+				throw new EvaluationError.NAME (@"Duplicate attribute name $(name) during frame synthesis.");
 			}
 			var template = new  Expressions.TemplateLiteral ();
 			template.source_expr = null;
@@ -152,7 +152,7 @@ namespace Flabbergast {
 			}
 			public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 				var named_args = new Gee.TreeMap<string, Data.Datum> ();
-				foreach (var entry in engine.state.this_tuple) {
+				foreach (var entry in engine.state.this_frame) {
 					if (entry.key[0].islower ()) {
 						engine.call (entry.value);
 						named_args[entry.key] = engine.operands.pop ();
@@ -169,13 +169,13 @@ namespace Flabbergast {
 		public ForeignGenerator (ExecutionEngine engine) throws EvaluationError {
 			this.engine = engine;
 			var context = engine.environment.create ();
-			var tuple = new Data.Tuple (context);
+			var frame = new Data.Frame (context);
 
 			var state = engine.state;
 			state.containers = new Utils.ContainerReference (state.context, state.containers);
 			engine.environment.append_containers (context, state.containers);
 
-			result = tuple;
+			result = frame;
 		}
 	}
 }

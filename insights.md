@@ -31,11 +31,11 @@ Lookups can be tables. Imagine each lookup as a matrix where the rows are the pa
   - The value does not exist: mark the column “ignored”.
   - The value is not computed: set a listener.
   - This is the last row: mark the column “good”.
-  - The value is a tuple: repeat in the next row.
-  - The value is not a tuple: mark the column “bad”.
+  - The value is a frame: repeat in the next row.
+  - The value is not a frame: mark the column “bad”.
 3. If, at anytime, the first column that is not marked “ignored” is:
   - marked “good”: the lookup is complete with the result being the last row in this column.
-  - marked “bad”: the lookup has an error where the user has attempted to lookup a value inside a non-tuple.
+  - marked “bad”: the lookup has an error where the user has attempted to lookup a value inside a non-frame.
   - none: the reference does not exist and this is an error.
 
 ## “Free” Variables
@@ -55,7 +55,7 @@ However, given:
 
     If a.enabled Then a Else Null
 
-It is clear that `a.enabled` is needed and `a` is optional, but `a` being computed is implied by having resolved `a.enabled`, even if they are not the same `a`. This is a consequence of the lookup algorithm above. In fact, for any sub-lookup, the algorithm above will produce a correct value as a consequence of finding the longer lookup. There is also the guarantee that the type of any sub-lookup must be a tuple, otherwise the longer lookup would have failed.
+It is clear that `a.enabled` is needed and `a` is optional, but `a` being computed is implied by having resolved `a.enabled`, even if they are not the same `a`. This is a consequence of the lookup algorithm above. In fact, for any sub-lookup, the algorithm above will produce a correct value as a consequence of finding the longer lookup. There is also the guarantee that the type of any sub-lookup must be a frame, otherwise the longer lookup would have failed.
 
 Why is any of this relevant? In the case of:
 
@@ -79,7 +79,7 @@ By type inference, `x` must be a Boolean and `y` and `z` must be templates. That
     If y Then y + 3 Else y
     a + a.x
 
-are always a type error since `x` needs to be both a Boolean, a template and `y` need to be both Boolean and a numeric type (integer or floating point), and `a` must be a tuple on account of `a.x` but the addition requires it to be a numeric type.
+are always a type error since `x` needs to be both a Boolean, a template and `y` need to be both Boolean and a numeric type (integer or floating point), and `a` must be a frame on account of `a.x` but the addition requires it to be a numeric type.
 
 Most of the targeted virtual machines make a distinction between integral and floating point types. If type inference is done, selecting the correct path can be done immediately after lookup. The following code:
 

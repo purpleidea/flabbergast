@@ -110,11 +110,11 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			engine.call (expression);
 			var result = engine.operands.pop ();
-			if (!(result is Data.Tuple)) {
-				throw new EvaluationError.TYPE_MISMATCH (@"Can only do indirect look from the context of a tuple. $(source.source):$(source.line):$(source.offset)");
+			if (!(result is Data.Frame)) {
+				throw new EvaluationError.TYPE_MISMATCH (@"Can only do indirect look from the context of a frame. $(source.source):$(source.line):$(source.offset)");
 			}
 			var state = engine.state;
-			state.context = ((Data.Tuple)result).context;
+			state.context = ((Data.Frame)result).context;
 			engine.state = state;
 			engine.call (engine.lookup_contextual (names, this));
 		}
@@ -131,8 +131,8 @@ namespace Flabbergast.Expressions {
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
-			var tuple = new Data.Tuple (context);
-			tuple.source = source;
+			var frame = new Data.Frame (context);
+			frame.source = source;
 
 			var attr_names = new Gee.HashSet<string> ();
 			foreach (var attr in attributes) {
@@ -140,7 +140,7 @@ namespace Flabbergast.Expressions {
 					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr.name.name).");
 				}
 				var attr_value = engine.create_closure (attr.expression);
-				tuple.attributes[attr.name.name] = attr_value;
+				frame.attributes[attr.name.name] = attr_value;
 				engine.environment[context, attr.name.name] = attr_value;
 				attr_names.add (attr.name.name);
 			}

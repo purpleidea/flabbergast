@@ -40,7 +40,7 @@ syn keyword flabbergastConditional If Then Else
 syn keyword flabbergastKeyword As Container Error Finite GenerateId Id In Is Length Let Lookup Template This Through To Where
 syn match flabbergastOperators '\(<=\?\|<\=>\|>=\?\|==\|||\|-\|!\|!=\|/\|\*\|&\|&&\|%\|+\)' display
 syn keyword flabbergastTodo contained containedin=flabbergastComment TODO FIXME XXX
-syn keyword flabbergastType Bool Float Int Str Tuple
+syn keyword flabbergastType Bool Float Frame Int Str
 syn match flabbergastImplDefined "\<X[a-zA-Z0-9]*\>" display
 
 hi def link flabbergastAttribute	Statement

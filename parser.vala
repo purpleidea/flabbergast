@@ -17,7 +17,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register_string_literal (false);
 		register_enum<Data.Ty> ("type", fix_name);
 
-		/* Tuple attributes */
+		/* Frame attributes */
 		register<Attribute> ("attribute", 0, "%P{name}%-:%-%P{expression}");
 		register<External> ("external attribute", 0, "%P{name}%-?:");
 		register<Informative> ("informative attribute", 0, "%P{name}%-%%:");
@@ -97,13 +97,13 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		register<IndirectLookup> ("remote lookup", precedence, "Lookup %L{names}{% .% } In%! %P{expression}", new Type[] { typeof (Name) });
 
 		precedence++;
-		register<Instantiate> ("template instantiation", precedence, "%P{+source_expr}%-{%!%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TuplePart) });
+		register<Instantiate> ("template instantiation", precedence, "%P{+source_expr}%-{%!%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (FramePart) });
 
 		precedence++;
 		register<NullCoalesce> ("null coalescence", precedence, "%P{+expression}%-??%!%-%P{+alternate}");
 
 		precedence++;
-		register<TupleLiteral> ("tuple literal", precedence, "{%!%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (Attribute) });
+		register<FrameLiteral> ("frame literal", precedence, "{%!%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (Attribute) });
 		register<TemplateLiteral> ("template", precedence, "Template%! %p{+source_expr}%_{%I%n%l{attributes}{%n}%i%n}", new Type[] { typeof (TemplatePart) });
 		register<Not> ("logical not", precedence, "!%-%P{+expression}");
 		register<Negation> ("negation", precedence, "-%-%P{+expression}");
@@ -144,11 +144,11 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 
 		/* Selectors */
 		register<Fricassee.PassThrough> ("pass-through (Each)", 0, "Each %P{source_expr}");
-		register<Fricassee.MergedTuples> ("merged tuple", 0, "%L{sources}{% ,%-}", new Type[] { typeof (Fricassee.Source) });
+		register<Fricassee.MergedFrames> ("merged frame", 0, "%L{sources}{% ,%-}", new Type[] { typeof (Fricassee.Source) });
 		/* Results */
-		register<Fricassee.AnonymousTuple> ("ordered anonymous tuple", 0, "%P{order} Select %P{result}");
-		register<Fricassee.NamedTuple> ("named tuple", 0, "Select %P{result_attr}%-:%-%P{result_value}");
-		register<Fricassee.AnonymousTuple> ("anonymous tuple", 0, "Select %P{result}");
+		register<Fricassee.AnonymousFrame> ("ordered anonymous frame", 0, "%P{order} Select %P{result}");
+		register<Fricassee.NamedFrame> ("named frame", 0, "Select %P{result_attr}%-:%-%P{result_value}");
+		register<Fricassee.AnonymousFrame> ("anonymous frame", 0, "Select %P{result}");
 		register<Fricassee.Reduce> ("reduce (ordered)", 0, "%P{order} Reduce %P{result} With %P{initial_attr}%-:%-%P{initial}");
 		register<Fricassee.Reduce> ("reduce", 0, "Reduce %P{result} With %P{initial_attr}%-:%-%P{initial}");
 		/* Order Clauses */
@@ -157,7 +157,7 @@ public class Flabbergast.Rules : GTeonoma.Rules {
 		/* Sources */
 		register<Fricassee.AttributeSource> ("name", 0, "%P{name}%-:%-Name");
 		register<Fricassee.OrdinalSource> ("ordinal", 0, "%P{name}%-:%-Ordinal");
-		register<Fricassee.TupleSource> ("expression", 0, "%P{name}%-:%-%P{expression}");
+		register<Fricassee.FrameSource> ("expression", 0, "%P{name}%-:%-%P{expression}");
 	}
 }
 internal class Flabbergast.IdentifierParser : GTeonoma.CustomParser<Name> {

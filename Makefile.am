@@ -148,7 +148,7 @@ libflabbergast_glib_la_SOURCES = \
 	expr_file.vala \
 	expr_fricassee.vala \
 	expr_misc.vala \
-	expr_tuple.vala \
+	expr_frame.vala \
 	expr_type.vala \
 	foreign.vala \
 	misc.c \

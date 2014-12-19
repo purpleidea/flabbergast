@@ -405,11 +405,11 @@ namespace Flabbergast.Expressions {
 				throw new EvaluationError.TYPE_MISMATCH (@"Invalid end type to Through. $(source.source):$(source.line):$(source.offset)");
 			}
 			var context = engine.environment.create ();
-			var tuple = new Data.Tuple (context);
-			tuple.source = source;
-			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
+			var frame = new Data.Frame (context);
+			frame.source = source;
+			frame.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 			var attributes = new Gee.TreeMap<string, Expression> ();
-			tuple.attributes = attributes;
+			frame.attributes = attributes;
 			var index = 0;
 			var end_int = ((Data.Integer)end_value).value;
 			for (var it = ((Data.Integer)start_value).value; it <= end_int; it++) {
@@ -418,7 +418,7 @@ namespace Flabbergast.Expressions {
 				attributes[attr_name] = attr_value;
 				engine.environment[context, attr_name] = attr_value;
 			}
-			engine.operands.push (tuple);
+			engine.operands.push (frame);
 			return;
 		}
 		public override Expression transform () {

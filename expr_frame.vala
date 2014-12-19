@@ -9,8 +9,8 @@ namespace Flabbergast.Expressions {
 			set;
 		}
 	}
-	public abstract class TuplePart : TemplatePart {}
-	public class Attribute : TuplePart {
+	public abstract class FramePart : TemplatePart {}
+	public class Attribute : FramePart {
 		public Expression expression {
 			get;
 			set;
@@ -18,7 +18,7 @@ namespace Flabbergast.Expressions {
 	}
 	internal class External : TemplatePart {}
 	internal class Informative : TemplatePart {}
-	internal class NamedOverride : TuplePart {
+	internal class NamedOverride : FramePart {
 		public Expression expression {
 			get;
 			set;
@@ -28,45 +28,45 @@ namespace Flabbergast.Expressions {
 			set;
 		}
 	}
-	internal class Override : TuplePart {
+	internal class Override : FramePart {
 		public Gee.List<TemplatePart> attributes {
 			get;
 			set;
 		}
 	}
-	internal class Undefine : TuplePart {}
+	internal class Undefine : FramePart {}
 
-	internal class TupleLiteral : Expression {
+	internal class FrameLiteral : Expression {
 		public Gee.List<Attribute> attributes {
 			get;
 			set;
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
-			var tuple = new Data.Tuple (context);
-			tuple.source = source;
-			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
+			var frame = new Data.Frame (context);
+			frame.source = source;
+			frame.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 
 			var state = engine.state;
 			state.containers = new Utils.ContainerReference (state.context, state.containers);
 			engine.environment.append_containers (context, state.containers);
 			state.context = context;
-			state.container_tuple = state.this_tuple;
-			state.this_tuple = tuple;
+			state.container_frame = state.this_frame;
+			state.this_frame = frame;
 
 			engine.state = state;
 
 			var attr_names = new Gee.HashSet<string> ();
 			foreach (var attr in attributes) {
 				if (attr.name.name in attr_names) {
-					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr.name.name) in literal tuple. $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
+					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr.name.name) in literal frame. $(attr.source.source):$(attr.source.line):$(attr.source.offset)");
 				}
 				var attr_value = engine.create_closure (attr.expression);
-				tuple.attributes[attr.name.name] = attr_value;
+				frame.attributes[attr.name.name] = attr_value;
 				engine.environment[context, attr.name.name] = attr_value;
 				attr_names.add (attr.name.name);
 			}
-			engine.operands.push (tuple);
+			engine.operands.push (frame);
 		}
 		public override Expression transform () {
 			foreach (var attribute in attributes) {
@@ -184,7 +184,7 @@ namespace Flabbergast.Expressions {
 			get;
 			set;
 		}
-		protected void prepare_tuple (ExecutionEngine engine, out Data.Tuple tuple, out uint context, out Data.Template template, bool inherit_environment) throws EvaluationError {
+		protected void prepare_frame (ExecutionEngine engine, out Data.Frame frame, out uint context, out Data.Template template, bool inherit_environment) throws EvaluationError {
 			engine.call (source_expr);
 			var result = engine.operands.pop ();
 			if (!(result is Data.Template)) {
@@ -193,27 +193,27 @@ namespace Flabbergast.Expressions {
 
 			template = (Data.Template)result;
 			context = engine.environment.create ();
-			tuple = new Data.Tuple (context);
-			tuple.source = source;
-			tuple.containers = inherit_environment ? new Utils.ContainerReference (engine.state.context, Utils.ContainerReference.append (engine.state.containers, template.containers)) : template.containers;
+			frame = new Data.Frame (context);
+			frame.source = source;
+			frame.containers = inherit_environment ? new Utils.ContainerReference (engine.state.context, Utils.ContainerReference.append (engine.state.containers, template.containers)) : template.containers;
 
 			var state = engine.state;
 			state.containers = inherit_environment ? new Utils.ContainerReference (state.context, state.containers) : template.containers;
-			engine.environment.append_containers (context, tuple.containers);
+			engine.environment.append_containers (context, frame.containers);
 			state.context = context;
-			state.container_tuple = state.this_tuple;
-			state.this_tuple = tuple;
+			state.container_frame = state.this_frame;
+			state.this_frame = frame;
 
 			engine.state = state;
 		}
-		protected void finish_tuple(ExecutionEngine engine, Data.Tuple tuple, Data.Template template, Gee.Set<string> attr_names, uint context) throws EvaluationError {
+		protected void finish_frame(ExecutionEngine engine, Data.Frame frame, Data.Template template, Gee.Set<string> attr_names, uint context) throws EvaluationError {
 			foreach (var entry in template.attributes.entries) {
 				if (entry.key in attr_names) {
 					continue;
 				}
 				attr_names.add (entry.key);
 				var attr_value = engine.create_closure (entry.value);
-				tuple.attributes[entry.key] = attr_value;
+				frame.attributes[entry.key] = attr_value;
 				engine.environment[context, entry.key] = attr_value;
 			}
 			foreach (var external in template.externals) {
@@ -221,19 +221,19 @@ namespace Flabbergast.Expressions {
 					throw new EvaluationError.EXTERNAL_REMAINING (@"External attribute $(external) not overridden at $(source.source):$(source.line):$(source.offset). $(template.source.source):$(template.source.line):$(template.source.offset)");
 				}
 			}
-			engine.operands.push (tuple);
+			engine.operands.push (frame);
 		}
 	}
 	internal class Instantiate : InstantiateLike {
-		public Gee.List<TuplePart> attributes {
+		public Gee.List<FramePart> attributes {
 			get;
 			set;
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			Data.Tuple tuple;
+			Data.Frame frame;
 			uint context;
 			Data.Template template;
-			prepare_tuple(engine, out tuple, out context, out template, true);
+			prepare_frame(engine, out frame, out context, out template, true);
 			var attr_names = new Gee.HashSet<string> ();
 			foreach (var attr in attributes) {
 				if (attr.name.name in attr_names) {
@@ -242,7 +242,7 @@ namespace Flabbergast.Expressions {
 				attr_names.add (attr.name.name);
 				if (attr is Attribute) {
 					var attr_value = engine.create_closure (((Attribute) attr).expression);
-					tuple.attributes[attr.name.name] = attr_value;
+					frame.attributes[attr.name.name] = attr_value;
 					engine.environment[context, attr.name.name] = attr_value;
 				} else if (attr is NamedOverride) {
 					if (!template.attributes.has_key (attr.name.name)) {
@@ -260,7 +260,7 @@ namespace Flabbergast.Expressions {
 					list.add (original_attribute);
 					let.attributes = list;
 					var attr_value = engine.create_closure (let);
-					tuple.attributes[attr.name.name] = attr_value;
+					frame.attributes[attr.name.name] = attr_value;
 					engine.environment[context, attr.name.name] = attr_value;
 				} else if (attr is Override) {
 					if (!template.attributes.has_key (attr.name.name)) {
@@ -272,7 +272,7 @@ namespace Flabbergast.Expressions {
 					child_override.attributes = new Gee.ArrayList<TemplatePart> ();
 					child_override.attributes.add_all (((Override) attr).attributes);
 					var attr_value = engine.create_closure (child_override);
-					tuple.attributes[attr.name.name] = attr_value;
+					frame.attributes[attr.name.name] = attr_value;
 					engine.environment[context, attr.name.name] = attr_value;
 				} else if (attr is Undefine) {
 					/* Do nothing. We've effectively squatted on this attribute name. */
@@ -280,7 +280,7 @@ namespace Flabbergast.Expressions {
 					assert_not_reached ();
 				}
 			}
-			finish_tuple(engine, tuple, template, attr_names, context);
+			finish_frame(engine, frame, template, attr_names, context);
 		}
 		public override Expression transform () {
 			source_expr = source_expr.transform ();
@@ -310,19 +310,19 @@ namespace Flabbergast.Expressions {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			/* Start constructing the instantiated template, but go back to our original environment. */
 			var original_state = engine.state;
-			Data.Tuple tuple;
+			Data.Frame frame;
 			uint context;
 			Data.Template template;
-			prepare_tuple(engine, out tuple, out context, out template, false);
+			prepare_frame(engine, out frame, out context, out template, false);
 			var attr_names = new Gee.HashSet<string> ();
 			var inside_state = engine.state;
 
 			engine.state = original_state;
 
-			/* Create a tuple for args */
+			/* Create a frame for args */
 			var args_context = engine.environment.create ();
-			var args_tuple = new Data.Tuple (args_context);
-			args_tuple.source = source;
+			var args_frame = new Data.Frame (args_context);
+			args_frame.source = source;
 
 			var it = 0;
 			var has_args = false;
@@ -332,7 +332,7 @@ namespace Flabbergast.Expressions {
 					has_args = true;
 					var id = make_id (it++);
 					var @value = engine.create_closure (arg.parameter);
-					args_tuple.attributes[id] = @value;
+					args_frame.attributes[id] = @value;
 					engine.environment[args_context, id] = @value;
 				} else {
 					if (arg.name.name == "value") {
@@ -342,7 +342,7 @@ namespace Flabbergast.Expressions {
 						passed_args = true;
 					}
 					var attr_value = engine.create_closure (arg.parameter);
-					tuple.attributes[arg.name.name] = attr_value;
+					frame.attributes[arg.name.name] = attr_value;
 					engine.environment[context, arg.name.name] = attr_value;
 					attr_names.add (arg.name.name);
 				}
@@ -351,14 +351,14 @@ namespace Flabbergast.Expressions {
 				throw new EvaluationError.OVERRIDE ("Function call has both unnamed arguments and a named argument “args”.");
 			}
 			if (!passed_args) {
-				var args_expr = new ReturnLiteral(args_tuple);
-				tuple.attributes["args"] = args_expr;
+				var args_expr = new ReturnLiteral(args_frame);
+				frame.attributes["args"] = args_expr;
 				engine.environment[context, "args"] = args_expr;
 				attr_names.add ("args");
 			}
-			/* Move back inside the nascent tuple and continue expansion. */
+			/* Move back inside the nascent frame and continue expansion. */
 			engine.state = inside_state;
-			finish_tuple(engine, tuple, template, attr_names, context);
+			finish_frame(engine, frame, template, attr_names, context);
 			/* Then do the lookup. */
 			var names = new Gee.ArrayList<Name> ();
 			names.add (new Name ("value"));
@@ -402,23 +402,23 @@ namespace Flabbergast.Expressions {
 		}
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
 			var context = engine.environment.create ();
-			var tuple = new Data.Tuple (context);
-			tuple.source = source;
-			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
+			var frame = new Data.Frame (context);
+			frame.source = source;
+			frame.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 			for (var it = 0; it < elements.size; it++) {
-				tuple.attributes[make_id (it)] = engine.create_closure (elements[it]);
+				frame.attributes[make_id (it)] = engine.create_closure (elements[it]);
 			}
 
 			var state = engine.state;
 			state.containers = new Utils.ContainerReference (state.context, state.containers);
 			engine.environment.append_containers (context, state.containers);
 			state.context = context;
-			state.container_tuple = state.this_tuple;
-			state.this_tuple = tuple;
+			state.container_frame = state.this_frame;
+			state.this_frame = frame;
 
 			engine.state = state;
 
-			engine.operands.push (tuple);
+			engine.operands.push (frame);
 		}
 		public override Expression transform () {
 			for (var it = 0; it < elements.size; it++) {
@@ -429,11 +429,11 @@ namespace Flabbergast.Expressions {
 	}
 	public class This : Expression {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			var this_tuple = engine.state.this_tuple;
-			if (this_tuple == null) {
-				throw new EvaluationError.INTERNAL ("This references non-existent tuple.");
+			var this_frame = engine.state.this_frame;
+			if (this_frame == null) {
+				throw new EvaluationError.INTERNAL ("This references non-existent frame.");
 			}
-			engine.operands.push (this_tuple);
+			engine.operands.push (this_frame);
 		}
 		public override Expression transform () {
 			return this;
@@ -441,11 +441,11 @@ namespace Flabbergast.Expressions {
 	}
 	public class Container : Expression {
 		public override void evaluate (ExecutionEngine engine) throws EvaluationError {
-			var container_tuple = engine.state.container_tuple;
-			if (container_tuple == null) {
-				throw new EvaluationError.INTERNAL ("This references non-existent tuple.");
+			var container_frame = engine.state.container_frame;
+			if (container_frame == null) {
+				throw new EvaluationError.INTERNAL ("This references non-existent frame.");
 			}
-			engine.operands.push (container_tuple);
+			engine.operands.push (container_frame);
 		}
 		public override Expression transform () {
 			return this;

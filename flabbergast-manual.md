@@ -5,7 +5,7 @@ Flabbergast is a rather unique programming language. It is best-described as an 
 
 It is important to understand the niche for Flabbergast: it is a configuration language. The configuration of some systems is rather trivial: `fstab` and `resolv.conf` have remained virtually unchanged over many years. More complex programs, such as Apache, BIND, Samba, and CUPS have significantly more complicated configurations. The complexity is not a function of the configuration itself; indeed `smb.conf` is just an INI file. Complexity comes because there's a desire to share common configuration between elements (e.g., the list of privileged users among SMB shares). Configuration files start to grow awkward macro systems, get preprocessed using M4 or the like, or get evermore specific configuration operations to migrate the complexity into the binary.
 
-Flabbergast, in some ways, is like a macro system. However, macro systems, such as M4 and the CPP, operate by manipulating text or tokens and can only ever output more text or tokens. Flabbergast is a language meant to manipulate structured configuration: tuples. Tuples can behave somewhat like objects: they can have inheritance relations, they can be extended, and, finally, rendered into a standard configuration format, which might be the tuples themselves or it could be text. Either way, the needs of the configuration remain in the Flabbergast language; not the binary consuming the configuration. Moreover, Flabbergast makes it possible to write libraries of utilities and templates for configurations.
+Flabbergast, in some ways, is like a macro system. However, macro systems, such as M4 and the CPP, operate by manipulating text or tokens and can only ever output more text or tokens. Flabbergast is a language meant to manipulate structured configuration: frames. Frames can behave somewhat like objects: they can have inheritance relations, they can be extended, and, finally, rendered into a standard configuration format, which might be the frames themselves or it could be text. Either way, the needs of the configuration remain in the Flabbergast language; not the binary consuming the configuration. Moreover, Flabbergast makes it possible to write libraries of utilities and templates for configurations.
 
 Another way to think about that language is that it is a system where dependency injection is not something added to the language, but is implicit. Every reference is an injection point. Defining an attribute is performing an injection. Since attributes can be overridden, the injection framework remains fluid.
 
@@ -13,9 +13,9 @@ Another way to think about that language is that it is a system where dependency
 
 As general background, this guide assumes some previous experience programming. Familiarity with one functional language, including Scheme, LISP, Haskell, or ML, and one object-oriented language is almost essential or experience with R, as it has elements of both. A deeper understanding of a dynamically-typed object-oriented language like Python, Perl, Ruby, or JavaScript can be extremely helpful, though not necessary. Use of a macro processor, such as the C Pre-Processor or M4 might provide some extra insights.
 
-Flabbergast has many of the same data types as many other languages: Booleans, integers, floating-point numbers, and strings; which look and act much like they do in other languages. It also has two special data types: tuples and templates. Note that there are no functions (first class or otherwise); templates can do some of the work of functions. Flabbergast is purely functional: everything is an expression and no expression can have indirect consequences on another expression.
+Flabbergast has many of the same data types as many other languages: Booleans, integers, floating-point numbers, and strings; which look and act much like they do in other languages. It also has two special data types: frames and templates. Note that there are no functions (first class or otherwise); templates can do some of the work of functions. Flabbergast is purely functional: everything is an expression and no expression can have indirect consequences on another expression.
 
-Tuples are similar to Perl's hashes, Python's objects, JavaScript's objects and C#'s anonymous classes. A tuple is a dictionary/map between identifiers and values, which may be of any of the aforementioned types. Tuples are immutable upon creation. Each entry in a tuple is called an _attribute_, having a _name_ and a _value_. The entire scope of a file is also one big tuple:
+Frames are similar to Perl's hashes, Python's objects, JavaScript's objects and C#'s anonymous classes. A frame is a dictionary/map between identifiers and values, which may be of any of the aforementioned types. Frames are immutable upon creation. Each entry in a frame is called an _attribute_, having a _name_ and a _value_. The entire scope of a file is also one big frame:
 
     a : 5
     b : {
@@ -23,9 +23,9 @@ Tuples are similar to Perl's hashes, Python's objects, JavaScript's objects and 
       y : "Hello, World"
     }
 
-This creates a tuple (the file-level tuple) that has two attributes: `a`, which is the integer 5, and `b`, which is another tuple containing two attributes: `x`, which is the Boolean true, and `y` which is a string.
+This creates a frame (the file-level frame) that has two attributes: `a`, which is the integer 5, and `b`, which is another frame containing two attributes: `x`, which is the Boolean true, and `y` which is a string.
 
-When creating a tuple, an expression can appear on the right side of the `:` to compute the value.
+When creating a frame, an expression can appear on the right side of the `:` to compute the value.
 
     a : 5
     b : a * a # Yields 25
@@ -74,7 +74,7 @@ The embedded expression must have converted an integer to a string; this is done
     d : "Hi" As Int # Error
     e : 3.5 To Int # Yields 3
 
-On to tuples, the core data structure of the language. Tuples are arranged in a hierarchy: one tuple nested inside another, this is called _containment_. Attributes in containing tuples are available to contained tuples:
+On to frames, the core data structure of the language. Frames are arranged in a hierarchy: one frame nested inside another, this is called _containment_. Attributes in containing frames are available to contained frames:
 
     a : 5
     b : {
@@ -91,7 +91,7 @@ If there are multiple candidates, the closest one is the one chosen (i.e., the o
       }
     }
 
-This is called contextual lookup. Multiple identifiers can be put together using a `.` to access inside tuples:
+This is called contextual lookup. Multiple identifiers can be put together using a `.` to access inside frames:
 
     a : {
       x : 5
@@ -109,11 +109,11 @@ And that works upward too:
 
 Now, something unexpected happens when using this notation, compared with most other languages. A reference is not considered to be pieces: it is atomic.
 
-    a : { # Tuple 1
+    a : { # Frame 1
       x : 5
     }
     b : {
-      a : { # Tuple 2
+      a : { # Frame 2
         y : 1
       }
       c : {
@@ -121,9 +121,9 @@ Now, something unexpected happens when using this notation, compared with most o
       }
     }
 
-Although the closest match of `a` is tuple 2, it does not contain an attribute `x`, so it must not be the correct `a`. Resolution can continue and consider other `a` values until one is matched! This will find tuple 1, which does have an `x`.
+Although the closest match of `a` is frame 2, it does not contain an attribute `x`, so it must not be the correct `a`. Resolution can continue and consider other `a` values until one is matched! This will find frame 1, which does have an `x`.
 
-There are other ways to generate tuples beyond typing them literally. Templates are prototype tuples, like classes are prototype objects. It might be fair to call templates “abstract tuples” in the Java or C# sense of the word. This measure is called _inheritance_, as it is in object-oriented languages; a tuple _inherits_ a template or the template is an _ancestor_ of the tuple.
+There are other ways to generate frames beyond typing them literally. Templates are prototype frames, like classes are prototype objects. It might be fair to call templates “abstract frames” in the Java or C# sense of the word. This measure is called _inheritance_, as it is in object-oriented languages; a frame _inherits_ a template or the template is an _ancestor_ of the frame.
 
     a_tmpl : Template {
       x : y + 1
@@ -143,9 +143,9 @@ Notice that `a_tmpl` does not produce an error for lacking `y`, because the attr
     z : 3
     b : b_tmpl { } # Yields { x : 7  y : 6 }
 
-When instantiated, the new tuple can perform lookups into the _containers_ of the location where it was instantiated and into the _containers_ of its _ancestors_, that is, the containers of the template that defined it, and any ancestors of that template. This is described in great detail in the more advanced sections. This feature, coupled with contextual lookup, is the useful basis to the Flabbergast language.
+When instantiated, the new frame can perform lookups into the _containers_ of the location where it was instantiated and into the _containers_ of its _ancestors_, that is, the containers of the template that defined it, and any ancestors of that template. This is described in great detail in the more advanced sections. This feature, coupled with contextual lookup, is the useful basis to the Flabbergast language.
 
-Like Java and C#, templates can only inherit a single parent. In Java and C#, this is mostly a concern over how to handle methods with the same name inherited from both parents. Flabbergast has an additional reason not to encourage this: how to combine the ancestry of the two templates. Java and C# work around their lack of multiple inheritance issues using interfaces. In Flabbergast, there is no need for interfaces, since those are a by-product of a type system that Flabbergast doesn't have. The consumer of a tuple can simply pluck the attributes it needs out of that tuple; it doesn't need to define a type. Tuples also don't have methods, as attributes can perform computation, so there are no type signatures to “get right”.
+Like Java and C#, templates can only inherit a single parent. In Java and C#, this is mostly a concern over how to handle methods with the same name inherited from both parents. Flabbergast has an additional reason not to encourage this: how to combine the ancestry of the two templates. Java and C# work around their lack of multiple inheritance issues using interfaces. In Flabbergast, there is no need for interfaces, since those are a by-product of a type system that Flabbergast doesn't have. The consumer of a frame can simply pluck the attributes it needs out of that frame; it doesn't need to define a type. Frames also don't have methods, as attributes can perform computation, so there are no type signatures to “get right”.
 
 Like object-oriented languages, in addition to adding new things, template inheritance can also replace existing things:
 
@@ -196,29 +196,29 @@ Unnamed values are placed in an `args` attribute.
 
 This means that function-like template can offer both variadic and non-variadic calling conventions. It is an error to specify both `args` and have unnamed arguments.
 
-There is an entirely different way to generate tuples: from existing tuples using the fricassée expressions. These work something like SQL or XQuery statements to generate new tuples from existing tuples, as SQL generates new tables from existing tables and XQuery generates new trees from existing trees.
+There is an entirely different way to generate frames: from existing frames using the fricassée expressions. These work something like SQL or XQuery statements to generate new frames from existing frames, as SQL generates new tables from existing tables and XQuery generates new trees from existing trees.
 
     a : { x : 1  y : 2  z : 3 }
     b : For n : Name, v : a Select n : v + 1 # Yields { x : 2  y : 3  z : 4 }
     c : For v : a Reduce v + acc With acc : 0 # Yields 6
 
-These are the essential features of the language. Many other built-in expressions are provided, including an `If` expression, other ways to generate tuples, access to external libraries, more variants of the fricassée expression, and more subtle ways to lookup identifiers.
+These are the essential features of the language. Many other built-in expressions are provided, including an `If` expression, other ways to generate frames, access to external libraries, more variants of the fricassée expression, and more subtle ways to lookup identifiers.
 
 ## Core Concepts
 
-There are two core concepts in Flabbergast: contextual (dynamic) lookup and inheritance. Both of these exist in the context of tuples, which are the primary data structure. They somewhat resemble objects in Python, Perl and JavaScript.
+There are two core concepts in Flabbergast: contextual (dynamic) lookup and inheritance. Both of these exist in the context of frames, which are the primary data structure. They somewhat resemble objects in Python, Perl and JavaScript.
 
-A tuple is a map of names to values, including other tuples. Each tuple is immutable upon creation. The values in the tuple can be expressions (i.e., dynamically computed when the tuple is created); there are no methods as there are in other object-oriented languages. Expressions can reference each other and the Flabbergast interpreter will determine the correct evaluation order. Although tuples cannot be modified, new tuples can be created from existing tuples using fricassée (`For`) expressions that allow generation of tuples based on the values in existing tuples, much like SQL or XQuery statements produce new tables or trees from existing tables or trees, respectively. Tuples can also be instantiated from templates, which are essentially unevaluated tuples (i.e., the values of the attributes have not yet been computed).
+A frame is a map of names to values, including other frames. Each frame is immutable upon creation. The values in the frame can be expressions (i.e., dynamically computed when the frame is created); there are no methods as there are in other object-oriented languages. Expressions can reference each other and the Flabbergast interpreter will determine the correct evaluation order. Although frames cannot be modified, new frames can be created from existing frames using fricassée (`For`) expressions that allow generation of frames based on the values in existing frames, much like SQL or XQuery statements produce new tables or trees from existing tables or trees, respectively. Frames can also be instantiated from templates, which are essentially unevaluated frames (i.e., the values of the attributes have not yet been computed).
 
-Each tuple also has an evaluation context. In most languages, there are multiple scopes in which variables can be found. For instance, in C, the compiler tries to resolve a variable in the current block and proceeds through each containing block, then checks the function parameters, and finally global variables. Java is considerably more complicated as it needs to check not only the enclosing blocks and the function parameters, but also the fields of the class, and it has to make a distinction between static and instantiated fields, and inner classes are even more involved as the containing classes have to be checked. Flabbergast's algorithm for resolution is very simple, but can yield very complicated results.
+Each frame also has an evaluation context. In most languages, there are multiple scopes in which variables can be found. For instance, in C, the compiler tries to resolve a variable in the current block and proceeds through each containing block, then checks the function parameters, and finally global variables. Java is considerably more complicated as it needs to check not only the enclosing blocks and the function parameters, but also the fields of the class, and it has to make a distinction between static and instantiated fields, and inner classes are even more involved as the containing classes have to be checked. Flabbergast's algorithm for resolution is very simple, but can yield very complicated results.
 
-Flabbergast uses contextual lookup. It is easiest to think of resolution as having two dimensions: containment and inheritance. When resolving a variable, the language will first look for an attribute of the same name in the current tuple; if none exists, it will look in the containing tuple (i.e., the tuple in which the current tuple is an attribute) and will continue to examine containers until a matching tuple is found. If there is no match, resolution will continue in the parents of the template; that is, it will go to the context in which the template was defined and search through the containing tuples there. If that yields no matches, resolution will proceed back through the template's template's containers and back until there are no more contexts.
+Flabbergast uses contextual lookup. It is easiest to think of resolution as having two dimensions: containment and inheritance. When resolving a variable, the language will first look for an attribute of the same name in the current frame; if none exists, it will look in the containing frame (i.e., the frame in which the current frame is an attribute) and will continue to examine containers until a matching frame is found. If there is no match, resolution will continue in the parents of the template; that is, it will go to the context in which the template was defined and search through the containing frames there. If that yields no matches, resolution will proceed back through the template's template's containers and back until there are no more contexts.
 
 ![Resolution order diagram](https://rawgithub.com/apmasell/flabbergast/master/flabbergast-resolution.svg "The order in which resolution occurs")
 
-In the figure, there are two templates, shown in colour, and tuples, shown in grey. The tuple containment is indicated by physical containment and inheritance is shown by arrows. When resolution inside of the tuple marked 1 is needed, resolution begins in the tuple itself, then proceeds through the tuples, as indicated by their numbers. Note that some tuples are considered multiple times due to the template and the tuple sharing some containment; this is inconsequential, as it will either be found the first time, or fail every time. Note that templates themselves are not checked: only the tuples in which they were defined or amended.
+In the figure, there are two templates, shown in colour, and frames, shown in grey. The frame containment is indicated by physical containment and inheritance is shown by arrows. When resolution inside of the frame marked 1 is needed, resolution begins in the frame itself, then proceeds through the frames, as indicated by their numbers. Note that some frames are considered multiple times due to the template and the frame sharing some containment; this is inconsequential, as it will either be found the first time, or fail every time. Note that templates themselves are not checked: only the frames in which they were defined or amended.
 
-Resolution has an extra complexity: chained accesses. Since tuples can be nested, it is desirable to access the attributes of an inner tuple using the `x.y` syntax. In most languages, resolution stops when the first name match is met (e.g., in Java, if there is a parameter `int foo` and a class field `String foo`, then `foo.charAt(3)` will fail to compile because `foo` has been resolved to the parameter, which is an `int` and so does not have the `charAt` method) while Flabbergast will attempt to find “the one you meant”. In the case of `x.y`, if a tuple `x` is found but it does not contain an attribute `y`, then the language assumes that this was not the `x` intended and _continues_ looking for an `x` does _does_ contain an attribute `y`. This means that the expression `x.y * x.z` can have two different tuples referenced for the first and second `x`! For instance, below, `b.z` will be 12 and the `a` in the `a.x` reference will be the top-level `a` while the `a` in the `a.y` reference will be `b.a`:
+Resolution has an extra complexity: chained accesses. Since frames can be nested, it is desirable to access the attributes of an inner frame using the `x.y` syntax. In most languages, resolution stops when the first name match is met (e.g., in Java, if there is a parameter `int foo` and a class field `String foo`, then `foo.charAt(3)` will fail to compile because `foo` has been resolved to the parameter, which is an `int` and so does not have the `charAt` method) while Flabbergast will attempt to find “the one you meant”. In the case of `x.y`, if a frame `x` is found but it does not contain an attribute `y`, then the language assumes that this was not the `x` intended and _continues_ looking for an `x` does _does_ contain an attribute `y`. This means that the expression `x.y * x.z` can have two different frames referenced for the first and second `x`! For instance, below, `b.z` will be 12 and the `a` in the `a.x` reference will be the top-level `a` while the `a` in the `a.y` reference will be `b.a`:
 
     a : { x : 3 }
     b : {
@@ -232,9 +232,9 @@ In general-purpose programming languages, this idea sounds like madness, but Fla
 
 In the last sentence, to whom does _her_ refer? While _my mum_ is the closest noun that could match _her_, it has been previously established that my mum does not have a cat, so _my mum's cat_ wouldn't make sense. Because we treat _her cat_ as a unit, we contextually keep looking for a _her_ that does have a cat, which would be _my sister_. Conceptually, this is how Flabbergast's resolution algorithm works: it finds the match that makes the most contextual sense.
 
-Inheritance allows creation of attributes, in addition to providing a history for contextual lookup. A tuple or template is a collection of key-value pairs, where each key is a valid identifier and a value can be any expression. A template can be _amended_ at the time of instantiation or through the `Template` expression, which creates a new template that copies all the existing attributes, less the amended ones. In most object-oriented languages, fields and methods can be overridden (i.e., replaced with new code). Similarly, attributes can be overridden with new expressions. Some languages allow access the overridden method through special keywords (e.g., Java's `super`, C#'s `base`, or Python's `super()`). Flabbergast permits accessing the original attribute, but a new name must be specified; there is no default name like `super`. Unlike most languages, Flabbergast permits deletion of an attribute. Because of contextual lookup, any other attributes referencing the deleted attribute will simply look elsewhere.
+Inheritance allows creation of attributes, in addition to providing a history for contextual lookup. A frame or template is a collection of key-value pairs, where each key is a valid identifier and a value can be any expression. A template can be _amended_ at the time of instantiation or through the `Template` expression, which creates a new template that copies all the existing attributes, less the amended ones. In most object-oriented languages, fields and methods can be overridden (i.e., replaced with new code). Similarly, attributes can be overridden with new expressions. Some languages allow access the overridden method through special keywords (e.g., Java's `super`, C#'s `base`, or Python's `super()`). Flabbergast permits accessing the original attribute, but a new name must be specified; there is no default name like `super`. Unlike most languages, Flabbergast permits deletion of an attribute. Because of contextual lookup, any other attributes referencing the deleted attribute will simply look elsewhere.
 
-Since attributes can refer to each other, it is the interpreter's duty to determine the order to evaluate the expressions. This means that attributes can be specified in any order (unlike C and C++). In fact, contextual lookup makes it impossible to determine to what attributes references refer until evaluation time. One unusual effect is that the inheritance path of a tuple can be changed at runtime (i.e., the “class” hierarchy is not determined at compile-time)! In fact, since templates can be instantiated in different contexts, it is possible for the same declaration to be used in different contexts that create two different tuple inheritance paths. Obviously, this is the kind of stuff that can be used for good or evil–there are legitimate reasons to re-parent tuples, but it can be very confusing and cause unexpected behaviour.
+Since attributes can refer to each other, it is the interpreter's duty to determine the order to evaluate the expressions. This means that attributes can be specified in any order (unlike C and C++). In fact, contextual lookup makes it impossible to determine to what attributes references refer until evaluation time. One unusual effect is that the inheritance path of a frame can be changed at runtime (i.e., the “class” hierarchy is not determined at compile-time)! In fact, since templates can be instantiated in different contexts, it is possible for the same declaration to be used in different contexts that create two different frame inheritance paths. Obviously, this is the kind of stuff that can be used for good or evil–there are legitimate reasons to re-parent frames, but it can be very confusing and cause unexpected behaviour.
 
 The interpreter must be able to linearise the order in which it will perform evaluations. If the expression evaluation contains a cycle, then it is not possible to evaluate any of the expressions in the cycle. This is called _circular evaluation_. While theoretically possible, determining a fixed point is a rather impractical proposition. There are pseudo-cycles that are acceptable: the expressions can refer to one-another circularly so long as they don't need the value. This happens mostly during contextual lookup:
 
@@ -244,7 +244,7 @@ The interpreter must be able to linearise the order in which it will perform eva
     }
     y : x.w
 
-Here, `x` as a tuple, cannot be completely evaluated because the attribute inside `z` depends on the value of `y`, which in turn, depends on `w`, inside of `x`. Although there is cross-reference into and out of `x`, there is an order that works: evaluate `x` to be a tuple with attributes `w` and `z` (though do not evaluate them), evaluate `x.w`i to be 4, evaluate `y` to be 4, and finally `x.z` to be 4. Here is an example of true circularity:
+Here, `x` as a frame, cannot be completely evaluated because the attribute inside `z` depends on the value of `y`, which in turn, depends on `w`, inside of `x`. Although there is cross-reference into and out of `x`, there is an order that works: evaluate `x` to be a frame with attributes `w` and `z` (though do not evaluate them), evaluate `x.w`i to be 4, evaluate `y` to be 4, and finally `x.z` to be 4. Here is an example of true circularity:
 
     x : y
     y : x
@@ -265,7 +265,7 @@ In Flabbergast, all keywords start with a capital letter and identifiers start w
 
 ### Types and Constants
 
-Flabbergast has a small handful of types: integers (`Int`), floating-pointer numbers (`Float`), Boolean values (`Bool`), text strings (`Str`), tuples (`Tuple`) and templates (`Template`).
+Flabbergast has a small handful of types: integers (`Int`), floating-pointer numbers (`Float`), Boolean values (`Bool`), text strings (`Str`), frames (`Frame`) and templates (`Template`).
 
 Integral and floating-point number literals are specified in the familiar way. They can also be manipulated using the typical `+`, `-`, `*`, `/` and `%` operators. In mixed-type expressions, integers are automatically promoted to floating-point numbers. They also can be compared using `==`, `!=`, `<`, `<=`, `>`, `>=`, and `<=>`. The `<=>` operator will be familiar to Perl and Ruby programmers: it compares two values and returns -1, 0, or 1 if the left operand is less than, equal to, or greater than the right operand, respectively. There is also a unary negation operator `-`. A few floating-point exceptional tests are provided: `Is Finite` and `Is NaN` to check if the number is finite or not-a-number in the IEEE sense, respectively. Also, the floating-point constants `NaN`, `Infinity`, `FloatMax`, and `FloatMin`, and integer constants `IntMax` and `IntMin` are provided.
 
@@ -284,7 +284,7 @@ Sometimes, attribute names are provided as strings and, since not all strings ar
     x : $foo == "foo" # True
     y : $5 # Error
 
-Tuples are collections of attributes. Literal tuples are specified starting with `{`, followed by a list of attributes, and terminated with a matching `}`. Each attribute is a name, followed by `:`, and an expression. Tuples inherit the context of the tuple in which they are defined. Templates look similar except that they are preceded by the `Template` keyword. There are two important differences between templates and tuples: tuples are immutable while templates can be manipulated and variable resolution can look inside tuples, but not inside of templates. Neither can be coerced to strings. More details on tuples are provided later.
+Frames are collections of attributes. Literal frames are specified starting with `{`, followed by a list of attributes, and terminated with a matching `}`. Each attribute is a name, followed by `:`, and an expression. Frames inherit the context of the frame in which they are defined. Templates look similar except that they are preceded by the `Template` keyword. There are two important differences between templates and frames: frames are immutable while templates can be manipulated and variable resolution can look inside frames, but not inside of templates. Neither can be coerced to strings. More details on frames are provided later.
 
 There is also a special `Null` constant which can be checked for using the `Is Null` operator. The null value cannot be used in any comparison operator and doing so will cause an error. The null value is not the same as an undefined variable. There is a null coalescence operator `??` that can substitute a default value if the left operand is null. Unlike most languages, null should be used extremely sparingly in Flabbergast: it is usually preferable to let contextual lookup find appropriate values. Null should mean “this value is not helpful and that's the final word” instead of the usual meanings of “I don't know” or “this does not exist”.
 
@@ -305,15 +305,15 @@ The `As` operator ensures that a value is of a particular type, if not, an error
     y : 4 Is Int # True
     z : 4.5 Is Int # False
 
-### Special Tuple Literals
+### Special Frame Literals
 
-Two special tuple literals are provided: the literal list and the range operator.
+Two special frame literals are provided: the literal list and the range operator.
 
-Tuples are implicitly sorted by their attribute names. The literal list is a way to create a tuple with only values and the names are set to arbitrary labels that have a guaranteed stable sorting. It is a comma-separated list of expressions starting with a `[` and terminating with a `]`.
+Frames are implicitly sorted by their attribute names. The literal list is a way to create a frame with only values and the names are set to arbitrary labels that have a guaranteed stable sorting. It is a comma-separated list of expressions starting with a `[` and terminating with a `]`.
 
 The `Through` operator produces a list with the values being numbers starting from the left operand up to, and including, the right operand, both of which must be integers. If the right operand is the same or less than the left, the list returned will be empty.
 
-The values of the following tuples are all exactly the same:
+The values of the following frames are all exactly the same:
 
     x : [ 1, 2, 3 ]
     y : 1 Through 3
@@ -347,9 +347,9 @@ A period-separated list of identifiers forms a free variable to be resolved by c
     }
     x : b.c
 
-Here, in `b.c`, lookup will start in the current tuple, which does not contain `a`, so lookup will continue to the containing tuple, which does have `a`. For `x`, it will look for a tuple `b` which contains an attribute `c`.
+Here, in `b.c`, lookup will start in the current frame, which does not contain `a`, so lookup will continue to the containing frame, which does have `a`. For `x`, it will look for a frame `b` which contains an attribute `c`.
 
-A period-separated list of identifiers can also be appened to any expression, in which case it will do exact matching starting from the expression supplied; this is called a direct lookup. The keyword `This` gives access to the tuple where the expression is being evaluated, effectively forcing direct lookup. Using parentheses or the result of an expression will also result in direct lookup.
+A period-separated list of identifiers can also be appened to any expression, in which case it will do exact matching starting from the expression supplied; this is called a direct lookup. The keyword `This` gives access to the frame where the expression is being evaluated, effectively forcing direct lookup. Using parentheses or the result of an expression will also result in direct lookup.
 
      x : 1
      a : {
@@ -358,20 +358,20 @@ A period-separated list of identifiers can also be appened to any expression, in
      }
      b : (a).x # Yields 4
 
-The keyword `Container` access the parent of the tuple (either the current tuple if it is used alone, or the preceding tuple if used in an contextual or direct lookup).
+The keyword `Container` access the parent of the frame (either the current frame if it is used alone, or the preceding frame if used in an contextual or direct lookup).
 
      a : 1
      b : {
        a : Container.a # Yields 1
      }
 
-The `Lookup` expression performs a remote inside out lookup; `Lookup a.b.c In x` will start contextual lookup for `a.b.c` starting from the context of the tuple `y`, rather than the current context.
+The `Lookup` expression performs a remote inside out lookup; `Lookup a.b.c In x` will start contextual lookup for `a.b.c` starting from the context of the frame `y`, rather than the current context.
 
 Here is non-trivial example uses of all lookup styles:
 
     i : 4
     a : {
-      h : i - 1 # This tuple does not contain i, but the container does. Yields 4 - 1 = 3
+      h : i - 1 # This frame does not contain i, but the container does. Yields 4 - 1 = 3
     }
     x : a.h # Will be 3
     y : a.i # Will be an error
@@ -386,15 +386,15 @@ Here is non-trivial example uses of all lookup styles:
       v : (a).h # Will be an error
     }
 
-In `a`, contextual lookup searches for an `i`, which does not exist in the current tuple, but does exist in its container. In `x`, contextual looks for an tuple `a` that contains an attribute `h`, which it finds at the top-level. In `y`, although `i` is accessible from the tuple `a`, it does not exist in `a`, so `a.i` fails to find a matching tuple. However, in `z`, a remote lookup searches for `i` starting from `a`, which is found in exactly the same way as when computing the value for `a.h`. Inside `w`, the situation is more complicated as another tuple named `a` is created. Searching for `a.h`, as `w.x` does, first checks the tuple `w.a`, but this tuple lacks an `h` attribute, so lookup continues, instead finding the top-level tuple. In `w.y`, lookup for `a.i` will match the `w.a` tuple as it does have an `i` attribute. In both `w.z` and `w.v`, searching for `a` yields `w.a`. In the case of `w.z`, doing a remote lookup inside `w.a` for `i` will find the attribute inside it. In the case of `w.v`, the parentheses have broken the lookup into a contextual lookup (`a`) and a direct get (`.h`); this is an error as the matched `a` (`w.a`) does not have an attribute `h`.
+In `a`, contextual lookup searches for an `i`, which does not exist in the current frame, but does exist in its container. In `x`, contextual looks for an frame `a` that contains an attribute `h`, which it finds at the top-level. In `y`, although `i` is accessible from the frame `a`, it does not exist in `a`, so `a.i` fails to find a matching frame. However, in `z`, a remote lookup searches for `i` starting from `a`, which is found in exactly the same way as when computing the value for `a.h`. Inside `w`, the situation is more complicated as another frame named `a` is created. Searching for `a.h`, as `w.x` does, first checks the frame `w.a`, but this frame lacks an `h` attribute, so lookup continues, instead finding the top-level frame. In `w.y`, lookup for `a.i` will match the `w.a` frame as it does have an `i` attribute. In both `w.z` and `w.v`, searching for `a` yields `w.a`. In the case of `w.z`, doing a remote lookup inside `w.a` for `i` will find the attribute inside it. In the case of `w.v`, the parentheses have broken the lookup into a contextual lookup (`a`) and a direct get (`.h`); this is an error as the matched `a` (`w.a`) does not have an attribute `h`.
 
 > __This is the most complicated part of the language, but also the most useful.__
 
 ### Fricassée Expressions
 
-Although tuples are immutable, it is possible to create new values from existing tuples using fricassée expressions. These expressions take a collection of input tuples an iterate over the attributes they share. The concept was based on XQuery's FLOWR expressions, which are based on SQL queries. It should be familiar to users of Haskell and LISP's `map` and `fold` functions, C#'s LINQ expressions, Python's `map` and `reduce` operators, or Perl's `map` construct. Conceptually, the expression has three parts: a source, an optional filter, and a sink. The source extracts data from tuples and produces a context in which each subsequent expression will be evaluated. The filter can discard any contexts that do not meet certain requirements. The sink produces a value from the contexts: either a new tuple, or a single value for a reduction. Some sinks respect the ordering of the contexts, so there are common ordering tools.
+Although frames are immutable, it is possible to create new values from existing frames using fricassée expressions. These expressions take a collection of input frames an iterate over the attributes they share. The concept was based on XQuery's FLOWR expressions, which are based on SQL queries. It should be familiar to users of Haskell and LISP's `map` and `fold` functions, C#'s LINQ expressions, Python's `map` and `reduce` operators, or Perl's `map` construct. Conceptually, the expression has three parts: a source, an optional filter, and a sink. The source extracts data from frames and produces a context in which each subsequent expression will be evaluated. The filter can discard any contexts that do not meet certain requirements. The sink produces a value from the contexts: either a new frame, or a single value for a reduction. Some sinks respect the ordering of the contexts, so there are common ordering tools.
 
-There are two sources provided: the combined attributes of tuples, and, prepared context tuples. In all cases, the select is done over a collection of input tuples and all the attributes of the input tuples. The following example shows the first part of a fricassée expression for different sources over the same input tuples. In the first three cases, the source will iterate over the union of all the attributes in the tuples `x`, `y`, and `z` and each context will have `a`, `b`, and `c` bound to the values in the corresponding tuples, or `Null` if there is no corresponding value. For the values only source, `i`, this is all the context will contain. In the case of `j`, the attribute name itself will be bound as `n` in a string, using the special `Name` value. In the case of `k`, the position will be provided using the special `Ordinal` value; indexing starts from 1.
+There are two sources provided: the combined attributes of frames, and, prepared context frames. In all cases, the select is done over a collection of input frames and all the attributes of the input frames. The following example shows the first part of a fricassée expression for different sources over the same input frames. In the first three cases, the source will iterate over the union of all the attributes in the frames `x`, `y`, and `z` and each context will have `a`, `b`, and `c` bound to the values in the corresponding frames, or `Null` if there is no corresponding value. For the values only source, `i`, this is all the context will contain. In the case of `j`, the attribute name itself will be bound as `n` in a string, using the special `Name` value. In the case of `k`, the position will be provided using the special `Ordinal` value; indexing starts from 1.
 
     x : {
       p : 1
@@ -416,14 +416,14 @@ There are two sources provided: the combined attributes of tuples, and, prepared
     l : For Each [ x, y, z ] ...
       # Will consider { p : 1  q : 2 }, { p : 3  q : 4 }, { p : 5 }
 
-The prepared tuple source, `Each`, is meant for library functions to produce iterable sources of data. One could imagine a library function matching a regular expression and returning the matched groups. It becomes the responsibility of the source to provide sensible attributes in each tuple. In the example, `z` makes for an awkward environment since `q` is not bound, and the `Each` source is not obligated to correct the inconsistency.
+The prepared frame source, `Each`, is meant for library functions to produce iterable sources of data. One could imagine a library function matching a regular expression and returning the matched groups. It becomes the responsibility of the source to provide sensible attributes in each frame. In the example, `z` makes for an awkward environment since `q` is not bound, and the `Each` source is not obligated to correct the inconsistency.
 
 Optionally, a `Where` clause can be used to filter the results. It must return a Boolean value.
 
     x : 1 Through 7
     i : For a : x Where a > 5 ... # Yields { a : 6 }, { a : 7 }
 
-Finally, a sink is needed to produce a value from the contexts. Three are supported: a reducer, an anonymous tuple generator, and a named tuple generator. The reducer and the anonymous tuple generator both support ordering.
+Finally, a sink is needed to produce a value from the contexts. Three are supported: a reducer, an anonymous frame generator, and a named frame generator. The reducer and the anonymous frame generator both support ordering.
 
 The reducer works as a typical fold/reduce operation:
 
@@ -432,25 +432,25 @@ The reducer works as a typical fold/reduce operation:
 
 The initial value of the accumulator, `a`, is set to zero and the reduce expression is repeated for each of the contexts. In each context, the accumulator will be bound to the previous value. The reducer can support ordering operations, shown later, on the contexts to choose the reduction order.
 
-The anonymous tuple generator produces a new tuple with each value being the result of an expression. The names of the tuples are generated automatically in the same way as if they had been generated by a literal list or `Through` expression.
+The anonymous frame generator produces a new frame with each value being the result of an expression. The names of the frames are generated automatically in the same way as if they had been generated by a literal list or `Through` expression.
 
     x : 7
     y : For v : (1 Through x) Select v * v # Produces a list of squares
 
-Because multiple input tuples can be provided, much like LISP's variadic `map`, it also functions like Haskell's `zip`:
+Because multiple input frames can be provided, much like LISP's variadic `map`, it also functions like Haskell's `zip`:
 
     x : [ 1, 2, 3 ]
     y : [ 4, 5, 6 ]
     z : For a, b In x, y Select a + b # Element-wise sum of the lists
 
-The anonymous tuple generator can support ordering operations, shown later, on the context to choose the order of the output.
+The anonymous frame generator can support ordering operations, shown later, on the context to choose the order of the output.
 
-The named attribute tuple generator produces a tuple where the element names are provided as strings:
+The named attribute frame generator produces a frame where the element names are provided as strings:
 
     x : 1 Through 3
-    y : For a : x Select "foo\(x)" : x # Produces the tuple { foo1 : 1  foo2 : 2  foo3 : 3 }
+    y : For a : x Select "foo\(x)" : x # Produces the frame { foo1 : 1  foo2 : 2  foo3 : 3 }
 
-The name provided must be a valid identifier, which is not true of all strings, otherwise an error will occur. This named attribute tuple generator does not support ordering operations since the order of attributes in a tuple is controlled by their names.
+The name provided must be a valid identifier, which is not true of all strings, otherwise an error will occur. This named attribute frame generator does not support ordering operations since the order of attributes in a frame is controlled by their names.
 
 Presently, there are two ordering operations: `Reverse` reverses the order of the input and `Order By` produces a sorting item.
 
@@ -460,9 +460,9 @@ Presently, there are two ordering operations: `Reverse` reverses the order of th
 
 Note that if two values have the same sort key, in the example -1 and 1 do, then the order between them is not guaranteed. Any type that can be compared using the `<=>` can be used as a sort key, but all must be of the same type.
 
-### Tuples and Templates
+### Frames and Templates
 
-In addition to literal tuples, tuples can be instantiated from templates. The instantiation can also modify a template by adding, removing, or overriding attributes. The syntax for instantiation is simply an expression yielding a template followed by `{`, an optional list of amendments, and terminated by `}`. Templates are created in a syntax similar to literal tuples: `Template {`, a list of attributes, followed by `}`.
+In addition to literal frames, frames can be instantiated from templates. The instantiation can also modify a template by adding, removing, or overriding attributes. The syntax for instantiation is simply an expression yielding a template followed by `{`, an optional list of amendments, and terminated by `}`. Templates are created in a syntax similar to literal frames: `Template {`, a list of attributes, followed by `}`.
 
     foo_tmpl : Template { a : b + 4 }
     foo : foo_tmpl { b : 3 } # Yields { a : 7  b : 4 }
@@ -484,7 +484,7 @@ There are several amendment attributes, not all of which can be used in all cont
  - `+`, followed by an identifier, then `:`, followed by an expression, will replace an attribute but allows the previous value to be bound to the identifier supplied. The attribute must already exist, so this is not valid when declaring a new template.
  - `+: {`, followed by a list of amendments, terminated by `}`, performs template derivation. It is short-hand for `+oldtemplate: Template oldtemplate { ... }` with the convenience of not having to choose a name.
 
-There is also a function call convenience syntax. In their own way, templates can act as lambdas. In tuple instantiation, the expressions are evaluated in the context of the tuple created. In a function call, expressions provided are evaluated in the current (parent) context, then placed into the instantiated template. A list of unnamed expressions can be provided and these are collected into an `args` tuple. Finally, instead of simply returning the entire tuple, the `value` attribute is returned from the instantiated tuple. For instance, the function call:
+There is also a function call convenience syntax. In their own way, templates can act as lambdas. In frame instantiation, the expressions are evaluated in the context of the frame created. In a function call, expressions provided are evaluated in the current (parent) context, then placed into the instantiated template. A list of unnamed expressions can be provided and these are collected into an `args` frame. Finally, instead of simply returning the entire frame, the `value` attribute is returned from the instantiated frame. For instance, the function call:
 
     {
       a : 3
@@ -545,7 +545,7 @@ The most important feature of Flabbergast is overriding. When starting out with 
 ### Interfaces
 In object-oriented languages, there is typically some convention surround how to tell if an object is consumable in a particular situation. Statically-typed object-oriented languages typically have “interfaces”, in the Java or C# sense. These are functions of the type system: since each expression needs a type and multiple inheritance is not permitted, an interface provides a type that any object can fulfill outside of the inheritance hierarchy. Dynamically-typed object-oriented languages, particularly Python, JavaScript, and Ruby, eschew this and proudly extol the benefits of “duck” typing: that is, simply call a method and expect it to work.
 
-Flabbergast is necessarily dynamically-typed by virtually of being dynamically-scoped. Therefore, interfaces are definitely of the duck-typing variety. Since methods aren't present, the interface is still simpler: it is just the attributes that a tuple is expected to have and, possibly, expected types for those attributes. Using the `As` operator is a polite way of insisting that certain types are provided from an interface.
+Flabbergast is necessarily dynamically-typed by virtually of being dynamically-scoped. Therefore, interfaces are definitely of the duck-typing variety. Since methods aren't present, the interface is still simpler: it is just the attributes that a frame is expected to have and, possibly, expected types for those attributes. Using the `As` operator is a polite way of insisting that certain types are provided from an interface.
 
 Often, the caller has some driver to convert code. For instance, this is a completely reasonable block of Python:
 
@@ -589,11 +589,11 @@ This has two advantages: the rendering logic can be overridden and the interface
       item_tmpl { name : "Gráinne"  country : "Ireland" }
     ]
 
-By changing the definition for `item_tmpl`, we can re-ancestor the tuples using it. Effectively, Flabbergast has a kind of multiple inheritance: there can be only one ancestor at a time, but the choice of ancestor can be varied at run time.
+By changing the definition for `item_tmpl`, we can re-ancestor the frames using it. Effectively, Flabbergast has a kind of multiple inheritance: there can be only one ancestor at a time, but the choice of ancestor can be varied at run time.
 
 ### Subexpressions and Encapsulation
 
-In complicated subexpressions, it is often useful to migrate common subexpressions to a `Let` expression. In general, `Let` is less preferred to creating a new attribute in the current tuple. There are places where that is not possible (e.g., inside a fricassée expression).
+In complicated subexpressions, it is often useful to migrate common subexpressions to a `Let` expression. In general, `Let` is less preferred to creating a new attribute in the current frame. There are places where that is not possible (e.g., inside a fricassée expression).
 
 There are two reasons that is preferred: debugging and overriding. Since there is no way to see the value bound in a let, it is much better if intermediate values can be seen if the entire output is dumped. It is also possible that a user would like to override this value. That violates all the usual object-oriented mindset about data encapsulation, but this isn't a usual object-oriented language.
 
@@ -608,7 +608,7 @@ When writing templates, it is good style to separate attributes into blocks: the
 Naming things is difficult. Very difficult. The major disadvantage to dynamic scoping is that names can collide and have unintended consequences. There are several ways to address the problems:
 
 1. Name things well. That might sound glib, but it isn't. The traditional loop variables `i`, `j`, and `k` are a heap of trouble in Flabbergast. The opposite end of the spectrum `where_super_explicit_names_that_no_one_can_confuse` are used is equally unpleasant. If the name is semantically meaningful and the same term isn't overloaded (e.g., `mu` can be the magnetic field permeability of free space and the coefficient of friction), then it is probably a good choice and collisions will be intentional.
-2. Use tuples as name spaces. While tuples are _not_ name spaces, contextual lookup can be used to help the situation. Using `parser.space` can provide more information than simply `space`.
+2. Use frames as name spaces. While frames are _not_ name spaces, contextual lookup can be used to help the situation. Using `parser.space` can provide more information than simply `space`.
 3. Name library imports with `_lib`. It is good hygiene to import libraries using `foo_lib : From lib:foo` as if there is a collision, the values will be the same anyway.
 4. Use lookup traps when needed. If lookup should stop beyond a certain point, define the name to `Null` to stop lookup from continuing. In templates, if the value needs to be provided or the name is common (e.g., `name` or `enabled`) use the `?:` definition to trap lookup.
 
@@ -667,7 +667,7 @@ In the previous example, an argument list is created for an executable binary. T
        }
     }
 
-Now, tuples inheriting from `foo_tmpl` can easily change the `args`.
+Now, frames inheriting from `foo_tmpl` can easily change the `args`.
 
 The attribute names, if useful, can be included in the template instantiation.
 
@@ -718,11 +718,11 @@ In the case where a collection of items is used, this can be trivial to work wit
       compression : Template arg_tmpl { name : "c"  value : 8 }
       log : Template switch_tmpl { name : "log"  value : True }
     }
-    args_tuples : For arg : args {} Select arg {}
-    args_str : For arg : args_tuples Where arg.enabled Reduce acc & " " & arg.spec With acc : ""
+    args_frames : For arg : args {} Select arg {}
+    args_str : For arg : args_frames Where arg.enabled Reduce acc & " " & arg.spec With acc : ""
 
 ### Flexible Rendering
-This uses tuple re-parenting to create multiple ways of rendering the same data:
+This uses frame re-parenting to create multiple ways of rendering the same data:
 
     weather : Template {
       toronto : data_tmpl { city : "Toronto"  temperature : 35  humdity : 71 }
@@ -810,9 +810,9 @@ The `b_ifier` function-like template can apply the same changes to any desired t
       For override : overrides
       Reduce override(base : tmpl)
       With tmpl : foo_tmpl
-    tuple : derived_tmpl { }
+    frame : derived_tmpl { }
 
-Here `derived_tmpl` is the combination of all the layered overrides in the `overrides` tuple. It's also possible to compose two overriding mixins:
+Here `derived_tmpl` is the combination of all the layered overrides in the `overrides` frame. It's also possible to compose two overriding mixins:
 
     a_ifier : Template { base ?:  value : Template base { x : 2 * y } }
     b_ifier : Template { base ?:  value : Template base { z : x + y } }
@@ -823,23 +823,23 @@ This will compose `a_ifier` and `b_ifier` into `ab_ifier`.
 ## The Standard Library
 Because Flabbergast is meant to render data, it has a rather lean standard library. Most languages have the following major elements in their standard libraries:
 
- - data structures. These are rather unnecessary once tuples have been accepted as the one true data structure.
+ - data structures. These are rather unnecessary once frames have been accepted as the one true data structure.
  - search and sort algorithms. These are built into the language via the fricassée expression.
  - I/O. This is highly discouraged as configurations should be hermetic and the controlling program may have security reasons to restrict access to the world. Since there is no way to control the order of operations, output that cause side-effects in the program is discouraged. In particular, if writing is permitted, should it happen immediately on evaluation or after success of the whole program (i.e., can a program which produces an error still write).
    - files. Traditional file I/O has too much state to be practical. The best compromise would be operations to read and write whole files. The write issue still applies.
    - GUIs. This is entirely mutable state.
-   - databases. Read-only queries of databases are probably reasonable as the results can be converted to tuples. Writing can also be done transactionally, dependent on the success of the whole program.
+   - databases. Read-only queries of databases are probably reasonable as the results can be converted to frames. Writing can also be done transactionally, dependent on the success of the whole program.
    - network. Again, this is entirely mutable state. It would certainly be possible to do read-only network access, however, the semantics surrounding network failures is unclear. Suppose an HTTP GET is available: what errors should be handled by the program? 404? 403? 500? non-existent domain? Any can be argued, but the question is: which represents the failure of the program and which represent the failure of the network and, most importantly, what is the correct behaviour of the program when an error of any kind occurs?
  - threading. Generally, threading control is only needed so that data structures and I/O can be done safely. Since both of those are handled outside the language, threading should be too.
- - string manipulation. Yuck. String manipulation is the source of all computational suffering. Embrace the tuples.
+ - string manipulation. Yuck. String manipulation is the source of all computational suffering. Embrace the frames.
  - regular expressions and parsing. Ignoring that parsing is usually absent, generally, this is done on the strings read from files.
  - mathematics. Computation is good!
  - XML and JSON.
 
 So, the Flabbergast libraries look like they do to avoid I/O and minimise the ensuing insanity.
 
-### Tuple Manipulation (`lib:tuple`)
-This library is simply a collection of convenience templates for manipulating tuples. It is portable and should be present on every platform; it is reasonable to expect to have it.
+### Frame Manipulation (`lib:frame`)
+This library is simply a collection of convenience templates for manipulating frames. It is portable and should be present on every platform; it is reasonable to expect to have it.
 
 ### String Manipulation (`lib:str`)
 These functions perform common string operations not found in the language. This is not a portable language, but should be trivial to port to new platforms; it is reasonable to expect to have it.
@@ -862,7 +862,7 @@ The regular expression library works in two parts: there are a set of templates 
     x : For Each my_expr(str : my_string) Select foo_value 
 
 ### Rendering (`lib:render`)
-This library converts tuples in to JSON-parseable strings and XML documents. In short, the library provides templates such that a tuple can be reduced to XML or JSON fragments.
+This library converts frames in to JSON-parseable strings and XML documents. In short, the library provides templates such that a frame can be reduced to XML or JSON fragments.
 
 It is portable and should be present on every platform.
 
@@ -946,13 +946,13 @@ These final files tend to be rather short.
 
 ### How do I create a new type?
 
-There isn't a mechanism to create user-defined types as such. There are two reasons: what would be the look-up rules for type names and how would one define new primitive operations? In general, there's no reason to create a new type: just create a new tuple with a well-defined interface. For all typical purposes, that is as good as defining a new type. In the typical class-based object-oriented sense, there is no guarantee that a tuple will inherit the intended template, but if it has a compliant interface, there isn't necessarily any harm.
+There isn't a mechanism to create user-defined types as such. There are two reasons: what would be the look-up rules for type names and how would one define new primitive operations? In general, there's no reason to create a new type: just create a new frame with a well-defined interface. For all typical purposes, that is as good as defining a new type. In the typical class-based object-oriented sense, there is no guarantee that a frame will inherit the intended template, but if it has a compliant interface, there isn't necessarily any harm.
 
 Many languages have restricted value sets: enumerations (C, C++, Java, C#) or symbols (LISP, Ruby, SmallTalk). These are intended to be universally comparable values that exist in some kind of special name space. Symbols are essentially strings, so the `$` identifier-like string is essentially the same. An enumeration-like structure can be easily made:
 
     my_enum : For x : [$a, $b, $c] Select x : x
 
-It would also be completely reasonable to provide a tuple:
+It would also be completely reasonable to provide a frame:
 
     my_enum : {
       a : { spec : "a"  id : 0 }
@@ -960,13 +960,13 @@ It would also be completely reasonable to provide a tuple:
       c : { spec : "c"  id : 2 }
     }
 
-The value of enumerations is mostly that they are cheap to compare and use in `switch` statements. Since none of that really translates to Flabbergast, this isn't so pressing. Rather than have dispatch logic, put the results in the tuples or templates.
+The value of enumerations is mostly that they are cheap to compare and use in `switch` statements. Since none of that really translates to Flabbergast, this isn't so pressing. Rather than have dispatch logic, put the results in the frames or templates.
 
 ### How do I do reflection/evaluation?
 
 This isn't supported and isn't likely to be.
 
-The language is sufficiently flexible that most of the things that would need reflection can be done using features of the language. Since tuples can be introspected, there's no need to have Java/C#-style reflection of classes. Reflecting on templates is rather unhelpful since they contain the attribute expressions can't be converted into callable functions.
+The language is sufficiently flexible that most of the things that would need reflection can be done using features of the language. Since frames can be introspected, there's no need to have Java/C#-style reflection of classes. Reflecting on templates is rather unhelpful since they contain the attribute expressions can't be converted into callable functions.
 
 Converting strings to executable code is a rather undesirable prospect. Again, since the language is meant to be embedded in other systems, there may be security implications to loading code from untrusted sources.
 
@@ -976,7 +976,7 @@ The more restricted version of this is allowing strings to be used for lookup. I
 
 This, however, only does a single layer of direct lookup, instead of contextual lookup.
 
-The predecessor of Flabbergast had an evaluation function and the use cases were either limited or insane–some users constructed entire tuples from strings, substituting supplied values into attribute names and values, even though better tools existed in the language. In general, it was use to bind tuples together in unrelated parts of the program. With a hypothetical `Eval`, it tended to look as follows:
+The predecessor of Flabbergast had an evaluation function and the use cases were either limited or insane–some users constructed entire frames from strings, substituting supplied values into attribute names and values, even though better tools existed in the language. In general, it was use to bind frames together in unrelated parts of the program. With a hypothetical `Eval`, it tended to look as follows:
 
     cpu_limits : {
        foo : 1.0
@@ -995,6 +995,6 @@ The predecessor of Flabbergast had an evaluation function and the use cases were
 
 In practise, this created more problems than it solved. First, debugging the evaluated expressions was difficult since they were opaque, and this only became more difficult as the names were more arbitrary. In this particular case, the fricassée solution proposed above would work (and indeed it would in most situations). As the item is operating on the string instead of the syntax tree, devious things can be done, for example, `name : "foo + 0.5"`, which might make `name` unusable in other contexts, or have unforeseen consequences.
 
-Moreover, there is precious little reason not to simply set the attribute in the correct tuple. That is much clearer.
+Moreover, there is precious little reason not to simply set the attribute in the correct frame. That is much clearer.
 
 With sufficient demonstration of utility, a reasonable plan would be to include a reflected contextual lookup operator. Imagine something to the effect of `Lookup Using [$a, $b, $c] In x` as the equivalent of `Lookup a.b.c In x`. This will be a difficult sales pitch.

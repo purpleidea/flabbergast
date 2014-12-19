@@ -80,22 +80,22 @@ namespace Flabbergast.Expressions.Fricassee {
 		}
 		public override Gee.List<uint> generate_contexts (ExecutionEngine engine) throws EvaluationError {
 			engine.call (source_expr);
-			var container_tuple = engine.operands.pop ();
-			if (!(container_tuple is Data.Tuple)) {
-				throw new EvaluationError.NAME (@"Value passed to Each is not a tuple. $(source_expr.source.source):$(source_expr.source.line):$(source_expr.source.offset)");
+			var container_frame = engine.operands.pop ();
+			if (!(container_frame is Data.Frame)) {
+				throw new EvaluationError.NAME (@"Value passed to Each is not a frame. $(source_expr.source.source):$(source_expr.source.line):$(source_expr.source.offset)");
 			}
 			var contexts = new Gee.ArrayList<uint> ();
-			foreach (Gee.Map.Entry<string, Expression> entry in (Data.Tuple)container_tuple) {
+			foreach (Gee.Map.Entry<string, Expression> entry in (Data.Frame)container_frame) {
 				if (entry.key[0].isupper ()) {
 					continue;
 				}
 				engine.call (entry.value);
 				var datum = engine.operands.pop ();
-				if (!(datum is Data.Tuple)) {
-					throw new EvaluationError.TYPE_MISMATCH (@"$(entry.key) is not a tuple in Each selector. $(source.source):$(source.line):$(source.offset)");
+				if (!(datum is Data.Frame)) {
+					throw new EvaluationError.TYPE_MISMATCH (@"$(entry.key) is not a frame in Each selector. $(source.source):$(source.line):$(source.offset)");
 				}
 				var context = engine.environment.create ();
-				foreach (Gee.Map.Entry<string, Expression> subentry in (Data.Tuple)datum) {
+				foreach (Gee.Map.Entry<string, Expression> subentry in (Data.Frame)datum) {
 					if (entry.key[0].isupper ()) {
 						continue;
 					}
@@ -127,15 +127,15 @@ namespace Flabbergast.Expressions.Fricassee {
 		internal abstract NameGetter prepare_input (ExecutionEngine engine, Gee.Set<string> attributes) throws EvaluationError;
 		internal abstract void transform ();
 	}
-	internal class TupleGetter : NameGetter {
-		private Data.Tuple tuple;
-		internal TupleGetter (string name, Data.Tuple tuple) {
+	internal class FrameGetter : NameGetter {
+		private Data.Frame frame;
+		internal FrameGetter (string name, Data.Frame frame) {
 			this.name = name;
-			this.tuple = tuple;
+			this.frame = frame;
 		}
 		internal override Expression get (ExecutionEngine engine, string name)  throws EvaluationError {
-			if (tuple.attributes.has_key (name)) {
-				var expr = tuple[name];
+			if (frame.attributes.has_key (name)) {
+				var expr = frame[name];
 				engine.call (expr);
 				if (engine.operands.pop () is Data.Continue) {
 					return new NullLiteral ();
@@ -146,18 +146,18 @@ namespace Flabbergast.Expressions.Fricassee {
 			}
 		}
 	}
-	internal class TupleSource : Source {
+	internal class FrameSource : Source {
 		public Expression expression {
 			get;
 			set;
 		}
 		internal override NameGetter prepare_input (ExecutionEngine engine, Gee.Set<string> attributes) throws EvaluationError {
 			engine.call (expression);
-			var tuple = engine.operands.pop ();
-			if (!(tuple is Data.Tuple)) {
-				throw new EvaluationError.TYPE_MISMATCH (@"Value for $(name.name) is not a tuple. $(source.source):$(source.line):$(source.offset)");
+			var frame = engine.operands.pop ();
+			if (!(frame is Data.Frame)) {
+				throw new EvaluationError.TYPE_MISMATCH (@"Value for $(name.name) is not a frame. $(source.source):$(source.line):$(source.offset)");
 			}
-			foreach (var entry in ((Data.Tuple)tuple).attributes.entries) {
+			foreach (var entry in ((Data.Frame)frame).attributes.entries) {
 				if (!entry.key[0].islower ()) {
 					continue;
 				}
@@ -167,7 +167,7 @@ namespace Flabbergast.Expressions.Fricassee {
 				}
 				attributes.add (entry.key);
 			}
-			return new TupleGetter (name.name, (Data.Tuple)tuple);
+			return new FrameGetter (name.name, (Data.Frame)frame);
 		}
 		internal override void transform () {
 			expression = expression.transform ();
@@ -202,7 +202,7 @@ namespace Flabbergast.Expressions.Fricassee {
 		}
 		internal override void transform () {}
 	}
-	internal class MergedTuples : Selector {
+	internal class MergedFrames : Selector {
 		public Gee.List<Source> sources {
 			get;
 			set;
@@ -284,7 +284,7 @@ namespace Flabbergast.Expressions.Fricassee {
 		}
 	}
 
-	internal class NamedTuple : Result {
+	internal class NamedFrame : Result {
 		public Expression result_attr {
 			get;
 			set;
@@ -296,12 +296,12 @@ namespace Flabbergast.Expressions.Fricassee {
 		}
 		public override void generate_result (ExecutionEngine engine, Gee.List<uint> contexts) throws EvaluationError {
 			var context = engine.environment.create ();
-			var tuple = new Data.Tuple (context);
-			tuple.source = source;
-			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
+			var frame = new Data.Frame (context);
+			frame.source = source;
+			frame.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 
 			var state = engine.state;
-			state.containers = tuple.containers;
+			state.containers = frame.containers;
 			engine.environment.append_containers (context, state.containers);
 
 			foreach (var target_context in contexts) {
@@ -321,22 +321,22 @@ namespace Flabbergast.Expressions.Fricassee {
 				} else {
 					throw new EvaluationError.TYPE_MISMATCH (@"The attribute type must be an integer or a string. $(source.source):$(source.line):$(source.offset)");
 				}
-				if (tuple.attributes.has_key (attr_name)) {
+				if (frame.attributes.has_key (attr_name)) {
 					throw new EvaluationError.NAME (@"Duplicate attribute name $(attr_name) in result of For⋯Select. $(source.source):$(source.line):$(source.offset)");
 				}
 
 				var attr_value = engine.create_closure (result_value);
-				tuple.attributes[attr_name] = attr_value;
+				frame.attributes[attr_name] = attr_value;
 				engine.environment[context, attr_name] = attr_value;
 			}
-			engine.operands.push (tuple);
+			engine.operands.push (frame);
 		}
 		public override void transform () {
 			result_attr = result_attr.transform ();
 			result_value = result_value.transform ();
 		}
 	}
-	internal class AnonymousTuple : Result {
+	internal class AnonymousFrame : Result {
 		public Expression result {
 			get;
 			set;
@@ -354,9 +354,9 @@ namespace Flabbergast.Expressions.Fricassee {
 			}
 
 			var context = engine.environment.create ();
-			var tuple = new Data.Tuple (context);
-			tuple.source = source;
-			tuple.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
+			var frame = new Data.Frame (context);
+			frame.source = source;
+			frame.containers = new Utils.ContainerReference (engine.state.context, engine.state.containers);
 
 			var state = engine.state;
 			engine.environment.append_containers (context, new Utils.ContainerReference (state.context, state.containers));
@@ -367,10 +367,10 @@ namespace Flabbergast.Expressions.Fricassee {
 				engine.state = state;
 				var attr_value = engine.create_closure (result);
 				var attr_name = make_id (it);
-				tuple.attributes[attr_name] = attr_value;
+				frame.attributes[attr_name] = attr_value;
 				engine.environment[context, attr_name] = attr_value;
 			}
-			engine.operands.push (tuple);
+			engine.operands.push (frame);
 		}
 		public override void transform () {
 			result = result.transform ();

@@ -252,10 +252,10 @@ environment_tmpl : Template {
 known_types_tmpl : Template {
 	bool ?:
 	float ?:
+	frame ?:
 	int ?:
 	str ?:
 	template ?:
-	tuple ?:
 	unit ?:
 }
 # The actions that can be performed to check that the required return type is
@@ -264,14 +264,14 @@ ensure_type_tmpl : Template {
 	any : Template filter {
 		types : known_types
 	}
-	number : Template filter {
-		types : [ known_types.float, known_types.int ]
-	}
 	bool : Template filter {
 		types : [ known_types.bool ]
 	}
-	tuple : Template filter {
-		types : [ known_types.tuple ]
+	frame : Template filter {
+		types : [ known_types.frame ]
+	}
+	number : Template filter {
+		types : [ known_types.float, known_types.int ]
 	}
 	# Check that the return type is one of the supplied types.
 	filter : Template {
@@ -346,7 +346,7 @@ language_tmpl : Template {
 		# object-oriented language, this would be the abstract super-class of a
 		# collection of rules.
 		group_name %:
-		# A tuple where the names are the names of the “alternative” rules where
+		# A frame where the names are the names of the “alternative” rules where
 		# this syntax element should be included. The values are ignored. In
 		# certain cases, for instance, attributes, it is useful to repackage the
 		# available syntax elements into different groups that have the same type.
@@ -355,7 +355,7 @@ language_tmpl : Template {
 		pattern ?:
 		# If the syntax group has environment propagation support, this element
 		# contains a list of actions to perform, using templates from the
-		# `environment` tuple, when the environment is being configured.
+		# `environment` frame, when the environment is being configured.
 		apply_environment_to : environment_flavour.enabled &&
 			Error "apply_environment_to attribute must be overridden in \(rule_name)."
 		ensure_type_is : is_typeable &&
@@ -369,7 +369,7 @@ language_tmpl : Template {
 	meandering_element : Template {
 		# The name of the rule to be parsed instead.
 		alternate_name ?:
-		# A tuple where the names are the of the “alternative” rules where this
+		# A frame where the names are the of the “alternative” rules where this
 		# element should be included.
 		alternatives : {}
 		is_real_element : False
@@ -885,14 +885,14 @@ language_tmpl : Template {
 					pattern : attribute_pattern { }
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.intrinsic { }
-					type_demand : { expression : [ known_types.tuple ] }
+					type_demand : { expression : [ known_types.frame ] }
 				}
 				name_input : Template syntax_element {
 					pattern : attribute_pattern {
 						value_pattern : Template parser.exact { word : "Name" }
 					}
 					apply_environment_to : [ ]
-					ensure_type_is : ensure_type.tuple { types : [ known_types.str ] }
+					ensure_type_is : ensure_type.frame { types : [ known_types.str ] }
 				}
 				ordinal_input : Template syntax_element {
 					pattern : attribute_pattern {
@@ -1002,7 +1002,7 @@ language_tmpl : Template {
 							environment.list_of { field : $orderings },
 							environment.other_elements { fields : [ $expression ] }
 						]
-					ensure_type_is : ensure_type.tuple { }
+					ensure_type_is : ensure_type.frame { }
 				}
 				named_select : Template syntax_element {
 					pattern : parser.sequence {
@@ -1019,7 +1019,7 @@ language_tmpl : Template {
 					apply_environment_to : [
 						environment.other_elements { fields : [ $name_expr, $value_expr ] }
 					]
-					ensure_type_is : ensure_type.tuple { }
+					ensure_type_is : ensure_type.frame { }
 					type_demand : {
 						name_expr : [ known_types.int, known_types.str ]
 						value_expr : known_types
@@ -1046,6 +1046,11 @@ language_tmpl : Template {
 					type : known_types.float
 					castable_from : [ known_types.int ]
 				}
+				frame : Template type_element {
+					friendly_name : "Frame"
+					type : known_types.frame
+					castable_from : [ ]
+				}
 				int : Template type_element {
 					friendly_name : "Int"
 					type : known_types.int
@@ -1059,11 +1064,6 @@ language_tmpl : Template {
 				tmpl : Template type_element {
 					friendly_name : "Template"
 					type : known_types.template
-					castable_from : [ ]
-				}
-				tuple : Template type_element {
-					friendly_name : "Tuple"
-					type : known_types.tuple
 					castable_from : [ ]
 				}
 			}
@@ -1292,7 +1292,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.propagate { fields : [ $result_builder ] }
 					type_demand : {
 						where_expr : [ known_types.bool ]
-						each_expr : [ known_types.tuple ]
+						each_expr : [ known_types.frame ]
 					}
 				}
 				for_merge : Template expression_tmpl {
@@ -1448,7 +1448,7 @@ language_tmpl : Template {
 				range : Template binary_operator {
 					level : 10
 					operator : "Through"
-					ensure_type_is : ensure_type.tuple { }
+					ensure_type_is : ensure_type.frame { }
 					type_demand : {
 						left : [ known_types.int ]
 						right : [ known_types.int ]
@@ -1535,7 +1535,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.any {}
-					type_demand : { expression : [ known_types.tuple ] }
+					type_demand : { expression : [ known_types.frame ] }
 				}
 
 				instantiation : Template expression_tmpl {
@@ -1565,7 +1565,7 @@ language_tmpl : Template {
 						environment.other_elements { fields : [ $source ] },
 						environment.list_independent { field : $attributes }
 					]
-					ensure_type_is : ensure_type.tuple {}
+					ensure_type_is : ensure_type.frame {}
 					type_demand : { source : [ known_types.template ] }
 					type_demand_all : { attributes : known_types }
 				}
@@ -1590,7 +1590,7 @@ language_tmpl : Template {
 					}
 				}
 
-				literal_tuple : Template expression_tmpl {
+				literal_frame : Template expression_tmpl {
 					level : 16
 					pattern : parser.sequence {
 						of : [
@@ -1613,7 +1613,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.list_of { field : $attributes } ]
-					ensure_type_is : ensure_type.tuple {}
+					ensure_type_is : ensure_type.frame {}
 					type_demand_all : { attributes : known_types }
 				}
 				not : Template unary_tmpl {
@@ -1630,7 +1630,7 @@ language_tmpl : Template {
 					level : 16
 					operator : "GenerateId"
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
-					type_demand : { expr : [ known_types.tuple ] }
+					type_demand : { expr : [ known_types.frame ] }
 				}
 				template_new : Template expression_tmpl {
 					level : 16
@@ -1905,7 +1905,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expr ] } ]
 					ensure_type_is : ensure_type.any {}
-					type_demand : { expr : [ known_types.tuple ] }
+					type_demand : { expr : [ known_types.frame ] }
 				}
 
 				subexpression : Template expression_tmpl {
@@ -1946,13 +1946,13 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.list_of { field : $items } ]
-					ensure_type_is : ensure_type.tuple { }
+					ensure_type_is : ensure_type.frame { }
 					type_demand_all : { items : known_types }
 				}
 
 				container : Template literal_tmpl {
 					name : "Container"
-					ensure_type_is : ensure_type.tuple { }
+					ensure_type_is : ensure_type.frame { }
 				}
 				false : Template literal_tmpl {
 					name : "False"
@@ -1992,7 +1992,7 @@ language_tmpl : Template {
 				}
 				this : Template literal_tmpl {
 					name : "This"
-					ensure_type_is : ensure_type.tuple { }
+					ensure_type_is : ensure_type.frame { }
 				}
 				true : Template literal_tmpl {
 					name : "True"

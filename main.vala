@@ -74,14 +74,14 @@ void print_tabs (uint depth) {
 }
 
 void print_datum (Data.Datum result, Rules rules, ExecutionEngine engine, bool debug, uint depth) {
-	if (result is Data.Tuple) {
-		stdout.printf ("{ # Id: %u Containers:", ((Data.Tuple)result).context);
-		for (var container = ((Data.Tuple)result).containers; container != null; container = container.parent) {
+	if (result is Data.Frame) {
+		stdout.printf ("{ # Id: %u Containers:", ((Data.Frame)result).context);
+		for (var container = ((Data.Frame)result).containers; container != null; container = container.parent) {
 			stdout.printf (" %u", container.context);
 		}
 		stdout.printf ("\n");
 
-		foreach (var entry in (Data.Tuple)result) {
+		foreach (var entry in (Data.Frame)result) {
 			print_tabs (depth);
 			stdout.printf (" %s: ", entry.key);
 			print_expression (rules, engine, entry.value, debug && debug_inner, depth + 1);
@@ -192,7 +192,7 @@ bool debug_parsing;
 bool debug_inner;
 string? filename;
 const OptionEntry[] options = {
-	{ "debug-inner", 'g', 0, OptionArg.NONE, ref debug_inner, "Interactively debug inside tuple printing.", null },
+	{ "debug-inner", 'g', 0, OptionArg.NONE, ref debug_inner, "Interactively debug inside frame printing.", null },
 	{ "debug-parsing", 0, 0, OptionArg.NONE, ref debug_parsing, "Turn on GTeonoma parsing output.", null },
 	{ "file", 'f', 0, OptionArg.FILENAME, ref filename, "Input file to read.", "FILE" },
 	{ "interactive", 'i', 0, OptionArg.NONE, ref interactive, "Enter interactive shell.", null },
@@ -227,7 +227,7 @@ int main (string[] args) {
 		return 1;
 	}
 	var engine = new ExecutionEngine ();
-	Data.Tuple? root_tuple = null;
+	Data.Frame? root_frame = null;
 	if (!(interactive && filename == null)) {
 		var parser = GTeonoma.StreamParser.open (rules, filename?? "/dev/stdin");
 		if (parser == null) {
@@ -250,7 +250,7 @@ int main (string[] args) {
 			}
 			var file = (File) result.get_object ();
 			file.transform ();
-			root_tuple = engine.start_from (file);
+			root_frame = engine.start_from (file);
 		} catch (EvaluationError e) {
 			stderr.printf ("%s: %s\n", filename ?? "stdin", e.message);
 			return 1;
