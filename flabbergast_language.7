@@ -27,26 +27,26 @@ Future versions may extend the keyword system to Unicode.
 Bool
 a Boolean value. Maybe either \fBTrue\fR or \fBFalse\fR.
 .TP
-Int
-platform-specific integral number
-.TP
 Float
 IEEE floating point number
+.TP
+Frame
+a mapping from identifiers to values, which are of the types mentioned in this section. No duplicate identifiers are permitted (i.e., the identifier space is a set).
+.TP
+Int
+platform-specific integral number
 .TP
 Str
 a Unicode text string
 .TP
-Frame
-a collection of pairs from identifiers to values are value of the types mentioned in this section. No duplicate identifiers are permitted (i.e., the identifier space is a set).
-.TP
 Template
-a collection of pairs from identifiers to expressions. No duplicate identifiers are permitted (i.e., the identifier space is a set).
+a mapping from from identifiers to expressions. No duplicate identifiers are permitted (i.e., the identifier space is a set).
 .TP
 Unit
 the type of the \fBNull\fR value.
 
 .SH GRAMMAR AND SEMANTICS
-Line-terminated constants may start with \fB#\fR. The grammar is a PEG, so assume that low precedence rules are shown first.
+Line-terminated comments may start with \fB#\fR. The grammar is a PEG, so assume that low precedence rules are shown first.
 
 For convenience of writing, expression are broken into groups, based on precedence. It can be assumed that the PEG expression for group \fIx\fR, with expressions \fIA\fR, \fIB\fR, ... is
 
@@ -67,11 +67,9 @@ For the semantics, they are written as a Horn clause of the form:
 .br
 .in +0.5i
 ..
-
 .de SEME
 .in
 ..
-
 .RS
 (\fIT\fR\*<0\*>*, \fIT\fR\*<1\*>, ...) ⊢ \fIexpr\fR ↓ value :: type :- ...
 .RE
@@ -322,7 +320,7 @@ w = O(x, y),
 .SEM Γ ⊢ a:E\*<+\*> o:(\fB+\fR / \fB-\fR) b:E\*<+\*> (p:(\fB+\fR / \fB-\fR) c:E\*<+\*>)+ ↓ z :: Float
 Γ ⊢ a ↓ x :: Int ∨ Γ ⊢ a ↓ x :: Float,
 
-Γ ⊢ b ↓ y :: Int ∨ Γ ⊢ b ↓ x :: Float,
+Γ ⊢ b ↓ y :: Int ∨ Γ ⊢ b ↓ y :: Float,
 
 w = O(x, y),
 
@@ -346,7 +344,7 @@ w = O(x, y),
 .SEM Γ ⊢ a:E\*<+\*> o:(\fB*\fR / \fB/\fR / \fB%\fR) b:E\*<+\*> (p:(\fB*\fR / \fB/\fR / \fB%\fR) c:E\*<+\*>)+ ↓ z :: Float
 Γ ⊢ a ↓ x :: Int ∨ Γ ⊢ a ↓ x :: Float,
 
-Γ ⊢ b ↓ y :: Int ∨ Γ ⊢ b ↓ x :: Float,
+Γ ⊢ b ↓ y :: Int ∨ Γ ⊢ b ↓ y :: Float,
 w = O(x, y),
 
 Γ ⊢ w p c ↓ z
@@ -358,7 +356,8 @@ Where the \fIO\fR is multiplication for \fB*\fR, division for \fB/\fR, and modul
 .TP
 Range of integers
 .SEM (t, ...) ⊢ start:E\*<+\*> \fBThrough\fR end:E\*<+\*> ↓ r = < u; r, t, ...; ∀ x ≥ s ∧ x ≤ e : ORD(x) → x :: Int >
-(t, ...) ⊢ start ↓ s :: Int
+(t, ...) ⊢ start ↓ s :: Int,
+
 (t, ...) ⊢ end ↓ e :: Int
 .SEME
 
@@ -575,7 +574,8 @@ Numeric negation
 .TP
 Unique identifier generation
 .SEM Γ ⊢ \fBGenerateId\fR expr:E\*<+\*> ↓ i :: Str
-.SEM Γ ⊢ expr ↓ < i; Δ; ... >
+Γ ⊢ expr ↓ < i; Δ; ... >
+.SEME
 
 Extracts the unique identifier from a frame. The implementation makes no guarantees about the format of these identifiers, other than they are valid Flabbergast identifiers.
 
@@ -586,7 +586,7 @@ This expression is meant to have a similar function to LISP's \fIgensym\fR or XP
 .TP
 Call template with arguments
 .SEM Γ ⊢ fn:E\*<+\*> \fB( )\fR ↓ t
-Γ ⊢ fn \fB{ args : [] }.value\fR ↓ t
+Γ ⊢ \fB(\fR fn \fB{ args : [] }).value\fR ↓ t
 .SEME
 
 .SEM Γ ⊢ fn:E\*<+\*> \fB(\fRarg:E\*<+\*> (\fB,\fR arg:E\*<+\*>)*(\fB,\fR name:I \fB:\fR nameexpr:E\*<0\*>  )*\fB)\fR ↓ t
@@ -594,14 +594,14 @@ Call template with arguments
 
 ∀ nameexpr : Γ ⊢ nameexpr ↓ v\*<nameexpr\*>,
 
-Γ ⊢ fn \fB{ args : [\fR v\*<arg\*>, ... \fB ] \fR name \fB:\fR v\*<nameexpr\*>, ... }.value\fR ↓ t
+Γ ⊢ \fB(\fR fn \fB{ args : [\fR v\*<arg\*>, ... \fB ] \fR name \fB:\fR v\*<nameexpr\*>, ... }).value\fR ↓ t
 .SEME
 
-.SEM Γ ⊢ fn:E\*<+\*> \fB(\fB,\fR name:I \fB:\fR nameexpr:E\*<0\*> (\fB,\fR name:I \fB:\fR nameexpr:E\*<0\*> )*\fB)\fR
+.SEM Γ ⊢ fn:E\*<+\*> \fB(name:I \fB:\fR nameexpr:E\*<0\*> (\fB,\fR name:I \fB:\fR nameexpr:E\*<0\*> )*\fB)\fR
 
 ∀ nameexpr : Γ ⊢ nameexpr ↓ v\*<nameexpr\*>,
 
-Γ ⊢ fn \fB{ args : [] \fR name \fB:\fR v\*<nameexpr\*>, ... }.value\fR ↓ t
+Γ ⊢ \fB(\fR fn \fB{ args : [] \fR name \fB:\fR v\*<nameexpr\*>, ... }).value\fR ↓ t
 .SEME
 
 Unlike normal template evaluation, all expressions are captured in the current context, instead of the context of the instantiation.
@@ -642,10 +642,10 @@ It is not an error if any value is not defined so long as it is not the first it
 
 .TP
 Perform direct lookup
-.SEM Γ ⊢ expr:E\*<+\*> (\fB.\fR name:I)(\fB.\fR other:I)* ↓ u
+.SEM Γ ⊢ expr:E\*<+\*> \fB.\fR name:I other:(\fB.\fR I)* ↓ u
 Γ ⊢ expr ↓ < u; Δ; name → v, ... >,
 
-Γ ⊢ v (\fB.\fR other:I)* ↓ u
+Γ ⊢ v other:I ↓ u
 .SEME
 Get values from inside of a frame. Do not perform contextual lookup.
 
