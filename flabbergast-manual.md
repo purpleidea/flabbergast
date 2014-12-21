@@ -856,6 +856,59 @@ Here `derived_tmpl` is the combination of all the layered overrides in the `over
 
 This will compose `a_ifier` and `b_ifier` into `ab_ifier`.
 
+### The Up-Down Problem
+Many rendering problems have this conflicting nature: containers have a limit on size, but also need their sized to be determined by their contents. This leads to a kind of dynamic system where the tree of nested boxes needs to be traversed multiple times to determine the optimal layout. Examples of this include hierarchical layout of widgets in a GUI (_e.g._, Gtk+ has its collection of size allocation methods) and text layout in document (_e.g._, line breaking and spacing in LaTeX).
+
+Flabbergast can't actually make the problem easier to solve, but it can make it easier to define. In procedural and functional languages, the state information from each step of the rendering process must be explicitly managed. Flabbergast can use lookup to automatically unwind the dependency order of the operations given the hierarchy of widgets. If circular evaluation occurs, then the problem is specified in a way that could only work with iterative refinement.
+
+Consider something like:
+
+    text_box : Template {
+        text ?:
+        width ?:
+        height ?:
+        # Explicitly define our minimums to be passed up.
+        min_width : 5  min_height : 1
+        preferred_width : 10
+				# Here, our preferred height (which we pass up) is defined in terms of
+				# our width, which is passed down. This might result in circular
+				# evaluation depending on the implementation of our container.
+				preferred_height : Length text * 1.5 / width
+        value : # Render output using width and height
+    }
+    fancy_border : Template {
+        child ?:
+        width ?:
+        height ?:
+				# We enforce what our parent forced on us onto our child widget. (Down)
+				exp_child : child {
+            width : Lookup width In Container - 1
+            height : Lookup height In Container - 1
+        }
+        # We set our “up” values based on our child.
+        min_width : exp_child.min_width + 1
+        min_height : exp_child.min_height + 1
+        preferred_width : exp_child.preferred_width + 1
+        preferred_height : exp_child.preferred_height + 1
+				value : # Render output using width, height, and exp_child.value
+    }
+    vertical_box : Template {
+        children ?:
+        width ?:
+        height ?:
+        child_height : height / (For c : children Reduce acc + 1 With acc : 0)
+        exp_children : For c : children Select c { width -:  height : Lookup child_height In Container }
+        min_width : For c : exp_children Reduce c.min_width + acc With acc : 0
+        min_height : For c : exp_children Reduce c.min_height + acc With acc : 0
+        preferred_width : For c : exp_children Reduce c.preferred_width + acc With acc : 0
+        preferred_height : For c : exp_children Reduce c.preferred_height + acc With acc : 0
+        value : # Render output using exp_children's values
+    }
+
+The most interesting part of this example is `text_box.preferred_height`. It might result in circular evaluation. It also might not. The determining factors will be how the containers are implemented and the preferred dimensions of its siblings. This is somewhat metastable: If a text box is placed inside a vertical box (or inside a fancy border placed in a vertical box) the answer will be stably produced. In a horizontal box (not shown), it would almost certainly be disastrous circular evaluation. However, there are situations where it might still work depending on the exact properties of the container's layout algorithm.
+
+The fact that the behaviour is not universally consistent is both good and bad. In the abstract, the problem is framed this way and it makes sense: the optimal layout might not exist depending on the desired composition and the solution would be to insert extra nodes into the rendering tree to capture the intended output (_e.g._, LaTeX's `minipage` environment). However, circular evaluation is not the most helpful error. To achieve this in a traditional language would be much more complicated; the would have to be many passes and widgets would need a way to defer their decision until the next pass. Adding a new widget which requires extra information or passes would involve invasive changes to the render (see [the expression problem](http://en.wikipedia.org/wiki/Expression_problem)). The Flabbergast interpreter is essentially dynamically determining the order in which to do the passes from the implied dependencies.
+
 ## The Standard Library
 Because Flabbergast is meant to render data, it has a rather lean standard library. Most languages have the following major elements in their standard libraries:
 
