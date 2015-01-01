@@ -1,37 +1,57 @@
+# A BSD `ar` style archive
 archive_tmpl : Template {
+	# The collection of `file_tmpl` files.
 	args ?:
 	value : For file : args Reduce acc & file.value With acc : "!<arch>\n"
+	# The default user ID to create files.
 	uid : 0
+	# The default group ID to create files.
 	gid : 0
+	# The default modification time, as a UNIX epoch time.
 	mtime : 0
+	# The user permission bits.
 	user : 6
+	# The group permission bits.
 	group : 4
+	# The other permission bits.
 	other : 4
-	mode : user & group & other
 }
 
+# Pad a string with spaces to the specified length.
 pad_string : Template {
 	input ?:
 	length ?:
 
-	value : input & padding
+	value :
+		If Length input <= length
+			Then input & padding
+			Else Error "Input string too long. Should be \(length) but is \(Length input)."
 	padding : For x : (1 Through (length - Length input)) Reduce (acc & " ") With acc : ""
 }
 
+# A file in a compressed archive
 file_tmpl : Template {
+	# The file name, which should contain only ASCII characters.
 	file_name ?:
+	# The file contents, which should contain only ASCII characters.
 	contents ?:
+	uid %:
+	gid %:
+	mtime %:
+	user %:
+	group %:
+	other %:
 
 	file_name_length : Length file_name
+	# If the file name is more than 16 characters, use the BSD `ar` encoding.
 	file_header : If file_name_length > 16 Then "#1/" & file_name_length Else file_name
 	header_suffix : If file_name_length > 16 Then file_name Else ""
-	extended_content_length : If file_name_length > 16 Then file_name_length Else 0
 	value :
 		pad_string(length : 16, input : file_header) &
 		pad_string(length : 12, input : mtime) &
 		pad_string(length : 6, input : uid) &
 		pad_string(length : 6, input : gid) &
-		pad_string(length : 8, input : mode) &
-		pad_string(length : 10, input : Length contents + extended_content_length) &
+		pad_string(length : 8, input : user & group & other) &
+		pad_string(length : 10, input : Length contents + Length header_suffix) &
 		"`\n" & header_suffix & contents
 }
