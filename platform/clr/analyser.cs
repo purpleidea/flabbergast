@@ -95,9 +95,12 @@ public abstract class AstTypeableNode : AstNode {
 			return Type.Int;
 		} else if (clr_type == typeof(float) || clr_type == typeof(double) || clr_type == typeof(Single) || clr_type == typeof(Double)) {
 			return Type.Float;
-		} else if (clr_type == typeof(string) || clr_type == typeof(String)) {
+		} else if (clr_type == typeof(string) || clr_type == typeof(String) || clr_type == typeof(Stringish)) {
 			return Type.Str;
-		// TODO: Template and frame
+		} else if (clr_type == typeof(Frame)) {
+			return Type.Frame;
+		} else if (clr_type == typeof(Template)) {
+			return Type.Template;
 		} else {
 			return 0;
 		}

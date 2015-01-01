@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="4.0">
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 	<PropertyGroup>
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
 		<Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
 		<ProductVersion>10.0.0</ProductVersion>
 		<SchemaVersion>2.0</SchemaVersion>
-		<ProjectGuid>{349DC095-A2A2-4245-862A-9C348D994656}</ProjectGuid>
+		<ProjectGuid>{B54764C8-8812-4DC0-BB5D-88890F1DB5BC}</ProjectGuid>
 		<OutputType>Library</OutputType>
-		<RootNamespace>Flabbergast</RootNamespace>
-		<AssemblyName>Flabbergast.Compiler</AssemblyName>
-		<AssemblyOriginatorKeyFile>flabbergast.snk</AssemblyOriginatorKeyFile>
+		<RootNamespace>flabbergastruntime</RootNamespace>
+		<AssemblyName>Flabbergast.Runtime</AssemblyName>
 		<SignAssembly>true</SignAssembly>
+		<AssemblyOriginatorKeyFile>flabbergast.snk</AssemblyOriginatorKeyFile>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
 		<DebugSymbols>true</DebugSymbols>
@@ -34,16 +34,11 @@
 		<Reference Include="System"/>
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="compiler-net.cs"/>
-		<Compile Include="analyser.cs"/>
-		<Compile Include="parser.cs"/>
+		<Compile Include="data.cs"/>
+		<Compile Include="exec.cs"/>
+		<Compile Include="srcref.cs"/>
+		<Compile Include="stringish.cs"/>
 		<Compile Include="AssemblyInfo.cs"/>
 	</ItemGroup>
 	<Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets"/>
-	<ItemGroup>
-		<ProjectReference Include="flabbergast-runtime.csproj">
-			<Project>{B54764C8-8812-4DC0-BB5D-88890F1DB5BC}</Project>
-			<Name>flabbergast-runtime</Name>
-		</ProjectReference>
-	</ItemGroup>
 </Project>
