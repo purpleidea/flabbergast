@@ -44,7 +44,11 @@ public class TaskMaster {
 		computations.Enqueue(computation);
 	}
 
-	public void LookupError(Lookup lookup) {
+	public void ReportLookupError(Lookup lookup) {
+		// TODO Handle
+	}
+
+	public void ReportOtherError(SourceReference reference, string message) {
 		// TODO Handle
 	}
 }
@@ -120,7 +124,7 @@ public class Lookup : Computation {
 
 				// If this is not a frame, but there are still more names, then this is an error.
 				if (!(values[frame, name] is Frame)) {
-					master.LookupError(this);
+					master.ReportLookupError(this);
 				}
 
 				got_value = false;
@@ -140,7 +144,7 @@ public class Lookup : Computation {
 			}
 		}
 		// The name is undefined.
-		master.LookupError(this);
+		master.ReportLookupError(this);
 		return false;
 	}
 }
