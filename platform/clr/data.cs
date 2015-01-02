@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Dynamic;
+using System.Linq;
 using System;
 
 namespace Flabbergast {
@@ -40,7 +41,10 @@ public class Unit {
 		private Unit() {}
 }
 
-public class Template {
+public interface IAttributeNames {
+	IEnumerable<string> GetAttributeNames();
+}
+public class Template : IAttributeNames {
 	private IDictionary<string, ComputeValue> attributes = new Dictionary<string, ComputeValue>();
 	public Context Context {
 			get;
@@ -68,9 +72,12 @@ public class Template {
 			attributes[name] = value;
 		}
 	}
+	public IEnumerable<string> GetAttributeNames() {
+		return attributes.Keys;
+	}
 }
 
-public class Frame : DynamicObject {
+public class Frame : DynamicObject, IAttributeNames {
 	private IDictionary<string, Computation> pending = new Dictionary<string, Computation>();
 	private IDictionary<string, Object> attributes = new Dictionary<string, Object>();
 	public Context Context {
@@ -153,6 +160,9 @@ public class Frame : DynamicObject {
 				attributes[name] = value;
 			}
 		}
+	}
+	public IEnumerable<string> GetAttributeNames() {
+		return attributes.Keys.Concat(pending.Keys);
 	}
 }
 }
