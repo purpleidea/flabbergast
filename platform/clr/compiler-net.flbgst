@@ -475,13 +475,34 @@ environment : compiler_lib.environment_tmpl {
 	}
 }
 known_types : compiler_lib.known_types_tmpl {
-	bool : { clr_type : "Flabbergast.Type.Bool" }
-	float : { clr_type : "Flabbergast.Type.Int" }
-	frame : { clr_type : "Flabbergast.Type.Frame" }
-	int : { clr_type : "Flabbergast.Type.Float" }
-	str : { clr_type : "Flabbergast.Type.Str" }
-	template : { clr_type : "Flabbergast.Type.Template" }
-	unit : { clr_type : "Flabbergast.Type.Unit" }
+	bool : {
+		clr_type : "Flabbergast.Type.Bool"
+		real_type : "bool"
+	}
+	float : {
+		clr_type : "Flabbergast.Type.Int"
+		real_type : "double"
+	}
+	frame : {
+		clr_type : "Flabbergast.Type.Frame"
+		real_type : "Flabbergast.Frame"
+	}
+	int : {
+		clr_type : "Flabbergast.Type.Float"
+		real_type : "long"
+	}
+	str : {
+		clr_type : "Flabbergast.Type.Str"
+		real_type : "Flabbergast.Stringish"
+	}
+	template : {
+		clr_type : "Flabbergast.Type.Template"
+		real_type : "Flabbergast.Template"
+	}
+	unit : {
+		clr_type : "Flabbergast.Type.Unit"
+		real_type : "Flabbergast.Unit"
+	}
 }
 ensure_type : compiler_lib.ensure_type_tmpl {
 	filter +: {
