@@ -3,16 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Flabbergast {
-public abstract class MergeIterator<T> : Computation {
+public abstract class MergeIterator : Computation {
 
-	public delegate bool KeyDispatch(string name, ref T current);
+	public delegate bool KeyDispatch();
+
+	public string Current {
+		get { return enumerator.Current; }
+	}
 
 	private SortedDictionary<string, KeyDispatch> dispatchers = new SortedDictionary<string, KeyDispatch>();
 	private IEnumerator<string> enumerator = null;
-	private T current;
 
-	public MergeIterator(IAttributeNames[] inputs, KeyDispatch default_dispatcher, T initial) {
-		current = initial;
+	public MergeIterator(IAttributeNames[] inputs, KeyDispatch default_dispatcher) {
 		foreach (var input in inputs) {
 			foreach (var key in input.GetAttributeNames()) {
 				dispatchers[key] = default_dispatcher;
@@ -28,11 +30,10 @@ public abstract class MergeIterator<T> : Computation {
 			enumerator = dispatchers.Keys.GetEnumerator();
 		}
 		while (enumerator.MoveNext()) {
-			if (!dispatchers[enumerator.Current](enumerator.Current, ref current)) {
+			if (!dispatchers[enumerator.Current]()) {
 				return false;
 			}
 		}
-		result = current;
 		return true;
 	}
 }
