@@ -1,7 +1,9 @@
-*~
 *-*.vapi
+*.build
 *.c
+*.changes
 *.deps
+*.dsc
 *.gir
 *.h
 *.la
@@ -10,10 +12,14 @@
 *.pc
 *.pdf
 *.png
+*.ppa.upload
 *.stamp
+*.swp
+*.tar.gz
+*~
 .libs/
+/Makefile
 ChangeLog
-Makefile
 Makefile.in
 aclocal.m4
 autom4te.cache/
@@ -33,9 +39,9 @@ doc/
 flabbergast
 flabbergast-fmt
 flabbergast-print
-update-flabbergast
 libtool
 m4/
 stamp-h1
+update-flabbergast
 !misc.c
 !readline.c
