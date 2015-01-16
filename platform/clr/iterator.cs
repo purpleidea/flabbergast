@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Flabbergast {
-public abstract class MergeIterator : Computation {
+public abstract class MergeIterator<T> : Computation {
 
-	public delegate bool KeyDispatch(string name, ref object current);
+	public delegate bool KeyDispatch(string name, ref T current);
 
 	private SortedDictionary<string, KeyDispatch> dispatchers = new SortedDictionary<string, KeyDispatch>();
 	private IEnumerator<string> enumerator = null;
-	private object current;
+	private T current;
 
-	public MergeIterator(IAttributeNames[] inputs, KeyDispatch default_dispatcher, object initial) {
+	public MergeIterator(IAttributeNames[] inputs, KeyDispatch default_dispatcher, T initial) {
 		current = initial;
 		foreach (var input in inputs) {
 			foreach (var key in input.GetAttributeNames()) {
