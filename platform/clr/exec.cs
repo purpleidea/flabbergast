@@ -6,25 +6,31 @@ public delegate Computation ComputeValue(Context context, Frame self, Frame cont
 public delegate void ConsumeResult(Object result);
 
 public abstract class Computation {
-	private List<ConsumeResult> consumers = new List<ConsumeResult>();
+	private ConsumeResult consumer = null;
+	private bool must_run = true;
 	protected object result = null;
 
 	protected abstract bool Run();
 
 	internal void Compute() {
-		if (result != null || Run()) {
-			foreach (var consumer in consumers) {
+		if (must_run || Run()) {
+			must_run = false;
+			if (consumer != null) {
 				consumer(result);
+				consumer = null;
 			}
-			consumers.Clear();
 		}
 	}
 
-	public void Notify(ConsumeResult consumer) {
-		if (result == null) {
-			consumers.Add(consumer);
+	public void Notify(ConsumeResult new_consumer) {
+		if (must_run) {
+			if (consumer == null) {
+				consumer = new_consumer;
+			} else {
+				consumer += new_consumer;
+			}
 		} else {
-			consumer(result);
+			new_consumer(result);
 		}
 	}
 }
