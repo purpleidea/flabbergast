@@ -95,11 +95,7 @@ public class Lookup : Computation {
 		this.names = names;
 		/* Create  grid where the first entry is the frame under consideration. */
 		var values = new object[context.Length, names.Length + 1];
-		var it = 0;
-		for (var c = context; c != null; c = c.Tail) {
-			values[it, 0] = c.Frame;
-			it++;
-		}
+		context.Fill((index, frame) => values[index, 0] = frame);
 	}
 	/**
 	 * This is the callback used by GetOrSubscribe. It will be called when a value is available.

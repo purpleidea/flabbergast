@@ -5,34 +5,51 @@ using System;
 
 namespace Flabbergast {
 
-public class Context {
-	public Frame Frame {
-		get;
-		private set;
-	}
-	public Context Tail {
-		get;
-		private set;
-	}
+public delegate void SetFrame(int i, Frame frame);
+
+public abstract class Context {
 	public int Length {
 		get;
-		private set;
+		protected set;
 	}
-
-	public Context(Frame frame, Context tail) {
-		this.Frame = frame;
-		this.Tail = tail;
-		Length = tail == null ? 1 : (tail.Length + 1);
-	}
-	
 	public Context Append(Context new_tail) {
 		if (new_tail == null) {
 			return this;
 		}
-		if (Tail == null) {
-			return new Context(Frame, new_tail);
+		return new ForkedContext(this, new_tail);
+	}
+	public abstract void Fill(SetFrame f, int start_index = 0);
+}
+
+public class LinkedContext : Context {
+	private Frame Frame;
+	private Context Tail;
+
+	public LinkedContext(Frame frame, Context tail) {
+		this.Frame = frame;
+		this.Tail = tail;
+		Length = tail == null ? 1 : (tail.Length + 1);
+	}
+	public override void Fill(SetFrame set_frame, int start_index) {
+		set_frame(start_index, Frame);
+		if (Tail != null) {
+			Tail.Fill(set_frame, start_index + 1);
 		}
-		return new Context(Frame, Tail.Append(new_tail));
+	}
+}
+
+public class ForkedContext : Context {
+	private Context Head;
+	private Context Tail;
+
+	public ForkedContext(Context head, Context tail) {
+		this.Head = head;
+		this.Tail = tail;
+		Length = Head.Length + Tail.Length;
+	}
+	public override void Fill(SetFrame set_frame, int start_index) {
+		Head.Fill(set_frame, start_index);
+		Tail.Fill(set_frame, start_index + Head.Length);
 	}
 }
 
