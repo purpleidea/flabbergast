@@ -360,8 +360,20 @@ language_tmpl : Template {
 			Error "apply_environment_to attribute must be overridden in \(rule_name)."
 		ensure_type_is : is_typeable &&
 			Error "ensure_type_is attribute must be overridden in \(rule_name)."
-		type_demand : []
-		type_demand_all : []
+		# Some syntax elements have parsed other syntax elements which must have
+		# specific types. This is a tuple where the names are the names of the
+		# other syntax elements and the values are a list of types.
+		type_demand : {}
+		# This is similar to `type_demand` where the names identify lists of syntax
+		# elements rather than single elements.
+		type_demand_all : {}
+
+		# The code generation value to be returned from this syntax element. It has
+		# access to the parameters defined by its group.
+		code_value : generation_parameters Is Null ||
+			Error "code_value attribute must be overridden in \(rule_name)."
+
+		# If true, this represent a syntax element with all the other fun stuff.
 		is_real_element : True
 	}
 	# This is a special rule that does not define real syntax, but instead,
