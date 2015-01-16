@@ -898,9 +898,11 @@ Consider something like:
         height ?:
         child_height : height / (For c : children Reduce acc + 1 With acc : 0)
         exp_children : For c : children Select c { width -:  height : Lookup child_height In Container }
-        min_width : For c : exp_children Reduce c.min_width + acc With acc : 0
+        # The maximum of the minimum width of the children.
+        min_width : For c : exp_children Reduce If c.min_width > acc Then c.min_width Else acc With acc : 0
         min_height : For c : exp_children Reduce c.min_height + acc With acc : 0
-        preferred_width : For c : exp_children Reduce c.preferred_width + acc With acc : 0
+        # The maximum of the preferred width of the children.
+        preferred_width : For c : exp_children Reduce If c.preferred_width > acc Then c.preferred_width Else acc With acc : 0
         preferred_height : For c : exp_children Reduce c.preferred_height + acc With acc : 0
         value : # Render output using exp_children's values
     }
