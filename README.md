@@ -7,6 +7,8 @@ In most languages, afterthoughts are not appreciated. However, most configuratio
 
 View the [User Community](https://plus.google.com/communities/103010827049942376743).
 
+There is nothing so unutterably stupid that people won't waste their time on it. – Mark Rendle, [The Worst Programming Language Ever](http://skillsmatter.com/skillscasts/6088-the-worst-programming-language-ever). This was not explicitly about Flabbergast.
+
 ## Documentation
 
 There are two important pieces of documentation: the rather dry [language spec man page](flabbergast_language.7) and the friendly [manual](flabbergast-manual.md).
