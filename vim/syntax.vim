@@ -22,15 +22,16 @@ syn region flabbergastInterpolation contained contains=TOP matchgroup=flabbergas
 
 syn match flabbergastTrailingWhite "[ \t]\+$"
 syn match flabbergastTrailingWhite "[ \t]\+$" containedin=ALL
-syn match flabbergastAttribute "[+?%-]\?:" display contained
+syn match flabbergastAttribute "[+?%-]\?:\|+" display contained
+syn match flabbergastIdentifier "\<args\>" display
+syn match flabbergastIdentifier "\<value\>" display
 syn match flabbergastIdentifier "\<[a-z][A-Za-z0-9_]*\>[ \t\n]*[+?%-]\?:" display contains=flabbergastAttribute
+syn match flabbergastIdentifier "\<[a-z][A-Za-z0-9_]*\>[ \t\n]*+\<[a-z][A-Za-z0-9_]*\>[ \t\n]*:" display contains=flabbergastAttribute
 syn match flabbergastComment "#.*$" contains=flabbergastTodo,@Spell display
 syn keyword flabbergastInt IntMax IntMin
 syn keyword flabbergastFloat FloatMax FloatMin Infinity NaN
 syn keyword flabbergastBool False True
 syn keyword flabbergastConstant Null
-syn match flabbergastIdentifier "\<args\>" display
-syn match flabbergastIdentifier "\<value\>" display
 syn match flabbergastBadKeyword "\<[A-WYZ][^ \t#]*" display
 syn match flabbergastIdentifierString "\$[a-z][a-zA-Z0-9_]*\>" display
 syn match flabbergastFrom "[A-Za-z0-9.+-]\+:[A-Za-z0-9~!*'();@&=+$,/?%#.+-]\+" display
