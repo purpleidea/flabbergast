@@ -35,7 +35,7 @@ public abstract class Computation {
 	}
 }
 
-public class TaskMaster {
+public abstract class TaskMaster {
 	private Queue<Computation> computations = new Queue<Computation>();
 
 	public TaskMaster() {}
@@ -50,13 +50,11 @@ public class TaskMaster {
 		computations.Enqueue(computation);
 	}
 
-	public void ReportLookupError(Lookup lookup) {
-		// TODO Handle
+	public virtual void ReportLookupError(Lookup lookup) {
+		ReportOtherError(lookup.SourceReference, String.Format("Undefined name “{0}”.", lookup.Name));
 	}
 
-	public void ReportOtherError(SourceReference reference, string message) {
-		// TODO Handle
-	}
+	public abstract void ReportOtherError(SourceReference reference, string message);
 }
 
 /**
@@ -68,8 +66,12 @@ public class Lookup : Computation {
 	 * The name components in the lookup expression.
 	 */
 	private string[] names;
+
+	public string Name {
+			get { return string.Join(".", names); }
+	}
 	/**
-	 * The dynamic programming grid. The first dimenion is the context and the second is the name.
+	 * The dynamic programming grid. The first dimension is the context and the second is the name.
 	 */
 	private object[,] values;
 
