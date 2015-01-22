@@ -2,10 +2,16 @@ using System.Collections.Generic;
 using System;
 namespace Flabbergast {
 
-public delegate Computation ComputeValue(Context context, Frame self, Frame container);
+public delegate Computation ComputeValue(SourceReference reference, Context context, Frame self, Frame container);
+public delegate Computation ComputeOverride(SourceReference reference, Context context, Frame self, Frame container, Computation original);
 public delegate void ConsumeResult(Object result);
 
 public abstract class Computation {
+
+	public static ComputeValue PerformOverride(ComputeOverride wrapper, ComputeValue original, string filename, int start_line, int start_column, int end_line, int end_column) {
+		return (reference, context, self, container) => wrapper(reference, context, self, container, original(new SimpleReference("used by override", filename, start_line, start_column, end_line, end_column, reference), context, self, container));
+	}
+
 	private ConsumeResult consumer = null;
 	private bool must_run = true;
 	protected object result = null;
