@@ -504,6 +504,10 @@ known_types : compiler_lib.known_types_tmpl {
 		real_type : "Flabbergast.Unit"
 	}
 }
+known_vm_types : compiler_lib.known_vm_types_tmpl {
+	any : { real_type : "object" }
+	list : { real_type : "Flabbergast.Context" }
+}
 ensure_type : compiler_lib.ensure_type_tmpl {
 	filter +: {
 		type_bits : For t : types Reduce acc & " | " & t.clr_type With acc : "0"

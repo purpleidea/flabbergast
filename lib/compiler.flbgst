@@ -258,6 +258,10 @@ known_types_tmpl : Template {
 	template ?:
 	unit ?:
 }
+known_vm_types_tmpl : Template {
+	any ?:
+	list ?:
+}
 # The actions that can be performed to check that the required return type is
 # correct.
 ensure_type_tmpl : Template {
