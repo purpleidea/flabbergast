@@ -96,6 +96,7 @@ public class Template : IAttributeNames {
 
 public class Frame : DynamicObject, IAttributeNames {
 	private IDictionary<string, Computation> pending = new Dictionary<string, Computation>();
+	private List<Computation> unslotted = new List<Computation>();
 	private IDictionary<string, Object> attributes = new Dictionary<string, Object>();
 	public Context Context {
 			get;
@@ -136,10 +137,15 @@ public class Frame : DynamicObject, IAttributeNames {
 		return false;
 	}
 
-	public void Close(TaskMaster master) {
-		foreach(var computation in pending.Values) {
+	public void Slot(TaskMaster master) {
+		foreach(var computation in unslotted) {
 			master.Slot(computation);
 		}
+	}
+
+	public void CollectUnslotted(List<Computation> target_collection) {
+		target_collection.AddRange(unslotted);
+		unslotted = target_collection;
 	}
 
 	public bool Has(string name, out bool is_pending) {
@@ -173,7 +179,11 @@ public class Frame : DynamicObject, IAttributeNames {
 					attributes[name] = result;
 					pending.Remove(name);
 				});
+				unslotted.Add(computation);
 			} else {
+				if (value is Frame) {
+					(value as Frame).CollectUnslotted(unslotted);
+				}
 				attributes[name] = value;
 			}
 		}
