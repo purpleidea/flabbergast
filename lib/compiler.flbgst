@@ -1266,6 +1266,7 @@ language_tmpl : Template {
 							},
 							space { mandatory : True },
 							parser.exact { word : "In" },
+							space { mandatory : True },
 							sibling_expression { field : $expression }
 						]
 					}
