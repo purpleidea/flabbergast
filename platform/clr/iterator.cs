@@ -10,6 +10,10 @@ public abstract class MergeIterator : Computation {
 	public string Current {
 		get { return enumerator.Current; }
 	}
+	public long Position {
+		get;
+		private set;
+	}
 
 	private SortedDictionary<string, KeyDispatch> dispatchers = new SortedDictionary<string, KeyDispatch>();
 	private IEnumerator<string> enumerator = null;
@@ -20,6 +24,7 @@ public abstract class MergeIterator : Computation {
 				dispatchers[key] = default_dispatcher;
 			}
 		}
+		Position = 0;
 	}
 
 	public void AddDispatcher(string name, KeyDispatch dispatcher) {
@@ -30,6 +35,7 @@ public abstract class MergeIterator : Computation {
 			enumerator = dispatchers.Keys.GetEnumerator();
 		}
 		while (enumerator.MoveNext()) {
+			Position++;
 			if (!dispatchers[enumerator.Current]()) {
 				return false;
 			}
