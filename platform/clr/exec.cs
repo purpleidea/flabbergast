@@ -9,7 +9,7 @@ public delegate void ConsumeResult(Object result);
 public abstract class Computation {
 
 	public static ComputeValue PerformOverride(ComputeOverride wrapper, ComputeValue original, string filename, int start_line, int start_column, int end_line, int end_column) {
-		return (reference, context, self, container) => wrapper(reference, context, self, container, original(new SimpleReference("used by override", filename, start_line, start_column, end_line, end_column, reference), context, self, container));
+		return (reference, context, self, container) => wrapper(reference, context, self, container, original(new SourceReference("used by override", filename, start_line, start_column, end_line, end_column, reference), context, self, container));
 	}
 
 	private ConsumeResult consumer = null;

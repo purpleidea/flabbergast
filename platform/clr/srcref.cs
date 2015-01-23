@@ -3,11 +3,14 @@ using System.IO;
 
 namespace Flabbergast {
 
-public abstract class SourceReference {
-	public abstract void Write(TextWriter writer, int indentation = 0, string prefix = "");
-}
-
-public class SimpleReference : SourceReference {
+/**
+ * Description of the current Flabbergast stack.
+ *
+ * Since the Flabbergast stack is utterly alien to the underlying VM (it can
+ * bifurcate), this object records it such that it can be presented to the user
+ * when needed.
+ */
+public class SourceReference {
 	public string Message { get; private set; }
 	public string FileName { get; private set; }
 	public int StartLine { get; private set; }
@@ -15,7 +18,8 @@ public class SimpleReference : SourceReference {
 	public int EndLine { get; private set; }
 	public int EndColumn { get; private set; }
 	public SourceReference Caller { get; private set; }
-	public SimpleReference(string message, string filename, int start_line, int start_column, int end_line, int end_column, SourceReference caller) {
+
+	public SourceReference(string message, string filename, int start_line, int start_column, int end_line, int end_column, SourceReference caller) {
 		Message = message;
 		FileName = filename;
 		StartLine = start_line;
@@ -24,7 +28,15 @@ public class SimpleReference : SourceReference {
 		EndColumn = end_column;
 		Caller = caller;
 	}
-	public override void Write(TextWriter writer, int indentation, string prefix) {
+	/**
+	 * Write the current stack trace.
+	 */
+	public virtual void Write(TextWriter writer, int indentation, string prefix) {
+		WriteMessage(writer, indentation, prefix);
+		if (Caller != null)
+			Caller.Write(writer, indentation, prefix);
+	}
+	protected void WriteMessage(TextWriter writer, int indentation, string prefix) {
 		writer.Write(prefix);
 		for (var it = 0; it < indentation; it++)
 			writer.Write('\t');
@@ -40,84 +52,36 @@ public class SimpleReference : SourceReference {
 		writer.Write(": ");
 		writer.Write(Message);
 		writer.Write("\n");
-		if (Caller != null)
-			Caller.Write(writer, indentation, prefix);
 	}
 }
 
+/**
+ * A stack element that bifurcates.
+ *
+ * These are typical of instantiation and tuple overriding that have both a
+ * container and an ancestor.
+ */
 public class JunctionReference : SourceReference {
-	public string Message { get; private set; }
-	public string FileName { get; private set; }
-	public int StartLine { get; private set; }
-	public int StartColumn { get; private set; }
-	public int EndLine { get; private set; }
-	public int EndColumn { get; private set; }
-	public SourceReference Caller { get; private set; }
+	/**
+	 * The stack trace of the non-local component. (i.e., the ancestor's stack trace).
+	 */
 	public SourceReference Junction { get; private set; }
-	public JunctionReference(string message, string filename, int start_line, int start_column, int end_line, int end_column, SourceReference caller, SourceReference junction) {
-		Message = message;
-		FileName = filename;
-		StartLine = start_line;
-		StartColumn = start_column;
-		EndLine = end_line;
-		EndColumn = end_column;
-		Caller = caller;
+	/**
+	 * A description of how the junction was created (e.g., “instantiated from”).
+	 */
+	public string JunctionType { get; private set; }
+	public JunctionReference(string message, string filename, int start_line, int start_column, int end_line, int end_column, SourceReference caller, SourceReference junction, string JunctionType) : base(message, filename, start_line, start_column, end_line, end_column, caller) {
 		Junction = junction;
 	}
 	public override void Write(TextWriter writer, int indentation, string prefix) {
+		WriteMessage(writer, indentation, prefix);
 		writer.Write(prefix);
 		for (var it = 0; it < indentation; it++)
 			writer.Write('\t');
-		writer.Write(FileName);
-		writer.Write(": ");
-		writer.Write(StartLine);
-		writer.Write(":");
-		writer.Write(StartColumn);
-		writer.Write("-");
-		writer.Write(EndLine);
-		writer.Write(":");
-		writer.Write(EndColumn);
-		writer.Write(": ");
-		writer.Write(Message);
-		writer.Write("\n");
+		writer.Write("\t");
+		writer.Write(JunctionType);
+		writer.Write(":\n");
 		Junction.Write(writer, indentation + 1, prefix);
-		if (Caller != null)
-			Caller.Write(writer, indentation, prefix);
-	}
-}
-public class IterationReference : SourceReference {
-	public string Name { get; private set; }
-	public int Index { get; private set; }
-	public string FileName { get; private set; }
-	public int StartLine { get; private set; }
-	public int StartColumn { get; private set; }
-	public int EndLine { get; private set; }
-	public int EndColumn { get; private set; }
-	public SourceReference Caller { get; private set; }
-	public IterationReference(string name, int index, string filename, int start_line, int start_column, int end_line, int end_column, SourceReference caller) {
-		Name = name;
-		Index = index;
-		FileName = filename;
-		StartLine = start_line;
-		StartColumn = start_column;
-		EndLine = end_line;
-		EndColumn = end_column;
-		Caller = caller;
-	}
-	public override void Write(TextWriter writer, int indentation, string prefix) {
-		writer.Write(prefix);
-		for (var it = 0; it < indentation; it++)
-			writer.Write('\t');
-		writer.Write(FileName);
-		writer.Write(": ");
-		writer.Write(StartLine);
-		writer.Write(":");
-		writer.Write(StartColumn);
-		writer.Write("-");
-		writer.Write(EndLine);
-		writer.Write(":");
-		writer.Write(EndColumn);
-		writer.Write(": Fricassée expression with attribute {0} and index {1}.\n", Name, Index);
 		if (Caller != null)
 			Caller.Write(writer, indentation, prefix);
 	}
