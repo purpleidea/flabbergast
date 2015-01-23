@@ -98,6 +98,10 @@ public class Unit {
  * the MergeIterator.
  */
 public interface IAttributeNames {
+	/**
+	 * Provide all the attribute names (keys) in the collection. They need not be
+	 * ordered.
+	 */
 	IEnumerable<string> GetAttributeNames();
 }
 
@@ -233,7 +237,7 @@ public class Frame : DynamicObject, IAttributeNames {
 	}
 
 	public IEnumerable<string> GetAttributeNames() {
-		return attributes.Keys.Concat(pending.Keys); //TODO wrong
+		return attributes.Keys.Concat(pending.Keys);
 	}
 
 	public override IEnumerable<string> GetDynamicMemberNames() {
