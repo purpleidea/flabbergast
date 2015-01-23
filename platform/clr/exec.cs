@@ -4,20 +4,42 @@ namespace Flabbergast {
 
 public delegate Computation ComputeValue(SourceReference reference, Context context, Frame self, Frame container);
 public delegate Computation ComputeOverride(SourceReference reference, Context context, Frame self, Frame container, Computation original);
+
+/**
+ * Delegate for the callback from a computation.
+ */
 public delegate void ConsumeResult(Object result);
 
+/**
+ * A generic computation to be worked on by the TaskMaster.
+ */
 public abstract class Computation {
 
+	/**
+	 * Apply an override to a normal computation resulting in another normal computation.
+	 */
 	public static ComputeValue PerformOverride(ComputeOverride wrapper, ComputeValue original, string filename, int start_line, int start_column, int end_line, int end_column) {
 		return (reference, context, self, container) => wrapper(reference, context, self, container, original(new SourceReference("used by override", filename, start_line, start_column, end_line, end_column, reference), context, self, container));
 	}
 
+	/**
+	 * The delegate(s) to be invoked when the computation is complete.
+	 */
 	private ConsumeResult consumer = null;
+	/**
+	 * True until the computation has been fully completed.
+	 */
 	private bool must_run = true;
+	/**
+	 * The return value of the computation.
+	 *
+	 * This should be assigned by the subclass.
+	 */
 	protected object result = null;
 
-	protected abstract bool Run();
-
+	/**
+	 * Called by the TaskMaster to start or continue computation.
+	 */
 	internal void Compute() {
 		if (must_run || Run()) {
 			must_run = false;
@@ -28,6 +50,10 @@ public abstract class Computation {
 		}
 	}
 
+	/**
+	 * Attach a callback when the computation is complete. If already complete,
+	 * the callback is immediately invoked.
+	 */
 	public void Notify(ConsumeResult new_consumer) {
 		if (must_run) {
 			if (consumer == null) {
@@ -39,28 +65,50 @@ public abstract class Computation {
 			new_consumer(result);
 		}
 	}
+
+	/**
+	 * The method that will be invoked when the result is needed. If the method
+	 * returns true, the computation is finished. Otherwise, it is assumed that
+	 * the computation needs to wait another value.
+	 */
+	protected abstract bool Run();
 }
 
+/**
+ * Scheduler for computations.
+ */
 public abstract class TaskMaster {
 	private Queue<Computation> computations = new Queue<Computation>();
 
 	public TaskMaster() {}
 
+	/**
+	 * Perform computations until the Flabbergast program is complete or deadlocked.
+	 */
 	public void Run() {
 		while(computations.Count > 0) {
 			computations.Dequeue().Compute();
 		}
 	}
 
-	public void Slot(Computation computation) {
-		computations.Enqueue(computation);
-	}
-
+	/**
+	 * Report an error during lookup.
+	 */
 	public virtual void ReportLookupError(Lookup lookup) {
 		ReportOtherError(lookup.SourceReference, String.Format("Undefined name “{0}”.", lookup.Name));
 	}
 
+	/**
+	 * Report an error during execution of the program.
+	 */
 	public abstract void ReportOtherError(SourceReference reference, string message);
+
+	/**
+	 * Add a computation to be executed.
+	 */
+	public void Slot(Computation computation) {
+		computations.Enqueue(computation);
+	}
 }
 
 /**
