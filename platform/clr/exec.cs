@@ -2,8 +2,8 @@ using System.Collections.Generic;
 using System;
 namespace Flabbergast {
 
-public delegate Computation ComputeValue(SourceReference reference, Context context, Frame self, Frame container);
-public delegate Computation ComputeOverride(SourceReference reference, Context context, Frame self, Frame container, Computation original);
+public delegate Computation ComputeValue(TaskMaster task_master, SourceReference reference, Context context, Frame self, Frame container);
+public delegate Computation ComputeOverride(TaskMaster task_master, SourceReference reference, Context context, Frame self, Frame container, Computation original);
 
 /**
  * Delegate for the callback from a computation.
@@ -19,7 +19,7 @@ public abstract class Computation {
 	 * Apply an override to a normal computation resulting in another normal computation.
 	 */
 	public static ComputeValue PerformOverride(ComputeOverride wrapper, ComputeValue original, string filename, int start_line, int start_column, int end_line, int end_column) {
-		return (reference, context, self, container) => wrapper(reference, context, self, container, original(new SourceReference("used by override", filename, start_line, start_column, end_line, end_column, reference), context, self, container));
+		return (task_master, reference, context, self, container) => wrapper(task_master, reference, context, self, container, original(task_master, new SourceReference("used by override", filename, start_line, start_column, end_line, end_column, reference), context, self, container));
 	}
 
 	/**

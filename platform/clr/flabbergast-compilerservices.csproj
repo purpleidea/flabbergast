@@ -36,6 +36,7 @@
 	<ItemGroup>
 		<Compile Include="compiler-net.cs"/>
 		<Compile Include="analyser.cs"/>
+		<Compile Include="generator.cs"/>
 		<Compile Include="parser.cs"/>
 		<Compile Include="AssemblyInfo.cs"/>
 	</ItemGroup>
