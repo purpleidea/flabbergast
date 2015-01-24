@@ -559,7 +559,319 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 		value : For action : actions Reduce acc & action.value With acc : ""
 	}
 }
+default_indent : "\n\t\t"
+kws : compiler_lib.kws_tmpl {
+	base_tmpl +: {
+		opcode ?:
+		storage_name : If return_type Is Null Then "null" Else Id
 
+		extra_indent : For arg : arguments Reduce arg.value.extra_indent & acc With acc : ""
+		arg_indents : For arg_name : Name, arg : arguments, arg_pos : Ordinal
+			Select arg_name :
+				For prev_arg : arguments, prev_arg_pos : Ordinal
+				Where prev_arg_pos < arg_pos
+				Reduce acc & prev_arg.value.extra_indent
+				With acc : ""
+
+		gen_gen +: {
+			sum_indent : indent & extra_indent
+
+			extra_load : ""
+			extra_emit : ""
+			store_result :
+				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_\(opcode)\", typeof(\(return_type.real_type)));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name));"
+
+			load_this : "\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);"
+			base_code :
+				For arg : arguments
+					Reverse
+					Reduce
+						"\(sum_indent)if (\(arg.value.storage_name).FieldType != typeof(\(arg.type.real_type))) throw new System.InvalidOperationException();" &
+						"\(sum_indent)\(generator).LoadField(\(arg.value.storage_name));" &
+						acc
+						With acc :
+							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.\(opcode)\(extra_emit));" & store_result & code
+
+			value :
+				For arg : arguments, arg_indent : arg_indents
+				Reduce arg.value.gen_gen(code : acc, indent : indent & arg_indent)
+				With acc : load_this & base_code
+		}
+	}
+	error +: {
+		opcode : "Callvirt"
+		gen_gen +: {
+			extra_load : "\(sum_indent)\(generator).LoadTaskMaster();\(sum_indent)\(generator).LoadField(\(source_reference));"
+			extra_emit : "typeof(TaskMaster).GetMethod(\"ReportOtherError\")"
+			load_this : ""
+			store_result : "\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);"
+		}
+	}
+	float_add +: { opcode : "Add" }
+	float_divide +: { opcode : "Div" }
+	float_modulus +: { opcode : "Rem" }
+	float_multiply +: { opcode : "Mul" }
+	float_subtract +: { opcode : "Sub" }
+	float_to_int +: { opcode : "Conv_I8" }
+	int_add +: { opcode : "Add" }
+	int_divide +: { opcode : "Div" }
+	int_modulus +: { opcode : "Rem" }
+	int_multiply +: { opcode : "Mul" }
+	int_subtract +: { opcode : "Sub" }
+	int_to_float +: { opcode : "Conv_R4" }
+
+	dynamic_type_dispatch +: {
+		extra_indent : of.extra_indent & "\t"
+		type_list :
+			For type : allow_types
+			Reduce type.real_type & ", " & acc
+			With acc : ""
+
+		gen_gen +: {
+			sum_indent : indent & extra_indent
+			value :
+				of.gen_gen(indent : indent, code :
+					"\(sum_indent)_generator.DynamicTypeDispatch(\(of.storage_name), \(source_reference), new System.Type[] { \(type_list) }, (\(storage_name)) {" &
+					code &
+					"\(sum_indent)});")
+		}
+	}
+	iterator +: {
+		extra_indent : For input : inputs Reduce input.extra_indent & acc With acc : initial.extra_indent
+		input_indents : For input_name : Name, input : inputs, input_pos : Ordinal
+			Select input_name :
+				For prev_input : inputs, prev_input_pos : Ordinal
+				Where prev_input_pos < input_pos
+				Reduce acc & input_arg.extra_indent
+				With acc : ""
+		num_inputs : For input : inputs Reduce len + 1 With len : 0
+
+		iterator_instance : Id & "_iterator"
+		iterator_state : Id & "_state"
+		iterator_key : Id & "_key"
+		iterator_ordinal : Id & "_ordinal"
+
+		gen_gen +: {
+			sum_indent : indent & extra_indent
+
+			value : initial.gen_gen(
+				indent : indent,
+				code :
+					For input : inputs, input_indent : input_indents
+					Reduce input.gen_gen(code : acc, indent : indent & input_indent)
+					With acc : base_code)
+
+			base_code :
+				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_accumulator\", \(initial.storage_name).FieldType);" &
+				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_key\", typeof(string));" &
+				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_ordinal\", typeof(long));" &
+				"\(sum_indent)\(generator).CopyField(\(initial.storage_name), \(storage_name));" &
+				"\(sum_indent)var \(iterator_instance) = \(generator).MakeField(\"\(rule_name)_iterator\", typeof(MergeIterator));" &
+				"\(sum_indent)var \(iterator_state) = \(generator).DefineState();" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(num_inputs));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newarr, typeof(IAttributeNames));" &
+				input_loads &
+				"\(sum_indent)\(generator).CreateBlockEntry<MergeIterator.KeyDispatch>(() => {" &
+				"\(sum_indent)\t\(generator).LoadIteratorData(\(iterator_instance), \(iterator_key), \(iterator_ordinal));" &
+				dispatch_code &
+				"\(sum_indent)});" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(MergeIterator).GetConstructors()[0]);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(iterator_instance));" &
+				add_cases &
+				"\(sum_indent)\(generator).LoadField(\(iterator_instance));" &
+				"\(sum_indent)\(generator).GenerateConsumeResult(null);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Callvirt, typeof(MergeIterator).GetMethod(\"Notify\"));" &
+				"\(sum_indent)\(generator).SlotSleep(\(iterator_instance));" &
+				"\(sum_indent)\(generator).FlushBlocks();" &
+				"\(sum_indent)\(generator).MarkState(\(iterator_state));" &
+				"\(sum_indent)\(generator).EraseField(\(iterator_instance));" &
+				code
+
+			dispatch_code : default_dispatcher.gen_gen(
+				indent : sum_indent & "\t",
+				code :
+					"\(sum_indent)\(default_dispatcher.extra_indent)\t\(generator).CopyField(\(default_dispatcher.storage_name), \(storage_name));" &
+					"\(sum_indent)\(default_dispatcher.extra_indent)\t\(generator).SetState(\(iterator_state));" &
+					"\(sum_indent)\(default_dispatcher.extra_indent)\t\(generator).SlotSleep(\(iterator_instance));"
+					)
+
+			input_loads :
+				For input : inputs, index : Ordinal
+				Reduce acc &
+					"\(sum_indent)if (!typeof(IAttributeNames).IsAssignableFrom(\(input.value.storage_name).FieldType)) throw new System.InvalidOperationException();" &
+					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
+					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(index - 1));" &
+					"\(sum_indent)\(generator).LoadField(\(input.value.storage_name));" &
+					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem);"
+				With acc : ""
+
+			add_cases :
+				For case : cases
+				Reduce
+					acc &
+					case.gen_gen(indent : sum_indent)
+					With acc : ""
+		}
+
+		base_case_tmpl +: {
+			gen_gen : Template {
+				indent ?:
+				sum_indent : indent & action.extra_indent & "\t"
+				load_key : "\(indent)\t\(generator).LoadIteratorData(\(iterator_instance), \(iterator_key), \(iterator_ordinal));"
+				base_code :
+					"\(sum_indent)\(generator).CopyField(\(action.storage_name), \(storage_name));" &
+					"\(sum_indent)\(generator).SetState(\(iterator_state));" &
+					"\(sum_indent)\(generator).SlotSleep(\(iterator_instance));"
+				value ?:
+			}
+		}
+		literal_case_tmpl +: {
+			gen_gen +: {
+				value :
+					"\(indent)\(generator).CreateIteratorBlock(\(iterator_instance), \"\(name)\", () => {" &
+					load_key &
+					action.gen_gen(indent : indent & "\t", code : base_code) &
+					"\(indent)});"
+			}
+		}
+		remote_field_case_tmpl +: {
+			gen_gen +: {
+				value :
+					"\(indent)\(generator).CreateIteratorBlock(\(iterator_instance), \(field).\(name_field).ToString(), () => {" &
+					load_key &
+					action.gen_gen(indent : indent & "\t", code : base_code) &
+					"\(indent)});"
+			}
+		}
+		list_case_tmpl +: {
+			current_element : Id
+			gen_gen +: {
+				value :
+					"\(indent)foreach (var \(current_element) in \(field)) \(generator).CreateIteratorBlock(\(iterator_instance), \(current_field_name).\(name_field).ToString(), () => {" &
+					load_key &
+					action.gen_gen(indent : indent & "\t", code : base_code) &
+					"\(indent)});"
+			}
+		}
+
+		current_name : codegen.gen_tmpl { storage_name : iterator_key }
+		current_ordinal : codegen.gen_tmpl { storage_name : iterator_key }
+	}
+}
+codegen : compiler_lib.codegen_tmpl {
+	gen_tmpl +: {
+		extra_indent ?:
+		storage_name : Id
+		gen_gen : Template {
+			indent ?:
+			code ?:
+			value : code
+		}
+	}
+	fold_others +: {
+		extra_indent : For argument : arguments Reduce argument.extra_indent & acc With acc : initial.extra_indent & "\t"
+		argument_indents : For argument_name : Name, argument : arguments, argument_pos : Ordinal
+			Select argument_name :
+				For prev_argument : arguments, prev_argument_pos : Ordinal
+				Where prev_argument_pos < argument_pos
+				Reduce acc & prev_argument.extra_indent
+				With acc : initial.extra_indent
+
+		fold_name : "\(Id)_left"
+
+		gen_gen +: {
+			argument_list : For argument : arguments Reduce acc & ", " & argument.storage_name With acc : "\(generator), \(source_reference)"
+			sum_indent : indent & extra_indent
+			value :
+				initial.gen_gen(indent : indent, code :
+					For argument : arguments, argument_indent : argument_indents
+					Reduce argument.gen_gen(code : acc, indent : indent & argument_indent)
+					With acc : base_code
+				)
+			base_code :
+				"\(sum_indent)_generator.Fold(\(initial.storage_name), \(field), (\(Id)_item, \(fold_name), \(Id)_block) => \(Id)_item.Generate(\(argument_list), \(Id)_block), (\(storage_name)) => {\(code)\(sum_indent)});"
+		}
+		fold_argument : codegen.gen_tmpl { storage_name : fold_name }
+	}
+	mask_parameters +: {
+		storage_name : action.storage_name
+		extra_indent : For parameter : parameters Reduce parameter.extra_indent & acc With acc : action.extra_indent
+		parameter_indents : For parameter_name : Name, parameter : parameters, parameter_pos : Ordinal
+			Select parameter_name :
+				For prev_parameter : parameters, prev_parameter_pos : Ordinal
+				Where prev_parameter_pos < parameter_pos
+				Reduce acc & prev_parameter.extra_indent
+				With acc : ""
+
+		gen_gen +: {
+			sum_indent : indent & extra_indent
+			base_code : For parameter_name : Name, parameter : parameters
+				Reduce
+					"\(sum_indent)var \(Id)_\(parameter_name) = \(parameter_name);" &
+					"\(sum_indent)\(parameter_name) = \(parameter.storage_name);" &
+					acc &
+					"\(sum_indent)\(parameter_name) = \(Id)_\(parameter_name);"
+					With acc : action.gen_gen(code : code, indent : sum_indent)
+
+			value :
+				For parameter : parameters, parameter_indent : parameter_indents
+				Reduce parameter.gen_gen(code : acc, indent : indent & action.extra_indent & parameter_indent)
+				With acc : base_code
+		}
+	}
+	not_implemented +: {
+		extra_indent : ""
+		storage_name : "null"
+		gen_gen +: {
+			value : "\(indent)throw new System.NotImplementedException(\"\(rule_name) not implemented\");"
+		}
+	}
+	other_code +: {
+		extra_indent : For argument : arguments Reduce argument.extra_indent & acc With acc : "\t"
+		argument_indents : For argument_name : Name, argument : arguments, argument_pos : Ordinal
+			Select argument_name :
+				For prev_argument : arguments, prev_argument_pos : Ordinal
+				Where prev_argument_pos < argument_pos
+				Reduce acc & prev_argument.extra_indent
+				With acc : ""
+
+		gen_gen +: {
+			argument_list : For argument : arguments Reduce acc & ", " & argument.storage_name With acc : "\(generator), \(source_reference)"
+			sum_indent : indent & extra_indent
+			value :
+				For argument : arguments, argument_indent : argument_indents
+				Reduce argument.gen_gen(code : acc, indent : indent & argument_indent)
+				With acc : "\(sum_indent)\(field).Generate(\(argument_list), (\(storage_name)) => {\(code)\(sum_indent)});"
+		}
+	}
+	parameter +: {
+		extra_indent : ""
+		storage_name : name
+	}
+	type_dispatch +: {
+		extra_indent : "\t" & of.extra_indent
+		callback : Id & "_code"
+
+		gen_gen +: {
+			sum_indent : indent & of.extra_indent
+
+			choice_block :
+				For choice : choices
+					Reduce
+						"\(indent)if (\(of.storage_name).FieldType == typeof(\(choice.type.real_type))) {" &
+						"\(indent)\tvar \(define) = \(of.storage_name);" &
+						choice.action.gen_gen(
+							indent : sum_indent & "\t",
+							code : "\(sum_indent)\(choice.action.extra_indent)\t\(callback)(\(choice.action.storage_name));"
+						) & "\(sum_indent)} else" & acc
+					With acc : "\(indent)\tthrow new System.InvalidOperationException(System.String.Format(\"Unexpected type {0} in \(rule_name).\", \(of.storage_name).FieldType));"
+			lift_code : "\(sum_indent)Generator.ParameterisedBlock \(callback) = (\(storage_name)) => {\(code)\(sum_indent)};"
+			value : of.gen_gen(indent : indent, code : lift_code & choice_block)
+		}
+	}
+}
 compiler : compiler_lib.language_tmpl {
 	syntax_element +: {
 		class_extra : ""
@@ -598,12 +910,24 @@ compiler : compiler_lib.language_tmpl {
 				"\t}\n"
 			Else ""
 
+		generator : "_generator"
+		source_reference : "_source_reference"
+		code_gen: If generation_parameters Is Null
+			Then ""
+			Else
+				("\tpublic override void Generate(Generator \(generator), SourceReference \(source_reference)," &
+					(For param_name : Name, param : generation_parameters Reduce "\(acc) System.Reflection.FieldInfo \(param_name)," With acc : "") &
+					"Generator.ParameterisedBlock _final_block) {" &
+					code_value.gen_gen(indent : default_indent, code : "\(indent)\(code_value.extra_indent)_final_block(\(code_value.storage_name));") &
+					"\n\t}\n")
+
 		class_gen :
 			"internal class \(class_name) : \(group_name) {\n" &
 			pattern.class_gen &
 			environment_methods.value &
 			type_assurance &
 			type_demands &
+			code_gen &
 			class_extra &
 			"\tinternal \(class_name) Clone() {\n" &
 			"\t\tvar _obj = new \(class_name)();\n" &
@@ -680,6 +1004,13 @@ compiler : compiler_lib.language_tmpl {
 				"\t\treturn false;\n\t}\n"
 			With outer_acc : ""
 
+		code_gen: If generation_parameters Is Null
+			Then ""
+			Else
+				("\tpublic abstract void Generate(Generator _generator, SourceReference _source_reference, " &
+					(For param_name : Name, param : generation_parameters Reduce acc & " System.Reflection.FieldInfo \(param_name)," With acc : "") &
+					" Generator.ParameterisedBlock _block);")
+
 		value : For rule : expanded_rules
 			Where rule.is_real_element
 			Reduce acc & rule.class_gen
@@ -690,6 +1021,7 @@ compiler : compiler_lib.language_tmpl {
 				parse_base &
 				parse_alternates &
 				parser_gen &
+				code_gen &
 				"}\n"
 	}
 	clr_identifier : Template parser.sequence {

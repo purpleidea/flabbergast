@@ -334,6 +334,242 @@ common_fields_tmpl : Template {
 	float : Template { field_name %: }
 	other : Template { field_name %:  type ?: }
 }
+# Code generation for all the elements in the KWS VM. See that documentation for details.
+kws_tmpl : Template {
+	# The base template for most of the simple instructions.
+	base_tmpl : Template codegen.gen_tmpl {
+		arguments ?:
+		return_type ?:
+	}
+	error : Template base_tmpl {
+		message ?:
+		arguments : [{ value : expr  type : known_types.str }]
+		return_type : Null
+	}
+	int_add : Template base_tmpl {
+		left ?:
+		right ?:
+		arguments : [
+			{ value : left  type : known_types.int },
+			{ value : right  type : known_types.int }
+		]
+		return_type : known_types.int
+	}
+	int_divide : Template base_tmpl {
+		left ?:
+		right ?:
+		arguments : [
+			{ value : left  type : known_types.int },
+			{ value : right  type : known_types.int }
+		]
+		return_type : known_types.int
+	}
+	int_modulus : Template base_tmpl {
+		left ?:
+		right ?:
+		arguments : [
+			{ value : left  type : known_types.int },
+			{ value : right  type : known_types.int }
+		]
+		return_type : known_types.int
+	}
+	int_multiply : Template base_tmpl {
+		left ?:
+		right ?:
+		arguments : [
+			{ value : left  type : known_types.int },
+			{ value : right  type : known_types.int }
+		]
+		return_type : known_types.int
+	}
+	int_subtract : Template base_tmpl {
+		left ?:
+		right ?:
+		arguments : [
+			{ value : left  type : known_types.int },
+			{ value : right  type : known_types.int }
+		]
+		return_type : known_types.int
+	}
+	int_to_float : Template base_tmpl {
+		expr ?:
+		arguments : [{ value : expr  type : known_types.int }]
+		return_type : known_types.float
+	}
+	float_add : Template base_tmpl {
+		left ?:
+		right ?:
+		arguments : [
+			{ value : left  type : known_types.float },
+			{ value : right  type : known_types.float }
+		]
+		return_type : known_types.float
+	}
+	float_divide : Template base_tmpl {
+		left ?:
+		right ?:
+		arguments : [
+			{ value : left  type : known_types.float },
+			{ value : right  type : known_types.float }
+		]
+		return_type : known_types.float
+	}
+	float_modulus : Template base_tmpl {
+		left ?:
+		right ?:
+		arguments : [
+			{ value : left  type : known_types.float },
+			{ value : right  type : known_types.float }
+		]
+		return_type : known_types.float
+	}
+	float_multiply : Template base_tmpl {
+		left ?:
+		right ?:
+		arguments : [
+			{ value : left  type : known_types.float },
+			{ value : right  type : known_types.float }
+		]
+		return_type : known_types.float
+	}
+	float_subtract : Template base_tmpl {
+		left ?:
+		right ?:
+		arguments : [
+			{ value : left  type : known_types.float },
+			{ value : right  type : known_types.float }
+		]
+		return_type : known_types.float
+	}
+	float_to_int : Template base_tmpl {
+		expr ?:
+		arguments : [{ value : expr  type : known_types.float }]
+		return_type : known_types.int
+	}
+
+	# Perform dynamic dispatch of a value. This is slightly different from the VM
+	# specification; it must be combined with `codegen.type_dispatch` for the
+	# full effect.
+	dynamic_type_dispatch : Template codegen.gen_tmpl {
+		# The code generator which produces an unknown type.
+		of ?:
+		# The list of types which this value may take. If the object has a
+		# different type, a run-time error is produced.
+		allow_types ?:
+	}
+	# Create a tuple merge loop using the provided values as inputs.
+	iterator : Template codegen.gen_tmpl {
+		# The code generation to produce frames and templates over which to be
+		# iterated.
+		inputs ?:
+		# The initial value for the accumulator of the iterator.
+		initial ?:
+		# The code to be invoked when the iterator has a value not covered in
+		# `cases`.
+		default_case ?:
+		# A list of the special cases of the iterator. The special cases will
+		# always be invoked, even if they are not present in the input.
+		cases ?:
+
+		# The current attribute name of the iterator. This may only be used in
+		# `default_case` and `cases`.
+		current_name ?:
+		# The current position of the iterator. This may only be used in
+		# `default_case` and `cases`.
+		current_ordinal ?:
+
+		# The base template for a “special case”. Not to be used directly.
+		base_case_tmpl : Template {
+			# The value to return if this case is selected.
+			action ?:
+		}
+		# The attribute name of the special case is a literal.
+		literal_case_tmpl : Template base_case_tmpl {
+			# The attribute name.
+			name ?:
+		}
+		# The attribute name of the special case is defined in a field of another element.
+		remote_field_case_tmpl : Template base_case_tmpl {
+			# The field containing the element of interest.
+			field ?:
+			# The field in the element of interest containing the name.
+			name_field ?:
+		}
+		# The attributes are many based on a list of other syntax elements.
+		list_case_tmpl : Template base_case_tmpl {
+			# The field containing the list of elements of interest.
+			field ?:
+			# The field in the element of interest containing the name.
+			name_field ?:
+			# A name, which may be used in a `parameter` to access the element in the
+			# list in `action`.
+			current_element ?:
+		}
+	}
+}
+# Supplemental code generation. These are more for controlling behaviour of the
+# code generator rather than generating code itself. None of these items
+# directly generate KWS VM code directly; they simply direct the paths of code
+# generation elements in the compiler.
+codegen_tmpl : Template {
+	# Base template for all code generation templates and KWS VM templates.
+	gen_tmpl : Template {}
+	# Given a list of syntax elements, fold them to return a single value.
+	#
+	# Start by computing an initial value. For ever item in the list, call the
+	# code generator using either the initial or previous value as input. Return
+	# the final value.
+	fold_others : Template gen_tmpl {
+		# A frame of arguments to be passed to the generator. The attribute names
+		# are the argument names.
+		arguments ?:
+		# The field containing the list.
+		field ?:
+		# The code generator containing the initial value to put in the fold.
+		initial ?:
+
+		# A code generator that should be used in `arguments` to specify the
+		# current value being folded.
+		fold_argument ?:
+	}
+	# Change the value of parameters with new values in a lexically-scoped way.
+	mask_parameters : Template gen_tmpl {
+		parameters ?:
+		action ?:
+	}
+	# Generate an error if executed. This is a tool to help prototyping new
+	# features.
+	not_implemented : Template gen_tmpl {}
+	# Compute the value of another syntax element
+	other_code : Template gen_tmpl {
+		# Arguments to be passed to the syntax element where keys are the names of the arguments.
+		arguments ?:
+		# The field containing the syntax element
+		field ?:
+	}
+	# Use a parameter passed to this syntax group or defined in a containing code generator.
+	parameter : Template gen_tmpl {
+		name ?:
+	}
+	# Choose an appropriate path based on the type of a value.
+	type_dispatch : Template gen_tmpl {
+		# A list of `choice_tmpl` to try.
+		choices ?:
+		# The name which may be used in a `parameter` which contains the value of
+		# the `of` code generator, converted to the appropriate type.
+		define ?:
+		# The input to be considered.
+		of ?:
+
+		# A possible path to choose based on the type.
+		choice_tmpl : Template {
+			# The type to match.
+			type ?:
+			# The code to be generated.
+			action ?:
+		}
+	}
+}
 # The syntax of the Flabbergast language
 language_tmpl : Template {
 	# The templates to generate the parser, as per `parser_tmpl`.
@@ -412,6 +648,9 @@ language_tmpl : Template {
 		# These are rules that have already been expanded, rather than `rules`
 		# where they are templates.
 		static_rules : []
+		# A list of parameter names for doing code generation. If code is not be
+		# generated, null.
+		generation_parameters : Null
 		alternatives :
 			For rule : expanded_rules
 			Reduce
@@ -480,6 +719,8 @@ language_tmpl : Template {
 		# the specification.
 		level ?:
 		alternatives : For x : [ level ] Select "expression\(x)" : Null
+		# TODO: Remove this once all the expressions have code generators
+		code_value : codegen.not_implemented {}
 		# A parser for a top-level expression
 		top_expression : Template parser.other {
 			accumulate : True
@@ -612,6 +853,10 @@ language_tmpl : Template {
 		level %:
 		# The symbol that separates the term.
 		symbol ?:
+		# The KWS VM operation to perform when the operands are integers.
+		integer_operation ?:
+		# The KWS VM operation to perform when the operands are floating point numbers.
+		float_operation ?:
 		apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 		ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
 		pattern : parser.sequence {
@@ -626,6 +871,82 @@ language_tmpl : Template {
 					field : $expression
 				}
 			]
+		}
+		right_dispatch : Template codegen.other_code {
+			field : $expression
+			arguments : [
+				codegen.parameter { name : $context },
+				codegen.parameter { name : $self_frame },
+				codegen.parameter { name : $container_frame }
+			]
+		}
+		code_value : codegen.type_dispatch {
+			of : codegen.parameter { name : $left }
+			define : $left_operation
+
+			choices :
+				[
+					# Left is integer
+					choice_tmpl {
+						type : known_types.int
+						action : codegen.type_dispatch {
+							of : right_dispatch {}
+							define : $right_operation
+
+							choices :
+								[
+									# Left is integer, right is integer
+									choice_tmpl {
+										type : known_types.int
+										action : integer_operation {
+											left : codegen.parameter { name : $left_operation }
+											right : codegen.parameter { name : $right_operation }
+										}
+									},
+									# Left is integer, right is float
+									choice_tmpl {
+										type : known_types.float
+										action : float_operation {
+											left : kws.int_to_float {
+												expr : codegen.parameter { name : $left_operation }
+											}
+											right : codegen.parameter { name : $right_operation }
+										}
+									}
+								]
+						}
+					},
+					# Left is float
+					choice_tmpl {
+						type : known_types.int
+						action : codegen.type_dispatch {
+							of : right_dispatch {}
+							define : $right_operation
+
+							choices :
+								[
+									# Left is float, right is integer
+									choice_tmpl {
+										type : known_types.int
+										action : float_operation {
+											left : codegen.parameter { name : $left_operation }
+											right : kws.int_to_float {
+												expr : codegen.parameter { name : $right_operation }
+											}
+										}
+									},
+									# Left is float, right is float
+									choice_tmpl {
+										type : known_types.float
+										action : float_operation {
+											left : codegen.parameter { name : $left_operation }
+											right : codegen.parameter { name : $right_operation }
+										}
+									}
+								]
+						}
+					}
+				]
 		}
 	}
 	# A decimal number with no preceding zeros.
@@ -1201,15 +1522,25 @@ language_tmpl : Template {
 			level : 8
 			environment_flavour : environment.flavour_simple
 			is_typeable : True
+			generation_parameters : {
+				context : known_vm_types.list
+				self_frame : known_types.frame
+				container_frame : known_types.frame
+				left : known_vm_types.any
+			}
 			common +: {
 				comment : common_fields.str
 			}
 			rules +: {
 				addition_term : Template long_term_tmpl {
 					symbol : "+"
+					integer_operation : kws.int_add
+					float_operation : kws.float_add
 				}
 				subtraction_term : Template long_term_tmpl {
 					symbol : "-"
+					integer_operation : kws.int_subtract
+					float_operation : kws.float_subtract
 				}
 			}
 		}
@@ -1218,18 +1549,30 @@ language_tmpl : Template {
 			level : 9
 			environment_flavour : environment.flavour_simple
 			is_typeable : True
+			generation_parameters : {
+				context : known_vm_types.list
+				self_frame : known_types.frame
+				container_frame : known_types.frame
+				left : known_vm_types.any
+			}
 			common +: {
 				comment : common_fields.str
 			}
 			rules +: {
 				multiplication_term : Template long_term_tmpl {
 					symbol : "*"
+					integer_operation : kws.int_multiply
+					float_operation : kws.float_multiply
 				}
 				division_term : Template long_term_tmpl {
 					symbol : "/"
+					integer_operation : kws.int_divide
+					float_operation : kws.float_divide
 				}
 				modulus_term : Template long_term_tmpl {
 					symbol : "%"
+					integer_operation : kws.int_modulus
+					float_operation : kws.float_modulus
 				}
 			}
 		}
@@ -1238,6 +1581,12 @@ language_tmpl : Template {
 			include_base_parser : False
 			is_typeable : True
 			environment_flavour : environment.flavour_simple
+
+			generation_parameters : {
+				context : known_vm_types.list
+				self_frame : known_types.frame
+				container_frame : known_types.frame
+			}
 
 			common +: {
 				comment : common_fields.str

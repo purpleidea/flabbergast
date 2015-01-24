@@ -394,7 +394,7 @@ public class Generator {
 	/**
 	 * Load a field onto the operand stack.
 	 */
-	void LoadField(FieldInfo field) {
+	public void LoadField(FieldInfo field) {
 		Builder.Emit(OpCodes.Ldarg_0);
 		Builder.Emit(System.Reflection.Emit.OpCodes.Ldfld, field);
 	}
