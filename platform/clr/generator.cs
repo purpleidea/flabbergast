@@ -470,6 +470,20 @@ public class Generator {
 	 * Generate a successful return.
 	 */
 	public void Return(FieldInfo result) {
+		if (result.FieldType == typeof(Frame) || result.FieldType == typeof(object)) {
+			var end = Builder.DefineLabel();
+			if (result.FieldType == typeof(object)) {
+				LoadField(result);
+				Builder.Emit(OpCodes.Isinst, typeof(Frame));
+				LoadField(result);
+				Builder.Emit(OpCodes.Castclass, typeof(Frame));
+			} else {
+				LoadField(result);
+			}
+			LoadTaskMaster();
+			Builder.Emit(OpCodes.Callvirt, typeof(Frame).GetMethod("Slot"));
+			Builder.MarkLabel(end);
+		}
 		CopyField(result, typeof(Computation).GetField("result"));
 		Builder.Emit(OpCodes.Ldc_I4_1);
 		Builder.Emit(System.Reflection.Emit.OpCodes.Ret);
