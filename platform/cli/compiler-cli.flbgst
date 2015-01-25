@@ -1,4 +1,4 @@
-compiler_lib : From lib:compiler-bootstrap
+compiler_lib : From lib:compiler
 
 parser : compiler_lib.parser_tmpl {
 	exact +: {

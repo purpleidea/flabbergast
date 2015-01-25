@@ -34,7 +34,7 @@
 		<Reference Include="System"/>
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="compiler-net.cs"/>
+		<Compile Include="compiler-cli.cs"/>
 		<Compile Include="analyser.cs"/>
 		<Compile Include="generator.cs"/>
 		<Compile Include="parser.cs"/>

@@ -1,4 +1,4 @@
 *.userprefs
 bin
-compiler-net.cs
+compiler-cli.cs
 obj
