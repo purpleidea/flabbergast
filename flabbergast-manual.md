@@ -132,7 +132,7 @@ There are other ways to generate frames beyond typing them literally. Templates 
       y : 1
     } # Yields { x : 2  y : 1 }
 
-Notice that `a_tmpl` does not produce an error for lacking `y`, because the attributes in it weren't evaluated until it was instantiated. The instantiation also _amended_ the template by adding `y`. Like classes, templates can also inherit from other templates and modify them:
+Notice that `a_tmpl` does not produce an error for lacking `y`, because the attributes in it weren't evaluated until it was instantiated. The instantiation also _amended_ the template by adding `y`. Like classes, templates can also inherit from other templates and create derivatives of them:
 
     a_tmpl : Template {
       x : y + 1
@@ -325,7 +325,7 @@ The values of the following frames are all exactly the same:
 
 ### Flow Control
 
-A conditional expression is provided: `If`, an expression which returns a Boolean value, `Then`, an expression to be returned if the first expression is true, `Else`, an expression to be returned if the first expression is false. The statement, very importantly, impacts contextual lookup. Free identifiers in the `Then` and `Else` expressions are not resolved unless that expression is selected. This means that they can contain invalid references without causing an error. For instance, `y` will be 5 and no error will occur even though `z` is not defined.
+A conditional expression is provided: `If`, an expression which returns a Boolean value, `Then`, an expression to be returned if the first expression is true, `Else`, an expression to be returned if the first expression is false. This expression, very importantly, impacts contextual lookup. Free identifiers in the `Then` and `Else` expressions are not resolved unless that expression is selected. This means that they can contain invalid references without causing an error. For instance, `y` will be 5 and no error will occur even though `z` is not defined.
 
     x : 5
     y : If x < 10 Then x Else z
@@ -365,7 +365,7 @@ The keyword `Container` access the parent of the frame (either the current frame
        a : Container.a # Yields 1
      }
 
-The `Lookup` expression performs a remote inside out lookup; `Lookup a.b.c In x` will start contextual lookup for `a.b.c` starting from the context of the frame `y`, rather than the current context.
+The `Lookup` expression performs a remote contextual lookup; `Lookup a.b.c In x` will start contextual lookup for `a.b.c` starting from the context of the frame `y`, rather than the current context.
 
 Here is non-trivial example uses of all lookup styles:
 
@@ -462,7 +462,7 @@ Note that if two values have the same sort key, in the example -1 and 1 do, then
 
 ### Frames and Templates
 
-In addition to literal frames, frames can be instantiated from templates. The instantiation can also modify a template by adding, removing, or overriding attributes. The syntax for instantiation is simply an expression yielding a template followed by `{`, an optional list of amendments, and terminated by `}`. Templates are created in a syntax similar to literal frames: `Template {`, a list of attributes, followed by `}`.
+In addition to literal frames, frames can be instantiated from templates. The instantiation can also amended a template by adding, removing, or overriding attributes. The syntax for instantiation is simply an expression yielding a template followed by `{`, an optional list of amendments, and terminated by `}`. Templates are created in a syntax similar to literal frames: `Template {`, a list of attributes, followed by `}`.
 
     foo_tmpl : Template { a : b + 4 }
     foo : foo_tmpl { b : 3 } # Yields { a : 7  b : 4 }
@@ -510,7 +510,7 @@ In this example, `c` would be circular evaluation when using normal evaluation s
 
 ### Miscellaneous
 
-The `Let` expression allows binding a value to a new name. For example, `Let a: 3 In a * a`. This is a convenient way to eliminate common subexpressions. Be advised that the normal short-circuiting rules do not apply: all the values in the expression must be evaluated first. Multiple attributes can be bound at once (_e.g._, `Let a: 3, b: 4 In a * a + b * b`).
+The `Let` expression allows binding a value to a new name. For example, `Let a : 3 In a * a`. This is a convenient way to eliminate common subexpressions. Be advised that the normal short-circuiting rules do not apply: all the values in the expression must be evaluated first. Multiple attributes can be bound at once (_e.g._, `Let a : 3, b : 4 In a * a + b * b`).
 
 The `From` expression allows importing external content into the program. This does two jobs: allows accessing libraries and allows access information for the program being configured. The `From` keyword is always followed by a URI. The `lib:` URI is  used for the standard library. The `file:` URI may also be supported. By convention, it is best to do all the importing at the start of a file:
 
@@ -539,7 +539,7 @@ In most languages, afterthoughts are not appreciated. However, most configuratio
 
 Most languages, particularly object-oriented languages, have a lot of plumbing: taking data from one place and copying it to another. Most constructors in object-oriented languages spend their time stuffing parameters into fields. There is a push in multi-paradigm object-oriented languages, including Python, Scala, Ruby, Groovy, Boo, and Nemerle, to have the compiler write the plumbing, freeing the programmer to work on the real logic. Flabbergast has a different approach: don't have plumbing at all. Define the data where it should be defined and use contextual lookup to pull data from the wherever. Copying data is generally a sign that contextual lookup is not being used effectively.
 
-Although Flabbergast has the `?:` attribute definition, it should almost never be used. This is one of the most frequent mistakes of novice programmers. If there's a value needed, just use it; there's no need force the consumer of a template to fill in the blank. The real use case is for things that must be provided and unique. For instance, the name of an SMB share is probably best defined with `?:`, but the users certainly are not. It's okay that this will cause a definition error: failure to provide an appropriately name value is a failure to consume that API correctly and, indeed, this was noted by an error being produced. There's no need to make this some how “more” explicit. The `%:` attribute definition provides an advisory version of `?:` that indicates that a value should be supplied, but does not stipulate that it needs to be included directly.
+Although Flabbergast has the `?:` attribute definition, it should almost never be used. This is one of the most frequent mistakes of novice programmers. If there's a value needed, just use it; there's no need force the consumer of a template to fill in the blank. The real use case is for things that must be provided and unique. For instance, the name of an SMB share is probably best defined with `?:`, but the list of users that can access the share should certainly not use `?:`. It's okay that a user who instantiates a share template without providing a users list somewhere will cause a lookup error: failure to provide an appropriately name value is a failure to consume that API correctly and, indeed, this was noted by an error being produced. There's no need to make this some how “more” explicit. The `%:` attribute definition provides an advisory version of `?:` that indicates that a value should be supplied, but does not stipulate that it needs to be included directly.
 
 The most important feature of Flabbergast is overriding. When starting out with Java or C#, understanding how to divide things up into objects is the hard part. When starting out with ML or Haskell, understanding how to make things stateless is the hard part. When starting out with Flabbergast, understanding  how to make things easy to override is the hard part.
 
@@ -569,7 +569,7 @@ However, it is often simpler to make items self-rendering:
       value : "name: \(name) country: \(country)\n"
     }
     strs : For item : items
-      Reduce "\(acc)\(item.value)"
+      Reduce acc & item.value
 			With acc : ""
 
 This has two advantages: the rendering logic can be overridden and the interface is simpler. As a disadvantage, there is now an inheritance implication for the values of `items`. However, because the template `item_tmpl` can be overridden and replaced, the inheritance implication is flexible. In fact, it would be reasonable to have:
@@ -612,6 +612,8 @@ Naming things is difficult. Very difficult. The major disadvantage to dynamic sc
 2. Use frames as name spaces. While frames are _not_ name spaces, contextual lookup can be used to help the situation. Using `parser.space` can provide more information than simply `space`.
 3. Name library imports with `_lib`. It is good hygiene to import libraries using `foo_lib : From lib:foo` as if there is a collision, the values will be the same anyway.
 4. Use lookup traps when needed. If lookup should stop beyond a certain point, define the name to `Null` to stop lookup from continuing. In templates, if the value needs to be provided or the name is common (_e.g._, `name` or `enabled`) use the `?:` definition to trap lookup.
+
+For a good reflection on naming, read [What's in a Name](https://blogs.janestreet.com/whats-in-a-name/) from Jane Street Tech Blog.
 
 ## Patterns
 In all languages, having common design patterns that introduce intent are important and this is especially true in languages that are more flexible, since they serve the added duty of communicating intent.
@@ -902,7 +904,10 @@ Consider something like:
         min_width : For c : exp_children Reduce If c.min_width > acc Then c.min_width Else acc With acc : 0
         min_height : For c : exp_children Reduce c.min_height + acc With acc : 0
         # The maximum of the preferred width of the children.
-        preferred_width : For c : exp_children Reduce If c.preferred_width > acc Then c.preferred_width Else acc With acc : 0
+        preferred_width :
+          For c : exp_children
+            Reduce If c.preferred_width > acc Then c.preferred_width Else acc
+            With acc : 0
         preferred_height : For c : exp_children Reduce c.preferred_height + acc With acc : 0
         value : # Render output using exp_children's values
     }
