@@ -66,3 +66,62 @@ Finally, environments are determined to be dirty or clean. A dirty environment
 is one which requires lookups and non-local flow. For instance, in the case of
 `Let` above, if `x` is determined to be a string, then the program does not
 need non-local flow even when crossing an environment boundary.
+
+## Code Generation
+It should be obvious that code generation is complex. The goal of the KWS VM
+specification is to simplify the compiler. The KWS VM instructions are more
+similar to the kinds of instructions one would expect on a typical VM, so
+providing translations for most of them are straight forward. Iteration and
+lookup are the two most complicated. In addition to the KWS VM, the compiler
+has several “code generation” templates. These are rules that do not, in
+general, generate code in the target VM, but instead control flow in the
+compiler itself.
+
+As a simplification, iteration handles both fricassée expressions and
+frame/template generation. This limits the scope of what needs to be
+implemented on the VM.
+
+The compiler is trying to produce two types of artefacts: native functions that
+take a “this” frame, a “container” frame, and a lookup context and return a
+value and native functions that take the same arguments plus an additional
+original value. These functions are the stuff that language can then use to
+assemble frames and do overrides.
+
+The most difficult problem is determining the order in which to do the
+computations, since lookup makes this not possible to figure out at run time.
+There are effectively two options: convert the entire program to
+continuation-passing style or be able to suspend and resume computations. The
+intellectually correct answer is to use continuation-passing style (CPS), but,
+in practice,
+this means repeated copying of variables to new closures, so the
+suspend-and-resume method is used (essentially Duff's device). The compiler
+template does not make this distinction, given the way it is defined. The
+implementation does.
+
+Each of the function types is represented by a class and the fields of the
+class hold the state information and intermediate values needed. A function can
+await another where it saves its state, appends itself to the “return” callback
+of the other function, then yields. Upon completion, the other function queues
+all waiting functions for execution and exits. In CLI and the JVM, each one of
+these return callbacks is implemented as a method+delegate or anonymous inner
+class, respectively. Upon re-entry, the main method of each function reads its
+current state and jumps to the appropriate point in the code.
+
+One of the quirky problems is this: CPS is a more natural for the language and
+Duff's device is more natural for the VM. The transformation is to use CPS in
+the compiler itself to generate the bytecode for the Duff's device. Sorry, the
+compiler is a labyrinth of callbacks.
+
+Another issue with the compiler is the linearisation order. A KWS VM
+instruction that takes two arguments doesn't explicitly know or care in what
+order they are computed; the VM specification assumes they _are_ already
+computed. For more complicated instructions, there can be several parameters
+and it is possible that one of them may need to exit the current execution
+flow, there by disrupting anything on the VM's operand stack (or currently
+assigned variables when targeting a SSA system, such as LLVM). To solve this,
+each representation of an instruction provide a generator generator, or
+`gen_gen`. The `gen_gen` provides the mechanism to assemble the declarative
+description of the KWS VM instructions into a form that can be converted into a
+compiler. In effect, `gen_gen` templates convert the declarative description of
+the behaviour in to continuation-passing style and then the target-language
+compiler converts the CPS into a Duff's device.
