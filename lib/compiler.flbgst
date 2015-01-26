@@ -461,6 +461,7 @@ kws_tmpl : Template {
 	iterator : Template codegen.gen_tmpl {
 		# The code generation to produce frames and templates over which to be
 		# iterated.
+		# TODO: This must be refactored to handle inputs from fields.
 		inputs ?:
 		# The initial value for the accumulator of the iterator.
 		initial ?:

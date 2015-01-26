@@ -1,6 +1,23 @@
 compiler_lib : From lib:compiler
 
+# The C# implementation of the parser. The parser definitions also create the
+# class definitions. Each syntax group in the compiler becomes an abstract
+# class and each syntax element derives this class. The parser generated is a
+# packrat parser. The memorisation logic and state information is managed by
+# code elsewhere.
+#
+# The parser makes heavy use of `goto` to control flow. The best strategy
+# (based on a search of the literature) for error reporting in a PEG parser is
+# to keep the error that occurs having consumed the most input, even if the
+# parser has backed up since then. The `Update` methods record and error,
+# keeping only the most extreme.
+#
+# In the Flabbergast compiler code, the action to be taken at the end of
+# parsing is the `parse_complete` template, which takes the success state and
+# indentation. Parser components can redefine `parse_complete` as needed to
+# define the behaviour of their children.
 parser : compiler_lib.parser_tmpl {
+	# Call `ParserPosition.Match` and record a failure otherwise.
 	exact +: {
 		class_gen : ""
 		copy_instance : ""
@@ -12,6 +29,10 @@ parser : compiler_lib.parser_tmpl {
 			parse_complete(ok : False, indent : indent & "\t") &
 			"\(indent)}"
 	}
+	# Duplicate the current state of the object under parse, then parse another
+	# rule, redefining `parse_complete` so the error state restores the previous
+	# object under parse and then call the parent's `parse_complete` always with
+	# success.
 	optional +: {
 		id : Id
 		class_gen : of.class_gen
@@ -33,6 +54,9 @@ parser : compiler_lib.parser_tmpl {
 			"\(indent)optional_exit_\(id):" &
 			(Lookup parse_complete In Container)(ok : True, indent : indent)
 	}
+	# Parse a number of items by parsing each item in sequence. If an error
+	# occurs, a flag is set and flow is short circuited to the end. At the end,
+	# the error flag is checked and the appropriate `parse_complete` is invoked.
 	sequence +: {
 		id : Id
 		class_gen : For x : of Reduce acc & x.class_gen With acc : ""
@@ -53,6 +77,10 @@ parser : compiler_lib.parser_tmpl {
 			parent_parse_complete(ok : True, indent : indent & "\t") &
 			"\(indent)}"
 	}
+	# Parse a list of items. Inside an endless loop, the object state is copied,
+	# then, if this is not the first iteration, the separator is parsed, then the
+	# main parse action. If an error occurred, the object state is restored and
+	# the loop exited. There is no “success” case that exits the loop.
 	many +: {
 		id : Id
 		class_gen : of.class_gen & (If separator Is Null Then "" Else separator.class_gen)
@@ -87,6 +115,11 @@ parser : compiler_lib.parser_tmpl {
 					"\(parent_indent)}"
 				Else pok)
 	}
+	# Parse exactly one path. For each path, the current object state is
+	# duplicated, the parse action performed. If successful, all other paths are
+	# ignored. If it fails, the stored state is restored and the next path is
+	# attempted. If all paths are exhausted, the parent's `parse_complete` is
+	# called with failure.
 	alternate +: {
 		id : Id
 		class_gen : For x : of Reduce acc & x.class_gen With acc : ""
@@ -122,6 +155,8 @@ parser : compiler_lib.parser_tmpl {
 			perr &
 			"\(parent_indent)}"
 	}
+	# Parse characters in an certain band. This simply reads the next character
+	# and checks its numerical value, then invokes `parse_complete`.
 	range +: {
 		class_gen : ""
 		copy_instance : ""
@@ -139,6 +174,7 @@ parser : compiler_lib.parser_tmpl {
 			perr &
 			"\(indent)}"
 	}
+	# Simply read a character from the parse stream.
 	single +: {
 		class_gen : ""
 		copy_instance : ""
@@ -152,6 +188,8 @@ parser : compiler_lib.parser_tmpl {
 			parse_complete(ok : False, indent : indent & "\t") &
 			"\(indent)}"
 	}
+	# Parse a character and check its Unicode class. All the real work is done by
+	# the system libraries.
 	char_class +: {
 		class_gen : ""
 		copy_instance : ""
@@ -215,6 +253,8 @@ parser : compiler_lib.parser_tmpl {
 		symbol_modifier : { name : "modifier symbol"  enum : "ModifierSymbol" }
 		symbol_other : { name : "miscellanous symbol"  enum : "OtherSymbol" }
 	}
+	# Peek a head in the buffer and make sure the buffer is either empty or the
+	# next character doesn't occur in the specified set of characters.
 	except +: {
 		class_gen : ""
 		copy_instance : ""
@@ -225,6 +265,8 @@ parser : compiler_lib.parser_tmpl {
 			parse_complete(ok : False, indent : indent & "\t") &
 			"\(indent)}"
 	}
+	# Define a field for a long integer and, for each character accumulated, do a
+	# multiply-and-accumulate operation on the field.
 	accumulate_integer +: {
 		require_definition :
 				For common_field : Name, common_type : expanded_common
@@ -240,6 +282,12 @@ parser : compiler_lib.parser_tmpl {
 		}
 		parser_gen : in.parser_gen
 	}
+	# This is similar to `accumulate_integer`, but the accumulation is done in a
+	# local variable and then converted to a Unicode character in a field.
+	#
+	# Because this uses a local buffer, it is fragile when combined with
+	# `optional` or `alternate`, since they can turn failure into success,
+	# allowing a buffer that should be discarded to be saved.
 	accumulate_unichar_integer +: {
 		unicode_accumulate_char : "_unicode_acc_" & Id
 		class_gen : ""
@@ -260,6 +308,13 @@ parser : compiler_lib.parser_tmpl {
 		}
 		parser_gen : "\(indent)int \(unicode_accumulate_char) = \(initial);" & in.parser_gen
 	}
+	# Accumulates a float. Doing character-at-a-time float conversion is
+	# impractical when compared to integers. It there for accumulates into a text
+	# buffer, then uses the system's float parser to do the work.
+	#
+	# Because this uses a local buffer, it is fragile when combined with
+	# `optional` or `alternate`, since they can turn failure into success,
+	# allowing a buffer that should be discarded to be saved.
 	accumulate_float +: {
 		require_definition :
 			For common_field : Name, common_type : expanded_common
@@ -290,6 +345,8 @@ parser : compiler_lib.parser_tmpl {
 		}
 		parser_gen : "var \(float_accumulate_buffer) = new System.Text.StringBuilder();" & in.parser_gen
 	}
+	# Accumulates items into a list. There is a second buffer to prevent
+	# duplication, prepopulated with forbidden values.
 	accumulate_list +: {
 		require_definition : If field Is Null Then False Else
 			(For common_field : Name, common_type : expanded_common Where common_field == field Reduce False With acc : True)
@@ -311,6 +368,7 @@ parser : compiler_lib.parser_tmpl {
 				& in.copy_instance
 		parser_gen : in.parser_gen
 	}
+	# Accumulates characters into a string builder.
 	accumulate_string +: {
 		require_definition : If field Is Null Then False Else
 			(For common_field : Name, common_type : expanded_common Where common_field == field Reduce False With acc : True)
@@ -325,6 +383,7 @@ parser : compiler_lib.parser_tmpl {
 		}
 		parser_gen : in.parser_gen
 	}
+	# Accumulates a character from a numeric literal.
 	collect_codepoint +: {
 		class_gen : in.class_gen
 		copy_instance : in.copy_instance
@@ -340,6 +399,12 @@ parser : compiler_lib.parser_tmpl {
 		}
 		parser_gen : in.parser_gen
 	}
+	# Calls another parse rule, passing a reference to our current state to the
+	# other rule. The rule may change either the parse state object or instance
+	# to which the reference refers.
+	#
+	# There's a mess to handle parsing into lists versus fields and to handle
+	# de-duplication in lists.
 	other +: {
 		require_definition : If field Is Null Then False Else
 			(For common_field : Name, common_type : expanded_common Where common_field == field Reduce False With acc : True)
@@ -362,6 +427,8 @@ parser : compiler_lib.parser_tmpl {
 		parser_gen : "\(indent)if (\(parse_call)) {\(pok)\(indent)} else {\(perr)\(indent)}"
 	}
 }
+# Some times, different parse rules should share fields across classes. These
+# define the rules.
 common_fields : compiler_lib.common_fields_tmpl {
 	str +: {
 		class_gen : "\tinternal System.Text.StringBuilder \(field_name) = new System.Text.StringBuilder();\n"
@@ -389,9 +456,13 @@ common_fields : compiler_lib.common_fields_tmpl {
 	}
 }
 
+# When making copies of a syntax node, the code to copy all support fields not
+# defined in the compiler proper.
 static_copy_instance : For field : [ "StartRow", "EndRow", "StartColumn", "EndColumn", "FileName" ]
 	Reduce acc & "\t\t_obj.\(field) = \(field);\n" With acc : ""
 
+# Definitions for environment-handling code. Most of the environment code is
+# defined in the `Environment` and `NameInfo` classes.
 environment : compiler_lib.environment_tmpl {
 	other_elements +: {
 		value : For field : fields
@@ -474,6 +545,10 @@ environment : compiler_lib.environment_tmpl {
 		known_flavours : [ flavour_simple, This ]
 	}
 }
+# The correspondence between Flabbergast types in the compiler and their
+# implementation types (a.k.a. `real_type`) and the flag used in the union
+# types used by the environments to propagate type information (a.k.a.
+# `union_type`).
 known_types : compiler_lib.known_types_tmpl {
 	bool : {
 		union_type : "Flabbergast.Type.Bool"
@@ -504,11 +579,18 @@ known_types : compiler_lib.known_types_tmpl {
 		real_type : "Flabbergast.Unit"
 	}
 }
+# These are types known by the KWS VM that are not found in the Flabbergast
+# language. Therefore, they have a `real_type`, but not a `union_type`.
 known_vm_types : compiler_lib.known_vm_types_tmpl {
 	any : { real_type : "object" }
 	list : { real_type : "Flabbergast.Context" }
 }
+# The mechanism code to do type checking in the compiler. Each syntax element
+# is told what types it may return and it propagates this type information to
+# its children. If the union is ever empty, a type error occurs, since this
+# implies that there is no possible type that could satisfy this expression.
 ensure_type : compiler_lib.ensure_type_tmpl {
+	# Restrict the union and check if the intersection is empty.
 	filter +: {
 		type_bits : For t : types Reduce acc & " | " & t.union_type With acc : "0"
 
@@ -525,14 +607,18 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 			ensure_type_of.value &
 			"\(parent_indent)}"
 	}
+	# Pass this type to a child node.
 	propagate +: {
 		allowed_type_bits : For t : extra_types Reduce acc & " | " & t.union_type With acc : current_type
 		value : For field : fields Reduce acc & "\(indent)if (\(field) != null) \(field).EnsureType(collector, \(allowed_type_bits));" With acc : ""
 	}
+	# Pass this type to all child nodes in a list.
 	propagate_all +: {
 		allowed_type_bits : For t : extra_types Reduce acc & " | " & t.union_type With acc : current_type
 		value : "\(indent)if (\(field) != null) foreach (var \(Id) in \(field)) \(Id).EnsureType(collector, \(allowed_type_bits));"
 	}
+	# This works similarly to filter, but takes the type from a syntax node
+	# rather than a literal in the compiler.
 	dynamic +: {
 		parent_indent : Lookup indent In Container
 		indent : parent_indent & "\t"
@@ -548,9 +634,11 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 			ensure_type_of.value &
 			"\(parent_indent)}"
 	}
+	# Stores the type information in the environment by lookup name.
 	stored +: {
 		value : "\(indent)Environment.Lookup(collector, \(field).Select((s) => s.ToString())).EnsureType(collector, \(current_type));"
 	}
+	# Stores the type information in the environment by syntax node.
 	intrinsic +: {
 		value : "\(indent)Environment.EnsureIntrinsic(collector, this, \(current_type));"
 	}
@@ -560,7 +648,22 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 	}
 }
 default_indent : "\n\t\t"
+# Code to generate CIL opcodes, using System.Reflection.Emit for KWS VM
+# instructions. This is heavily supported by the `Generator` class. This code
+# also makes obscene use of callbacks. Per the compiler design manual, the
+# continuation passing flow of the language is represented in the compiler. At
+# most steps, a callback is created which takes the return value as an
+# argument.
+#
+# The compiler makes heavy use of “private scope” fields, which are essentially
+# anonymous fields. Each instruction stores its results in a field defined by
+# `storage_name`.
 kws : compiler_lib.kws_tmpl {
+	# The base template for most instructions. Since each instruction computes
+	# some values and then does one opcode, this is heavily applicable to most of
+	# the “normal” operations in the KWS VM. This template takes the arguments,
+	# expands their `gen_gen` templates in a fold operation, finally loading all
+	# the results, inserting the opcodes, then storing the result in a field.
 	base_tmpl +: {
 		opcode ?:
 		storage_name : If return_type Is Null Then "null" Else Id
@@ -655,6 +758,9 @@ kws : compiler_lib.kws_tmpl {
 		gen_gen +: {
 			sum_indent : indent & extra_indent
 
+			# This is the simplest part of the hideously complex: it expands all the
+			# `gen_gen` templates of the input, then calls the behemoth in
+			# `base_code`.
 			value : initial.gen_gen(
 				indent : indent,
 				code :
@@ -663,6 +769,7 @@ kws : compiler_lib.kws_tmpl {
 					With acc : base_code)
 
 			base_code :
+				# Create new fields for all the bits of stuff we need.
 				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_accumulator\", \(initial.storage_name).FieldType);" &
 				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_key\", typeof(string));" &
 				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_ordinal\", typeof(long));" &
@@ -670,19 +777,24 @@ kws : compiler_lib.kws_tmpl {
 				"\(sum_indent)var \(iterator_instance) = \(generator).MakeField(\"\(rule_name)_iterator\", typeof(MergeIterator));" &
 				"\(sum_indent)var \(iterator_state) = \(generator).DefineState();" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
+				# Create an array for the length of the input and load all the inputs.
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(num_inputs));" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newarr, typeof(IAttributeNames));" &
 				input_loads &
+				# Create a block for the default dispatcher and put a delegate on the stack.
 				"\(sum_indent)\(generator).CreateBlockEntry<MergeIterator.KeyDispatch>(() => {" &
 				"\(sum_indent)\t\(generator).LoadIteratorData(\(iterator_instance), \(iterator_key), \(iterator_ordinal));" &
 				dispatch_code &
 				"\(sum_indent)});" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(MergeIterator).GetConstructors()[0]);" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(iterator_instance));" &
+				# Load all the special dispatchers.
 				add_cases &
+				# Create a re-entry point for the end of input (i.e., the iterator returning).
 				"\(sum_indent)\(generator).LoadField(\(iterator_instance));" &
 				"\(sum_indent)\(generator).GenerateConsumeResult(null);" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Callvirt, typeof(MergeIterator).GetMethod(\"Notify\"));" &
+				# Invoke the iterator and prepare all the remaining states.
 				"\(sum_indent)\(generator).SlotSleep(\(iterator_instance));" &
 				"\(sum_indent)\(generator).FlushBlocks();" &
 				"\(sum_indent)\(generator).MarkState(\(iterator_state));" &
@@ -760,16 +872,30 @@ kws : compiler_lib.kws_tmpl {
 		current_ordinal : codegen.gen_tmpl { storage_name : iterator_key }
 	}
 }
+# Generate hideously complicated flows in the compiler's code generation routines.
 codegen : compiler_lib.codegen_tmpl {
+	# This is the base template for all of the code generation. The `gen_gen`
+	# system is described in the compiler design manual.
 	gen_tmpl +: {
+		# Keeping tabbing correct in the code generator, but the OCD makes the
+		# final result intelligible. This attribute should be the tabbing that
+		# should be applied to `code` in addition to `indent` to make it appear at
+		# the correct indentation. It can be thought of as the indentation
+		# difference between the starting indentation and the indentation of the
+		# callback.
 		extra_indent ?:
 		storage_name : Id
 		gen_gen : Template {
+			# The indentation of the code.
 			indent ?:
+			# The code to execute when this operation is completed and its value is
+			# stored in a variable with the name of the value in `storage_name`.
 			code ?:
 			value : code
 		}
 	}
+	# This nasty customer does a fold over a list of syntax elements. It
+	# accomplishes this using the painfully obtuse `Generator.Fold` function.
 	fold_others +: {
 		extra_indent : For argument : arguments Reduce argument.extra_indent & acc With acc : initial.extra_indent & "\t"
 		argument_indents : For argument_name : Name, argument : arguments, argument_pos : Ordinal
@@ -795,6 +921,7 @@ codegen : compiler_lib.codegen_tmpl {
 		}
 		fold_argument : codegen.gen_tmpl { storage_name : fold_name }
 	}
+	# This changes the value of parameters by renaming them, then restoring the names.
 	mask_parameters +: {
 		storage_name : action.storage_name
 		extra_indent : For parameter : parameters Reduce parameter.extra_indent & acc With acc : action.extra_indent
@@ -872,7 +999,11 @@ codegen : compiler_lib.codegen_tmpl {
 		}
 	}
 }
+
+# The compiler!
 compiler : compiler_lib.language_tmpl {
+	# Since each syntax element corresponds to a class, it should know how to
+	# generate a class with all the appropriate methods.
 	syntax_element +: {
 		class_extra : ""
 		indent : "\n\t\t"
@@ -944,6 +1075,7 @@ compiler : compiler_lib.language_tmpl {
 					Else "\(indent)_result = null;\(indent)return false;")
 		}
 	}
+	# Generates the super class for a syntax group and all the appropriate method stubs.
 	syntax_group +: {
 		super_class_extra : ""
 		common_field_class_gen : For field : expanded_common Reduce acc & field.class_gen With acc : ""
@@ -1024,6 +1156,7 @@ compiler : compiler_lib.language_tmpl {
 				code_gen &
 				"}\n"
 	}
+	# Defines a parser for a CLI-compliant name.
 	cli_identifier : Template parser.sequence {
 		of : [
 			parser.char_class {
@@ -1056,6 +1189,9 @@ compiler : compiler_lib.language_tmpl {
 		]
 	}
 
+	# For rule groups, some require special handling not inferable from the
+	# compiler, so the `super_class_extra` and `class_extra` attributes provide
+	# that content.
 	rule_groups +: {
 		attribute +: {
 			super_class_extra : "\tinternal virtual void AddMask(ErrorCollector collector, Environment environment) {}\n"
@@ -1090,6 +1226,7 @@ compiler : compiler_lib.language_tmpl {
 		}
 		expression +: {
 			rules +: {
+				# This is a special expression to call methods in the CLI libraries.
 				xinvoke : Template expression_tmpl {
 					level : 19
 					pattern : parser.sequence {

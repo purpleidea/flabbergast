@@ -32,6 +32,9 @@ public abstract class AstNode {
 			return null;
 		}
 	}
+	/**
+	 * Parse an “expression” defined in the language specification.
+	 */
 	public static AstNode ParseExpression(Parser parser) {
 		expression result;
 		var position = new ParserPosition(parser);
