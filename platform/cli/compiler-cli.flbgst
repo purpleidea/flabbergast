@@ -1024,7 +1024,7 @@ compiler : compiler_lib.language_tmpl {
 				code_gen &
 				"}\n"
 	}
-	clr_identifier : Template parser.sequence {
+	cli_identifier : Template parser.sequence {
 		of : [
 			parser.char_class {
 				classes : [
@@ -1102,14 +1102,14 @@ compiler : compiler_lib.language_tmpl {
 									nonempty : True
 									accumulate : True
 									separator : parser.single { char : "." }
-									of : clr_identifier { }
+									of : cli_identifier { }
 								}
 							},
 							space { mandatory : True },
 							parser.accumulate_string {
 								field : "method_name"
 								accumulate: True
-								in : clr_identifier { }
+								in : cli_identifier { }
 							},
 							space { },
 							parser.exact { word : "(" },
