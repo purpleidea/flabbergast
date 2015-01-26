@@ -476,31 +476,31 @@ environment : compiler_lib.environment_tmpl {
 }
 known_types : compiler_lib.known_types_tmpl {
 	bool : {
-		clr_type : "Flabbergast.Type.Bool"
+		union_type : "Flabbergast.Type.Bool"
 		real_type : "bool"
 	}
 	float : {
-		clr_type : "Flabbergast.Type.Int"
+		union_type : "Flabbergast.Type.Int"
 		real_type : "double"
 	}
 	frame : {
-		clr_type : "Flabbergast.Type.Frame"
+		union_type : "Flabbergast.Type.Frame"
 		real_type : "Flabbergast.Frame"
 	}
 	int : {
-		clr_type : "Flabbergast.Type.Float"
+		union_type : "Flabbergast.Type.Float"
 		real_type : "long"
 	}
 	str : {
-		clr_type : "Flabbergast.Type.Str"
+		union_type : "Flabbergast.Type.Str"
 		real_type : "Flabbergast.Stringish"
 	}
 	template : {
-		clr_type : "Flabbergast.Type.Template"
+		union_type : "Flabbergast.Type.Template"
 		real_type : "Flabbergast.Template"
 	}
 	unit : {
-		clr_type : "Flabbergast.Type.Unit"
+		union_type : "Flabbergast.Type.Unit"
 		real_type : "Flabbergast.Unit"
 	}
 }
@@ -510,7 +510,7 @@ known_vm_types : compiler_lib.known_vm_types_tmpl {
 }
 ensure_type : compiler_lib.ensure_type_tmpl {
 	filter +: {
-		type_bits : For t : types Reduce acc & " | " & t.clr_type With acc : "0"
+		type_bits : For t : types Reduce acc & " | " & t.union_type With acc : "0"
 
 		parent_indent : Lookup indent In Container
 		indent : parent_indent & "\t"
@@ -526,11 +526,11 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 			"\(parent_indent)}"
 	}
 	propagate +: {
-		allowed_type_bits : For t : extra_types Reduce acc & " | " & t.clr_type With acc : current_type
+		allowed_type_bits : For t : extra_types Reduce acc & " | " & t.union_type With acc : current_type
 		value : For field : fields Reduce acc & "\(indent)if (\(field) != null) \(field).EnsureType(collector, \(allowed_type_bits));" With acc : ""
 	}
 	propagate_all +: {
-		allowed_type_bits : For t : extra_types Reduce acc & " | " & t.clr_type With acc : current_type
+		allowed_type_bits : For t : extra_types Reduce acc & " | " & t.union_type With acc : current_type
 		value : "\(indent)if (\(field) != null) foreach (var \(Id) in \(field)) \(Id).EnsureType(collector, \(allowed_type_bits));"
 	}
 	dynamic +: {
@@ -899,12 +899,12 @@ compiler : compiler_lib.language_tmpl {
 			Then "\tinternal override void MakeTypeDemands(ErrorCollector collector) {\n" &
 				(For field : Name, types : type_demand
 					Reduce "\(ensure_acc)\t\tif (\(field) != null) \(field).EnsureType(collector, " &
-						(For t : types Reduce acc & " | " & t.clr_type With acc : "0") &
+						(For t : types Reduce acc & " | " & t.union_type With acc : "0") &
 						");\n"
 					With ensure_acc : "") &
 				(For field : Name, types : type_demand_all
 					Reduce "\(ensure_acc)\t\tif (\(field) != null) foreach (var _item in \(field)) _item.EnsureType(collector, " &
-						(For t : types Reduce acc & " | " & t.clr_type With acc : "0") &
+						(For t : types Reduce acc & " | " & t.union_type With acc : "0") &
 						");\n"
 					With ensure_acc : "") &
 				"\t}\n"
@@ -1084,8 +1084,8 @@ compiler : compiler_lib.language_tmpl {
 		type +: {
 			super_class_extra : "\tinternal abstract Type TypeId { get; }\n\tinternal abstract Type CastableFrom { get; }\n"
 			type_element +: {
-				castable_from_type_bits : For t : castable_from Reduce acc & " | " & t.clr_type With acc : type.clr_type
-				class_extra : "\tinternal override Type TypeId { get { return \(type.clr_type); } }\n\tinternal override Type CastableFrom { get { return \(castable_from_type_bits); }}\n"
+				castable_from_type_bits : For t : castable_from Reduce acc & " | " & t.union_type With acc : type.union_type
+				class_extra : "\tinternal override Type TypeId { get { return \(type.union_type); } }\n\tinternal override Type CastableFrom { get { return \(castable_from_type_bits); }}\n"
 			}
 		}
 		expression +: {
