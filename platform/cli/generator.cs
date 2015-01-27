@@ -499,4 +499,44 @@ public class FieldValue : LoadableValue {
 		generator.Emit(OpCodes.Ldfld, Field);
 	}
 }
+public class BoolConstant : LoadableValue {
+	private bool number;
+	public override System.Type BackingType { get { return typeof(bool); } }
+	public BoolConstant(bool number) {
+		this.number = number;
+	}
+	public override void Load(ILGenerator generator) {
+		generator.Emit(number ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+	}
+}
+public class FloatConstant : LoadableValue {
+	private double number;
+	public readonly static FloatConstant NAN = new FloatConstant(Double.NaN);
+	public readonly static FloatConstant INFINITY = new FloatConstant(Double.PositiveInfinity);
+	public FloatConstant(double number) {
+		this.number = number;
+	}
+	public override System.Type BackingType { get { return typeof(double); } }
+	public override void Load(ILGenerator generator) {
+		generator.Emit(OpCodes.Ldc_R8, number);
+	}
+}
+public class IntConstant : LoadableValue {
+	private long number;
+	public IntConstant(long number) {
+		this.number = number;
+	}
+	public override System.Type BackingType { get { return typeof(long); } }
+	public override void Load(ILGenerator generator) {
+		generator.Emit(OpCodes.Ldc_I8, number);
+	}
+}
+public class UnitConstant : LoadableValue {
+	public readonly static UnitConstant NULL = new UnitConstant();
+	private UnitConstant() {}
+	public override System.Type BackingType { get { return typeof(Unit); } }
+	public override void Load(ILGenerator generator) {
+		generator.Emit(OpCodes.Ldsfld, typeof(Unit).GetField("NULL"));
+	}
+}
 }

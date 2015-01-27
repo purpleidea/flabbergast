@@ -447,6 +447,24 @@ kws_tmpl : Template {
 		return_type : known_types.int
 	}
 
+	# An integral, floating point, or Boolean constant.
+	numeric_constant : Template codegen.gen_tmpl {
+		# The type of the value
+		type ?:
+		# Either the numeric value, `max`, or `min`.
+		number ?:
+		# The maximum value this type can take.
+		max ?:
+		# The minimum value this type can take.
+		min ?:
+	}
+	# The null value of the unit type.
+	null_constant : Template codegen.gen_tmpl {}
+	# The not-a-number floating point constant.
+	nan_constant : Template codegen.gen_tmpl {}
+	# The positive infinity floating point constant
+	infinity_constant : Template codegen.gen_tmpl {}
+
 	# Perform dynamic dispatch of a value. This is slightly different from the VM
 	# specification; it must be combined with `codegen.type_dispatch` for the
 	# full effect.
@@ -2330,14 +2348,26 @@ language_tmpl : Template {
 				false : Template literal_tmpl {
 					name : "False"
 					ensure_type_is : ensure_type.bool { }
+					code_value : kws.numeric_constant {
+						type : known_types.bool
+						number : min
+					}
 				}
 				float_max : Template literal_tmpl {
 					name : "FloatMax"
 					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
+					code_value : kws.numeric_constant {
+						type : known_types.float
+						number : max
+					}
 				}
 				float_min : Template literal_tmpl {
 					name : "FloatMin"
 					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
+					code_value : kws.numeric_constant {
+						type : known_types.float
+						number : min
+					}
 				}
 				id : Template literal_tmpl {
 					name : "Id"
@@ -2346,22 +2376,33 @@ language_tmpl : Template {
 				infinity : Template literal_tmpl {
 					name : "Infinity"
 					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
+					code_value : kws.infinity_constant {}
 				}
 				int_max : Template literal_tmpl {
 					name : "IntMax"
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					code_value : kws.numeric_constant {
+						type : known_types.int
+						number : max
+					}
 				}
 				int_min : Template literal_tmpl {
 					name : "IntMin"
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					code_value : kws.numeric_constant {
+						type : known_types.int
+						number : min
+					}
 				}
 				nan : Template literal_tmpl {
 					name : "NaN"
 					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
+					code_value : kws.nan_constant {}
 				}
 				null : Template literal_tmpl {
 					name : "Null"
 					ensure_type_is : ensure_type.filter { types : [ known_types.unit ] }
+					code_value : kws.null_constant {}
 				}
 				this : Template literal_tmpl {
 					name : "This"
@@ -2373,6 +2414,10 @@ language_tmpl : Template {
 				true : Template literal_tmpl {
 					name : "True"
 					ensure_type_is : ensure_type.bool { }
+					code_value : kws.numeric_constant {
+						type : known_types.bool
+						number : max
+					}
 				}
 
 				time_literal : Template expression_tmpl {

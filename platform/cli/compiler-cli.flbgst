@@ -553,10 +553,16 @@ known_types : compiler_lib.known_types_tmpl {
 	bool : {
 		union_type : "Flabbergast.Type.Bool"
 		real_type : "bool"
+		max : "true"
+		min : "false"
+		constant_creator : "BoolConstant"
 	}
 	float : {
 		union_type : "Flabbergast.Type.Int"
 		real_type : "double"
+		max : "System.Double.MaxValue"
+		min : "System.Double.MinValue"
+		constant_creator : "FloatConstant"
 	}
 	frame : {
 		union_type : "Flabbergast.Type.Frame"
@@ -565,6 +571,9 @@ known_types : compiler_lib.known_types_tmpl {
 	int : {
 		union_type : "Flabbergast.Type.Float"
 		real_type : "long"
+		max : "System.Int64.MaxValue"
+		min : "System.Int64.MinValue"
+		constant_creator : "IntConstant"
 	}
 	str : {
 		union_type : "Flabbergast.Type.Str"
@@ -724,6 +733,32 @@ kws : compiler_lib.kws_tmpl {
 	int_subtract +: { opcode : "Sub" }
 	int_to_float +: { opcode : "Conv_R4" }
 
+	numeric_constant +: {
+		extra_indent : ""
+		max : type.max
+		min : type.min
+		gen_gen +: {
+			value : "\(indent)var \(storage_name) = new \(type.constant_creator)(\(number));" & code
+		}
+	}
+	null_constant +: {
+		extra_indent : ""
+		gen_gen +: {
+			value : "\(indent)var \(storage_name) = UnitConstant.NULL;" & code
+		}
+	}
+	nan_constant +: {
+		extra_indent : ""
+		gen_gen +: {
+			value : "\(indent)var \(storage_name) = FloatConstant.NAN;" & code
+		}
+	}
+	infinity_constant +: {
+		extra_indent : ""
+		gen_gen +: {
+			value : "\(indent)var \(storage_name) = FloatConstant.INFINITY;" & code
+		}
+	}
 	dynamic_type_dispatch +: {
 		extra_indent : of.extra_indent & "\t"
 		type_list :
