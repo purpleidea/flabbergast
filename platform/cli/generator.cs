@@ -226,7 +226,7 @@ public class Generator {
 	 * Create a new source reference based on an existing one, updated to reflect
 	 * entry into a new AST node.
 	 */
-	public FieldValue AmmendSourceReference(AstNode node, string message, LoadableValue source_reference) {
+	public FieldValue AmendSourceReference(AstNode node, string message, LoadableValue source_reference) {
 		var field = MakeField("source_reference", typeof(SourceReference));
 		Builder.Emit(OpCodes.Ldarg_0);
 		Builder.Emit(OpCodes.Ldstr, message);

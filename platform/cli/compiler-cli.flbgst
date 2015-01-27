@@ -978,7 +978,7 @@ codegen : compiler_lib.codegen_tmpl {
 		storage_name : name
 		gen_gen +: {
 			value :
-				"if (\(name) == null) throw new System.InvalidOperationException(\"\(error_message)\");" &
+				"\(indent)if (\(name) == null) throw new System.InvalidOperationException(\"\(error_message)\");" &
 				code
 		}
 	}
