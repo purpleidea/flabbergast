@@ -1117,7 +1117,7 @@ compiler : compiler_lib.language_tmpl {
 			Else
 				("\tpublic override void Generate(Generator \(generator), SourceReference \(source_reference)," &
 					(For param_name : Name, param : generation_parameters Reduce "\(acc) LoadableValue \(param_name)," With acc : "") &
-					"Generator.ParameterisedBlock _final_block) {" &
+					" Generator.ParameterisedBlock _final_block) {" &
 					code_value.gen_gen(indent : default_indent, code : "\(indent)\(code_value.extra_indent)_final_block(\(code_value.storage_name));") &
 					"\n\t}\n")
 
