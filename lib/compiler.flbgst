@@ -458,6 +458,12 @@ kws_tmpl : Template {
 		# The minimum value this type can take.
 		min ?:
 	}
+	numeric_constant_units : Template numeric_constant {
+		# The unit multiplier
+		unit %:
+		# The field containing the value
+		field ?:
+	}
 	# The null value of the unit type.
 	null_constant : Template codegen.gen_tmpl {}
 	# The not-a-number floating point constant.
@@ -834,6 +840,10 @@ language_tmpl : Template {
 		pattern : int_with_unit_tmpl {}
 		apply_environment_to : [ ]
 		ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+		code_value : kws.numeric_constant_units {
+			type : known_types.int
+			field : $count
+		}
 	}
 	# A “long” expression (i.e., one containing many terms)
 	long_expression_tmpl : Template expression_tmpl {

@@ -741,6 +741,9 @@ kws : compiler_lib.kws_tmpl {
 			value : "\(indent)var \(storage_name) = new \(type.constant_creator)(\(number));" & code
 		}
 	}
+	numeric_constant_units +: {
+		number : "\(field) * \(unit)"
+	}
 	null_constant +: {
 		extra_indent : ""
 		gen_gen +: {
