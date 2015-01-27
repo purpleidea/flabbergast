@@ -548,6 +548,14 @@ codegen_tmpl : Template {
 		# The field containing the syntax element
 		field ?:
 	}
+	# A deveritive of `other_code` with all the arguments set for an expression.
+	other_expression : Template other_code {
+		arguments : {
+			context : codegen.parameter { name : $context }
+			self_frame : codegen.parameter { name : $self_frame }
+			container_frame : codegen.parameter { name : $container_frame }
+		}
+	}
 	# Use a parameter passed to this syntax group or defined in a containing code generator.
 	parameter : Template gen_tmpl {
 		name ?:
@@ -873,14 +881,6 @@ language_tmpl : Template {
 				}
 			]
 		}
-		right_dispatch : Template codegen.other_code {
-			field : $expression
-			arguments : [
-				codegen.parameter { name : $context },
-				codegen.parameter { name : $self_frame },
-				codegen.parameter { name : $container_frame }
-			]
-		}
 		code_value : codegen.type_dispatch {
 			of : codegen.parameter { name : $left }
 			define : $left_operation
@@ -891,7 +891,7 @@ language_tmpl : Template {
 					choice_tmpl {
 						type : known_types.int
 						action : codegen.type_dispatch {
-							of : right_dispatch {}
+							of : codegen.other_expression { field : $expression }
 							define : $right_operation
 
 							choices :
@@ -921,7 +921,7 @@ language_tmpl : Template {
 					choice_tmpl {
 						type : known_types.int
 						action : codegen.type_dispatch {
-							of : right_dispatch {}
+							of : codegen.other_expression { field : $expression }
 							define : $right_operation
 
 							choices :
@@ -2288,6 +2288,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
+					code_value : codegen.other_expression { field : $expression }
 				}
 				literal_list : Template expression_tmpl {
 					level : max_level
