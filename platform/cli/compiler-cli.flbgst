@@ -976,6 +976,11 @@ codegen : compiler_lib.codegen_tmpl {
 	parameter +: {
 		extra_indent : ""
 		storage_name : name
+		gen_gen +: {
+			value :
+				"if (\(name) == null) throw new System.InvalidOperationException(\"\(error_message)\");" &
+				code
+		}
 	}
 	type_dispatch +: {
 		extra_indent : "\t" & of.extra_indent
