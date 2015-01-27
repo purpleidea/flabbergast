@@ -2322,6 +2322,10 @@ language_tmpl : Template {
 				container : Template literal_tmpl {
 					name : "Container"
 					ensure_type_is : ensure_type.frame { }
+					code_value : codegen.parameter {
+						name : $self_frame
+						error : "Already at the outermost frame. “Container” has no meaning here."
+					}
 				}
 				false : Template literal_tmpl {
 					name : "False"
@@ -2362,6 +2366,9 @@ language_tmpl : Template {
 				this : Template literal_tmpl {
 					name : "This"
 					ensure_type_is : ensure_type.frame { }
+					code_value : codegen.parameter {
+						name : $self_frame
+					}
 				}
 				true : Template literal_tmpl {
 					name : "True"
