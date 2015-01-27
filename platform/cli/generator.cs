@@ -304,14 +304,7 @@ public class Generator {
 			Builder.Emit(OpCodes.Isinst, types[it]);
 			Builder.Emit(OpCodes.Brtrue, labels[it]);
 		}
-		LoadTaskMaster();
-		source_reference.Load(Builder);
-		Builder.Emit(OpCodes.Ldstr, String.Format("Unexpected type {0} instead of {1}.", "{0}", string.Join(", ", (object[]) types)));
-		original.Load(Builder);
-		Builder.Emit(OpCodes.Call, typeof(String).GetMethod("Format", new System.Type[] { typeof(string), typeof(object) }));
-		Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError"));
-		Builder.Emit(OpCodes.Ldc_I4_0);
-		Builder.Emit(System.Reflection.Emit.OpCodes.Ret);
+		EmitTypeError(String.Format("Unexpected type {0} instead of {1}.", "{0}", string.Join(", ", (object[]) types)), original, source_reference);
 		
 		for(var it = 0; it < types.Length; it++) {
 			Builder.MarkLabel(labels[it]);
@@ -330,6 +323,17 @@ public class Generator {
 		var id = entry_points.Count;
 		entry_points.Add(label);
 		return id;
+	}
+	public void EmitTypeError(string message, LoadableValue data, LoadableValue source_reference) {
+		LoadTaskMaster();
+		source_reference.Load(Builder);
+		Builder.Emit(OpCodes.Ldstr, message);
+		data.Load(Builder);
+		Builder.Emit(OpCodes.Call, typeof(object).GetMethod("GetType"));
+		Builder.Emit(OpCodes.Call, typeof(String).GetMethod("Format", new System.Type[] { typeof(string), typeof(object) }));
+		Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError"));
+		Builder.Emit(OpCodes.Ldc_I4_0);
+		Builder.Emit(OpCodes.Ret);
 	}
 	/**
 	 * Generate code for a list using a fold (i.e., each computation in the list
