@@ -671,10 +671,10 @@ kws : compiler_lib.kws_tmpl {
 		extra_indent : For arg : arguments Reduce arg.value.extra_indent & acc With acc : ""
 		arg_indents : For arg_name : Name, arg : arguments, arg_pos : Ordinal
 			Select arg_name :
-				For prev_arg : arguments, prev_arg_pos : Ordinal
+				(For prev_arg : arguments, prev_arg_pos : Ordinal
 				Where prev_arg_pos < arg_pos
 				Reduce acc & prev_arg.value.extra_indent
-				With acc : ""
+				With acc : "")
 
 		gen_gen +: {
 			sum_indent : indent & extra_indent
@@ -744,10 +744,10 @@ kws : compiler_lib.kws_tmpl {
 		extra_indent : For input : inputs Reduce input.extra_indent & acc With acc : initial.extra_indent
 		input_indents : For input_name : Name, input : inputs, input_pos : Ordinal
 			Select input_name :
-				For prev_input : inputs, prev_input_pos : Ordinal
+				(For prev_input : inputs, prev_input_pos : Ordinal
 				Where prev_input_pos < input_pos
 				Reduce acc & input_arg.extra_indent
-				With acc : ""
+				With acc : "")
 		num_inputs : For input : inputs Reduce len + 1 With len : 0
 
 		iterator_instance : Id & "_iterator"
@@ -900,10 +900,10 @@ codegen : compiler_lib.codegen_tmpl {
 		extra_indent : For argument : arguments Reduce argument.extra_indent & acc With acc : initial.extra_indent & "\t"
 		argument_indents : For argument_name : Name, argument : arguments, argument_pos : Ordinal
 			Select argument_name :
-				For prev_argument : arguments, prev_argument_pos : Ordinal
+				(For prev_argument : arguments, prev_argument_pos : Ordinal
 				Where prev_argument_pos < argument_pos
 				Reduce acc & prev_argument.extra_indent
-				With acc : initial.extra_indent
+				With acc : initial.extra_indent)
 
 		fold_name : "\(Id)_left"
 
@@ -927,10 +927,10 @@ codegen : compiler_lib.codegen_tmpl {
 		extra_indent : For parameter : parameters Reduce parameter.extra_indent & acc With acc : action.extra_indent
 		parameter_indents : For parameter_name : Name, parameter : parameters, parameter_pos : Ordinal
 			Select parameter_name :
-				For prev_parameter : parameters, prev_parameter_pos : Ordinal
+				(For prev_parameter : parameters, prev_parameter_pos : Ordinal
 				Where prev_parameter_pos < parameter_pos
 				Reduce acc & prev_parameter.extra_indent
-				With acc : ""
+				With acc : "")
 
 		gen_gen +: {
 			sum_indent : indent & extra_indent
@@ -959,10 +959,10 @@ codegen : compiler_lib.codegen_tmpl {
 		extra_indent : For argument : arguments Reduce argument.extra_indent & acc With acc : "\t"
 		argument_indents : For argument_name : Name, argument : arguments, argument_pos : Ordinal
 			Select argument_name :
-				For prev_argument : arguments, prev_argument_pos : Ordinal
+				(For prev_argument : arguments, prev_argument_pos : Ordinal
 				Where prev_argument_pos < argument_pos
 				Reduce acc & prev_argument.extra_indent
-				With acc : ""
+				With acc : "")
 
 		gen_gen +: {
 			argument_list : For argument : arguments Reduce acc & ", " & argument.storage_name With acc : "\(generator), \(source_reference)"
