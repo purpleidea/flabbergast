@@ -2470,6 +2470,10 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					code_value : kws.numeric_constant {
+						type : known_types.int
+						number : $amount
+					}
 				}
 				hex_integer_literal : Template expression_tmpl {
 					level : max_level
@@ -2487,6 +2491,10 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					code_value : kws.numeric_constant {
+						type : known_types.int
+						number : $amount
+					}
 				}
 				int_k : Template int_with_unit_expr_tmpl { symbol : "k"  unit : 1000 }
 				int_m : Template int_with_unit_expr_tmpl { symbol : "M"  unit : 1000 * 1000 }
@@ -2522,6 +2530,10 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
+					code_value : kws.numeric_constant {
+						type : known_types.float
+						number : $value
+					}
 				}
 
 				string_identifier : Template expression_tmpl {
