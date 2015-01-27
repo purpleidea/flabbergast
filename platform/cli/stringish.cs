@@ -4,6 +4,7 @@ using System.IO;
 
 namespace Flabbergast {
 public abstract class Stringish : IComparable<Stringish> {
+	public static Stringish[] BOOLEANS = new Stringish[] { new SimpleStringish("False"), new SimpleStringish("True") };
 	public abstract int Length { get; }
 	public abstract void Write(TextWriter writer);
 	public int CompareTo(Stringish other) {
@@ -43,10 +44,10 @@ public abstract class Stringish : IComparable<Stringish> {
 	}
 }
 
-public class SimpleString : Stringish {
+public class SimpleStringish : Stringish {
 	private string str;
 	public override int Length { get { return str.Length; } }
-	public SimpleString(string str) {
+	public SimpleStringish(string str) {
 		this.str = str;
 	}
 	public override IEnumerator<string> Stream() {
@@ -57,12 +58,12 @@ public class SimpleString : Stringish {
 	}
 }
 
-public class ConcatString : Stringish {
+public class ConcatStringish : Stringish {
 	private Stringish head;
 	private Stringish tail;
 	private int chars;
 	public override int Length { get { return chars; } }
-	public ConcatString(Stringish head, Stringish tail) {
+	public ConcatStringish(Stringish head, Stringish tail) {
 		this.head = head;
 		this.tail = tail;
 		this.chars = head.Length + tail.Length;

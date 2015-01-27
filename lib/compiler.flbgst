@@ -447,6 +447,16 @@ kws_tmpl : Template {
 		return_type : known_types.int
 	}
 
+	cast_to_string : Template codegen.gen_tmpl {
+		source ?:
+	}
+	string_constant_tmpl : Template codegen.gen_tmpl {}
+	string_constant : Template string_constant_tmpl {
+		str ?:
+	}
+	string_constant_from_field : Template string_constant_tmpl {
+		field ?:
+	}
 	# An integral, floating point, or Boolean constant.
 	numeric_constant : Template codegen.gen_tmpl {
 		# The type of the value
@@ -2524,6 +2534,9 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
+					code_value : kws.string_constant_from_field {
+						field : $name
+					}
 				}
 				string_literal : Template expression_tmpl {
 					level : max_level

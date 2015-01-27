@@ -733,6 +733,32 @@ kws : compiler_lib.kws_tmpl {
 	int_subtract +: { opcode : "Sub" }
 	int_to_float +: { opcode : "Conv_R4" }
 
+	cast_to_string +: {
+		gen_gen +: {
+			value : source.gen_gen(
+				indent : indent,
+				code :
+					"\(indent)var \(storage_name) = \(generator).MakeField(typeof(Stringish));" &
+					"\(indent)\(generator).Build.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
+					"\(indent)\(generator).ToStringish(\(source.storage_name));" &
+					"\(indent)\(generator).Build.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name));" &
+					code
+				)
+		}
+	}
+	string_constant_tmpl +: {
+		extra_indent : ""
+		source ?:
+		gen_gen +: {
+			value : "\(indent)var \(storage_name) = new StringishValue(\(source));" & code
+		}
+	}
+	string_constant +: {
+		source : "\"" & str & "\""
+	}
+	string_constant_from_field +: {
+		source : field & ".ToString()"
+	}
 	numeric_constant +: {
 		extra_indent : ""
 		max : type.max

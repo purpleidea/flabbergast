@@ -483,6 +483,58 @@ public class Generator {
 		Builder.Emit(OpCodes.Ldc_I4_1);
 		Builder.Emit(System.Reflection.Emit.OpCodes.Ret);
 	}
+	private void ToStringishHelper<T>(bool boxed, LoadableValue source) {
+		source.Load(Builder);
+		if (boxed) {
+			Builder.Emit(OpCodes.Unbox_Any, typeof(T));
+		}
+		Builder.Emit(OpCodes.Call, typeof(T).GetMethod("ToString", new System.Type[] { typeof(T) }));
+	}
+	private void ToStringishHelperBool(bool boxed, LoadableValue source) {
+		Builder.Emit(OpCodes.Ldsfld, typeof(Stringish).GetField("BOOLEANS"));
+		source.Load(Builder);
+		if (boxed) {
+			Builder.Emit(OpCodes.Unbox_Any, typeof(bool));
+		}
+		Builder.Emit(OpCodes.Ldelem);
+	}
+	private void ToStringishHelperStringish(bool boxed, LoadableValue source) {
+		source.Load(Builder);
+		if (boxed) {
+			Builder.Emit(OpCodes.Unbox_Any, typeof(Stringish));
+		}
+	}
+	public void ToStringish(LoadableValue source, LoadableValue source_reference) {
+		var boxed = source.BackingType == typeof(object);
+		var converters = new Dictionary<System.Type, Action>() {
+			{ typeof(bool), () => ToStringishHelper<double>(boxed, source) },
+			{ typeof(bool), () => ToStringishHelper<long>(boxed, source) },
+			{ typeof(bool), () => ToStringishHelperBool(boxed, source) },
+			{ typeof(Stringish), () => ToStringishHelperStringish(boxed, source) }
+		};
+		if (boxed) {
+			var end = Builder.DefineLabel();
+			var labels = new Dictionary<System.Type, Label>();
+			foreach (var type in converters.Keys) {
+				var label = Builder.DefineLabel();
+				labels[type] = label;
+				source.Load(Builder);
+				Builder.Emit(OpCodes.Isinst, type);
+				Builder.Emit(OpCodes.Brtrue, label);
+			}
+
+			EmitTypeError("Cannot convert type {0} to string.", source, source_reference);
+
+			foreach (var entry in converters) {
+				Builder.MarkLabel(labels[entry.Key]);
+				entry.Value();
+				Builder.Emit(OpCodes.Br, end);
+			}
+			Builder.MarkLabel(end);
+		} else {
+			converters[source.BackingType]();
+		}
+	}
 }
 
 public abstract class LoadableValue {
@@ -533,6 +585,17 @@ public class IntConstant : LoadableValue {
 	public override System.Type BackingType { get { return typeof(long); } }
 	public override void Load(ILGenerator generator) {
 		generator.Emit(OpCodes.Ldc_I8, number);
+	}
+}
+public class StringishValue : LoadableValue {
+	private string str;
+	public StringishValue(string str) {
+		this.str = str;
+	}
+	public override System.Type BackingType { get { return typeof(Stringish); } }
+	public override void Load(ILGenerator generator) {
+		generator.Emit(OpCodes.Ldstr, str);
+		generator.Emit(OpCodes.Newobj, typeof(SimpleStringish).GetConstructors()[0]);
 	}
 }
 public class UnitConstant : LoadableValue {
