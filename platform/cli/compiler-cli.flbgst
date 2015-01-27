@@ -683,15 +683,15 @@ kws : compiler_lib.kws_tmpl {
 			extra_emit : ""
 			store_result :
 				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_\(opcode)\", typeof(\(return_type.real_type)));" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name));"
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);"
 
 			load_this : "\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);"
 			base_code :
 				For arg : arguments
 					Reverse
 					Reduce
-						"\(sum_indent)if (\(arg.value.storage_name).FieldType != typeof(\(arg.type.real_type))) throw new System.InvalidOperationException();" &
-						"\(sum_indent)\(generator).LoadField(\(arg.value.storage_name));" &
+						"\(sum_indent)if (\(arg.value.storage_name).BackingType != typeof(\(arg.type.real_type))) throw new System.InvalidOperationException();" &
+						"\(sum_indent)\(arg.value.storage_name).Load(\(generator));" &
 						acc
 						With acc :
 							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.\(opcode)\(extra_emit));" & store_result & code
@@ -705,7 +705,7 @@ kws : compiler_lib.kws_tmpl {
 	error +: {
 		opcode : "Callvirt"
 		gen_gen +: {
-			extra_load : "\(sum_indent)\(generator).LoadTaskMaster();\(sum_indent)\(generator).LoadField(\(source_reference));"
+			extra_load : "\(sum_indent)\(generator).LoadTaskMaster();\(sum_indent)\(source_reference).Load(\(generator));"
 			extra_emit : "typeof(TaskMaster).GetMethod(\"ReportOtherError\")"
 			load_this : ""
 			store_result : "\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);"
@@ -770,7 +770,7 @@ kws : compiler_lib.kws_tmpl {
 
 			base_code :
 				# Create new fields for all the bits of stuff we need.
-				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_accumulator\", \(initial.storage_name).FieldType);" &
+				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_accumulator\", \(initial.storage_name).BackingType);" &
 				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_key\", typeof(string));" &
 				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_ordinal\", typeof(long));" &
 				"\(sum_indent)\(generator).CopyField(\(initial.storage_name), \(storage_name));" &
@@ -787,11 +787,11 @@ kws : compiler_lib.kws_tmpl {
 				dispatch_code &
 				"\(sum_indent)});" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(MergeIterator).GetConstructors()[0]);" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(iterator_instance));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(iterator_instance).Field);" &
 				# Load all the special dispatchers.
 				add_cases &
 				# Create a re-entry point for the end of input (i.e., the iterator returning).
-				"\(sum_indent)\(generator).LoadField(\(iterator_instance));" &
+				"\(sum_indent)\(iterator_instance).Load(\(generator));" &
 				"\(sum_indent)\(generator).GenerateConsumeResult(null);" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Callvirt, typeof(MergeIterator).GetMethod(\"Notify\"));" &
 				# Invoke the iterator and prepare all the remaining states.
@@ -812,10 +812,10 @@ kws : compiler_lib.kws_tmpl {
 			input_loads :
 				For input : inputs, index : Ordinal
 				Reduce acc &
-					"\(sum_indent)if (!typeof(IAttributeNames).IsAssignableFrom(\(input.value.storage_name).FieldType)) throw new System.InvalidOperationException();" &
+					"\(sum_indent)if (!typeof(IAttributeNames).IsAssignableFrom(\(input.value.storage_name).BackingType)) throw new System.InvalidOperationException();" &
 					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
 					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(index - 1));" &
-					"\(sum_indent)\(generator).LoadField(\(input.value.storage_name));" &
+					"\(sum_indent)\(input.value.storage_name).Load(\(generator));" &
 					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem);"
 				With acc : ""
 
@@ -987,13 +987,13 @@ codegen : compiler_lib.codegen_tmpl {
 			choice_block :
 				For choice : choices
 					Reduce
-						"\(indent)if (\(of.storage_name).FieldType == typeof(\(choice.type.real_type))) {" &
+						"\(indent)if (\(of.storage_name).BackingType == typeof(\(choice.type.real_type))) {" &
 						"\(indent)\tvar \(define) = \(of.storage_name);" &
 						choice.action.gen_gen(
 							indent : sum_indent & "\t",
 							code : "\(sum_indent)\(choice.action.extra_indent)\t\(callback)(\(choice.action.storage_name));"
 						) & "\(sum_indent)} else" & acc
-					With acc : "\(indent)\tthrow new System.InvalidOperationException(System.String.Format(\"Unexpected type {0} in \(rule_name).\", \(of.storage_name).FieldType));"
+					With acc : "\(indent)\tthrow new System.InvalidOperationException(System.String.Format(\"Unexpected type {0} in \(rule_name).\", \(of.storage_name).BackingType));"
 			lift_code : "\(sum_indent)Generator.ParameterisedBlock \(callback) = (\(storage_name)) => {\(code)\(sum_indent)};"
 			value : of.gen_gen(indent : indent, code : lift_code & choice_block)
 		}
@@ -1047,7 +1047,7 @@ compiler : compiler_lib.language_tmpl {
 			Then ""
 			Else
 				("\tpublic override void Generate(Generator \(generator), SourceReference \(source_reference)," &
-					(For param_name : Name, param : generation_parameters Reduce "\(acc) System.Reflection.FieldInfo \(param_name)," With acc : "") &
+					(For param_name : Name, param : generation_parameters Reduce "\(acc) LoadableValue \(param_name)," With acc : "") &
 					"Generator.ParameterisedBlock _final_block) {" &
 					code_value.gen_gen(indent : default_indent, code : "\(indent)\(code_value.extra_indent)_final_block(\(code_value.storage_name));") &
 					"\n\t}\n")
@@ -1140,7 +1140,7 @@ compiler : compiler_lib.language_tmpl {
 			Then ""
 			Else
 				("\tpublic abstract void Generate(Generator _generator, SourceReference _source_reference, " &
-					(For param_name : Name, param : generation_parameters Reduce acc & " System.Reflection.FieldInfo \(param_name)," With acc : "") &
+					(For param_name : Name, param : generation_parameters Reduce acc & " LoadableValue \(param_name)," With acc : "") &
 					" Generator.ParameterisedBlock _block);")
 
 		value : For rule : expanded_rules

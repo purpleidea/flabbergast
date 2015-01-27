@@ -12,11 +12,11 @@ public class CompilationUnit {
 	/**
 	 * A call back that will populate a function with generated code.
 	 */
-	public delegate void FunctionBlock(Generator generator, FieldInfo source_reference, FieldInfo context, FieldInfo self, FieldInfo container);
+	public delegate void FunctionBlock(Generator generator, LoadableValue source_reference, LoadableValue context, LoadableValue self, LoadableValue container);
 	/**
 	 * A call back that will populate a function with generated code.
 	 */
-	public delegate void FunctionOverrideBlock(Generator generator, FieldInfo source_reference, FieldInfo context, FieldInfo self, FieldInfo container, FieldInfo original);
+	public delegate void FunctionOverrideBlock(Generator generator, LoadableValue source_reference, LoadableValue context, LoadableValue self, LoadableValue container, LoadableValue original);
 
 	/**
 	 * The backing module builder from the library.
@@ -76,11 +76,11 @@ public class Generator {
 	 * Generate code for an item during a fold operation, using an inital value
 	 * and passing the output to a result block.
 	 */
-	public delegate void FoldBlock<T>(T item, FieldInfo left, ParameterisedBlock result);
+	public delegate void FoldBlock<T>(T item, LoadableValue left, ParameterisedBlock result);
 	/**
 	 * Generate code given a single input.
 	 */
-	public delegate void ParameterisedBlock(FieldInfo result);
+	public delegate void ParameterisedBlock(LoadableValue result);
 	/**
 	 * The compilation unit that created this function.
 	 */
@@ -98,25 +98,25 @@ public class Generator {
 	 */
 	public MethodBuilder Initialiser { get; private set; }
 	/**
-	 * The source refernce of the caller of this function.
+	 * The source reference of the caller of this function.
 	 */
-	public FieldInfo InitialSourceReference { get; private set; }
+	public FieldValue InitialSourceReference { get; private set; }
 	/**
 	 * The lookup context provided by the caller.
 	 */
-	public FieldInfo InitialContext { get; private set; }
+	public FieldValue InitialContext { get; private set; }
 	/**
 	 * The “This” frame provided by the caller.
 	 */
-	public FieldInfo InitialSelfFrame { get; private set; }
+	public FieldValue InitialSelfFrame { get; private set; }
 	/**
 	 * The “Container” provided by from the caller.
 	 */
-	public FieldInfo InitialContainerFrame { get; private set; }
+	public FieldValue InitialContainerFrame { get; private set; }
 	/**
 	 * The original value to an override function, null otherwise.
 	 */
-	public FieldInfo InitialOriginal { get; private set; }
+	public FieldValue InitialOriginal { get; private set; }
 	/**
 	 * The field containing the current state for this function to continue upon
 	 * re-entry.
@@ -160,12 +160,12 @@ public class Generator {
 		// Create fields for all information provided by the caller.
 		state_field = TypeBuilder.DefineField("state", typeof(long), FieldAttributes.Private);
 		task_master = TypeBuilder.DefineField("task_master", typeof(TaskMaster), FieldAttributes.Private);
-		InitialSourceReference = TypeBuilder.DefineField("source_reference", typeof(SourceReference), FieldAttributes.Private);
-		InitialContext = TypeBuilder.DefineField("context", typeof(Context), FieldAttributes.Private);
-		InitialSelfFrame = TypeBuilder.DefineField("self", typeof(Frame), FieldAttributes.Private);
-		InitialContainerFrame = TypeBuilder.DefineField("container", typeof(Frame), FieldAttributes.Private);
+		InitialSourceReference = new FieldValue(TypeBuilder.DefineField("source_reference", typeof(SourceReference), FieldAttributes.Private));
+		InitialContext = new FieldValue(TypeBuilder.DefineField("context", typeof(Context), FieldAttributes.Private));
+		InitialSelfFrame = new FieldValue(TypeBuilder.DefineField("self", typeof(Frame), FieldAttributes.Private));
+		InitialContainerFrame = new FieldValue(TypeBuilder.DefineField("container", typeof(Frame), FieldAttributes.Private));
 		var construct_params = new System.Type[] { typeof(TaskMaster), typeof(SourceReference), typeof(Context), typeof(Frame), typeof(Frame) };
-		var initial_information = new FieldInfo[] { task_master, InitialSourceReference, InitialContext, InitialSelfFrame, InitialContainerFrame };
+		var initial_information = new FieldInfo[] { task_master, InitialSourceReference.Field, InitialContext.Field, InitialSelfFrame.Field, InitialContainerFrame.Field };
 
 		// Create a constructor the takes all the state information provided by the
 		// caller and stores it in appropriate fields.
@@ -226,7 +226,7 @@ public class Generator {
 	 * Create a new source reference based on an existing one, updated to reflect
 	 * entry into a new AST node.
 	 */
-	public FieldInfo AmmendSourceReference(AstNode node, string message, FieldInfo source_reference) {
+	public FieldValue AmmendSourceReference(AstNode node, string message, LoadableValue source_reference) {
 		var field = MakeField("source_reference", typeof(SourceReference));
 		Builder.Emit(OpCodes.Ldarg_0);
 		Builder.Emit(OpCodes.Ldstr, message);
@@ -234,20 +234,22 @@ public class Generator {
 		Builder.Emit(OpCodes.Ldc_I4, node.StartColumn);
 		Builder.Emit(OpCodes.Ldc_I4, node.EndRow);
 		Builder.Emit(OpCodes.Ldc_I4, node.EndColumn);
-		LoadField(source_reference);
+		source_reference.Load(Builder);
 		Builder.Emit(OpCodes.Newobj, typeof(SourceReference).GetConstructors()[0]);
-		Builder.Emit(OpCodes.Stfld, field);
+		Builder.Emit(OpCodes.Stfld, field.Field);
 		return field;
 	}
 	/**
 	 * Copies the contents of one field to another, boxing or unboxing based on
 	 * the field types.
 	 */
-	void CopyField(FieldInfo source, FieldInfo target) {
+	void CopyField(LoadableValue source, FieldValue target) {
+		CopyField(source, target.Field);
+	}
+	void CopyField(LoadableValue source, FieldInfo target) {
 		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(OpCodes.Ldfld, source);
-		if (source.FieldType != target.FieldType) {
+		source.Load(Builder);
+		if (source.BackingType != target.FieldType) {
 			if (target.FieldType == typeof(object)) {
 				Builder.Emit(OpCodes.Box);
 			} else {
@@ -277,9 +279,8 @@ public class Generator {
 	 * Create a block and add the resulting entry to a MergeIterator with the
 	 * provided attribute name.
 	 */
-	public void CreateIteratorBlock(FieldInfo iterator_instance, string name, Block block_generator) {
-		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(OpCodes.Ldfld, iterator_instance);
+	public void CreateIteratorBlock(FieldValue iterator_instance, string name, Block block_generator) {
+		iterator_instance.Load(Builder);
 		Builder.Emit(OpCodes.Ldstr, name);
 		CreateBlockEntry<MergeIterator.KeyDispatch>(block_generator);
 		Builder.Emit(OpCodes.Callvirt, typeof(MergeIterator).GetMethod("AddDispatcher"));
@@ -295,18 +296,18 @@ public class Generator {
 	/**
 	 * Generate a runtime dispatch that checks each of the provided types.
 	 */
-	void DynamicTypeDispatch(FieldInfo original, FieldInfo source_reference, System.Type[] types, ParameterisedBlock block) {
+	void DynamicTypeDispatch(LoadableValue original, LoadableValue source_reference, System.Type[] types, ParameterisedBlock block) {
 		var labels = new Label[types.Length];
 		for(var it = 0; it < types.Length; it++) {
 			labels[it] = Builder.DefineLabel();
-			LoadField(original);
+			original.Load(Builder);
 			Builder.Emit(OpCodes.Isinst, types[it]);
 			Builder.Emit(OpCodes.Brtrue, labels[it]);
 		}
 		LoadTaskMaster();
-		LoadField(source_reference);
+		source_reference.Load(Builder);
 		Builder.Emit(OpCodes.Ldstr, String.Format("Unexpected type {0} instead of {1}.", "{0}", string.Join(", ", (object[]) types)));
-		LoadField(original);
+		original.Load(Builder);
 		Builder.Emit(OpCodes.Call, typeof(String).GetMethod("Format", new System.Type[] { typeof(string), typeof(object) }));
 		Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError"));
 		Builder.Emit(OpCodes.Ldc_I4_0);
@@ -334,10 +335,10 @@ public class Generator {
 	 * Generate code for a list using a fold (i.e., each computation in the list
 	 * is made from the previous computation).
 	 */
-	public void Fold<T>(FieldInfo initial, List<T> list, FoldBlock<T> expand, ParameterisedBlock result) {
+	public void Fold<T>(LoadableValue initial, List<T> list, FoldBlock<T> expand, ParameterisedBlock result) {
 		FoldHelper(list, expand, result, initial, 0);
 	}
-	private void FoldHelper<T>(List<T> list, FoldBlock<T> expand, ParameterisedBlock result, FieldInfo curr_result, int it) {
+	private void FoldHelper<T>(List<T> list, FoldBlock<T> expand, ParameterisedBlock result, LoadableValue curr_result, int it) {
 		if (it < list.Count) {
 			expand(list[it], curr_result, (next_result) => FoldHelper(list, expand, result, next_result, it + 1));
 		} else {
@@ -360,16 +361,16 @@ public class Generator {
 	/**
 	 * Generate a function to receive a value and request continued computation from the task master.
 	 */
-	public void GenerateConsumeResult(FieldInfo result_target) {
+	public void GenerateConsumeResult(FieldValue result_target) {
 		GenerateConsumeResult(result_target, Builder, true);
 	}
-	private void GenerateConsumeResult(FieldInfo result_target, ILGenerator builder, bool load_instance) {
+	private void GenerateConsumeResult(FieldValue result_target, ILGenerator builder, bool load_instance) {
 		var method = TypeBuilder.DefineMethod("ConsumeResult" + result_consumer++, MethodAttributes.Public, typeof(void), new System.Type[] { typeof(object)});
 		var consume_builder = method.GetILGenerator();
 		if (result_target != null) {
 			consume_builder.Emit(OpCodes.Ldarg_0);
 			consume_builder.Emit(OpCodes.Ldarg_1);
-			consume_builder.Emit(OpCodes.Stfld, result_target);
+			consume_builder.Emit(OpCodes.Stfld, result_target.Field);
 		}
 		LoadTaskMaster(consume_builder);
 		consume_builder.Emit(OpCodes.Ldarg_0);
@@ -392,26 +393,17 @@ public class Generator {
 		Builder.ThrowException(typeof(ArgumentOutOfRangeException));
 	}
 	/**
-	 * Load a field onto the operand stack.
+	 * Load the key and ordinal from an iterator instance and place them in the appropriate fields.
 	 */
-	public void LoadField(FieldInfo field) {
+	public void LoadIteratorData(LoadableValue iterator, FieldValue key, FieldValue ordinal) {
 		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(System.Reflection.Emit.OpCodes.Ldfld, field);
-	}
-	/**
-	 * Load the key and ordinal from an interator instance and place them in the appropriate fields.
-	 */
-	public void LoadIteratorData(FieldInfo iterator, FieldInfo key, FieldInfo ordinal) {
-		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(OpCodes.Ldfld, iterator);
+		iterator.Load(Builder);
 		Builder.Emit(OpCodes.Callvirt, typeof(MergeIterator).GetMethod("get_Current"));
-		Builder.Emit(OpCodes.Stfld, key);
+		Builder.Emit(OpCodes.Stfld, key.Field);
 		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(OpCodes.Ldfld, iterator);
+		iterator.Load(Builder);
 		Builder.Emit(OpCodes.Callvirt, typeof(MergeIterator).GetMethod("get_Position"));
-		Builder.Emit(OpCodes.Stfld, ordinal);
+		Builder.Emit(OpCodes.Stfld, ordinal.Field);
 	}
 	/**
 	 * Load the task master in the `Run` function.
@@ -429,8 +421,8 @@ public class Generator {
 	/**
 	 * Create an anymous field with the specified type.
 	 */
-	public FieldInfo MakeField(string name, System.Type type) {
-		return TypeBuilder.DefineField(name, type, FieldAttributes.PrivateScope);
+	public FieldValue MakeField(string name, System.Type type) {
+		return new FieldValue(TypeBuilder.DefineField(name, type, FieldAttributes.PrivateScope));
 	}
 	/**
 	 * Mark the current code position as the entry point for a state.
@@ -452,33 +444,32 @@ public class Generator {
 	/**
 	 * Slot a computation for execution by the task master.
 	 */
-	public void Slot(FieldInfo field) {
+	public void Slot(LoadableValue target) {
 		LoadTaskMaster();
-		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(OpCodes.Ldfld, field);
+		target.Load(Builder);
 		Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("Slot"));
 	}
 	/**
 	 * Slot a computation for execution and stop execution.
 	 */
-	public void SlotSleep(FieldInfo field) {
-		Slot(field);
+	public void SlotSleep(LoadableValue target) {
+		Slot(target);
 		Builder.Emit(OpCodes.Ldc_I4_0);
 		Builder.Emit(OpCodes.Ret);
 	}
 	/**
 	 * Generate a successful return.
 	 */
-	public void Return(FieldInfo result) {
-		if (result.FieldType == typeof(Frame) || result.FieldType == typeof(object)) {
+	public void Return(LoadableValue result) {
+		if (result.BackingType == typeof(Frame) || result.BackingType == typeof(object)) {
 			var end = Builder.DefineLabel();
-			if (result.FieldType == typeof(object)) {
-				LoadField(result);
+			if (result.BackingType == typeof(object)) {
+				result.Load(Builder);
 				Builder.Emit(OpCodes.Isinst, typeof(Frame));
-				LoadField(result);
+				result.Load(Builder);
 				Builder.Emit(OpCodes.Castclass, typeof(Frame));
 			} else {
-				LoadField(result);
+				result.Load(Builder);
 			}
 			LoadTaskMaster();
 			Builder.Emit(OpCodes.Callvirt, typeof(Frame).GetMethod("Slot"));
@@ -487,6 +478,25 @@ public class Generator {
 		CopyField(result, typeof(Computation).GetField("result"));
 		Builder.Emit(OpCodes.Ldc_I4_1);
 		Builder.Emit(System.Reflection.Emit.OpCodes.Ret);
+	}
+}
+
+public abstract class LoadableValue {
+	public abstract System.Type BackingType { get; }
+	public abstract void Load(ILGenerator generator);
+	public void Load(Generator generator) {
+		Load(generator.Builder);
+	}
+}
+public class FieldValue : LoadableValue {
+	public FieldInfo Field { get; private set; }
+	public override System.Type BackingType { get { return Field.FieldType; } }
+	public FieldValue(FieldInfo field) {
+		Field = field;
+	}
+	public override void Load(ILGenerator generator) {
+		generator.Emit(OpCodes.Ldarg_0);
+		generator.Emit(OpCodes.Ldfld, Field);
 	}
 }
 }
