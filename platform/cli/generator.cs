@@ -240,6 +240,15 @@ public class Generator {
 		return field;
 	}
 	/**
+	 * Clips the range of the Int32 on the stack to -1, 0, or 1.
+	 */
+	public void Clamp() {
+		Builder.Emit(OpCodes.Ldc_I4_1);
+		Builder.Emit(OpCodes.Call, typeof(Math).GetMethod("Min", new System.Type[] { typeof(int), typeof(int) }));
+		Builder.Emit(OpCodes.Ldc_I4_M1);
+		Builder.Emit(OpCodes.Call, typeof(Math).GetMethod("Max", new System.Type[] { typeof(int), typeof(int) }));
+	}
+	/**
 	 * Copies the contents of one field to another, boxing or unboxing based on
 	 * the field types.
 	 */
