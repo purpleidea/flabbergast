@@ -688,13 +688,13 @@ kws : compiler_lib.kws_tmpl {
 		gen_gen +: {
 			sum_indent : indent & extra_indent
 
-			extra_load : ""
+			extra_load : "\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);"
 			extra_emit : ""
 			store_result :
 				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_\(opcode)\", typeof(\(return_type.real_type)));" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);"
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);" &
+				code
 
-			load_this : "\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);"
 			base_code :
 				For arg : arguments
 					Reverse
@@ -703,13 +703,13 @@ kws : compiler_lib.kws_tmpl {
 						"\(sum_indent)\(arg.value.storage_name).Load(\(generator));" &
 						acc
 						With acc :
-							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.\(opcode)\(extra_emit));" & store_result & code
+							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.\(opcode)\(extra_emit));" & store_result
 
 			value :
 				For arg : arguments, arg_indent : arg_indents
 				Reverse
 				Reduce arg.value.gen_gen(code : acc, indent : indent & arg_indent)
-				With acc : load_this & base_code
+				With acc : extra_load & base_code
 		}
 	}
 	error +: {
@@ -717,7 +717,6 @@ kws : compiler_lib.kws_tmpl {
 		gen_gen +: {
 			extra_load : "\(sum_indent)\(generator).LoadTaskMaster();\(sum_indent)\(source_reference).Load(\(generator));"
 			extra_emit : ", typeof(TaskMaster).GetMethod(\"ReportOtherError\")"
-			load_this : ""
 			store_result : "\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);"
 		}
 	}
