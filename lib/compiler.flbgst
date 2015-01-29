@@ -609,8 +609,9 @@ codegen_tmpl : Template {
 		# A list of `choice_tmpl` to try.
 		choices ?:
 		# The name which may be used in a `parameter` which contains the value of
-		# the `of` code generator, converted to the appropriate type.
-		define ?:
+		# the `of` code generator, converted to the appropriate type. If null, the
+		# result is discarded.
+		define : Null
 		# The input to be considered.
 		of ?:
 

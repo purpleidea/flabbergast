@@ -1066,13 +1066,16 @@ codegen : compiler_lib.codegen_tmpl {
 				For choice : choices
 					Reduce
 						"if (\(of.storage_name).BackingType == typeof(\(choice.type.real_type))) {" &
-						"\(sum_indent)\t\tvar \(define) = \(of.storage_name);" &
 						choice.action.gen_gen(
 							indent : sum_indent & "\t",
 							code : "\(sum_indent)\(choice.action.extra_indent)\t\(callback)(\(choice.action.storage_name));"
 						) & "\(sum_indent)} else " & acc
 					With acc : "throw new System.InvalidOperationException(System.String.Format(\"Unexpected type {0} in \(rule_name).\", \(of.storage_name).BackingType));"
-			lift_code : "\(sum_indent)Generator.ParameterisedBlock \(callback) = (\(storage_name)) => {\(code)\(sum_indent)};"
+			lift_code :
+				"\(sum_indent)Generator.ParameterisedBlock \(callback) = (\(storage_name)) => {\(code)\(sum_indent)};" &
+				(If define Is Null
+					Then ""
+					Else "\(sum_indent)\tvar \(define) = \(of.storage_name);")
 			value : of.gen_gen(indent : indent, code : lift_code & sum_indent & choice_block)
 		}
 	}
