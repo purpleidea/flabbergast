@@ -2020,7 +2020,7 @@ language_tmpl : Template {
 					type_demand : { expr : [ known_types.bool, known_types.float, known_types.int, known_types.str ] }
 					code_value : kws.error {
 						message : kws.cast_to_string {
-							source :codegen.other_expression { field : $expr }
+							source : codegen.other_expression { field : $expr }
 						}
 					}
 				}
