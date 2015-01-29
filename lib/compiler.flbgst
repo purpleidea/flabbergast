@@ -1481,6 +1481,12 @@ language_tmpl : Template {
 
 		string_piece : Template syntax_group {
 			environment_flavour : environment.flavour_simple
+			generation_parameters : {
+				str : known_types.str
+				context : known_vm_types.list
+				self_frame : known_types.frame
+				container_frame : known_types.frame
+			}
 			common +: {
 				comment : common_fields.str
 			}
@@ -1540,6 +1546,10 @@ language_tmpl : Template {
 						}
 					}
 					apply_environment_to : [ ]
+					code_value : kws.string_concatenate {
+						first : codegen.parameter { name : $str }
+						second : kws.string_constant_from_field { field : $text }
+					}
 				}
 				expression_escape : Template syntax_element {
 					pattern : parser.sequence {
@@ -1557,6 +1567,12 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					type_demand : { expression : [ known_types.bool, known_types.float, known_types.int, known_types.str ] }
+					code_value : kws.string_concatenate {
+						first : codegen.parameter { name : $str }
+						second : kws.cast_to_string {
+							source : codegen.other_expression { field : $expression }
+						}
+					}
 				}
 			}
 		}
@@ -1792,6 +1808,14 @@ language_tmpl : Template {
 					type_demand : {
 						left : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
 						right : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
+					}
+					code_value : kws.string_concatenate {
+						first : kws.cast_to_string {
+							source : codegen.other_expression { field : $left }
+						}
+						second : kws.cast_to_string {
+							source : codegen.other_expression { field : $right }
+						}
 					}
 				}
 
@@ -2589,6 +2613,16 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.list_of { field : $parts } ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
+					code_value : codegen.fold_others {
+						arguments : {
+							str : fold_argument
+							context : codegen.parameter { name : $context }
+							self_frame : codegen.parameter { name : $self_frame }
+							container_frame : codegen.parameter { name : $container_frame }
+						}
+						field : $parts
+						initial : kws.string_constant { str : "" }
+					}
 				}
 			}
 		}
