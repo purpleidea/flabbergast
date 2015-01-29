@@ -614,6 +614,8 @@ codegen_tmpl : Template {
 		define : Null
 		# The input to be considered.
 		of ?:
+		# The action to be performed if none of the supplied types match.
+		default_action : codegen.not_implemented {}
 
 		# A possible path to choose based on the type.
 		choice_tmpl : Template {
