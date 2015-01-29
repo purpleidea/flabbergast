@@ -1024,7 +1024,8 @@ codegen : compiler_lib.codegen_tmpl {
 		}
 	}
 	other_code +: {
-		extra_indent : For argument : arguments Reduce argument.extra_indent & acc With acc : "\t"
+		extra_indent : argument_indent & "\t"
+		argument_indent : For argument : arguments Reduce argument.extra_indent & acc With acc : ""
 		argument_indents : For argument_name : Name, argument : arguments, argument_pos : Ordinal
 			Select argument_name :
 				(For prev_argument : arguments, prev_argument_pos : Ordinal
@@ -1034,7 +1035,7 @@ codegen : compiler_lib.codegen_tmpl {
 
 		gen_gen +: {
 			argument_list : For argument : arguments Reduce acc & ", " & argument.storage_name With acc : "\(generator), \(source_reference)"
-			sum_indent : indent & extra_indent
+			sum_indent : indent & argument_indent
 			value :
 				For argument : arguments, argument_indent : argument_indents
 				Reduce argument.gen_gen(code : acc, indent : indent & argument_indent)
@@ -1060,15 +1061,15 @@ codegen : compiler_lib.codegen_tmpl {
 			choice_block :
 				For choice : choices
 					Reduce
-						"\(indent)if (\(of.storage_name).BackingType == typeof(\(choice.type.real_type))) {" &
-						"\(indent)\tvar \(define) = \(of.storage_name);" &
+						"if (\(of.storage_name).BackingType == typeof(\(choice.type.real_type))) {" &
+						"\(sum_indent)\t\tvar \(define) = \(of.storage_name);" &
 						choice.action.gen_gen(
 							indent : sum_indent & "\t",
 							code : "\(sum_indent)\(choice.action.extra_indent)\t\(callback)(\(choice.action.storage_name));"
-						) & "\(sum_indent)} else" & acc
-					With acc : "\(indent)\tthrow new System.InvalidOperationException(System.String.Format(\"Unexpected type {0} in \(rule_name).\", \(of.storage_name).BackingType));"
+						) & "\(sum_indent)} else " & acc
+					With acc : "throw new System.InvalidOperationException(System.String.Format(\"Unexpected type {0} in \(rule_name).\", \(of.storage_name).BackingType));"
 			lift_code : "\(sum_indent)Generator.ParameterisedBlock \(callback) = (\(storage_name)) => {\(code)\(sum_indent)};"
-			value : of.gen_gen(indent : indent, code : lift_code & choice_block)
+			value : of.gen_gen(indent : indent, code : lift_code & sum_indent & choice_block)
 		}
 	}
 }
