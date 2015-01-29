@@ -343,7 +343,7 @@ kws_tmpl : Template {
 	}
 	error : Template base_tmpl {
 		message ?:
-		arguments : [{ value : expr  type : known_types.str }]
+		arguments : [{ value : message  type : known_types.str }]
 		return_type : Null
 	}
 	int_add : Template base_tmpl {
@@ -1951,6 +1951,11 @@ language_tmpl : Template {
 					operator : "Error"
 					ensure_type_is : ensure_type.stop {}
 					type_demand : { expr : [ known_types.bool, known_types.float, known_types.int, known_types.str ] }
+					code_value : kws.error {
+						message : kws.cast_to_string {
+							source :codegen.other_expression { field : $expr }
+						}
+					}
 				}
 				length : Template unary_tmpl {
 					level : 12
