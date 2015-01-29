@@ -903,6 +903,16 @@ language_tmpl : Template {
 				]
 			}
 		}
+		code_value : codegen.fold_others {
+			arguments : {
+				context : codegen.parameter { name : $context }
+				self_frame : codegen.parameter { name : $self_frame }
+				container_frame : codegen.parameter { name : $container_frame }
+				left : fold_argument
+			}
+			field : $terms
+			initial : codegen.other_expression { field : $start_expr }
+		}
 	}
 	# A right-hand term in “long” expression
 	long_term_tmpl : Template syntax_element {
