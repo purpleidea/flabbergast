@@ -732,6 +732,10 @@ kws : compiler_lib.kws_tmpl {
 	int_multiply +: { opcode : "Mul" }
 	int_subtract +: { opcode : "Sub" }
 	int_to_float +: { opcode : "Conv_R4" }
+	string_concatenate +: {
+		opcode : "Newobj"
+		extra_emit : ", typeof(ConcatStringish).GetConstructors()[0]"
+	}
 
 	cast_to_string +: {
 		extra_indent : source.extra_indent

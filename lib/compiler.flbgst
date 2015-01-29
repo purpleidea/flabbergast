@@ -446,6 +446,15 @@ kws_tmpl : Template {
 		arguments : [{ value : expr  type : known_types.float }]
 		return_type : known_types.int
 	}
+	string_concatenate : Template base_tmpl {
+		first ?:
+		second ?:
+		arguments : [
+			{ value : first  type : known_types.str },
+			{ value : second  type : known_types.str }
+		]
+		return_type : known_types.str
+	}
 
 	cast_to_string : Template codegen.gen_tmpl {
 		source ?:
