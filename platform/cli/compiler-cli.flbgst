@@ -707,6 +707,7 @@ kws : compiler_lib.kws_tmpl {
 
 			value :
 				For arg : arguments, arg_indent : arg_indents
+				Reverse
 				Reduce arg.value.gen_gen(code : acc, indent : indent & arg_indent)
 				With acc : load_this & base_code
 		}
