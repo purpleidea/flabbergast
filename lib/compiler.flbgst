@@ -414,6 +414,16 @@ kws_tmpl : Template {
 		]
 		return_type : known_types.float
 	}
+	float_is_finite : Template base_tmpl {
+		source ?:
+		arguments : [ { value : source  type : known_types.float } ]
+		return_type : known_types.bool
+	}
+	float_is_nan : Template base_tmpl {
+		source ?:
+		arguments : [ { value : source  type : known_types.float } ]
+		return_type : known_types.bool
+	}
 	float_modulus : Template base_tmpl {
 		left ?:
 		right ?:
@@ -1935,18 +1945,72 @@ language_tmpl : Template {
 					suffix : "Finite"
 					ensure_type_is : ensure_type.bool {}
 					type_demand : { left : [ known_types.float, known_types.int ] }
+					code_value : codegen.type_dispatch {
+						of : codegen.other_expression { field : $left }
+						define : $left_result
+						choices : [
+							choice_tmpl {
+								type : known_types.int
+								action : kws.numeric_constant {
+									type : known_types.bool
+									number : max
+								}
+							},
+							choice_tmpl {
+								type : known_types.float
+								action : kws.float_is_finite {
+									source : codegen.parameter { name : $left_result }
+								}
+							}
+						]
+					}
 				}
 				is_nan : Template is_suffix_operator {
 					level : 11
 					suffix : "NaN"
 					ensure_type_is : ensure_type.bool {}
 					type_demand : { left : [ known_types.float, known_types.int ] }
+					code_value : codegen.type_dispatch {
+						of : codegen.other_expression { field : $left }
+						define : $left_result
+						choices : [
+							choice_tmpl {
+								type : known_types.int
+								action : kws.numeric_constant {
+									type : known_types.bool
+									number : min
+								}
+							},
+							choice_tmpl {
+								type : known_types.float
+								action : kws.float_is_nan {
+									source : codegen.parameter { name : $left_result }
+								}
+							}
+						]
+					}
 				}
 				is_null : Template is_suffix_operator {
 					level : 11
 					suffix : "Null"
 					ensure_type_is : ensure_type.bool {}
 					type_demand : { left : known_types }
+					code_value : codegen.type_dispatch {
+						of : codegen.other_expression { field : $left }
+						default_action : kws.numeric_constant {
+							type : known_types.bool
+							number : min
+						}
+						choices : [
+							choice_tmpl {
+								type : known_types.unit
+								action : kws.numeric_constant {
+									type : known_types.bool
+									number : min
+								}
+							}
+						]
+					}
 				}
 
 				error : Template unary_tmpl {

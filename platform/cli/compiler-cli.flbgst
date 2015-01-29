@@ -722,6 +722,22 @@ kws : compiler_lib.kws_tmpl {
 	}
 	float_add +: { opcode : "Add" }
 	float_divide +: { opcode : "Div" }
+	float_is_finite +: {
+		opcode : "Call"
+		gen_gen +: {
+			extra_emit : ", typeof(double).GetMethod(\"IsInfinity\")"
+			store_result +original:
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ceq);" &
+				original
+		}
+	}
+	float_is_nan +: {
+		opcode : "Call"
+		gen_gen +: {
+			extra_emit : ", typeof(double).GetMethod(\"IsNaN\")"
+		}
+	}
 	float_modulus +: { opcode : "Rem" }
 	float_multiply +: { opcode : "Mul" }
 	float_subtract +: { opcode : "Sub" }
