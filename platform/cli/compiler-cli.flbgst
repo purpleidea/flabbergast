@@ -25,7 +25,7 @@ parser : compiler_lib.parser_tmpl {
 			"\(indent)if (_position.Match(\"\(word)\")) {" &
 			parse_complete(ok : True, indent : indent & "\t") &
 			"\(indent)} else {" &
-			"\(indent)\t_position.Update(\"\\\"\(word)\\\"\", \"\(rule_name)\");" &
+			"\(indent)\t_position.Update(\"“\(word)”\", \"\(rule_name)\");" &
 			parse_complete(ok : False, indent : indent & "\t") &
 			"\(indent)}"
 	}
@@ -162,7 +162,7 @@ parser : compiler_lib.parser_tmpl {
 		copy_instance : ""
 		pok : parse_complete(ok : True, indent : indent & "\t")
 		perr :
-			"\(indent)\t_position.Update(\"character between \\\"\(from)\\\" and \\\"\(to)\\\"\", \"\(rule_name)\");" &
+			"\(indent)\t_position.Update(\"character between “\(from)” and “\(to)”\", \"\(rule_name)\");" &
 			parse_complete(ok : False, indent : indent & "\t")
 		acc : If accumulate
 			Then (accumulate_char { input : "_position.PeekLast()" }).value
