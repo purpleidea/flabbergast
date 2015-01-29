@@ -715,7 +715,7 @@ kws : compiler_lib.kws_tmpl {
 		opcode : "Callvirt"
 		gen_gen +: {
 			extra_load : "\(sum_indent)\(generator).LoadTaskMaster();\(sum_indent)\(source_reference).Load(\(generator));"
-			extra_emit : "typeof(TaskMaster).GetMethod(\"ReportOtherError\")"
+			extra_emit : ", typeof(TaskMaster).GetMethod(\"ReportOtherError\")"
 			load_this : ""
 			store_result : "\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);"
 		}
@@ -734,14 +734,15 @@ kws : compiler_lib.kws_tmpl {
 	int_to_float +: { opcode : "Conv_R4" }
 
 	cast_to_string +: {
+		extra_indent : source.extra_indent
 		gen_gen +: {
 			value : source.gen_gen(
 				indent : indent,
 				code :
-					"\(indent)var \(storage_name) = \(generator).MakeField(typeof(Stringish));" &
-					"\(indent)\(generator).Build.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
-					"\(indent)\(generator).ToStringish(\(source.storage_name));" &
-					"\(indent)\(generator).Build.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name));" &
+					"\(indent)var \(storage_name) = \(generator).MakeField(\"str\", typeof(Stringish));" &
+					"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
+					"\(indent)\(generator).ToStringish(\(source.storage_name), \(source_reference));" &
+					"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);" &
 					code
 				)
 		}
@@ -983,7 +984,10 @@ codegen : compiler_lib.codegen_tmpl {
 			base_code :
 				"\(sum_indent)_generator.Fold(\(initial.storage_name), \(field), (\(Id)_item, \(fold_name), \(Id)_block) => \(Id)_item.Generate(\(argument_list), \(Id)_block), (\(storage_name)) => {\(code)\(sum_indent)});"
 		}
-		fold_argument : codegen.gen_tmpl { storage_name : fold_name }
+		fold_argument : codegen.gen_tmpl {
+			extra_indent : ""
+			storage_name : fold_name
+		}
 	}
 	# This changes the value of parameters by renaming them, then restoring the names.
 	mask_parameters +: {
@@ -1115,7 +1119,7 @@ compiler : compiler_lib.language_tmpl {
 		code_gen: If generation_parameters Is Null
 			Then ""
 			Else
-				("\tpublic override void Generate(Generator \(generator), SourceReference \(source_reference)," &
+				("\tpublic override void Generate(Generator \(generator), LoadableValue \(source_reference)," &
 					(For param_name : Name, param : generation_parameters Reduce "\(acc) LoadableValue \(param_name)," With acc : "") &
 					" Generator.ParameterisedBlock _final_block) {" &
 					code_value.gen_gen(indent : default_indent, code : "\(indent)\(code_value.extra_indent)_final_block(\(code_value.storage_name));") &
@@ -1208,7 +1212,7 @@ compiler : compiler_lib.language_tmpl {
 		code_gen: If generation_parameters Is Null
 			Then ""
 			Else
-				("\tpublic abstract void Generate(Generator _generator, SourceReference _source_reference, " &
+				("\tpublic abstract void Generate(Generator _generator, LoadableValue _source_reference, " &
 					(For param_name : Name, param : generation_parameters Reduce acc & " LoadableValue \(param_name)," With acc : "") &
 					" Generator.ParameterisedBlock _block);")
 
