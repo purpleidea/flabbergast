@@ -1313,12 +1313,6 @@ compiler : compiler_lib.language_tmpl {
 				}
 			}
 		}
-		time +: {
-			super_class_extra : "\tinternal abstract long Seconds { get; }\n"
-			time_chunk +: {
-				class_extra : "\tinternal override long Seconds { get { return count * \(unit); } }\n"
-			}
-		}
 		type +: {
 			super_class_extra : "\tinternal abstract Type TypeId { get; }\n\tinternal abstract Type CastableFrom { get; }\n"
 			type_element +: {

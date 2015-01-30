@@ -1479,10 +1479,20 @@ language_tmpl : Template {
 		}
 
 		time : Template syntax_group {
+			generation_parameters : {
+				existing : known_types.int
+			}
 			time_chunk : Template syntax_element {
 				unit ?:
 				symbol ?:
 				pattern : int_with_unit_tmpl {}
+				code_value : kws.int_add {
+					left : codegen.parameter { name : $existing }
+					right : kws.numeric_constant_units {
+						type : known_types.int
+						field : $count
+					}
+				}
 			}
 			rules +: {
 				days : Template time_chunk { symbol : "d"  unit : 60 * 60 * 24 }
@@ -2571,6 +2581,16 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					code_value : codegen.fold_others {
+						arguments : {
+							existing : fold_argument
+						}
+						field : $parts
+						initial : kws.numeric_constant {
+							type : known_types.int
+							number : 0
+						}
+					}
 				}
 				integer_literal : Template expression_tmpl {
 					level : max_level
