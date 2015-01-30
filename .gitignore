@@ -40,7 +40,8 @@ flabbergast
 flabbergast-fmt
 flabbergast-print
 libtool
-m4/
+m4/lt*.m4
+m4/libtool.m4
 stamp-h1
 update-flabbergast
 !misc.c
