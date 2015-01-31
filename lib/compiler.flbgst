@@ -614,16 +614,10 @@ codegen_tmpl : Template {
 		name ?:
 		error_message : "Parameter \(name) is not defined."
 	}
-	# Choose an appropriate path based on the type of a value.
-	type_dispatch : Template gen_tmpl {
+	# Do some type-dependent behaviour
+	type_dispatch_tmpl : Template gen_tmpl {
 		# A list of `choice_tmpl` to try.
 		choices ?:
-		# The name which may be used in a `parameter` which contains the value of
-		# the `of` code generator, converted to the appropriate type. If null, the
-		# result is discarded.
-		define : Null
-		# The input to be considered.
-		of ?:
 		# The action to be performed if none of the supplied types match.
 		default_action : codegen.not_implemented {}
 
@@ -634,6 +628,19 @@ codegen_tmpl : Template {
 			# The code to be generated.
 			action ?:
 		}
+	}
+	# Choose an appropriate path based on the type of a value.
+	type_dispatch : Template type_dispatch_tmpl {
+		# The name which may be used in a `parameter` which contains the value of
+		# the `of` code generator, converted to the appropriate type. If null, the
+		# result is discarded.
+		define : Null
+		# The input to be considered.
+		of ?:
+	}
+	type_dispatch_parsed : Template type_dispatch_tmpl {
+		# The field containing the type information.
+		field ?:
 	}
 }
 # The syntax of the Flabbergast language

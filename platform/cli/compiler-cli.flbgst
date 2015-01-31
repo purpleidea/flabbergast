@@ -1071,17 +1071,20 @@ codegen : compiler_lib.codegen_tmpl {
 				code
 		}
 	}
-	type_dispatch +: {
-		extra_indent : "\t" & of.extra_indent
+	type_dispatch_tmpl +: {
 		callback : Id & "_code"
+		reference_type ?:
+		choice_tmpl +: {
+			target_type ?:
+		}
 
 		gen_gen +: {
-			sum_indent : indent & of.extra_indent
+			sum_indent ?:
 
 			choice_block :
 				For choice : choices
 					Reduce
-						"if (\(of.storage_name).BackingType == typeof(\(choice.type.real_type))) {" &
+						"if (\(reference_type) == \(choice.target_type)) {" &
 						choice.action.gen_gen(
 							indent : sum_indent & "\t",
 							code : "\(sum_indent)\(choice.action.extra_indent)\t\(callback)(\(choice.action.storage_name));"
@@ -1093,11 +1096,39 @@ codegen : compiler_lib.codegen_tmpl {
 							code : "\(sum_indent)\(default_action.extra_indent)\t\(callback)(\(default_action.storage_name));"
 							) & sum_indent & "}"
 			lift_code :
-				"\(sum_indent)Generator.ParameterisedBlock \(callback) = (\(storage_name)) => {\(code)\(sum_indent)};" &
-				(If define Is Null
-					Then ""
-					Else "\(sum_indent)\tvar \(define) = \(of.storage_name);")
-			value : of.gen_gen(indent : indent, code : lift_code & sum_indent & choice_block)
+				"\(sum_indent)Generator.ParameterisedBlock \(callback) = (\(storage_name)) => {\(code)\(sum_indent)};"
+		}
+	}
+	type_dispatch +: {
+		extra_indent : "\t" & of.extra_indent
+		reference_type : of.storage_name & ".BackingType"
+		choice_tmpl +: {
+			target_type : "typeof(\(type.real_type))"
+		}
+		gen_gen +: {
+			sum_indent : indent & of.extra_indent
+			value : of.gen_gen(
+				indent : indent,
+				code :
+					lift_code &
+					(If define Is Null
+						Then ""
+						Else "\(sum_indent)var \(define) = \(of.storage_name);") &
+					sum_indent &
+					choice_block
+			)
+		}
+	}
+	type_dispatch_parsed +: {
+		extra_indent : "\t"
+		reference_type : "\(field).TypeId"
+		choice_tmpl +: {
+			target_type : type.union_type
+		}
+
+		gen_gen +: {
+			sum_indent : indent
+			value : lift_code & sum_indent & choice_block
 		}
 	}
 }
