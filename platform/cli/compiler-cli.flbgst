@@ -712,6 +712,14 @@ kws : compiler_lib.kws_tmpl {
 				With acc : extra_load & base_code
 		}
 	}
+	bool_negate +: {
+		opcode : "Ldc_I4_0"
+		gen_gen +: {
+			store_result +original:
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ceq);" &
+				original
+		}
+	}
 	error +: {
 		opcode : "Callvirt"
 		gen_gen +: {
@@ -740,12 +748,14 @@ kws : compiler_lib.kws_tmpl {
 	}
 	float_modulus +: { opcode : "Rem" }
 	float_multiply +: { opcode : "Mul" }
+	float_negate +: { opcode : "Neg" }
 	float_subtract +: { opcode : "Sub" }
 	float_to_int +: { opcode : "Conv_I8" }
 	int_add +: { opcode : "Add" }
 	int_divide +: { opcode : "Div" }
 	int_modulus +: { opcode : "Rem" }
 	int_multiply +: { opcode : "Mul" }
+	int_negate +: { opcode : "Neg" }
 	int_subtract +: { opcode : "Sub" }
 	int_to_float +: { opcode : "Conv_R4" }
 	string_concatenate +: {

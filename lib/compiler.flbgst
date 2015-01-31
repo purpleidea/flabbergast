@@ -341,6 +341,11 @@ kws_tmpl : Template {
 		arguments ?:
 		return_type ?:
 	}
+	bool_negate : Template base_tmpl {
+		source ?:
+		arguments : [ { value : source  type : known_types.bool } ]
+		return_type : known_types.bool
+	}
 	error : Template base_tmpl {
 		message ?:
 		arguments : [{ value : message  type : known_types.str }]
@@ -380,6 +385,11 @@ kws_tmpl : Template {
 			{ value : left  type : known_types.int },
 			{ value : right  type : known_types.int }
 		]
+		return_type : known_types.int
+	}
+	int_negate : Template base_tmpl {
+		source ?:
+		arguments : [ { value : source  type : known_types.int } ]
 		return_type : known_types.int
 	}
 	int_subtract : Template base_tmpl {
@@ -440,6 +450,11 @@ kws_tmpl : Template {
 			{ value : left  type : known_types.float },
 			{ value : right  type : known_types.float }
 		]
+		return_type : known_types.float
+	}
+	float_negate : Template base_tmpl {
+		source ?:
+		arguments : [ { value : source  type : known_types.float } ]
 		return_type : known_types.float
 	}
 	float_subtract : Template base_tmpl {
@@ -2158,11 +2173,32 @@ language_tmpl : Template {
 					level : 16
 					operator : "!"
 					ensure_type_is : ensure_type.bool { ensure_type_of : propagate { fields : [ $expr ] } }
+					code_value : kws.bool_negate {
+						source : codegen.other_expression { field : $expr }
+					}
 				}
 				negation : Template unary_tmpl {
 					level : 16
 					operator : "-"
 					ensure_type_is : ensure_type.number { ensure_type_of : propagate { fields : [ $expr ] } }
+					code_value : codegen.type_dispatch {
+						of : codegen.other_expression { field : $expr }
+						define : $expr_result
+						choices : [
+							choice_tmpl {
+								type : known_types.int
+								action : kws.int_negate {
+									source : codegen.parameter { name : $expr_result }
+								}
+							},
+							choice_tmpl {
+								type : known_types.float
+								action : kws.float_negate {
+									source : codegen.parameter { name : $expr_result }
+								}
+							}
+						]
+					}
 				}
 				generate_id : Template unary_tmpl {
 					level : 16
