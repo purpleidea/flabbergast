@@ -80,7 +80,36 @@ public abstract class Computation {
 public abstract class TaskMaster {
 	private Queue<Computation> computations = new Queue<Computation>();
 
+	private long next_id = 0;
+
+	public static Stringish OrdinalName(long id) {
+		var len = (sizeof (long) * 8 * Math.Log (2) / Math.Log (62)) + 1;
+		var id_str = new System.Text.StringBuilder();
+		if (id < 0) {
+			id_str.Append('e');
+			id = long.MaxValue + id;
+		} else {
+			id_str.Append('f');
+		}
+		for (var it = len; it > 0; it--) {
+			var digit = (char) (id % 62);
+			id = id / 62;
+			if (digit < 10) {
+				id_str.Append('0' + digit);
+			} else if (digit < 36) {
+				id_str.Append('A' + (digit - 10));
+			} else {
+				id_str.Append('a' + (digit - 36));
+			}
+		}
+		return new SimpleStringish(id_str.ToString());
+	}
+
 	public TaskMaster() {}
+
+	public long NextId() {
+		return System.Threading.Interlocked.Increment(ref next_id);
+	}
 
 	/**
 	 * Perform computations until the Flabbergast program is complete or deadlocked.

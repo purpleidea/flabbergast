@@ -480,6 +480,16 @@ kws_tmpl : Template {
 		]
 		return_type : known_types.str
 	}
+	string_ordinal : Template base_tmpl {
+		source ?:
+		arguments : [ { value : source  type : known_types.int } ]
+		return_type : known_types.str
+	}
+	frame_id : Template base_tmpl {
+		source ?:
+		arguments : [ { value : source  type : known_types.frame } ]
+		return_type : known_types.str
+	}
 
 	cast_to_string : Template codegen.gen_tmpl {
 		source ?:
@@ -2215,6 +2225,9 @@ language_tmpl : Template {
 					operator : "GenerateId"
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
 					type_demand : { expr : [ known_types.frame ] }
+					code_value : kws.frame_id {
+						source : codegen.other_expression { field : $expr }
+					}
 				}
 				template_new : Template expression_tmpl {
 					level : 16
@@ -2570,6 +2583,9 @@ language_tmpl : Template {
 				id : Template literal_tmpl {
 					name : "Id"
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
+					code_value : kws.frame_id {
+						source : codegen.parameter { name : $self_frame }
+					}
 				}
 				infinity : Template literal_tmpl {
 					name : "Infinity"

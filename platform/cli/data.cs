@@ -172,6 +172,11 @@ public class Frame : DynamicObject, IAttributeNames {
 		private set;
 	}
 
+	public Stringish Id {
+		get;
+		private set;
+	}
+
 	/**
 	 * The stack trace when this frame was created.
 	 */
@@ -184,10 +189,11 @@ public class Frame : DynamicObject, IAttributeNames {
 	private List<Computation> unslotted = new List<Computation>();
 	private IDictionary<string, Object> attributes = new SortedDictionary<string, Object>();
 
-	public Frame(SourceReference source_ref, Context context, Frame container) {
+	public Frame(long id, SourceReference source_ref, Context context, Frame container) {
 		this.SourceReference = source_ref;
 		this.Context = context;
 		this.Container = container;
+		this.Id = TaskMaster.OrdinalName(id);
 	}
 
 	/**

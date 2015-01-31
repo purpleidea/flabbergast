@@ -762,6 +762,14 @@ kws : compiler_lib.kws_tmpl {
 		opcode : "Newobj"
 		extra_emit : ", typeof(ConcatStringish).GetConstructors()[0]"
 	}
+	string_ordinal +: {
+		opcode : "Call"
+		extra_emit : ", typeof(TaskMaster).GetMethod(\"OrdinalName\")"
+	}
+	frame_id +: {
+		opcode : "Call"
+		extra_emit : ", typeof(Frame).GetMethod(\"get_Id\")"
+	}
 
 	cast_to_string +: {
 		extra_indent : source.extra_indent
