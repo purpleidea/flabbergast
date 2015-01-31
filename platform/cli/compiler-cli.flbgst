@@ -790,6 +790,10 @@ kws : compiler_lib.kws_tmpl {
 	string_constant_from_field +: {
 		source : field & ".ToString()"
 	}
+	string_length +: {
+		opcode : "Call"
+		extra_emit : ", typeof(Stringish).GetMethod(\"get_Length\")"
+	}
 	numeric_constant +: {
 		extra_indent : ""
 		max : type.max

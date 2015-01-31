@@ -491,6 +491,11 @@ kws_tmpl : Template {
 	string_constant_from_field : Template string_constant_tmpl {
 		field ?:
 	}
+	string_length : Template base_tmpl {
+		source ?:
+		arguments : [ { value : source  type : known_types.str } ]
+		return_type : known_types.int
+	}
 	# An integral, floating point, or Boolean constant.
 	numeric_constant : Template codegen.gen_tmpl {
 		# The type of the value
@@ -2061,6 +2066,11 @@ language_tmpl : Template {
 					operator : "Length"
 					ensure_type_is : ensure_type.stop {}
 					type_demand : { expr : [ known_types.bool, known_types.float, known_types.int, known_types.str ] }
+					code_value : kws.string_length {
+						source : kws.cast_to_string {
+							source : codegen.other_expression { field : $expr }
+						}
+					}
 				}
 
 				remote_lookup : Template expression_tmpl {
