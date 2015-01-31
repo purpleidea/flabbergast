@@ -1972,6 +1972,115 @@ language_tmpl : Template {
 						propagate_castable : True
 						ensure_type_of : propagate { fields : [ $left ] }
 					}
+					code_value : codegen.type_dispatch {
+						of : codegen.other_expression { field : $left }
+						define : $left_result
+						choices : [
+							# Int → *
+							choice_tmpl {
+								type : known_types.int
+								action : codegen.type_dispatch_parsed {
+									field : $right
+									choices : [
+										# Int → Int
+										choice_tmpl {
+											type : known_types.int
+											action : codegen.parameter { name : $left_result }
+										},
+										# Int → Float
+										choice_tmpl {
+											type : known_types.float
+											action : kws.int_to_float {
+												expr : codegen.parameter { name : $left_result }
+											}
+										},
+										# Int → Str
+										choice_tmpl {
+											type : known_types.str
+											action : kws.cast_to_string {
+												source : codegen.parameter { name : $left_result }
+											}
+										}
+									]
+								}
+							},
+							# Float → *
+							choice_tmpl {
+								type : known_types.float
+								action : codegen.type_dispatch_parsed {
+									field : $right
+									choices : [
+										# Float → Float
+										choice_tmpl {
+											type : known_types.float
+											action : codegen.parameter { name : $left_result }
+										},
+										# Float → Int
+										choice_tmpl {
+											type : known_types.int
+											action : kws.float_to_int {
+												expr : codegen.parameter { name : $left_result }
+											}
+										},
+										# Float → Str
+										choice_tmpl {
+											type : known_types.str
+											action : kws.cast_to_string {
+												source : codegen.parameter { name : $left_result }
+											}
+										}
+									]
+								}
+							},
+							# Bool → *
+							choice_tmpl {
+								type : known_types.bool
+								action : codegen.type_dispatch_parsed {
+									field : $right
+									choices : [
+										# Bool → Bool
+										choice_tmpl {
+											type : known_types.bool
+											action : codegen.parameter { name : $left_result }
+										},
+										# Bool → Str
+										choice_tmpl {
+											type : known_types.str
+											action : kws.cast_to_string {
+												source : codegen.parameter { name : $left_result }
+											}
+										}
+									]
+								}
+							},
+							# Frame → *
+							choice_tmpl {
+								type : known_types.frame
+								action : codegen.type_dispatch_parsed {
+									field : $right
+									choices : [
+										choice_tmpl {
+											type : known_types.frame
+											action : codegen.parameter { name : $left_result }
+										}
+									]
+								}
+							},
+							# Template → *
+							choice_tmpl {
+								type : known_types.template
+								action : codegen.type_dispatch_parsed {
+									field : $right
+									choices : [
+										choice_tmpl {
+											type : known_types.template
+											action : codegen.parameter { name : $left_result }
+										}
+									]
+								}
+							}
+						]
+					}
 				}
 				enforce : Template type_operator {
 					level : 11
@@ -1980,12 +2089,30 @@ language_tmpl : Template {
 						field : $right
 						ensure_type_of : ensure_type.propagate { fields : [ $left ] }
 					}
+					code_value : codegen.other_expression { field : $left }
 				}
 				check : Template type_operator {
 					level : 11
 					operator : "Is"
 					ensure_type_is : ensure_type.bool {}
 					type_demand : { left : known_types }
+					code_value : codegen.type_dispatch_parsed {
+						field : $right
+						choices : For t : known_types
+							Select choice_tmpl {
+								type : t
+								action : codegen.type_dispatch {
+									of : codegen.other_expression { field : $left }
+									default_action : kws.numeric_constant { type : known_types.bool  number : min }
+									choices : [
+										choice_tmpl {
+											type : t
+											action : kws.numeric_constant { type : known_types.bool  number : max }
+										}
+									]
+								}
+							}
+					}
 				}
 				is_finite : Template is_suffix_operator {
 					level : 11
