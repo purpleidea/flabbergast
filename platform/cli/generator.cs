@@ -313,7 +313,7 @@ public class Generator {
 			Builder.Emit(OpCodes.Isinst, types[it]);
 			Builder.Emit(OpCodes.Brtrue, labels[it]);
 		}
-		EmitTypeError(String.Format("Unexpected type {0} instead of {1}.", "{0}", string.Join(", ", (object[]) types)), original, source_reference);
+		EmitTypeError(source_reference, String.Format("Unexpected type {0} instead of {1}.", "{0}", string.Join(", ", (object[]) types)), original);
 		
 		for(var it = 0; it < types.Length; it++) {
 			Builder.MarkLabel(labels[it]);
@@ -333,13 +333,20 @@ public class Generator {
 		entry_points.Add(label);
 		return id;
 	}
-	public void EmitTypeError(string message, LoadableValue data, LoadableValue source_reference) {
+	public void EmitTypeError(LoadableValue source_reference, string message, params LoadableValue[] data) {
 		LoadTaskMaster();
 		source_reference.Load(Builder);
 		Builder.Emit(OpCodes.Ldstr, message);
-		data.Load(Builder);
-		Builder.Emit(OpCodes.Call, typeof(object).GetMethod("GetType"));
-		Builder.Emit(OpCodes.Call, typeof(String).GetMethod("Format", new System.Type[] { typeof(string), typeof(object) }));
+		foreach (var item in data) {
+			item.Load(Builder);
+			Builder.Emit(OpCodes.Call, typeof(object).GetMethod("GetType"));
+		}
+		var signature = new System.Type[data.Length + 1];
+		signature[0] = typeof(string);
+		for (var it = 0; it < data.Length; it++) {
+			signature[it + 1] =  typeof(object);
+		}
+		Builder.Emit(OpCodes.Call, typeof(String).GetMethod("Format", signature));
 		Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError"));
 		Builder.Emit(OpCodes.Ldc_I4_0);
 		Builder.Emit(OpCodes.Ret);
@@ -532,7 +539,7 @@ public class Generator {
 				Builder.Emit(OpCodes.Brtrue, label);
 			}
 
-			EmitTypeError("Cannot convert type {0} to string.", source, source_reference);
+			EmitTypeError(source_reference, "Cannot convert type {0} to string.", source);
 
 			foreach (var entry in converters) {
 				Builder.MarkLabel(labels[entry.Key]);
