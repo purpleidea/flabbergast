@@ -76,7 +76,7 @@ public class Generator {
 	 * Generate code for an item during a fold operation, using an inital value
 	 * and passing the output to a result block.
 	 */
-	public delegate void FoldBlock<T>(T item, LoadableValue left, ParameterisedBlock result);
+	public delegate void FoldBlock<T>(int index, T item, LoadableValue left, ParameterisedBlock result);
 	/**
 	 * Generate code given a single input.
 	 */
@@ -360,7 +360,7 @@ public class Generator {
 	}
 	private void FoldHelper<T>(List<T> list, FoldBlock<T> expand, ParameterisedBlock result, LoadableValue curr_result, int it) {
 		if (it < list.Count) {
-			expand(list[it], curr_result, (next_result) => FoldHelper(list, expand, result, next_result, it + 1));
+			expand(it, list[it], curr_result, (next_result) => FoldHelper(list, expand, result, next_result, it + 1));
 		} else {
 			result(curr_result);
 		}

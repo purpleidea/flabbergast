@@ -1087,7 +1087,7 @@ codegen : compiler_lib.codegen_tmpl {
 					With acc : base_code
 				)
 			base_code :
-				"\(sum_indent)_generator.Fold(\(initial.storage_name), \(field), (\(Id)_item, \(fold_name), \(Id)_block) => \(Id)_item.Generate(\(argument_list), \(Id)_block), (\(storage_name)) => {\(code)\(sum_indent)});"
+				"\(sum_indent)_generator.Fold(\(initial.storage_name), \(field), (\(Id)_index, \(Id)_item, \(fold_name), \(Id)_block) => \(Id)_item.Generate(\(argument_list), \(Id)_block), (\(storage_name)) => {\(code)\(sum_indent)});"
 		}
 		fold_argument : codegen.gen_tmpl {
 			extra_indent : ""
