@@ -757,6 +757,20 @@ kws : compiler_lib.kws_tmpl {
 	int_multiply +: { opcode : "Mul" }
 	int_negate +: { opcode : "Neg" }
 	int_subtract +: { opcode : "Sub" }
+	int_to_bool +: {
+		opcode : "Conv_I4"
+		gen_gen +: {
+			store_result +original:
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(number));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ceq);" &
+				(If invert
+					Then
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ceq);"
+					Else "") &
+				original
+		}
+	}
 	int_to_float +: { opcode : "Conv_R4" }
 	string_concatenate +: {
 		opcode : "Newobj"
@@ -829,6 +843,55 @@ kws : compiler_lib.kws_tmpl {
 		extra_indent : ""
 		gen_gen +: {
 			value : "\(indent)var \(storage_name) = FloatConstant.INFINITY;" & code
+		}
+	}
+	compare +: {
+		extra_indent : left.extra_indent & right.extra_indent & "\t"
+		gen_gen +: {
+			sum_indent : indent & extra_indent
+			base_code :
+				"\(sum_indent)if (\(left.storage_name).BackingType == typeof(object) || \(right.storage_name).BackingType == typeof(object)) {" &
+				"\(sum_indent)\tthrow new System.InvalidOperationException();" &
+				"\(sum_indent)} else if (\(left.storage_name).BackingType != \(right.storage_name).BackingType) {" &
+				"\(sum_indent)\t\(generator).EmitTypeError(\(source_reference), \"Cannot compare value of type {0} and type {1}.\", \(left.storage_name), \(right.storage_name));" &
+				"\(sum_indent)} else {" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
+				"\(sum_indent)\t\(left.storage_name).Load(\(generator));" &
+				"\(sum_indent)\t\(right.storage_name).Load(\(generator));" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, \(left.storage_name).BackingType.GetMethod(\"CompareTo\"));" &
+				"\(sum_indent)\t\(generator).Clamp();" &
+				"\(sum_indent)\tvar \(storage_name) = \(generator).MakeField(\"compare\", typeof(long));" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);" &
+				code &
+				"\(sum_indent)}"
+
+			value : left.gen_gen(
+				indent : indent,
+				code : right.gen_gen(
+					indent : indent & left.extra_indent,
+					code : base_code
+					)
+				)
+		}
+	}
+	conditional +: {
+		extra_indent : condition.extra_indent & "\t"
+		callback : Id & "_code"
+
+		gen_gen +: {
+			sum_indent : indent & condition.extra_indent
+			value : condition.gen_gen(
+				indent : indent,
+				code :
+					"\(sum_indent)Generator.ParameterisedBlock \(callback) = (\(storage_name)) => {\(code)\(sum_indent)};" &
+					"\(sum_indent)if (!typeof(bool).IsAssignableFrom(\(condition.storage_name).BackingType)) throw new System.InvalidOperationException();" &
+					"\(sum_indent)\(condition.storage_name).Load(\(generator));" &
+					"\(sum_indent)var \(Id)_else = \(generator).Builder.DefineLabel(); " &
+					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Brtrue, \(Id)_else);" &
+					true_action.gen_gen(indent : sum_indent, code : "\(sum_indent)\(true_action.extra_indent)\(callback)(\(true_action.storage_name));") &
+					"\(sum_indent)\(generator).Builder.MarkLabel(\(Id)_else); " &
+					false_action.gen_gen(indent : sum_indent, code : "\(sum_indent)\(false_action.extra_indent)\(callback)(\(false_action.storage_name));")
+				)
 		}
 	}
 	dynamic_type_dispatch +: {

@@ -401,6 +401,17 @@ kws_tmpl : Template {
 		]
 		return_type : known_types.int
 	}
+	# Convert an integer to a Boolean by comparing it to a single value.
+	int_to_bool : Template base_tmpl {
+		# The expression to compute
+		source ?:
+		# A static integral value to compare against.
+		number ?:
+		# Whether to invert the result (i.e., not equal rather than equal)
+		invert : False
+		arguments : [{ value : source  type : known_types.int }]
+		return_type : known_types.bool
+	}
 	int_to_float : Template base_tmpl {
 		expr ?:
 		arguments : [{ value : expr  type : known_types.int }]
@@ -530,6 +541,20 @@ kws_tmpl : Template {
 	# The positive infinity floating point constant
 	infinity_constant : Template codegen.gen_tmpl {}
 
+	# Compare two values of the same type and return an indicator integer.
+	compare : Template codegen.gen_tmpl {
+		left ?:
+		right ?:
+	}
+	# Branch the current program flow.
+	conditional : Template codegen.gen_tmpl {
+		# A Boolean value to choose the correct path.
+		condition ?:
+		# The return value if the condition is true.
+		true_action ?:
+		# The return value if the condition is false.
+		false_action ?:
+	}
 	# Perform dynamic dispatch of a value. This is slightly different from the VM
 	# specification; it must be combined with `codegen.type_dispatch` for the
 	# full effect.
@@ -866,6 +891,14 @@ language_tmpl : Template {
 		type_demand : {
 			left : [ known_types.bool, known_types.float, known_types.int, known_types.str  ]
 			right : left
+		}
+		code_value : kws.int_to_bool {
+			number -:
+			invert -:
+			source : kws.compare {
+				left : codegen.other_expression { field : $left }
+				right : codegen.other_expression { field : $right }
+			}
 		}
 	}
 	# A binary operator where the right operand is a type.
@@ -1858,6 +1891,11 @@ language_tmpl : Template {
 					]
 					ensure_type_is : ensure_type.propagate { fields : [ $then_expr, $else_expr ] }
 					type_demand : { cond_expr : [ known_types.bool ] }
+					code_value : kws.conditional {
+						condition : codegen.other_expression { field : $cond_expr }
+						true_action : codegen.other_expression { field : $then_expr }
+						false_action : codegen.other_expression { field : $else_expr }
+					}
 				}
 
 				concatenate : Template binary_operator {
@@ -1894,6 +1932,14 @@ language_tmpl : Template {
 						left : [ known_types.bool ]
 						right : [ known_types.bool ]
 					}
+					code_value : kws.conditional {
+						condition : codegen.other_expression { field : $left }
+						true_action : kws.numeric_constant {
+							type : known_types.int
+							number : max
+						}
+						false_action : codegen.other_expression { field : $right }
+					}
 				}
 
 				conjunction : Template binary_operator {
@@ -1911,37 +1957,65 @@ language_tmpl : Template {
 						left : [ known_types.bool ]
 						right : [ known_types.bool ]
 					}
+					code_value : kws.conditional {
+						condition : codegen.other_expression { field : $left }
+						true_action : codegen.other_expression { field : $right }
+						false_action : kws.numeric_constant {
+							type : known_types.int
+							number : min
+						}
+					}
 				}
 
 				equality : Template compare_operator {
 					level : 6
 					operator : "=="
+					number : 0
+					invert : False
 				}
 				inequality : Template compare_operator {
 					level : 6
 					operator : "!="
+					number : 0
+					invert : True
 				}
 				greater : Template compare_operator {
 					level : 6
 					operator : ">"
+					number : 1
+					invert : False
 				}
 				greater_or_equality : Template compare_operator {
 					level : 6
 					operator : ">="
+					number : -1
+					invert : True
 				}
 				lesser : Template compare_operator {
 					level : 6
 					operator : "<"
+					number : -1
+					invert : False
 				}
 				lesser_or_equality : Template compare_operator {
 					level : 6
 					operator : "<="
+					number : 1
+					invert : True
 				}
 
-				compare : Template compare_operator {
+				compare : Template binary_operator {
 					level : 7
 					operator : "<=>"
+					type_demand : {
+						left : [ known_types.bool, known_types.float, known_types.int, known_types.str  ]
+						right : left
+					}
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					code_value : kws.compare {
+						left : codegen.other_expression { field : $left }
+						right : codegen.other_expression { field : $right }
+					}
 				}
 
 				arithmetic_disjunction : Template long_expression_tmpl {
@@ -2285,6 +2359,17 @@ language_tmpl : Template {
 							ensure_type.propagate {
 								extra_types : [ known_types.unit ]
 								fields : [ $left ]
+							}
+						]
+					}
+					code_value : codegen.type_dispatch {
+						of : codegen.other_expression { field : $left }
+						define : $left_result
+						default_action : codegen.parameter { name : $left_result }
+						choices : [
+							choice_tmpl {
+								type : known_types.unit
+								action : codegen.other_expression { field : $right }
 							}
 						]
 					}
