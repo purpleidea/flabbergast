@@ -25,7 +25,7 @@ parser : compiler_lib.parser_tmpl {
 			"\(indent)if (_position.Match(\"\(word)\")) {" &
 			parse_complete(ok : True, indent : indent & "\t") &
 			"\(indent)} else {" &
-			"\(indent)\t_position.Update(\"“\(word)”\", \"\(rule_name)\");" &
+			"\(indent)\t_position.Update(\"“\(word)”\", \"\(pretty_name)\");" &
 			parse_complete(ok : False, indent : indent & "\t") &
 			"\(indent)}"
 	}
@@ -162,7 +162,7 @@ parser : compiler_lib.parser_tmpl {
 		copy_instance : ""
 		pok : parse_complete(ok : True, indent : indent & "\t")
 		perr :
-			"\(indent)\t_position.Update(\"character between “\(from)” and “\(to)”\", \"\(rule_name)\");" &
+			"\(indent)\t_position.Update(\"character between “\(from)” and “\(to)”\", \"\(pretty_name)\");" &
 			parse_complete(ok : False, indent : indent & "\t")
 		acc : If accumulate
 			Then (accumulate_char { input : "_position.PeekLast()" }).value
@@ -184,7 +184,7 @@ parser : compiler_lib.parser_tmpl {
 		parser_gen : "\(indent)if (\"\(char)\".IndexOf(_position.Next()) \(If invert_match Then "==" Else "!=") -1) {" &
 			acc & parse_complete(ok : True, indent : indent & "\t") &
 			"\(indent)} else {" &
-			"\(indent)\t_position.Update(Parser.ToLiteral(\"\(char)\"), \"\(rule_name)\");" &
+			"\(indent)\t_position.Update(Parser.ToLiteral(\"\(char)\"), \"\(pretty_name)\");" &
 			parse_complete(ok : False, indent : indent & "\t") &
 			"\(indent)}"
 	}
@@ -219,7 +219,7 @@ parser : compiler_lib.parser_tmpl {
 			") {" &
 			acc & parse_complete(ok : True, indent : indent & "\t") &
 			"\(indent)} else {" &
-			"\(indent)\t_position.Update(\"character \(If invert_match Then "not " Else "")of type \(accepted_names ?? "unknown")\", \"\(rule_name)\");" &
+			"\(indent)\t_position.Update(\"character \(If invert_match Then "not " Else "")of type \(accepted_names ?? "unknown")\", \"\(pretty_name)\");" &
 			parse_complete(ok : False, indent : indent & "\t") &
 			"\(indent)}"
 
@@ -261,7 +261,7 @@ parser : compiler_lib.parser_tmpl {
 		parser_gen : "\(indent)if (_position.Index >= _position.Parser.Input.Length || \"\(char)\".IndexOf(_position.Parser.Input[_position.Index]) == -1) {" &
 			parse_complete(ok : True, indent : indent & "\t") &
 			"\(indent)} else {" &
-			"\(indent)\t_position.Update(\"anything except \" + Parser.ToLiteral(\"\(char)\"), \"\(rule_name)\");" &
+			"\(indent)\t_position.Update(\"anything except \" + Parser.ToLiteral(\"\(char)\"), \"\(pretty_name)\");" &
 			parse_complete(ok : False, indent : indent & "\t") &
 			"\(indent)}"
 	}
@@ -1213,7 +1213,7 @@ codegen : compiler_lib.codegen_tmpl {
 		extra_indent : ""
 		storage_name : "null"
 		gen_gen +: {
-			value : "\(indent)throw new System.NotImplementedException(\"\(rule_name) not implemented\");"
+			value : "\(indent)throw new System.NotImplementedException(\"\(pretty_name) not implemented\");"
 		}
 	}
 	other_code +: {
@@ -1371,6 +1371,7 @@ compiler : compiler_lib.language_tmpl {
 
 		class_gen :
 			"internal class \(class_name) : \(group_name) {\n" &
+			"\tpublic override string PrettyName { get { return \"\(pretty_name)\"; } }" &
 			pattern.class_gen &
 			environment_methods.value &
 			type_assurance &
@@ -1540,6 +1541,7 @@ compiler : compiler_lib.language_tmpl {
 				# This is a special expression to call methods in the CLI libraries.
 				xinvoke : Template expression_tmpl {
 					level : 19
+					pretty_name : "invoke CLI method"
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "XInvoke" },

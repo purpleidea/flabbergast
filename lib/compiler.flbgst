@@ -769,6 +769,8 @@ language_tmpl : Template {
 		# object-oriented language, this would be the abstract super-class of a
 		# collection of rules.
 		group_name %:
+		# The name of this element as the users should see it.
+		pretty_name ?:
 		# A frame where the names are the names of the “alternative” rules where
 		# this syntax element should be included. The values are ignored. In
 		# certain cases, for instance, attributes, it is useful to repackage the
@@ -995,6 +997,7 @@ language_tmpl : Template {
 		unit ?:
 		symbol ?:
 		pattern : int_with_unit_tmpl {}
+		pretty_name : "integral value with unit \(symbol)"
 		apply_environment_to : [ ]
 		ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
 		code_value : kws.numeric_constant_units {
@@ -1246,6 +1249,7 @@ language_tmpl : Template {
 			environment_flavour : environment.flavour_simple
 			rules +: {
 				file : Template syntax_element {
+					pretty_name : "file contents"
 					pattern : parser.sequence {
 						of : [
 							parser.accumulate_list {
@@ -1280,6 +1284,7 @@ language_tmpl : Template {
 			}
 			rules +: {
 				plain_attribute : Template syntax_element {
+					pretty_name : "attribute"
 					alternatives : { new_tmpl_attributes : Null  extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
 					pattern : attribute_pattern { }
 					apply_environment_to : [
@@ -1291,6 +1296,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.any { ensure_type_of : propagate { fields : [ $expression ] } }
 				}
 				named_override : Template syntax_element {
+					pretty_name : "attribute with named override"
 					alternatives : { extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
 					pattern : parser.sequence {
 						of : [
@@ -1318,6 +1324,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.stop {}
 				}
 				template_override : Template syntax_element {
+					pretty_name : "attribute overriding a template"
 					alternatives : { extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
 
 					pattern : parser.sequence {
@@ -1348,6 +1355,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.filter { types : [ known_types.template ] }
 				}
 				missing_attribute : Template syntax_element {
+					pretty_name : "attribute requiring override"
 					alternatives : { new_tmpl_attributes : Null  extend_tmpl_attributes : Null }
 					pattern : parser.sequence {
 						of : [
@@ -1361,6 +1369,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.stop {}
 				}
 				informative_attribute : Template syntax_element {
+					pretty_name : "informative attribute"
 					alternatives : { new_tmpl_attributes : Null  extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
 					pattern : parser.sequence {
 						of : [
@@ -1374,6 +1383,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.stop {}
 				}
 				remove_attribute : Template syntax_element {
+					pretty_name : "removal attribute"
 					alternatives : { extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
 					pattern : parser.sequence {
 						of : [
@@ -1397,6 +1407,7 @@ language_tmpl : Template {
 			}
 			rules +: {
 				plain_attribute : Template syntax_element {
+					pretty_name : "named function argument"
 					pattern : attribute_pattern {}
 					apply_environment_to : [
 						environment.modified_environment {
@@ -1416,12 +1427,14 @@ language_tmpl : Template {
 			}
 			rules +: {
 				expr_input : Template syntax_element {
+					pretty_name : "fricassée input"
 					pattern : attribute_pattern { }
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.intrinsic { }
 					type_demand : { expression : [ known_types.frame ] }
 				}
 				name_input : Template syntax_element {
+					pretty_name : "fricassée Name input"
 					pattern : attribute_pattern {
 						value_pattern : Template parser.exact { word : "Name" }
 					}
@@ -1429,6 +1442,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.frame { types : [ known_types.str ] }
 				}
 				ordinal_input : Template syntax_element {
+					pretty_name : "fricassée Ordinal input"
 					pattern : attribute_pattern {
 						value_pattern : Template parser.exact { word : "Ordinal" }
 					}
@@ -1445,6 +1459,7 @@ language_tmpl : Template {
 			}
 			rules +: {
 				order_by : Template syntax_element {
+					pretty_name : "fricassée Order By clause"
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "Order" },
@@ -1463,6 +1478,7 @@ language_tmpl : Template {
 					type_demand : { expression : [ known_types.int, known_types.float, known_types.str ] }
 				}
 				reverse : Template syntax_element {
+					pretty_name : "fricassée Reverse clause"
 					pattern : parser.sequence {
 						of : [ parser.exact { word : "Reverse" }, space { mandatory : True } ]
 					}
@@ -1479,6 +1495,7 @@ language_tmpl : Template {
 			}
 			rules +: {
 				reduce : Template syntax_element {
+					pretty_name : "fricassée Reduce result"
 					pattern : parser.sequence {
 						of : [
 							parser.accumulate_list {
@@ -1516,6 +1533,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.propagate { fields : [ $reduce_expr, $initial_expr ] }
 				}
 				anonymous_select : Template syntax_element {
+					pretty_name : "fricassée Select result"
 					pattern : parser.sequence {
 						of : [
 							parser.accumulate_list {
@@ -1539,6 +1557,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.frame { }
 				}
 				named_select : Template syntax_element {
+					pretty_name : "fricassée Select with attribute names"
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "Select" },
@@ -1568,6 +1587,7 @@ language_tmpl : Template {
 				castable_from ?:
 				type ?:
 				pattern : parser.exact { word : friendly_name }
+				pretty_name : friendly_name & " type"
 			}
 			rules +: {
 				bool : Template type_element {
@@ -1620,10 +1640,26 @@ language_tmpl : Template {
 				}
 			}
 			rules +: {
-				days : Template time_chunk { symbol : "d"  unit : 60 * 60 * 24 }
-				hours : Template time_chunk { symbol : "h"  unit : 60 * 60 }
-				minutes : Template time_chunk { symbol : "m"  unit : 60 }
-				seconds : Template time_chunk { symbol : "s"  unit : 1 }
+				days : Template time_chunk {
+					pretty_name : "days"
+					symbol : "d"
+					unit : 60 * 60 * 24
+				}
+				hours : Template time_chunk {
+					pretty_name : "hours"
+					symbol : "h"
+					unit : 60 * 60
+				}
+				minutes : Template time_chunk {
+					pretty_name : "minutes"
+					symbol : "m"
+					unit : 60
+				}
+				seconds : Template time_chunk {
+					pretty_name : "seconds"
+					symbol : "s"
+					unit : 1
+				}
 			}
 		}
 
@@ -1644,6 +1680,7 @@ language_tmpl : Template {
 			}
 			rules +: {
 				literal_string : Template syntax_element {
+					pretty_name : "string literal"
 					pattern : parser.accumulate_string {
 						field : $text
 						in : parser.alternate {
@@ -1700,6 +1737,7 @@ language_tmpl : Template {
 					}
 				}
 				expression_escape : Template syntax_element {
+					pretty_name : "expression in string"
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "\\\\(" },
@@ -1731,6 +1769,7 @@ language_tmpl : Template {
 			}
 			rules +: {
 				literal_identifier : Template syntax_element {
+					pretty_name : "identifier"
 					pattern : parser.sequence {
 						of : [
 							space { },
@@ -1756,11 +1795,13 @@ language_tmpl : Template {
 			}
 			rules +: {
 				addition_term : Template long_term_tmpl {
+					pretty_name : "addition term"
 					symbol : "+"
 					integer_operation : kws.int_add
 					float_operation : kws.float_add
 				}
 				subtraction_term : Template long_term_tmpl {
+					pretty_name : "subtraction term"
 					symbol : "-"
 					integer_operation : kws.int_subtract
 					float_operation : kws.float_subtract
@@ -1783,16 +1824,19 @@ language_tmpl : Template {
 			}
 			rules +: {
 				multiplication_term : Template long_term_tmpl {
+					pretty_name : "multiplication term"
 					symbol : "*"
 					integer_operation : kws.int_multiply
 					float_operation : kws.float_multiply
 				}
 				division_term : Template long_term_tmpl {
+					pretty_name : "division term"
 					symbol : "/"
 					integer_operation : kws.int_divide
 					float_operation : kws.float_divide
 				}
 				modulus_term : Template long_term_tmpl {
+					pretty_name : "remainder term"
 					symbol : "%"
 					integer_operation : kws.int_modulus
 					float_operation : kws.float_modulus
@@ -1822,6 +1866,7 @@ language_tmpl : Template {
 				}
 			rules +: {
 				let : Template expression_tmpl {
+					pretty_name : "name binding"
 					level : 0
 					pattern : parser.sequence {
 						of : [
@@ -1856,6 +1901,7 @@ language_tmpl : Template {
 
 
 				for_each : Template expression_tmpl {
+					pretty_name : "fricassée expression"
 					level : 1
 					pattern : for_pattern {
 						selector : Template parser.sequence {
@@ -1885,6 +1931,7 @@ language_tmpl : Template {
 					}
 				}
 				for_merge : Template expression_tmpl {
+					pretty_name : "fricasée merge expression"
 					level : 1
 					pattern : for_pattern {
 						selector : Template parser.accumulate_list {
@@ -1919,6 +1966,7 @@ language_tmpl : Template {
 				}
 
 				if : Template expression_tmpl {
+					pretty_name : "conditional expression"
 					level : 2
 					pattern : parser.sequence {
 						of : [
@@ -1954,6 +2002,7 @@ language_tmpl : Template {
 				}
 
 				concatenate : Template binary_operator {
+					pretty_name : "string concatenation"
 					level : 3
 					operator : "&"
 					right_operand : Template sibling_expression {}
@@ -1973,6 +2022,7 @@ language_tmpl : Template {
 				}
 
 				disjunction : Template binary_operator {
+					pretty_name : "logical disjunction"
 					level : 4
 					operator : "||"
 					right_operand : Template sibling_expression {}
@@ -1998,6 +2048,7 @@ language_tmpl : Template {
 				}
 
 				conjunction : Template binary_operator {
+					pretty_name : "logical conjunction"
 					level : 5
 					operator : "&&"
 					right_operand : Template sibling_expression {}
@@ -2023,36 +2074,42 @@ language_tmpl : Template {
 				}
 
 				equality : Template compare_operator {
+					pretty_name : "equality comparison"
 					level : 6
 					operator : "=="
 					number : 0
 					invert : False
 				}
 				inequality : Template compare_operator {
+					pretty_name : "inequality comparison"
 					level : 6
 					operator : "!="
 					number : 0
 					invert : True
 				}
 				greater : Template compare_operator {
+					pretty_name : "greater-than comparison"
 					level : 6
 					operator : ">"
 					number : 1
 					invert : False
 				}
 				greater_or_equality : Template compare_operator {
+					pretty_name : "greater-than or equality comparison"
 					level : 6
 					operator : ">="
 					number : -1
 					invert : True
 				}
 				lesser : Template compare_operator {
+					pretty_name : "lesser-than comparison"
 					level : 6
 					operator : "<"
 					number : -1
 					invert : False
 				}
 				lesser_or_equality : Template compare_operator {
+					pretty_name : "lesser-than or equality comparison"
 					level : 6
 					operator : "<="
 					number : 1
@@ -2060,6 +2117,7 @@ language_tmpl : Template {
 				}
 
 				compare : Template binary_operator {
+					pretty_name : "comparison"
 					level : 7
 					operator : "<=>"
 					type_demand : {
@@ -2074,16 +2132,19 @@ language_tmpl : Template {
 				}
 
 				arithmetic_disjunction : Template long_expression_tmpl {
+					pretty_name : "arithmetic disjunction"
 					level : 8
 					term_type : $arithmetic_disjunction_term
 				}
 
 				arithmetic_conjunction : Template long_expression_tmpl {
+					pretty_name : "arithmetic conjunction"
 					level : 9
 					term_type : $arithmetic_conjunction_term
 				}
 
 				range : Template binary_operator {
+					pretty_name : "integral range"
 					level : 10
 					operator : "Through"
 					ensure_type_is : ensure_type.frame { }
@@ -2102,6 +2163,7 @@ language_tmpl : Template {
 				}
 
 				coerce : Template type_operator {
+					pretty_name : "type coercion"
 					level : 11
 					operator : "To"
 					ensure_type_is : ensure_type.dynamic {
@@ -2220,6 +2282,7 @@ language_tmpl : Template {
 					}
 				}
 				enforce : Template type_operator {
+					pretty_name : "type enforcement"
 					level : 11
 					operator : "As"
 					ensure_type_is : ensure_type.dynamic {
@@ -2229,6 +2292,7 @@ language_tmpl : Template {
 					code_value : codegen.other_expression { field : $left }
 				}
 				check : Template type_operator {
+					pretty_name : "type check"
 					level : 11
 					operator : "Is"
 					ensure_type_is : ensure_type.bool {}
@@ -2252,6 +2316,7 @@ language_tmpl : Template {
 					}
 				}
 				is_finite : Template is_suffix_operator {
+					pretty_name : "finite check"
 					level : 11
 					suffix : "Finite"
 					ensure_type_is : ensure_type.bool {}
@@ -2277,6 +2342,7 @@ language_tmpl : Template {
 					}
 				}
 				is_nan : Template is_suffix_operator {
+					pretty_name : "not-a-number check"
 					level : 11
 					suffix : "NaN"
 					ensure_type_is : ensure_type.bool {}
@@ -2302,6 +2368,7 @@ language_tmpl : Template {
 					}
 				}
 				is_null : Template is_suffix_operator {
+					pretty_name : "null check"
 					level : 11
 					suffix : "Null"
 					ensure_type_is : ensure_type.bool {}
@@ -2325,6 +2392,7 @@ language_tmpl : Template {
 				}
 
 				error : Template unary_tmpl {
+					pretty_name : "raise error"
 					level : 12
 					operator : "Error"
 					ensure_type_is : ensure_type.stop {}
@@ -2336,6 +2404,7 @@ language_tmpl : Template {
 					}
 				}
 				length : Template unary_tmpl {
+					pretty_name : "string length"
 					level : 12
 					operator : "Length"
 					ensure_type_is : ensure_type.stop {}
@@ -2348,6 +2417,7 @@ language_tmpl : Template {
 				}
 
 				remote_lookup : Template expression_tmpl {
+					pretty_name : "remote contextual lookup"
 					level : 13
 					pattern : parser.sequence {
 						of : [
@@ -2382,6 +2452,7 @@ language_tmpl : Template {
 				}
 
 				instantiation : Template expression_tmpl {
+					pretty_name : "template instantiation"
 					level : 14
 					pattern : parser.sequence {
 						of : [
@@ -2414,6 +2485,7 @@ language_tmpl : Template {
 				}
 
 				coalesce : Template binary_operator {
+					pretty_name : "null coalescence"
 					level : 15
 					operator : "??"
 					apply_environment_to : [
@@ -2445,6 +2517,7 @@ language_tmpl : Template {
 				}
 
 				literal_frame : Template expression_tmpl {
+					pretty_name : "literal frame"
 					level : 16
 					pattern : parser.sequence {
 						of : [
@@ -2471,6 +2544,7 @@ language_tmpl : Template {
 					type_demand_all : { attributes : known_types }
 				}
 				not : Template unary_tmpl {
+					pretty_name : "logical negation"
 					level : 16
 					operator : "!"
 					ensure_type_is : ensure_type.bool { ensure_type_of : propagate { fields : [ $expr ] } }
@@ -2479,6 +2553,7 @@ language_tmpl : Template {
 					}
 				}
 				negation : Template unary_tmpl {
+					pretty_name : "numeric negation"
 					level : 16
 					operator : "-"
 					ensure_type_is : ensure_type.number { ensure_type_of : propagate { fields : [ $expr ] } }
@@ -2502,6 +2577,7 @@ language_tmpl : Template {
 					}
 				}
 				generate_id : Template unary_tmpl {
+					pretty_name : "unique frame identifier"
 					level : 16
 					operator : "GenerateId"
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
@@ -2511,6 +2587,7 @@ language_tmpl : Template {
 					}
 				}
 				template_new : Template expression_tmpl {
+					pretty_name : "define new template"
 					level : 16
 					pattern : parser.sequence {
 						of : [
@@ -2538,6 +2615,7 @@ language_tmpl : Template {
 					type_demand_all : { attributes : known_types }
 				}
 				template_extend : Template expression_tmpl {
+					pretty_name : "extend existing template"
 					level : 16
 					pattern : parser.sequence {
 						of : [
@@ -2574,6 +2652,7 @@ language_tmpl : Template {
 				}
 
 				function_anonymous : Template expression_tmpl {
+					pretty_name : "function-like template instantiation (unnamed arguments)"
 					level : 17
 					pattern : parser.sequence {
 						of : [
@@ -2607,6 +2686,7 @@ language_tmpl : Template {
 					type_demand_all : { args : known_types }
 				}
 				function_named : Template expression_tmpl {
+					pretty_name : "function-like template instantiation (named arguments)"
 					level : 17
 					pattern : parser.sequence {
 						of : [
@@ -2643,6 +2723,7 @@ language_tmpl : Template {
 					type_demand_all : { args : known_types }
 				}
 				function_mixed : Template expression_tmpl {
+					pretty_name : "function-like template instantiation (named and unnamed arguments)"
 					level : 17
 					pattern : parser.sequence {
 						of : [
@@ -2702,6 +2783,7 @@ language_tmpl : Template {
 				}
 
 				contextual_lookup : Template expression_tmpl {
+					pretty_name : "contextual lookup"
 					level : 18
 					pattern : parser.accumulate_list {
 						field : $parts
@@ -2721,6 +2803,7 @@ language_tmpl : Template {
 					}
 				}
 				from : Template expression_tmpl {
+					pretty_name : "external import"
 					level : 18
 					pattern : parser.sequence {
 						of : [
@@ -2761,6 +2844,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.any {}
 				}
 				direct_lookup : Template expression_tmpl {
+					pretty_name : "direct lookup"
 					level : 18
 					pattern : parser.sequence {
 						of : [
@@ -2794,6 +2878,7 @@ language_tmpl : Template {
 				}
 
 				subexpression : Template expression_tmpl {
+					pretty_name : "sub-expression"
 					level : max_level
 					pattern : parser.sequence {
 						of : [
@@ -2809,6 +2894,7 @@ language_tmpl : Template {
 					code_value : codegen.other_expression { field : $expression }
 				}
 				literal_list : Template expression_tmpl {
+					pretty_name : "literal list"
 					level : max_level
 					pattern : parser.sequence {
 						of : [
@@ -2837,6 +2923,7 @@ language_tmpl : Template {
 				}
 
 				container : Template literal_tmpl {
+					pretty_name : "access containing frame"
 					name : "Container"
 					ensure_type_is : ensure_type.frame { }
 					code_value : codegen.parameter {
@@ -2845,6 +2932,7 @@ language_tmpl : Template {
 					}
 				}
 				false : Template literal_tmpl {
+					pretty_name : "logical false"
 					name : "False"
 					ensure_type_is : ensure_type.bool { }
 					code_value : kws.numeric_constant {
@@ -2853,6 +2941,7 @@ language_tmpl : Template {
 					}
 				}
 				float_max : Template literal_tmpl {
+					pretty_name : "largest floating-point value"
 					name : "FloatMax"
 					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
 					code_value : kws.numeric_constant {
@@ -2861,6 +2950,7 @@ language_tmpl : Template {
 					}
 				}
 				float_min : Template literal_tmpl {
+					pretty_name : "smallest floating-point value"
 					name : "FloatMin"
 					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
 					code_value : kws.numeric_constant {
@@ -2869,6 +2959,7 @@ language_tmpl : Template {
 					}
 				}
 				id : Template literal_tmpl {
+					pretty_name : "unique identifier for current tuple"
 					name : "Id"
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
 					code_value : kws.frame_id {
@@ -2876,11 +2967,13 @@ language_tmpl : Template {
 					}
 				}
 				infinity : Template literal_tmpl {
+					pretty_name : "floating-point infinite value"
 					name : "Infinity"
 					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
 					code_value : kws.infinity_constant {}
 				}
 				int_max : Template literal_tmpl {
+					pretty_name : "largest integral value"
 					name : "IntMax"
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
 					code_value : kws.numeric_constant {
@@ -2889,6 +2982,7 @@ language_tmpl : Template {
 					}
 				}
 				int_min : Template literal_tmpl {
+					pretty_name : "smallest integral value"
 					name : "IntMin"
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
 					code_value : kws.numeric_constant {
@@ -2897,16 +2991,19 @@ language_tmpl : Template {
 					}
 				}
 				nan : Template literal_tmpl {
+					pretty_name : "floating-point not-a-number"
 					name : "NaN"
 					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
 					code_value : kws.nan_constant {}
 				}
 				null : Template literal_tmpl {
+					pretty_name : "null value"
 					name : "Null"
 					ensure_type_is : ensure_type.filter { types : [ known_types.unit ] }
 					code_value : kws.null_constant {}
 				}
 				this : Template literal_tmpl {
+					pretty_name : "current frame"
 					name : "This"
 					ensure_type_is : ensure_type.frame { }
 					code_value : codegen.parameter {
@@ -2914,6 +3011,7 @@ language_tmpl : Template {
 					}
 				}
 				true : Template literal_tmpl {
+					pretty_name : "logical truth"
 					name : "True"
 					ensure_type_is : ensure_type.bool { }
 					code_value : kws.numeric_constant {
@@ -2923,6 +3021,7 @@ language_tmpl : Template {
 				}
 
 				time_literal : Template expression_tmpl {
+					pretty_name : "time value"
 					level : max_level
 					pattern : parser.accumulate_list {
 						field : $parts
@@ -2950,6 +3049,7 @@ language_tmpl : Template {
 					}
 				}
 				integer_literal : Template expression_tmpl {
+					pretty_name : "integral value"
 					level : max_level
 					pattern : parser.accumulate_integer {
 						field : $amount
@@ -2968,6 +3068,7 @@ language_tmpl : Template {
 					}
 				}
 				hex_integer_literal : Template expression_tmpl {
+					pretty_name : "hexidecimal integral value"
 					level : max_level
 					pattern : parser.accumulate_integer {
 						field : $amount
@@ -2995,6 +3096,7 @@ language_tmpl : Template {
 				int_mi : Template int_with_unit_expr_tmpl { symbol : "Mi"  unit : 1024 * 1024 }
 				int_gi : Template int_with_unit_expr_tmpl { symbol : "Gi"  unit : 1024 * 1024 * 1024 }
 				float_literal : Template expression_tmpl {
+					pretty_name : "floating-point value"
 					level : max_level
 					pattern : parser.accumulate_float {
 						field : $value
@@ -3029,6 +3131,7 @@ language_tmpl : Template {
 				}
 
 				string_identifier : Template expression_tmpl {
+					pretty_name : "string from identifier"
 					level : max_level
 					pattern : parser.sequence {
 						of : [
@@ -3043,6 +3146,7 @@ language_tmpl : Template {
 					}
 				}
 				string_literal : Template expression_tmpl {
+					pretty_name : "string literal"
 					level : max_level
 					pattern : parser.sequence {
 						of : [
