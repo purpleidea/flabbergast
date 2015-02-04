@@ -583,6 +583,19 @@ public class FieldValue : LoadableValue {
 		generator.Emit(OpCodes.Ldfld, Field);
 	}
 }
+public class AutoUnboxValue : LoadableValue {
+	private System.Type unbox_type;
+	private LoadableValue backing_value;
+	public override System.Type BackingType { get { return unbox_type; } }
+	public AutoUnboxValue(LoadableValue backing_value, System.Type unbox_type) {
+		this.backing_value = backing_value;
+		this.unbox_type = unbox_type;
+	}
+	public override void Load(ILGenerator generator) {
+		backing_value.Load(generator);
+		generator.Emit(OpCodes.Unbox_Any, unbox_type);
+	}
+}
 public class BoolConstant : LoadableValue {
 	private bool number;
 	public override System.Type BackingType { get { return typeof(bool); } }
