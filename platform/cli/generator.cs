@@ -444,7 +444,7 @@ public class Generator {
 		Builder.Emit(System.Reflection.Emit.OpCodes.Ldfld, task_master);
 	}
 	/**
-	 * Create an anymous field with the specified type.
+	 * Create an anonymous field with the specified type.
 	 */
 	public FieldValue MakeField(string name, System.Type type) {
 		return new FieldValue(TypeBuilder.DefineField(name, type, FieldAttributes.PrivateScope));
@@ -472,7 +472,7 @@ public class Generator {
 	public void Slot(LoadableValue target) {
 		LoadTaskMaster();
 		target.Load(Builder);
-		Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("Slot"));
+		Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot"));
 	}
 	/**
 	 * Slot a computation for execution and stop execution.
