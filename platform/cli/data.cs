@@ -189,6 +189,16 @@ public class Frame : DynamicObject, IAttributeNames {
 	private List<Computation> unslotted = new List<Computation>();
 	private IDictionary<string, Object> attributes = new SortedDictionary<string, Object>();
 
+	public static Frame Through(long id, SourceReference source_ref, long start, long end, Context context, Frame container) {
+		var result = new Frame(id, source_ref, context, container);
+		if (end > start)
+			return result;
+		for (long it = 0; it <= (end - start); it++) {
+			result[TaskMaster.OrdinalNameStr(it)] = start + it;
+		}
+		return result;
+	}
+
 	public Frame(long id, SourceReference source_ref, Context context, Frame container) {
 		this.SourceReference = source_ref;
 		this.Context = Context.Prepend(this, context);
