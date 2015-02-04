@@ -191,7 +191,7 @@ public class Frame : DynamicObject, IAttributeNames {
 
 	public Frame(long id, SourceReference source_ref, Context context, Frame container) {
 		this.SourceReference = source_ref;
-		this.Context = context;
+		this.Context = Context.Prepend(this, context);
 		this.Container = container;
 		this.Id = TaskMaster.OrdinalName(id);
 	}
