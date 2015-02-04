@@ -774,15 +774,21 @@ kws : compiler_lib.kws_tmpl {
 	int_to_float +: { opcode : "Conv_R4" }
 	string_concatenate +: {
 		opcode : "Newobj"
-		extra_emit : ", typeof(ConcatStringish).GetConstructors()[0]"
+		gen_gen +: {
+			extra_emit : ", typeof(ConcatStringish).GetConstructors()[0]"
+		}
 	}
 	string_ordinal +: {
 		opcode : "Call"
-		extra_emit : ", typeof(TaskMaster).GetMethod(\"OrdinalName\")"
+		gen_gen +: {
+			extra_emit : ", typeof(TaskMaster).GetMethod(\"OrdinalName\")"
+		}
 	}
 	frame_id +: {
 		opcode : "Call"
-		extra_emit : ", typeof(Frame).GetMethod(\"get_Id\")"
+		gen_gen +: {
+			extra_emit : ", typeof(Frame).GetMethod(\"get_Id\")"
+		}
 	}
 	frame_context +: {
 		opcode : "Call"
