@@ -402,6 +402,11 @@ public class Generator {
 		builder.Emit(OpCodes.Ldftn, method);
 		builder.Emit(OpCodes.Newobj, typeof(ConsumeResult).GetConstructors()[0]);
 	}
+	public void GenerateNextId() {
+		LoadTaskMaster();
+		Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("NextId"));
+	}
+
 	/**
 	 * Finish this function by creating the state dispatch instruction using a
 	 * switch (computed goto).
