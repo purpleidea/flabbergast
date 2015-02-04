@@ -559,10 +559,17 @@ public class Generator {
 }
 
 public abstract class LoadableValue {
+	public static LoadableValue NULL_LIST = new NullList();
 	public abstract System.Type BackingType { get; }
 	public abstract void Load(ILGenerator generator);
 	public void Load(Generator generator) {
 		Load(generator.Builder);
+	}
+}
+internal class NullList : LoadableValue {
+	public override System.Type BackingType { get { return typeof(Context); } }
+	public override void Load(ILGenerator generator) {
+		generator.Emit(OpCodes.Ldnull);
 	}
 }
 public class FieldValue : LoadableValue {
