@@ -18,18 +18,18 @@ public abstract class Context {
 		get;
 		protected set;
 	}
-	public Context Prepend(Frame head) {
-		return new LinkedContext(head, this);
+	public static Context Prepend(Frame head, Context tail) {
+		return new LinkedContext(head, tail);
 	}
 	/**
 	 * Conjoin two contexts, placing all the frames of the provided context after
-	 * all the frames in the current context.
+	 * all the frames in the original context.
 	 */
-	public Context Append(Context new_tail) {
+	public static Context Append(Context original, Context new_tail) {
 		if (new_tail == null) {
-			return this;
+			return original;
 		}
-		return new ForkedContext(this, new_tail);
+		return new ForkedContext(original, new_tail);
 	}
 	/**
 	 * Visit all the frames in a context.
