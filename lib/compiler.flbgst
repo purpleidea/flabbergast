@@ -506,6 +506,25 @@ kws_tmpl : Template {
 		arguments : [ { value : source  type : known_types.frame } ]
 		return_type : known_vm_types.list
 	}
+	list_null : Template codegen.gen_tmpl {}
+	list_prepend : Template base_tmpl {
+		frame ?:
+		tail ?:
+		arguments : [
+			{ value : frame  type : known_types.frame },
+			{ value : tail  type : known_vm_types.list }
+		]
+		return_type : known_vm_types.list
+	}
+	list_append : Template base_tmpl {
+		head ?:
+		tail ?:
+		arguments : [
+			{ value : head  type : known_vm_types.list },
+			{ value : tail  type : known_vm_types.list }
+		]
+		return_type : known_vm_types.list
+	}
 
 	cast_to_string : Template codegen.gen_tmpl {
 		source ?:

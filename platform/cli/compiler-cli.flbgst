@@ -796,6 +796,22 @@ kws : compiler_lib.kws_tmpl {
 			extra_emit : ", typeof(Frame).GetMethod(\"get_Context\")"
 		}
 	}
+	list_null +: {
+		extra_indent : ""
+		storage_name : "LoadableValue.NULL_LIST"
+	}
+	list_prepend +: {
+		opcode : "Call"
+		gen_gen +: {
+			extra_emit : ", typeof(Context).GetMethod(\"Prepend\")"
+		}
+	}
+	list_append +: {
+		opcode : "Call"
+		gen_gen +: {
+			extra_emit : ", typeof(Context).GetMethod(\"Append\")"
+		}
+	}
 
 	cast_to_string +: {
 		extra_indent : source.extra_indent
