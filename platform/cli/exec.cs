@@ -183,7 +183,7 @@ public class Lookup : Computation {
 	 */
 	private bool delayed = false;
 
-	public Lookup(TaskMaster master, SourceReference source_ref, Context context, string[] names) {
+	public Lookup(TaskMaster master, SourceReference source_ref, string[] names, Context context) {
 		this.master = master;
 		this.SourceReference = source_ref;
 		this.names = names;
