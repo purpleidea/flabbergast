@@ -157,14 +157,6 @@ public abstract class NameInfo {
 	}
 	public abstract void EnsureType(ErrorCollector collector, Type type);
 	public abstract void CreateChild(ErrorCollector collector, string name, string root);
-	public virtual bool NeedsToBreakFlow() {
-		foreach (var info in Children.Values) {
-			if (info.NeedsToBreakFlow()) {
-				return true;
-			}
-		}
-		return false;
-	}
 }
 public class OpenNameInfo : NameInfo {
 	private Environment Environment;
@@ -182,9 +174,6 @@ public class OpenNameInfo : NameInfo {
 	}
 	public override void CreateChild(ErrorCollector collector, string name, string root) {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
-	}
-	public override bool NeedsToBreakFlow() {
-		return true;
 	}
 }
 public class JunkInfo : NameInfo {
