@@ -784,6 +784,12 @@ kws : compiler_lib.kws_tmpl {
 		opcode : "Call"
 		extra_emit : ", typeof(Frame).GetMethod(\"get_Id\")"
 	}
+	frame_context +: {
+		opcode : "Call"
+		gen_gen +: {
+			extra_emit : ", typeof(Frame).GetMethod(\"get_Context\")"
+		}
+	}
 
 	cast_to_string +: {
 		extra_indent : source.extra_indent

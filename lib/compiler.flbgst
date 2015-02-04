@@ -501,6 +501,11 @@ kws_tmpl : Template {
 		arguments : [ { value : source  type : known_types.frame } ]
 		return_type : known_types.str
 	}
+	frame_context : Template base_tmpl {
+		source ?:
+		arguments : [ { value : source  type : known_types.frame } ]
+		return_type : known_vm_types.list
+	}
 
 	cast_to_string : Template codegen.gen_tmpl {
 		source ?:
