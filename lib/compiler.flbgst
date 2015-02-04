@@ -525,6 +525,17 @@ kws_tmpl : Template {
 		]
 		return_type : known_vm_types.list
 	}
+	lookup_tmpl : Template base_tmpl {
+		source ?:
+		arguments : [ { value : source  type : known_types.frame } ]
+		return_type : known_vm_types.any
+	}
+	lookup_literal : Template lookup_tmpl {
+		name ?:
+	}
+	lookup_field : Template lookup_tmpl {
+		field ?:
+	}
 
 	cast_to_string : Template codegen.gen_tmpl {
 		source ?:
@@ -2334,6 +2345,12 @@ language_tmpl : Template {
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.any {}
 					type_demand : { expression : [ known_types.frame ] }
+					code_value : kws.lookup_field {
+						field : $parts
+						source : kws.frame_context {
+							source : codegen.other_expression { field : $expression }
+						}
+					}
 				}
 
 				instantiation : Template expression_tmpl {
@@ -2739,6 +2756,13 @@ language_tmpl : Template {
 					apply_environment_to : [ environment.other_elements { fields : [ $expr ] } ]
 					ensure_type_is : ensure_type.any {}
 					type_demand : { expr : [ known_types.frame ] }
+					code_value : kws.lookup_field {
+						field : $names
+						source : kws.list_prepend {
+							frame : codegen.other_expression { field : $expr }
+							tail : kws.list_null {}
+						}
+					}
 				}
 
 				subexpression : Template expression_tmpl {

@@ -812,6 +812,57 @@ kws : compiler_lib.kws_tmpl {
 			extra_emit : ", typeof(Context).GetMethod(\"Append\")"
 		}
 	}
+	lookup_tmpl +: {
+		opcode : "Newobj"
+		gen_gen +: {
+			extra_load :
+				"\(sum_indent)\(generator).LoadTaskMaster();" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
+				"\(sum_indent)\(source_reference).Load(\(generator));"
+			extra_emit : ", typeof(Lookup).GetConstructors()[0]"
+			store_result :
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
+				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"lookup\",typeof(object));" &
+				"\(sum_indent)\(generator).GenerateConsumeResult(\(storage_name));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Lookup).GetMethod(\"Notify\"));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(TaskMaster).GetMethod(\"Slot\"));" &
+				"\(sum_indent)var \(Id)_state = \(generator).DefineState();" &
+				"\(sum_indent)\(generator).SetState(\(Id)_state);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);" &
+				"\(sum_indent)\(generator).MarkState(\(Id)_state);" &
+				code
+		}
+	}
+	lookup_literal +: {
+		gen_gen +: {
+			names_length : For n : name Reduce acc + 1 With acc : 0
+			load_names :
+				For n : name, index : Ordinal
+					Reduce
+						acc &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(index - 1));" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \"\(n)\");" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem);"
+					With acc :
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(names_length));" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newarr, typeof(string));"
+		}
+	}
+	lookup_field +: {
+		gen_gen +: {
+			load_names :
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(field).Count);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newarr, typeof(string));" &
+				"\(sum_indent)for (var \(Id)_iter = 0; \(Id)_iter < \(field).Count; \(Id)_iter++) {" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(Id)_iter);" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(field)[\(Id)_iter].ToString());" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem);" &
+				"\(sum_indent)}"
+		}
+	}
 
 	cast_to_string +: {
 		extra_indent : source.extra_indent
