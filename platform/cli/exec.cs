@@ -83,6 +83,9 @@ public abstract class TaskMaster {
 	private long next_id = 0;
 
 	public static Stringish OrdinalName(long id) {
+		return new SimpleStringish(OrdinalNameStr(id));
+	}
+	public static string OrdinalNameStr(long id) {
 		var len = (sizeof (long) * 8 * Math.Log (2) / Math.Log (62)) + 1;
 		var id_str = new System.Text.StringBuilder();
 		if (id < 0) {
@@ -102,7 +105,7 @@ public abstract class TaskMaster {
 				id_str.Append('a' + (digit - 36));
 			}
 		}
-		return new SimpleStringish(id_str.ToString());
+		return id_str.ToString();
 	}
 
 	public TaskMaster() {}
