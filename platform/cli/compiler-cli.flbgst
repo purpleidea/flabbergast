@@ -1244,6 +1244,17 @@ codegen : compiler_lib.codegen_tmpl {
 				code
 		}
 	}
+	push_source_reference +: {
+		storage_name : in.storage_name
+		extra_indent : ""
+		parent_source_reference : Lookup source_reference In Container
+		source_reference : Id
+		gen_gen +: {
+			value :
+				"\(indent)var \(source_reference) = \(generator).PushSourceReference(this, \(parent_source_reference));" &
+				in.gen_gen(indent : indent, code : code)
+		}
+	}
 	type_dispatch_tmpl +: {
 		callback : Id & "_code"
 		reference_type ?:

@@ -717,6 +717,13 @@ codegen_tmpl : Template {
 		name ?:
 		error_message : "Parameter \(name) is not defined."
 	}
+	# Redefine the source reference to include the current syntax element.
+	#
+	# This isn't done by default since it would fill up the stack with mostly
+	# uninformative entires, but it is needed when new frames are created.
+	push_source_reference : Template gen_tmpl {
+		in ?:
+	}
 	# Do some type-dependent behaviour
 	type_dispatch_tmpl : Template gen_tmpl {
 		# A list of `choice_tmpl` to try.
@@ -2083,6 +2090,14 @@ language_tmpl : Template {
 					type_demand : {
 						left : [ known_types.int ]
 						right : [ known_types.int ]
+					}
+					code_value : codegen.push_source_reference {
+						in : kws.frame_new_through {
+							start : codegen.other_expression { field : $left }
+							end : codegen.other_expression { field : $right }
+							container : codegen.parameter { name : $self_frame }
+							context : codegen.parameter { name : $context }
+						}
 					}
 				}
 
