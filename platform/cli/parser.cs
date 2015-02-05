@@ -20,6 +20,8 @@ public abstract class AstNode {
 	public int EndColumn;
 	public string FileName;
 
+	public abstract string PrettyName { get; }
+
 	/**
 	 * Parse in the “file” context defined in the language specification.
 	 */
