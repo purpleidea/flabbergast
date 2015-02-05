@@ -187,6 +187,8 @@ environment_tmpl : Template {
 	blank_environment : Template application_action {
 		# A list of actions to perform using this new environment.
 		apply_to ?:
+		# A name to store the environment for later use during code generation.
+		name ?:
 	}
 	modified_environment : Template application_action {
 		# A list of actions to perform using this new environment.
@@ -202,6 +204,8 @@ environment_tmpl : Template {
 		# A list of special names. These are names that have different bindings
 		# in the child environment than the parent.
 		special_names : []
+		# A name to store the environment for later use during code generation.
+		name ?:
 
 		# Create masks for all the attributes in a list. Masks are names backed
 		# by real expressions, so information about them can translate to the
@@ -1291,6 +1295,8 @@ language_tmpl : Template {
 						environment.modified_environment {
 							apply_to : [ environment.other_elements { fields : [ $expression ] } ]
 							special_names : [ forbidden_name_from_field { field : $name } ]
+							force_back : True
+							name : Null
 						}
 					]
 					ensure_type_is : ensure_type.any { ensure_type_of : propagate { fields : [ $expression ] } }
@@ -1320,6 +1326,8 @@ language_tmpl : Template {
 							free_name_from_field { field : $temporary_name },
 							forbidden_name_from_field { field : $name }
 						]
+						force_back : True
+						name : Null
 					} ]
 					ensure_type_is : ensure_type.stop {}
 				}
@@ -1409,11 +1417,7 @@ language_tmpl : Template {
 				plain_attribute : Template syntax_element {
 					pretty_name : "named function argument"
 					pattern : attribute_pattern {}
-					apply_environment_to : [
-						environment.modified_environment {
-							apply_to : [ environment.other_elements { fields : [ $expression ] } ]
-						}
-					]
+					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.any { ensure_type_of : propagate { fields : [ $expression ] } }
 				}
 			}
@@ -1524,10 +1528,13 @@ language_tmpl : Template {
 							flavour : environment.flavour_double
 							target_flavour : environment.flavour_simple
 						},
-						environment.list_of { field : $orderings },
 						environment.modified_environment {
 							special_names : [ mask_from_fields { name_field : $initial_name  expr_field : $initial_expr } ]
-							apply_to : [ environment.other_elements { fields : [ $reduce_expr ] } ]
+							apply_to : [
+								environment.list_of { field : $orderings },
+								environment.other_elements { fields : [ $reduce_expr ] }
+							]
+							name : $inner_environment
 						}
 					]
 					ensure_type_is : ensure_type.propagate { fields : [ $reduce_expr, $initial_expr ] }
@@ -1893,6 +1900,7 @@ language_tmpl : Template {
 							force_back : True
 							special_names : [ masks_from_attributes { field : $definitions } ]
 							apply_to : [ environment.other_elements { fields : [ $expression ] } ]
+							name : $inner_environment
 						}
 					]
 					ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
@@ -1920,8 +1928,10 @@ language_tmpl : Template {
 								environment.other_elements { fields : [ $where_expr ] },
 								environment.modified_environment {
 									apply_to : [ environment.other_elements { fields : [ $result_builder ] } ]
+									name : $result_environment
 								}
 							]
+							name : $where_environment
 						}
 					]
 					ensure_type_is : ensure_type.propagate { fields : [ $result_builder ] }
@@ -1954,9 +1964,11 @@ language_tmpl : Template {
 								environment.other_elements { fields : [ $where_expr ] },
 								environment.modified_environment {
 									apply_to : [ environment.other_elements { fields : [ $result_builder ] } ]
+									name : $result_environment
 								}
 							]
 							special_names : [ masks_from_attributes { field : $inputs } ]
+							name : $where_environment
 						}
 					]
 					ensure_type_is : ensure_type.propagate { fields : [ $result_builder ] }
@@ -1987,9 +1999,11 @@ language_tmpl : Template {
 						environment.other_elements { fields : [ $cond_expr ] },
 						environment.modified_environment {
 							apply_to : [ environment.other_elements { fields : [ $then_expr ] } ]
+							name : $then_environment
 						},
 						environment.modified_environment {
 							apply_to : [ environment.other_elements { fields : [ $else_expr ] } ]
+							name : $else_environment
 						}
 					]
 					ensure_type_is : ensure_type.propagate { fields : [ $then_expr, $else_expr ] }
@@ -2030,6 +2044,7 @@ language_tmpl : Template {
 						environment.other_elements { fields : [ $left ] },
 						environment.modified_environment {
 							apply_to : [ environment.other_elements { fields : [ $right ] } ]
+							name : $optional_environment
 						}
 					]
 					ensure_type_is : ensure_type.bool {}
@@ -2056,6 +2071,7 @@ language_tmpl : Template {
 						environment.other_elements { fields : [ $left ] },
 						environment.modified_environment {
 							apply_to : [ environment.other_elements { fields : [ $right ] } ]
+							name : $optional_environment
 						}
 					]
 					ensure_type_is : ensure_type.bool {}
@@ -2492,6 +2508,7 @@ language_tmpl : Template {
 						environment.other_elements { fields : [ $left ] },
 						environment.modified_environment {
 							apply_to : [ environment.other_elements { fields : [ $right ] } ]
+							name : $optional_environment
 						}
 					]
 					ensure_type_is : ensure_type.multiple {
