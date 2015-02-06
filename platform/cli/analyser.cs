@@ -105,6 +105,17 @@ public abstract class AstTypeableNode : AstNode {
 			return 0;
 		}
 	}
+	public static System.Type[] ClrTypeFromType(Type type) {
+		var types = new System.Type[(((ulong) type) * 0x200040008001UL & 0x111111111111111UL) % 0xf];
+		var index = 0;
+		if (type.HasFlag(Type.Bool)) types[index++] = typeof(bool);
+		if (type.HasFlag(Type.Float)) types[index++] = typeof(double);
+		if (type.HasFlag(Type.Frame)) types[index++] = typeof(Frame);
+		if (type.HasFlag(Type.Int)) types[index++] = typeof(long);
+		if (type.HasFlag(Type.Template)) types[index++] = typeof(Template);
+		if (type.HasFlag(Type.Unit)) types[index++] = typeof(Unit);
+		return types;
+	}
 }
 public interface ErrorCollector {
 	void ReportTypeError(AstNode where, Type new_type, Type existing_type);
