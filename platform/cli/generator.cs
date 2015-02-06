@@ -73,7 +73,7 @@ public class Generator {
 	 */
 	public delegate void Block();
 	/**
-	 * Generate code for an item during a fold operation, using an inital value
+	 * Generate code for an item during a fold operation, using an initial value
 	 * and passing the output to a result block.
 	 */
 	public delegate void FoldBlock<T>(int index, T item, LoadableValue left, ParameterisedBlock result);
@@ -123,6 +123,10 @@ public class Generator {
 	 */
 	private FieldInfo state_field;
 	/**
+	 * A reference count to control mutual exclusion.
+	 */
+	private FieldInfo interlock_field;
+	/**
 	 * The field containing the task master.
 	 */
 	private FieldInfo task_master;
@@ -159,6 +163,7 @@ public class Generator {
 		TypeBuilder = type_builder;
 		// Create fields for all information provided by the caller.
 		state_field = TypeBuilder.DefineField("state", typeof(long), FieldAttributes.Private);
+		interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
 		task_master = TypeBuilder.DefineField("task_master", typeof(TaskMaster), FieldAttributes.Private);
 		InitialSourceReference = new FieldValue(TypeBuilder.DefineField("source_reference", typeof(SourceReference), FieldAttributes.Private));
 		InitialContext = new FieldValue(TypeBuilder.DefineField("context", typeof(Context), FieldAttributes.Private));
@@ -206,7 +211,7 @@ public class Generator {
 
 			init_builder.Emit(OpCodes.Ldarg, initial_information.Length);
 			init_builder.Emit(OpCodes.Ldloc, init_this);
-			GenerateConsumeResult(InitialOriginal, init_builder, false);
+			GenerateConsumeResult(InitialOriginal, init_builder, false, false);
 			init_builder.Emit(OpCodes.Callvirt, typeof(Computation).GetMethod("Notify"));
 			init_builder.Emit(OpCodes.Ldloc, init_this);
 		}
@@ -302,6 +307,12 @@ public class Generator {
 			Builder.MarkSequencePoint(Owner.SymbolDocument, node.StartRow, node.StartColumn, node.EndRow, node.EndColumn);
 		}
 	}
+	public void DecrementInterlock(ILGenerator builder, Label skip) {
+		builder.Emit(OpCodes.Ldarg_0);
+		builder.Emit(OpCodes.Ldflda, interlock_field);
+		builder.Emit(OpCodes.Call, typeof(System.Threading.Interlocked).GetMethod("Decrement", new System.Type[] { typeof(int) }));
+		builder.Emit(OpCodes.Brtrue, skip);
+	}
 	/**
 	 * Generate a runtime dispatch that checks each of the provided types.
 	 */
@@ -314,7 +325,7 @@ public class Generator {
 			Builder.Emit(OpCodes.Brtrue, labels[it]);
 		}
 		EmitTypeError(source_reference, String.Format("Unexpected type {0} instead of {1}.", "{0}", string.Join(", ", (object[]) types)), original);
-		
+
 		for(var it = 0; it < types.Length; it++) {
 			Builder.MarkLabel(labels[it]);
 			var converted_field = MakeField("converted", types[it]);
@@ -381,10 +392,10 @@ public class Generator {
 	/**
 	 * Generate a function to receive a value and request continued computation from the task master.
 	 */
-	public void GenerateConsumeResult(FieldValue result_target) {
-		GenerateConsumeResult(result_target, Builder, true);
+	public void GenerateConsumeResult(FieldValue result_target, bool interlocked = false) {
+		GenerateConsumeResult(result_target, Builder, true, interlocked);
 	}
-	private void GenerateConsumeResult(FieldValue result_target, ILGenerator builder, bool load_instance) {
+	private void GenerateConsumeResult(FieldValue result_target, ILGenerator builder, bool load_instance, bool interlocked) {
 		var method = TypeBuilder.DefineMethod("ConsumeResult" + result_consumer++, MethodAttributes.Public, typeof(void), new System.Type[] { typeof(object)});
 		var consume_builder = method.GetILGenerator();
 		if (result_target != null) {
@@ -393,8 +404,13 @@ public class Generator {
 			consume_builder.Emit(OpCodes.Stfld, result_target.Field);
 		}
 		LoadTaskMaster(consume_builder);
+		var return_label = consume_builder.DefineLabel();
+		if (interlocked) {
+			DecrementInterlock(consume_builder, return_label);
+		}
 		consume_builder.Emit(OpCodes.Ldarg_0);
 		consume_builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("Slot"));
+		consume_builder.MarkLabel(return_label);
 		consume_builder.Emit(OpCodes.Ret);
 		if (load_instance) {
 			builder.Emit(OpCodes.Ldarg_0);
@@ -495,6 +511,19 @@ public class Generator {
 		Slot(target);
 		Builder.Emit(OpCodes.Ldc_I4_0);
 		Builder.Emit(OpCodes.Ret);
+	}
+	public void StartInterlock(int count) {
+		Builder.Emit(OpCodes.Ldarg_0);
+		Builder.Emit(OpCodes.Ldc_I4, count + 1);
+		Builder.Emit(OpCodes.Stfld, interlock_field);
+	}
+	public void StopInterlock() {
+		var state = DefineState();
+		SetState(state);
+		DecrementInterlock(Builder, entry_points[state]);
+		Builder.Emit(OpCodes.Ldc_I4_0);
+		Builder.Emit(OpCodes.Ret);
+		MarkState(state);
 	}
 	/**
 	 * Generate a successful return.
