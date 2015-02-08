@@ -500,7 +500,7 @@ environment : compiler_lib.environment_tmpl {
 			(For special_name : special_names Reduce acc & special_name.value With acc : "") &
 			(For application : apply_to Reduce acc & application.value With acc : "")
 
-		masks_from_attributes +: {
+		masks_from_definitions +: {
 			value : "\t\tif (\(field) != null) foreach (var \(Id) in \(field)) {\n" &
 				"\t\t\t\(Id).AddMask(_collector, \(current_environment));\n" &
 				"\t\t}\n"
@@ -1530,15 +1530,7 @@ compiler : compiler_lib.language_tmpl {
 	# compiler, so the `super_class_extra` and `class_extra` attributes provide
 	# that content.
 	rule_groups +: {
-		attribute +: {
-			super_class_extra : "\tinternal virtual void AddMask(ErrorCollector collector, Environment environment) {}\n"
-			rules +: {
-				plain_attribute +: {
-					class_extra : "\tinternal override void AddMask(ErrorCollector collector, Environment environment) { environment.AddMask(name.ToString(), expression); }\n"
-				}
-			}
-		}
-		fricassee_merge_input +: {
+		named_definition +: {
 			super_class_extra : "\tinternal void AddMask(ErrorCollector collector, Environment environment) { environment.AddMask(name.ToString(), this); }\n"
 		}
 		identifier +: {
