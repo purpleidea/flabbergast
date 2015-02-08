@@ -1300,7 +1300,7 @@ language_tmpl : Template {
 							name : Null
 						}
 					]
-					ensure_type_is : ensure_type.any { ensure_type_of : propagate { fields : [ $expression ] } }
+					ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
 				}
 				named_override : Template syntax_element {
 					pretty_name : "attribute with named override"
