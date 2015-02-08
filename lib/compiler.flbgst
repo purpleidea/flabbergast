@@ -500,6 +500,15 @@ kws_tmpl : Template {
 		arguments : [ { value : source  type : known_types.int } ]
 		return_type : known_types.str
 	}
+	frame_new : Template base_tmpl {
+		container ?:
+		context ?:
+		arguments : [
+			{ value : context  type : known_vm_types.list },
+			{ value : container  type : known_types.frame }
+		]
+		return_type : known_types.frame
+	}
 	frame_new_through : Template base_tmpl {
 		container ?:
 		context ?:

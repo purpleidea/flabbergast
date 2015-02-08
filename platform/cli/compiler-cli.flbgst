@@ -803,6 +803,15 @@ kws : compiler_lib.kws_tmpl {
 			extra_emit : ", typeof(TaskMaster).GetMethod(\"OrdinalName\")"
 		}
 	}
+	frame_new +: {
+		opcode : "Newobj"
+		extra_load +original: original &
+			"\(sum_indent)\(generator).GenerateNextId();" &
+			"\(sum_indent)\(source_reference).Load(\(generator));"
+		gen_gen +: {
+			extra_emit : ", typeof(Frame).GetConstructors()[0]"
+		}
+	}
 	frame_new_through +: {
 		opcode : "Call"
 		gen_gen +: {
