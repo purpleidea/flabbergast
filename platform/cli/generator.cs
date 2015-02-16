@@ -76,11 +76,11 @@ public class Generator {
 	 * Generate code for an item during a fold operation, using an initial value
 	 * and passing the output to a result block.
 	 */
-	public delegate void FoldBlock<T>(int index, T item, LoadableValue left, ParameterisedBlock result);
+	public delegate void FoldBlock<T, R>(int index, T item, R left, ParameterisedBlock<R> result);
 	/**
 	 * Generate code given a single input.
 	 */
-	public delegate void ParameterisedBlock(LoadableValue result);
+	public delegate void ParameterisedBlock<R>(R result);
 	/**
 	 * The compilation unit that created this function.
 	 */
@@ -316,7 +316,7 @@ public class Generator {
 	/**
 	 * Generate a runtime dispatch that checks each of the provided types.
 	 */
-	void DynamicTypeDispatch(LoadableValue original, LoadableValue source_reference, System.Type[] types, ParameterisedBlock block) {
+	void DynamicTypeDispatch(LoadableValue original, LoadableValue source_reference, System.Type[] types, ParameterisedBlock<LoadableValue> block) {
 		var labels = new Label[types.Length];
 		for(var it = 0; it < types.Length; it++) {
 			labels[it] = Builder.DefineLabel();
@@ -366,10 +366,10 @@ public class Generator {
 	 * Generate code for a list using a fold (i.e., each computation in the list
 	 * is made from the previous computation).
 	 */
-	public void Fold<T>(LoadableValue initial, List<T> list, FoldBlock<T> expand, ParameterisedBlock result) {
+	public void Fold<T, R>(R initial, List<T> list, FoldBlock<T, R> expand, ParameterisedBlock<R> result) {
 		FoldHelper(list, expand, result, initial, 0);
 	}
-	private void FoldHelper<T>(List<T> list, FoldBlock<T> expand, ParameterisedBlock result, LoadableValue curr_result, int it) {
+	private void FoldHelper<T, R>(List<T> list, FoldBlock<T, R> expand, ParameterisedBlock<R> result, R curr_result, int it) {
 		if (it < list.Count) {
 			expand(it, list[it], curr_result, (next_result) => FoldHelper(list, expand, result, next_result, it + 1));
 		} else {
