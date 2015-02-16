@@ -602,6 +602,14 @@ kws_tmpl : Template {
 	# The positive infinity floating point constant
 	infinity_constant : Template codegen.gen_tmpl {}
 
+	external_tmpl : Template codegen.gen_tmpl {}
+	external_literal : Template external_tmpl {
+		uri ?:
+	}
+	external_from_field : Template external_tmpl {
+		field ?:
+	}
+
 	# Compare two values of the same type and return an indicator integer.
 	compare : Template codegen.gen_tmpl {
 		left ?:
@@ -2882,6 +2890,9 @@ language_tmpl : Template {
 					}
 					apply_environment_to : []
 					ensure_type_is : ensure_type.any {}
+					code_value : kws.external_from_field {
+						field : $uri
+					}
 				}
 				direct_lookup : Template expression_tmpl {
 					pretty_name : "direct lookup"

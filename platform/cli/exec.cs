@@ -74,11 +74,17 @@ public abstract class Computation {
 	protected abstract bool Run();
 }
 
+public interface UriHandler {
+	bool ResolveUri(SourceReference reference, string uri, ConsumeResult consume_result);
+}
+
 /**
  * Scheduler for computations.
  */
 public abstract class TaskMaster {
 	private Queue<Computation> computations = new Queue<Computation>();
+	private List<UriHandler> handlers = new List<UriHandler>();
+	private Dictionary<string, object> external_cache = new Dictionary<string, object>();
 
 	private long next_id = 0;
 
@@ -109,6 +115,22 @@ public abstract class TaskMaster {
 	}
 
 	public TaskMaster() {}
+
+	public void AddUriHandler(UriHandler handler) {
+		handlers.Add(handler);
+	}
+
+	public virtual void GetExternal(SourceReference reference, string uri, ConsumeResult target) {
+		if (external_cache.ContainsKey(uri)) {
+			target(external_cache[uri]);
+		}
+		foreach (var handler in handlers) {
+			if (handler.ResolveUri(reference, uri, (result) => { external_cache[uri] = result; target(result); })) {
+				return;
+			}
+		}
+		ReportOtherError(reference, String.Format("The URI “{0}” could not be resolved.", uri));
+	}
 
 	public long NextId() {
 		return System.Threading.Interlocked.Increment(ref next_id);

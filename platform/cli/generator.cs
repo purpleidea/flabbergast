@@ -18,6 +18,7 @@ public class CompilationUnit {
 	 */
 	public delegate void FunctionOverrideBlock(Generator generator, LoadableValue source_reference, LoadableValue context, LoadableValue self, LoadableValue container, LoadableValue original);
 
+	public IEnumerable<string> ExternalUris { get { return externals.Keys; } }
 	/**
 	 * The backing module builder from the library.
 	 */
@@ -27,6 +28,7 @@ public class CompilationUnit {
 	 */
 	public System.Diagnostics.SymbolStore.ISymbolDocumentWriter SymbolDocument { get; private set; }
 
+	internal Dictionary<string, bool> externals = new Dictionary<string, bool>();
 	/**
 	 * Counter for generating unique class names.
 	 */
@@ -484,6 +486,20 @@ public class Generator {
 		Builder.Emit(OpCodes.Newobj, typeof(SourceReference).GetConstructors()[0]);
 		Builder.Emit(OpCodes.Stfld, reference.Field);
 		return reference;
+	}
+	public LoadableValue ResolveUri(string uri, LoadableValue source_reference) {
+		Owner.externals[uri] = true;
+		var state = DefineState();
+		var library_field = MakeField(uri, typeof(object));
+		SetState(state);
+		LoadTaskMaster();
+		source_reference.Load(this);
+		GenerateConsumeResult(library_field);
+		Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("GetExternal"));
+		Builder.Emit(OpCodes.Ldc_I4_0);
+		Builder.Emit(OpCodes.Ret);
+		MarkState(state);
+		return library_field;
 	}
 	/**
 	 * Change the state that will be entered upon re-entry.

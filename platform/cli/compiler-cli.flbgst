@@ -961,6 +961,19 @@ kws : compiler_lib.kws_tmpl {
 			value : "\(indent)var \(storage_name) = FloatConstant.INFINITY;" & code
 		}
 	}
+	external_tmpl +: {
+		uri_str ?:
+		extra_indent : ""
+		gen_gen +: {
+				value : "\(indent)var \(storage_name) = \(generator).ResolveUri(\(uri_str), \(parameters.source_reference.storage_name));" & code
+		}
+	}
+	external_literal +: {
+		uri_str : "\"\(uri)\""
+	}
+	external_from_field +: {
+		uri_str : "\(field).ToString()"
+	}
 	compare +: {
 		extra_indent : left.extra_indent & right.extra_indent & "\t"
 		gen_gen +: {
