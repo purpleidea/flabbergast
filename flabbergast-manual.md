@@ -997,6 +997,30 @@ There is a compiler capable of generating a real compiler in a target language t
 
 The following answers are universally discouraging of certain ideas as these ideas are not congruent with normal Flabbergast use.
 
+### When do I end something with `_tmpl`? How do you feel about Hungary?
+
+I sometimes suffix attribute names that hold templates with `_tmpl`, but not always. I would love to provide some rule, but it is one of those value judgements. In particular, there are two scenarios I see: mixed frames and meta-templates. Templates meant to be used in function-like scenarios should never end with `_tmpl`.
+
+In certain contexts, there is a mix of different types and suffixing templates can be helpful. For example:
+
+    thingie_tmpl : Template { name ?: }
+    thingies : [ thingie_tmpl { name : $a } ]
+    num_thingies : For x : thingies Reduce acc + 1 With acc : 0
+    length_thingies : For x : thingies Reduce acc + Length x.name With acc : 0
+    thingie_csv : For x : thingies, pos : Ordinal Reduce acc & (If pos > 1 Then "," Else "") & x.name With acc : ""
+
+This context has a number of unrelated items. They are of different types and meant for different purposes. Naming the template `thingie_tmpl` gives an indication that this is the intended template to be used by all these other `thingie` definitions.
+
+The other situation that occurs relatively frequently is the meta-template. There are many of these in the compiler. It is often useful to have a template which is never meant to be instantiated by the end user; it is simply a base on which to build more templates. In that case, the `_tmpl` suffix functions almost as an indicator of abstractness. For example:
+
+    instruction_tmpl : Template {}
+    add_instruction : Template instruction_tmpl { left ?: right ?: }
+    multiply_instruction : Template instruction_tmpl { left ?: right ?: }
+
+For inheritance reasons, it will provide a place for common plumbing between all the other instructions, but it isn't meant to be consume directly.
+
+Hungary makes delicious food. Please do not apply it to Flabbergast.
+
 ### How do I use a string as the URI in `From`?
 
 This is intentionally not possible. For various embedding reasons, it's important that the dependencies of a file are known during compilation. Importing new files can lead to all kinds of misery for doing any analysis of the code, and might represent a security problem for the host application.
