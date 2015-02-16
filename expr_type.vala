@@ -71,7 +71,7 @@ namespace Flabbergast.Expressions {
 			 }
 			 break;
 		}
-		throw new EvaluationError.TYPE_MISMATCH (@"Type cannot be coerced as requested. $(expression.source.source):$(expression.source.line):$(expression.source.offset)");
+		throw new EvaluationError.TYPE_MISMATCH (@"Type cannot be coerced as requested. Have: $(result_type.name ()) Want: $(ty.get_real_type ().name ()) $(expression.source.source):$(expression.source.line):$(expression.source.offset)");
 	}
 	internal class Coerce : Expression {
 		public Expression expression {
