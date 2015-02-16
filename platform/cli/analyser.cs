@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 
 namespace Flabbergast {
 [Flags]
@@ -168,6 +169,15 @@ public abstract class NameInfo {
 	}
 	public abstract void EnsureType(ErrorCollector collector, Type type);
 	public abstract void CreateChild(ErrorCollector collector, string name, string root);
+	public virtual LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
+	return null;
+}
+	public virtual string CheckValidNarrowing(LookupCache next, LookupCache current) {
+		return null;
+	}
+	public virtual bool NeedsLoad() {
+		return false;
+	}
 }
 public class OpenNameInfo : NameInfo {
 	private Environment Environment;
@@ -186,6 +196,31 @@ public class OpenNameInfo : NameInfo {
 	public override void CreateChild(ErrorCollector collector, string name, string root) {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
 	}
+	public override bool NeedsLoad() {
+		return true;
+	}
+	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
+		var lookup_result = generator.MakeField("lookup", typeof(object));
+		generator.LoadTaskMaster();
+		generator.Builder.Emit(OpCodes.Dup);
+		source_reference.Load(generator);
+		context.Load(generator);
+		var name_parts = Name.Split('.');
+		generator.Builder.Emit(OpCodes.Ldc_I4, name_parts.Length);
+		generator.Builder.Emit(OpCodes.Newarr, typeof(string));
+		for (var it = 0; it < name_parts.Length; it++) {
+			generator.Builder.Emit(OpCodes.Dup);
+			generator.Builder.Emit(OpCodes.Ldc_I4, it);
+			generator.Builder.Emit(OpCodes.Ldstr, name_parts[it]);
+			generator.Builder.Emit(OpCodes.Stelem);
+		}
+		generator.Builder.Emit(OpCodes.Newobj, typeof(Lookup).GetConstructors()[0]);
+		generator.Builder.Emit(OpCodes.Dup);
+		generator.GenerateConsumeResult(lookup_result, true);
+		generator.Builder.Emit(OpCodes.Call, typeof(Lookup).GetMethod("Notify"));
+		generator.Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot"));
+		return new LoadableCache(lookup_result, RealType, this);
+	}
 }
 public class JunkInfo : NameInfo {
 	public JunkInfo() {
@@ -195,6 +230,9 @@ public class JunkInfo : NameInfo {
 	public override void CreateChild(ErrorCollector collector, string name, string root) {
 		Children[name] = new JunkInfo();
 	}
+	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
+		throw new InvalidOperationException("Attempted to load invalid name.");
+}
 }
 internal class BoundNameInfo : NameInfo {
 	private Environment Environment;
@@ -246,6 +284,29 @@ internal class CopyFromParentInfo : NameInfo {
 	public override bool HasName(string name) {
 		return base.HasName(name) || Source.HasName(name);
 	}
+	public override string CheckValidNarrowing(LookupCache next, LookupCache current) {
+		var parent_value = current[Source];
+		var union_type = AstTypeableNode.TypeFromClrType(parent_value.BackingType);
+		if ((union_type & Mask) == 0) {
+			return String.Format("Value for “{0}” must be to {1}, but it is {2}.", Name, Mask, union_type);
+		} else {
+			next[this] = parent_value;
+			return null;
+		}
+	}
+}
+public class LoadableCache {
+	public LoadableValue Value { get; private set; }
+	public Type PossibleTypes { get; private set; }
+	public NameInfo NameInfo { get; private set; }
+	public bool SinglyTyped { get { return (PossibleTypes & (PossibleTypes - 1)) == 0; } }
+	public System.Type[] Types { get; private set; }
+	public LoadableCache(LoadableValue loadable_value, Type type, NameInfo name_info) {
+		Value = loadable_value;
+		PossibleTypes = type;
+		NameInfo = name_info;
+		Types = AstTypeableNode.ClrTypeFromType(type);
+	}
 }
 public class Environment {
 	Environment Parent;
@@ -284,6 +345,67 @@ public class Environment {
 	}
 	internal void AddForbiddenName(string name) {
 		Children[name] = null;
+	}
+	internal void GenerateLookupCache(Generator generator, LookupCache current, LoadableValue source_reference, LoadableValue context, Generator.ParameterisedBlock<LookupCache> block) {
+		var base_lookup_cache = new LookupCache(current);
+		string narrow_error = null;
+		foreach (var info in Children.Values) {
+			var current_narrow_error = info.CheckValidNarrowing(base_lookup_cache, current);
+			if (narrow_error != null && current_narrow_error != null) {
+				narrow_error = narrow_error + current_narrow_error;
+			} else {
+				narrow_error = narrow_error ?? current_narrow_error;
+			}
+		}
+		if (narrow_error != null) {
+			generator.Builder.Emit(OpCodes.Ldstr, narrow_error);
+			generator.Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError"));
+			generator.Builder.Emit(OpCodes.Ldc_I4_0);
+			generator.Builder.Emit(OpCodes.Ret);
+			return;
+		}
+		var load_count = 0;
+		foreach (var info in Children.Values) {
+			load_count += info.NeedsLoad() ? 1 : 0;
+		}
+		var lookup_results = new List<LoadableCache>();
+		if (load_count > 0) {
+			generator.StartInterlock(load_count);
+			foreach (var info in Children.Values) {
+				lookup_results.Add(info.Load(generator, source_reference, context));
+			}
+			generator.StopInterlock();
+		}
+		foreach (var lookup_result in lookup_results.Where(x => x.SinglyTyped)) {
+			base_lookup_cache[lookup_result.NameInfo] = new AutoUnboxValue(lookup_result.Value, lookup_result.Types[0]);
+			var label = generator.Builder.DefineLabel();
+			lookup_result.Value.Load(generator);
+			generator.Builder.Emit(OpCodes.Isinst, lookup_result.Types[0]);
+			generator.Builder.Emit(OpCodes.Brtrue, label);
+			generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", lookup_result.Value, lookup_result.NameInfo.Name, "{0}"));
+			generator.Builder.MarkLabel(label);
+		}
+		GenerateLookupPermutation(generator, base_lookup_cache, 0, lookup_results.Where(x => !x.SinglyTyped).ToArray(), source_reference, block);
+	}
+	private void GenerateLookupPermutation(Generator generator, LookupCache cache, int index, LoadableCache[] values, LoadableValue source_reference, Generator.ParameterisedBlock<LookupCache> block) {
+		if (index >= values.Length) {
+			block(cache);
+			return;
+		}
+		var labels = new Label[values[index].Types.Length];
+		for (var it = 0; it < labels.Length; it++) {
+			labels[it] = generator.Builder.DefineLabel();
+			values[index].Value.Load(generator);
+			generator.Builder.Emit(OpCodes.Isinst, values[index].Types[it]);
+			generator.Builder.Emit(OpCodes.Brtrue, labels[it]);
+			generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", values[it].Value, values[it].NameInfo.Name, "{0}"));
+		}
+		for (var it = 0; it < labels.Length; it++) {
+			generator.Builder.MarkLabel(labels[it]);
+			var sub_cache = new LookupCache(cache);
+			sub_cache[values[index].NameInfo] = new AutoUnboxValue(values[index].Value, values[index].Types[it]);
+			GenerateLookupPermutation(generator, sub_cache, index + 1, values, source_reference, block);
+		}
 	}
 	public NameInfo Lookup(ErrorCollector collector, IEnumerable<string> names) {
 		IEnumerator<string> enumerator = names.GetEnumerator();

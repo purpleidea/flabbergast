@@ -600,7 +600,27 @@ public class Generator {
 		}
 	}
 }
+public class LookupCache {
+	private LookupCache parent;
+	private Dictionary<NameInfo, LoadableValue> defined_values = new Dictionary<NameInfo, LoadableValue>();
 
+	public LookupCache(LookupCache parent) {
+		this.parent = parent;
+	}
+
+	public LoadableValue this[NameInfo name_info] {
+		get {
+			if (defined_values.ContainsKey(name_info)) {
+				return defined_values[name_info];
+			} else if (parent != null) {
+				return parent[name_info];
+			} else {
+				throw new InvalidOperationException("Attempt to lookup cached name “" + name_info.Name + "”, but it was never cached. This is a compiler bug.");
+			}
+		}
+		set { defined_values[name_info] = value; }
+	}
+}
 public abstract class LoadableValue {
 	public static LoadableValue NULL_LIST = new NullList();
 	public abstract System.Type BackingType { get; }

@@ -699,6 +699,9 @@ codegen_tmpl : Template {
 		# the current flavour by default.
 		target_flavour : generation_flavour
 	}
+	lookup_cached : Template gen_tmpl {
+		field ?:
+	}
 	# Change the value of parameters with new values in a lexically-scoped way.
 	mask_parameters : Template gen_tmpl {
 		parameters ?:
@@ -718,6 +721,17 @@ codegen_tmpl : Template {
 	parameter : Template gen_tmpl {
 		name ?:
 		error_message : "Parameter \(name) is not defined."
+	}
+	prepare_lookup_cache : Template gen_tmpl {
+		in ?:
+		name ?:
+		specials : no_specials {}
+		lookup_special_tmpl : Template {}
+		specials_from_definitions : Template lookup_special_tmpl {
+			field ?:
+			target_flavour : generation_flavour
+		}
+		no_specials : Template lookup_special_tmpl {}
 	}
 	# Redefine the source reference to include the current syntax element.
 	#
@@ -1895,6 +1909,11 @@ language_tmpl : Template {
 					]
 					ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
 					type_demand_all : { definitions : known_types }
+					code_value : codegen.prepare_lookup_cache {
+						in : codegen.other_code { field  : $expression }
+						name : $inner_environment
+						specials : specials_from_definitions { field : $definitions }
+					}
 				}
 
 
@@ -2000,8 +2019,14 @@ language_tmpl : Template {
 					type_demand : { cond_expr : [ known_types.bool ] }
 					code_value : kws.conditional {
 						condition : codegen.other_code { field : $cond_expr }
-						true_action : codegen.other_code { field : $then_expr }
-						false_action : codegen.other_code { field : $else_expr }
+						true_action : codegen.prepare_lookup_cache {
+							in : codegen.other_code { field : $then_expr }
+							name : $then_environment
+						}
+						false_action : codegen.prepare_lookup_cache {
+							in : codegen.other_code { field : $else_expr }
+							name : $else_environment
+						}
 					}
 				}
 
@@ -2048,7 +2073,10 @@ language_tmpl : Template {
 							type : known_types.int
 							number : max
 						}
-						false_action : codegen.other_code { field : $right }
+						false_action : codegen.prepare_lookup_cache {
+							in : codegen.other_code { field : $right }
+							name : $optional_environment
+						}
 					}
 				}
 
@@ -2071,7 +2099,10 @@ language_tmpl : Template {
 					}
 					code_value : kws.conditional {
 						condition : codegen.other_code { field : $left }
-						true_action : codegen.other_code { field : $right }
+						true_action : codegen.prepare_lookup_cache {
+							in : codegen.other_code { field : $right }
+							name : $optional_environment
+						}
 						false_action : kws.numeric_constant {
 							type : known_types.int
 							number : min
@@ -2516,7 +2547,10 @@ language_tmpl : Template {
 						choices : [
 							choice_tmpl {
 								type : known_types.unit
-								action : codegen.other_code { field : $right }
+								action : codegen.prepare_lookup_cache {
+									name : $optional_environment
+									in : codegen.other_code { field : $right }
+								}
 							}
 						]
 					}
@@ -2806,6 +2840,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.stored {
 						field : $parts
 					}
+					code_value : codegen.lookup_cached { field : $parts }
 				}
 				from : Template expression_tmpl {
 					pretty_name : "external import"

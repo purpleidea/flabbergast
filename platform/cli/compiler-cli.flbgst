@@ -1205,6 +1205,12 @@ codegen : compiler_lib.codegen_tmpl {
 			}
 		}
 	}
+	lookup_cached +: {
+		extra_indent : ""
+		gen_gen +: {
+			value : "\(indent)var \(storage_name) = \(lookup_cache)[\(generation_environment).Lookup(null, \(field).Select((s) => s.ToString()))];\(code)"
+		}
+	}
 	# This changes the value of parameters by renaming them, then restoring the names.
 	mask_parameters +: {
 		storage_name : action.storage_name
@@ -1257,6 +1263,85 @@ codegen : compiler_lib.codegen_tmpl {
 			value :
 				"\(indent)if (\(name) == null) throw new System.InvalidOperationException(\"\(error_message)\");" &
 				code
+		}
+	}
+	prepare_lookup_cache +: {
+		extra_indent : in.extra_indent & specials.extra_indent & "\t"
+		storage_name : in.storage_name
+		parent_context : Lookup parameters.context In Container
+		parent_lookup_cache : Lookup lookup_cache In Container
+		parameters : { context : specials.context }
+		lookup_cache : Id
+		gen_gen +: {
+			sum_indent : indent & specials.extra_indent
+			value :
+				specials.gen_gen(
+					indent : indent,
+					code :
+						"\(sum_indent)\(name).GenerateLookupCache(\(generator), \(specials.initial_cache), \(parameters.source_reference.storage_name), \(specials.context.storage_name), (\(lookup_cache)) => {" &
+						in.gen_gen(indent : sum_indent & "\t", code : code) &
+						"\(sum_indent)});"
+					)
+		}
+		lookup_special_tmpl +: {
+			extra_indent : ""
+			initial_cache ?:
+			context ?:
+			gen_gen : Template {
+				code ?:
+				indent ?:
+			}
+		}
+		no_specials +: {
+			initial_cache : parent_lookup_cache
+			context : parent_context
+			gen_gen +: {
+				value : code
+			}
+		}
+		specials_from_definitions +: {
+			extra_indent : "\t"
+			initial_cache : Id
+			context : codegen.gen_tmpl {
+				extra_indent : ""
+			}
+			# This is here so that our call to the generate of the named elements
+			# uses the original lookup context.
+			parameters : { context : parent_context }
+			# Restore the lookup cache for the child definitions
+			lookup_cache : parent_lookup_cache
+			argument_list :"\(generator), " &
+				(If target_flavour.non_accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
+				(target_flavour.non_accumulate_flavour.call_site {}).value
+
+			gen_gen +: {
+				value :
+					"\(indent)var \(Id)_frame = \(generator).MakeField(\"anon_frame\", typeof(Frame));" &
+					"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
+					"\(indent)\(generator).GenerateNextId();" &
+					"\(indent)\(parameters.source_reference.storage_name).Load(\(generator));" &
+					"\(indent)\(parameters.self_frame.storage_name).Load(\(generator));" &
+					"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(Frame).GetConstructors()[0]);" &
+					"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(Id)_frame.Field);" &
+					"\(indent)\(generator).Fold(\(parent_lookup_cache), \(field), (\(Id)_index, \(Id)_item, \(Id)_cache, \(Id)_block) =>" &
+					"\(indent)\t\(Id)_item.Generate(\(argument_list)(\(Id)_result) => {" &
+					"\(indent)\t\tvar \(Id)_new_cached = new LookupCache(\(Id)_cache);" &
+					"\(indent)\t\t\(Id)_new_cached[\(name).Lookup(null, System.Linq.Enumerable.Repeat(\(Id)_item.name.ToString(), 1))] = \(Id)_result;" &
+					"\(indent)\t\t\(Id)_frame.Load(\(generator));" &
+					"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(Id)_item.name.ToString());" &
+					"\(indent)\t\t\(Id)_result.Load(\(generator));" &
+					"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Frame).GetMethod(\"set_Item\"));" &
+					"\(indent)\t\t\(Id)_block(\(Id)_new_cached);" &
+					"\(indent)}), (\(initial_cache)) => {" &
+					"\(indent)\tvar \(context.storage_name) = \(generator).MakeField(\"subcontext\", typeof(Context));" &
+					"\(indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
+					"\(indent)\t\(Id)_frame.Load(\(generator));" &
+					"\(indent)\t\(parent_context.storage_name).Load(\(generator));" &
+					"\(indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Context).GetMethod(\"Prepend\"));" &
+					"\(indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(context.storage_name).Field);" &
+					code &
+					"\(indent)});"
+			}
 		}
 	}
 	push_source_reference +: {
