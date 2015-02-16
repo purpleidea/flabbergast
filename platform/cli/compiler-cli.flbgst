@@ -1539,6 +1539,9 @@ compiler : compiler_lib.language_tmpl {
 	# compiler, so the `super_class_extra` and `class_extra` attributes provide
 	# that content.
 	rule_groups +: {
+		fricassee_merge_input +: {
+			super_class_extra : "\tinternal void AddMask(ErrorCollector collector, Environment environment) { environment.AddMask(name.ToString(), this); }\n"
+		}
 		named_definition +: {
 			super_class_extra : "\tinternal void AddMask(ErrorCollector collector, Environment environment) { environment.AddMask(name.ToString(), this); }\n"
 		}
