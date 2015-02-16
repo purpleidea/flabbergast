@@ -742,7 +742,7 @@ kws : compiler_lib.kws_tmpl {
 	error +: {
 		opcode : "Callvirt"
 		gen_gen +: {
-			extra_load : "\(sum_indent)\(generator).LoadTaskMaster();\(sum_indent)\(source_reference).Load(\(generator));"
+			extra_load : "\(sum_indent)\(generator).LoadTaskMaster();\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));"
 			extra_emit : ", typeof(TaskMaster).GetMethod(\"ReportOtherError\")"
 			store_result : "\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);"
 		}
@@ -807,7 +807,7 @@ kws : compiler_lib.kws_tmpl {
 		opcode : "Newobj"
 		extra_load +original: original &
 			"\(sum_indent)\(generator).GenerateNextId();" &
-			"\(sum_indent)\(source_reference).Load(\(generator));"
+			"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));"
 		gen_gen +: {
 			extra_emit : ", typeof(Frame).GetConstructors()[0]"
 		}
@@ -817,7 +817,7 @@ kws : compiler_lib.kws_tmpl {
 		gen_gen +: {
 			extra_load +original: original &
 				"\(sum_indent)\(generator).GenerateNextId();" &
-				"\(sum_indent)\(source_reference).Load(\(generator));"
+				"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));"
 			extra_emit : ", typeof(Frame).GetMethod(\"Through\")"
 		}
 	}
@@ -855,7 +855,7 @@ kws : compiler_lib.kws_tmpl {
 			extra_load :
 				"\(sum_indent)\(generator).LoadTaskMaster();" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
-				"\(sum_indent)\(source_reference).Load(\(generator));"
+				"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));"
 			extra_emit : ", typeof(Lookup).GetConstructors()[0]"
 			store_result :
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
@@ -909,7 +909,7 @@ kws : compiler_lib.kws_tmpl {
 				code :
 					"\(indent)var \(storage_name) = \(generator).MakeField(\"str\", typeof(Stringish));" &
 					"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
-					"\(indent)\(generator).ToStringish(\(source.storage_name), \(source_reference));" &
+					"\(indent)\(generator).ToStringish(\(source.storage_name), \(parameters.source_reference.storage_name));" &
 					"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);" &
 					code
 				)
@@ -969,7 +969,7 @@ kws : compiler_lib.kws_tmpl {
 				"\(sum_indent)if (\(left.storage_name).BackingType == typeof(object) || \(right.storage_name).BackingType == typeof(object)) {" &
 				"\(sum_indent)\tthrow new System.InvalidOperationException();" &
 				"\(sum_indent)} else if (\(left.storage_name).BackingType != \(right.storage_name).BackingType) {" &
-				"\(sum_indent)\t\(generator).EmitTypeError(\(source_reference), \"Cannot compare value of type {0} and type {1}.\", \(left.storage_name), \(right.storage_name));" &
+				"\(sum_indent)\t\(generator).EmitTypeError(\(parameters.source_reference.storage_name), \"Cannot compare value of type {0} and type {1}.\", \(left.storage_name), \(right.storage_name));" &
 				"\(sum_indent)} else {" &
 				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
 				"\(sum_indent)\t\(left.storage_name).Load(\(generator));" &
@@ -999,7 +999,7 @@ kws : compiler_lib.kws_tmpl {
 			value : condition.gen_gen(
 				indent : indent,
 				code :
-					"\(sum_indent)Generator.ParameterisedBlock \(callback) = (\(storage_name)) => {\(code)\(sum_indent)};" &
+					"\(sum_indent)Generator.ParameterisedBlock<LoadableValue> \(callback) = (\(storage_name)) => {\(code)\(sum_indent)};" &
 					"\(sum_indent)if (!typeof(bool).IsAssignableFrom(\(condition.storage_name).BackingType)) throw new System.InvalidOperationException();" &
 					"\(sum_indent)\(condition.storage_name).Load(\(generator));" &
 					"\(sum_indent)var \(Id)_else = \(generator).Builder.DefineLabel(); " &
@@ -1021,7 +1021,7 @@ kws : compiler_lib.kws_tmpl {
 			sum_indent : indent & extra_indent
 			value :
 				of.gen_gen(indent : indent, code :
-					"\(sum_indent)_generator.DynamicTypeDispatch(\(of.storage_name), \(source_reference), new System.Type[] { \(type_list) }, (\(storage_name)) {" &
+					"\(sum_indent)_generator.DynamicTypeDispatch(\(of.storage_name), \(parameters.source_reference.storage_name), new System.Type[] { \(type_list) }, (\(storage_name)) {" &
 					code &
 					"\(sum_indent)});")
 		}
@@ -1183,31 +1183,26 @@ codegen : compiler_lib.codegen_tmpl {
 	# This nasty customer does a fold over a list of syntax elements. It
 	# accomplishes this using the painfully obtuse `Generator.Fold` function.
 	fold_others +: {
-		extra_indent : For argument : arguments Reduce argument.extra_indent & acc With acc : initial.extra_indent & "\t"
-		argument_indents : For argument_name : Name, argument : arguments, argument_pos : Ordinal
-			Select argument_name :
-				(For prev_argument : arguments, prev_argument_pos : Ordinal
-				Where prev_argument_pos < argument_pos
-				Reduce acc & prev_argument.extra_indent
-				With acc : initial.extra_indent)
-
+		extra_indent : initial.extra_indent & "\t"
 		fold_name : "\(Id)_left"
+		argument_list : "\(generator), " &
+			(If target_flavour.accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
+			(target_flavour.accumulate_flavour.call_site {}).value
 
 		gen_gen +: {
-			argument_list : For argument : arguments Reduce acc & ", " & argument.storage_name With acc : "\(generator), \(source_reference)"
-			sum_indent : indent & extra_indent
+			sum_indent : indent & initial.extra_indent
 			value :
-				initial.gen_gen(indent : indent, code :
-					For argument : arguments, argument_indent : argument_indents
-					Reduce argument.gen_gen(code : acc, indent : indent & argument_indent)
-					With acc : base_code
-				)
-			base_code :
-				"\(sum_indent)_generator.Fold(\(initial.storage_name), \(field), (\(Id)_index, \(Id)_item, \(fold_name), \(Id)_block) => \(Id)_item.Generate(\(argument_list), \(Id)_block), (\(storage_name)) => {\(code)\(sum_indent)});"
+				initial.gen_gen(
+					indent : indent,
+					code :
+						"\(sum_indent)_generator.Fold((LoadableValue) \(initial.storage_name), \(field), (\(Id)_index, \(Id)_item, \(fold_name), \(Id)_block) => \(Id)_item.Generate(\(argument_list)\(Id)_block), (\(storage_name)) => {\(code)\(sum_indent)});"
+						)
 		}
-		fold_argument : codegen.gen_tmpl {
-			extra_indent : ""
-			storage_name : fold_name
+		parameters : {
+			accumulator : codegen.gen_tmpl {
+				extra_indent : ""
+				storage_name : fold_name
+			}
 		}
 	}
 	# This changes the value of parameters by renaming them, then restoring the names.
@@ -1226,7 +1221,7 @@ codegen : compiler_lib.codegen_tmpl {
 			base_code : For parameter_name : Name, parameter : parameters
 				Reduce
 					"\(sum_indent)var \(Id)_\(parameter_name) = \(parameter_name);" &
-					"\(sum_indent)\(parameter_name) = \(parameter.storage_name);" &
+					"\(sum_indent)\(parameter_name) = \(parameters.storage_name);" &
 					acc &
 					"\(sum_indent)\(parameter_name) = \(Id)_\(parameter_name);"
 					With acc : action.gen_gen(code : code, indent : sum_indent)
@@ -1245,22 +1240,14 @@ codegen : compiler_lib.codegen_tmpl {
 		}
 	}
 	other_code +: {
-		extra_indent : argument_indent & "\t"
-		argument_indent : For argument : arguments Reduce argument.extra_indent & acc With acc : ""
-		argument_indents : For argument_name : Name, argument : arguments, argument_pos : Ordinal
-			Select argument_name :
-				(For prev_argument : arguments, prev_argument_pos : Ordinal
-				Where prev_argument_pos < argument_pos
-				Reduce acc & prev_argument.extra_indent
-				With acc : "")
+		extra_indent : "\t"
+		argument_list :"\(generator), " &
+			(If target_flavour.non_accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
+			(target_flavour.non_accumulate_flavour.call_site {}).value
 
 		gen_gen +: {
-			argument_list : For argument : arguments Reduce acc & ", " & argument.storage_name With acc : "\(generator), \(source_reference)"
-			sum_indent : indent & argument_indent
 			value :
-				For argument : arguments, argument_indent : argument_indents
-				Reduce argument.gen_gen(code : acc, indent : indent & argument_indent)
-				With acc : "\(sum_indent)\(field).Generate(\(argument_list), (\(storage_name)) => {\(code)\(sum_indent)});"
+				"\(indent)\(field).Generate(\(argument_list)(\(storage_name)) => {\(code)\(indent)});"
 		}
 	}
 	parameter +: {
@@ -1275,11 +1262,17 @@ codegen : compiler_lib.codegen_tmpl {
 	push_source_reference +: {
 		storage_name : in.storage_name
 		extra_indent : ""
-		parent_source_reference : Lookup source_reference In Container
-		source_reference : Id
+		parent_source_reference : Lookup parameters.source_reference.storage_name In Container
+		new_source_reference : Id
+		parameters : {
+			source_reference : codegen.gen_tmpl {
+				extra_indent : ""
+				storage_name : new_source_reference
+			}
+		}
 		gen_gen +: {
 			value :
-				"\(indent)var \(source_reference) = \(generator).PushSourceReference(this, \(parent_source_reference));" &
+				"\(indent)var \(new_source_reference) = \(generator).PushSourceReference(this, \(parent_source_reference));" &
 				in.gen_gen(indent : indent, code : code)
 		}
 	}
@@ -1308,7 +1301,7 @@ codegen : compiler_lib.codegen_tmpl {
 							code : "\(sum_indent)\(default_action.extra_indent)\t\(callback)(\(default_action.storage_name));"
 							) & sum_indent & "}"
 			lift_code :
-				"\(sum_indent)Generator.ParameterisedBlock \(callback) = (\(storage_name)) => {\(code)\(sum_indent)};"
+				"\(sum_indent)Generator.ParameterisedBlock<LoadableValue> \(callback) = (\(storage_name)) => {\(code)\(sum_indent)};"
 		}
 	}
 	type_dispatch +: {
@@ -1317,17 +1310,16 @@ codegen : compiler_lib.codegen_tmpl {
 		choice_tmpl +: {
 			target_type : "typeof(\(type.real_type))"
 		}
+		converted_result : codegen.gen_tmpl {
+			extra_indent : ""
+			storage_name : of.storage_name
+		}
+
 		gen_gen +: {
 			sum_indent : indent & of.extra_indent
 			value : of.gen_gen(
 				indent : indent,
-				code :
-					lift_code &
-					(If define Is Null
-						Then ""
-						Else "\(sum_indent)var \(define) = \(of.storage_name);") &
-					sum_indent &
-					choice_block
+				code : lift_code & sum_indent & choice_block
 			)
 		}
 	}
@@ -1342,6 +1334,56 @@ codegen : compiler_lib.codegen_tmpl {
 			sum_indent : indent
 			value : lift_code & sum_indent & choice_block
 		}
+	}
+
+	flavour_complex_tmpl : Template {
+		parameter_names ?:
+		parameter_str :
+			For parameter_name : parameter_names
+				Reduce "\(acc)LoadableValue _\(parameter_name), "
+				With acc :
+					"Generator _generator, " &
+					(If has_cache Then "LookupCache _cache, " Else "")
+		parameter_definitions :
+			For parameter_name : parameter_names
+			Select parameter_name : gen_tmpl {
+				extra_indent : ""
+				storage_name : "_" & parameter_name
+			}
+		call_site : Template {
+			parameter_lookups ?:
+			value :
+				For x : parameter_lookups
+					Reduce acc & x.storage_name & ", "
+					With acc : ""
+		}
+	}
+	flavour_aware : flavour_complex_tmpl {
+		has_cache : True
+		parameter_names : [ $source_reference, $context, $self_frame, $container_frame ]
+		call_site +: {
+			parameter_lookups : [ parameters.source_reference, parameters.context, parameters.self_frame, parameters.container_frame ]
+		}
+		accumulate_flavour : flavour_aware_accumulate
+		non_accumulate_flavour : flavour_aware
+	}
+	flavour_aware_accumulate : flavour_complex_tmpl {
+		has_cache : True
+		parameter_names : [ $source_reference, $context, $self_frame, $container_frame, $accumulator ]
+		call_site +: {
+			parameter_lookups : [ parameters.source_reference, parameters.context, parameters.self_frame, parameters.container_frame, parameters.accumulator ]
+		}
+		accumulate_flavour : flavour_aware_accumulate
+		non_accumulate_flavour : flavour_aware
+	}
+	flavour_accumulate : flavour_complex_tmpl {
+		has_cache : False
+		parameter_names : [ $source_reference, $accumulator ]
+		call_site +: {
+			parameter_lookups : [ parameters.source_reference, parameters.accumulator ]
+		}
+		accumulate_flavour : flavour_accumulate
+		non_accumulate_flavour : Null
 	}
 }
 
@@ -1387,19 +1429,21 @@ compiler : compiler_lib.language_tmpl {
 			Else ""
 
 		generator : "_generator"
-		source_reference : "_source_reference"
-		code_gen: If generation_parameters Is Null
+		generation_environment : "Environment"
+		lookup_cache : If !(generation_flavour Is Null) && generation_flavour.has_cache Then "_cache" Else Null
+		parameters : If generation_flavour Is Null Then Null Else generation_flavour.parameter_definitions
+		code_gen: If generation_flavour Is Null
 			Then ""
 			Else
-				("\tpublic override void Generate(Generator \(generator), LoadableValue \(source_reference)," &
-					(For param_name : Name, param : generation_parameters Reduce "\(acc) LoadableValue \(param_name)," With acc : "") &
-					" Generator.ParameterisedBlock _final_block) {" &
+				("\tpublic override void Generate(" &
+					generation_flavour.parameter_str &
+					"Generator.ParameterisedBlock<LoadableValue> _final_block) {" &
 					code_value.gen_gen(indent : default_indent, code : "\(indent)\(code_value.extra_indent)_final_block(\(code_value.storage_name));") &
 					"\n\t}\n")
 
 		class_gen :
 			"internal class \(class_name) : \(group_name) {\n" &
-			"\tpublic override string PrettyName { get { return \"\(pretty_name)\"; } }" &
+			"\tpublic override string PrettyName { get { return \"\(pretty_name)\"; } }\n" &
 			pattern.class_gen &
 			environment_methods.value &
 			type_assurance &
@@ -1482,12 +1526,10 @@ compiler : compiler_lib.language_tmpl {
 				"\t\treturn false;\n\t}\n"
 			With outer_acc : ""
 
-		code_gen: If generation_parameters Is Null
+		code_gen: If generation_flavour Is Null
 			Then ""
 			Else
-				("\tpublic abstract void Generate(Generator _generator, LoadableValue _source_reference, " &
-					(For param_name : Name, param : generation_parameters Reduce acc & " LoadableValue \(param_name)," With acc : "") &
-					" Generator.ParameterisedBlock _block);")
+				"\tpublic abstract void Generate(\(generation_flavour.parameter_str)Generator.ParameterisedBlock<LoadableValue> _block);\n"
 
 		value : For rule : expanded_rules
 			Where rule.is_real_element

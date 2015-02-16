@@ -690,17 +690,14 @@ codegen_tmpl : Template {
 	# code generator using either the initial or previous value as input. Return
 	# the final value.
 	fold_others : Template gen_tmpl {
-		# A frame of arguments to be passed to the generator. The attribute names
-		# are the argument names.
-		arguments ?:
 		# The field containing the list.
 		field ?:
 		# The code generator containing the initial value to put in the fold.
 		initial ?:
 
-		# A code generator that should be used in `arguments` to specify the
-		# current value being folded.
-		fold_argument ?:
+		# The flavour for accumulation. This should be the accumulating version of
+		# the current flavour by default.
+		target_flavour : generation_flavour
 	}
 	# Change the value of parameters with new values in a lexically-scoped way.
 	mask_parameters : Template gen_tmpl {
@@ -712,19 +709,10 @@ codegen_tmpl : Template {
 	not_implemented : Template gen_tmpl {}
 	# Compute the value of another syntax element
 	other_code : Template gen_tmpl {
-		# Arguments to be passed to the syntax element where keys are the names of the arguments.
-		arguments ?:
 		# The field containing the syntax element
 		field ?:
-		cache : True
-	}
-	# A derivative of `other_code` with all the arguments set for an expression.
-	other_expression : Template other_code {
-		arguments : {
-			context : codegen.parameter { name : $context }
-			self_frame : codegen.parameter { name : $self_frame }
-			container_frame : codegen.parameter { name : $container_frame }
-		}
+
+		target_flavour : generation_flavour
 	}
 	# Use a parameter passed to this syntax group or defined in a containing code generator.
 	parameter : Template gen_tmpl {
@@ -755,10 +743,9 @@ codegen_tmpl : Template {
 	}
 	# Choose an appropriate path based on the type of a value.
 	type_dispatch : Template type_dispatch_tmpl {
-		# The name which may be used in a `parameter` which contains the value of
-		# the `of` code generator, converted to the appropriate type. If null, the
-		# result is discarded.
-		define : Null
+		# This contains the value of the `of` code generator, converted to the
+		# appropriate type.
+		converted_result ?:
 		# The input to be considered.
 		of ?:
 	}
@@ -766,6 +753,16 @@ codegen_tmpl : Template {
 		# The field containing the type information.
 		field ?:
 	}
+
+	# Generate code that is aware of the current context, This frame and
+	# Container frame.
+	flavour_aware ?:
+	# Generate code that is aware of the current context, This frame, and
+	# Container frame and has a special accumulator for a folding generation.
+	flavour_aware_accumulate ?:
+	# Generate code that is unaware of the environment but has an accumulator for
+	# folding generation.
+	flavour_accumulate ?:
 }
 # The syntax of the Flabbergast language
 language_tmpl : Template {
@@ -809,7 +806,7 @@ language_tmpl : Template {
 
 		# The code generation value to be returned from this syntax element. It has
 		# access to the parameters defined by its group.
-		code_value : generation_parameters Is Null ||
+		code_value : generation_flavour Is Null ||
 			Error "code_value attribute must be overridden in \(rule_name)."
 
 		# If true, this represent a syntax element with all the other fun stuff.
@@ -847,9 +844,9 @@ language_tmpl : Template {
 		# These are rules that have already been expanded, rather than `rules`
 		# where they are templates.
 		static_rules : []
-		# A list of parameter names for doing code generation. If code is not be
-		# generated, null.
-		generation_parameters : Null
+		# The type of code generation to be performed. If code is not be generated,
+		# null.
+		generation_flavour : Null
 		alternatives :
 			For rule : expanded_rules
 			Reduce
@@ -967,8 +964,8 @@ language_tmpl : Template {
 			number -:
 			invert -:
 			source : kws.compare {
-				left : codegen.other_expression { field : $left }
-				right : codegen.other_expression { field : $right }
+				left : codegen.other_code { field : $left }
+				right : codegen.other_code { field : $right }
 			}
 		}
 	}
@@ -1059,14 +1056,8 @@ language_tmpl : Template {
 			}
 		}
 		code_value : codegen.fold_others {
-			arguments : {
-				context : codegen.parameter { name : $context }
-				self_frame : codegen.parameter { name : $self_frame }
-				container_frame : codegen.parameter { name : $container_frame }
-				left : fold_argument
-			}
 			field : $terms
-			initial : codegen.other_expression { field : $start_expr }
+			initial : codegen.other_code { field : $start_expr }
 		}
 	}
 	# A right-hand term in “long” expression
@@ -1095,8 +1086,8 @@ language_tmpl : Template {
 			]
 		}
 		code_value : codegen.type_dispatch {
-			of : codegen.parameter { name : $left }
-			define : $left_operation
+			of : parameters.accumulator
+			left_operation : converted_result
 
 			choices :
 				[
@@ -1104,8 +1095,8 @@ language_tmpl : Template {
 					choice_tmpl {
 						type : known_types.int
 						action : codegen.type_dispatch {
-							of : codegen.other_expression { field : $expression }
-							define : $right_operation
+							of : codegen.other_code { field : $expression }
+							right_operation : converted_result
 
 							choices :
 								[
@@ -1113,8 +1104,8 @@ language_tmpl : Template {
 									choice_tmpl {
 										type : known_types.int
 										action : integer_operation {
-											left : codegen.parameter { name : $left_operation }
-											right : codegen.parameter { name : $right_operation }
+											left : left_operation
+											right : right_operation
 										}
 									},
 									# Left is integer, right is float
@@ -1122,9 +1113,9 @@ language_tmpl : Template {
 										type : known_types.float
 										action : float_operation {
 											left : kws.int_to_float {
-												expr : codegen.parameter { name : $left_operation }
+												expr : left_operation
 											}
-											right : codegen.parameter { name : $right_operation }
+											right : right_operation
 										}
 									}
 								]
@@ -1134,8 +1125,8 @@ language_tmpl : Template {
 					choice_tmpl {
 						type : known_types.int
 						action : codegen.type_dispatch {
-							of : codegen.other_expression { field : $expression }
-							define : $right_operation
+							of : codegen.other_code { field : $expression }
+							right_operation : converted_result
 
 							choices :
 								[
@@ -1143,9 +1134,9 @@ language_tmpl : Template {
 									choice_tmpl {
 										type : known_types.int
 										action : float_operation {
-											left : codegen.parameter { name : $left_operation }
+											left : left_operation
 											right : kws.int_to_float {
-												expr : codegen.parameter { name : $right_operation }
+												expr : right_operation
 											}
 										}
 									},
@@ -1153,8 +1144,8 @@ language_tmpl : Template {
 									choice_tmpl {
 										type : known_types.float
 										action : float_operation {
-											left : codegen.parameter { name : $left_operation }
-											right : codegen.parameter { name : $right_operation }
+											left : left_operation
+											right : right_operation
 										}
 									}
 								]
@@ -1418,6 +1409,7 @@ language_tmpl : Template {
 		}
 		named_definition : Template syntax_group {
 			environment_flavour : environment.flavour_simple
+			generation_flavour : codegen.flavour_aware
 			is_typeable : True
 			common +: {
 				comment : common_fields.str
@@ -1429,6 +1421,7 @@ language_tmpl : Template {
 					pattern : attribute_pattern {}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.any { ensure_type_of : propagate { fields : [ $expression ] } }
+					code_value : codegen.other_code { field : $expression }
 				}
 			}
 		}
@@ -1439,6 +1432,7 @@ language_tmpl : Template {
 				comment : common_fields.str
 				name : common_fields.str
 			}
+			generation_flavour : codegen.flavour_aware
 			rules +: {
 				expr_input : Template syntax_element {
 					pretty_name : "fricassée input"
@@ -1446,6 +1440,8 @@ language_tmpl : Template {
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.intrinsic { }
 					type_demand : { expression : [ known_types.frame ] }
+					# TODO
+					code_value : codegen.not_implemented {}
 				}
 				name_input : Template syntax_element {
 					pretty_name : "fricassée Name input"
@@ -1454,6 +1450,8 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.frame { types : [ known_types.str ] }
+					# TODO
+					code_value : codegen.not_implemented {}
 				}
 				ordinal_input : Template syntax_element {
 					pretty_name : "fricassée Ordinal input"
@@ -1462,6 +1460,8 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					# TODO
+					code_value : codegen.not_implemented {}
 				}
 			}
 		}
@@ -1641,15 +1641,13 @@ language_tmpl : Template {
 		}
 
 		time : Template syntax_group {
-			generation_parameters : {
-				existing : known_types.int
-			}
+			generation_flavour : codegen.flavour_accumulate
 			time_chunk : Template syntax_element {
 				unit ?:
 				symbol ?:
 				pattern : int_with_unit_tmpl {}
 				code_value : kws.int_add {
-					left : codegen.parameter { name : $existing }
+					left : parameters.accumulator
 					right : kws.numeric_constant_units {
 						type : known_types.int
 						field : $count
@@ -1682,12 +1680,7 @@ language_tmpl : Template {
 
 		string_piece : Template syntax_group {
 			environment_flavour : environment.flavour_simple
-			generation_parameters : {
-				str : known_types.str
-				context : known_vm_types.list
-				self_frame : known_types.frame
-				container_frame : known_types.frame
-			}
+			generation_flavour : codegen.flavour_aware_accumulate
 			common +: {
 				comment : common_fields.str
 			}
@@ -1749,7 +1742,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					code_value : kws.string_concatenate {
-						first : codegen.parameter { name : $str }
+						first : parameters.accumulator
 						second : kws.string_constant_from_field { field : $text }
 					}
 				}
@@ -1771,9 +1764,9 @@ language_tmpl : Template {
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					type_demand : { expression : [ known_types.bool, known_types.float, known_types.int, known_types.str ] }
 					code_value : kws.string_concatenate {
-						first : codegen.parameter { name : $str }
+						first : parameters.accumulator
 						second : kws.cast_to_string {
-							source : codegen.other_expression { field : $expression }
+							source : codegen.other_code { field : $expression }
 						}
 					}
 				}
@@ -1801,12 +1794,7 @@ language_tmpl : Template {
 			level : 8
 			environment_flavour : environment.flavour_simple
 			is_typeable : True
-			generation_parameters : {
-				context : known_vm_types.list
-				self_frame : known_types.frame
-				container_frame : known_types.frame
-				left : known_vm_types.any
-			}
+			generation_flavour : codegen.flavour_aware_accumulate
 			common +: {
 				comment : common_fields.str
 			}
@@ -1830,12 +1818,7 @@ language_tmpl : Template {
 			level : 9
 			environment_flavour : environment.flavour_simple
 			is_typeable : True
-			generation_parameters : {
-				context : known_vm_types.list
-				self_frame : known_types.frame
-				container_frame : known_types.frame
-				left : known_vm_types.any
-			}
+			generation_flavour : codegen.flavour_aware_accumulate
 			common +: {
 				comment : common_fields.str
 			}
@@ -1866,11 +1849,7 @@ language_tmpl : Template {
 			is_typeable : True
 			environment_flavour : environment.flavour_simple
 
-			generation_parameters : {
-				context : known_vm_types.list
-				self_frame : known_types.frame
-				container_frame : known_types.frame
-			}
+			generation_flavour : codegen.flavour_aware
 
 			common +: {
 				comment : common_fields.str
@@ -2020,9 +1999,9 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.propagate { fields : [ $then_expr, $else_expr ] }
 					type_demand : { cond_expr : [ known_types.bool ] }
 					code_value : kws.conditional {
-						condition : codegen.other_expression { field : $cond_expr }
-						true_action : codegen.other_expression { field : $then_expr }
-						false_action : codegen.other_expression { field : $else_expr }
+						condition : codegen.other_code { field : $cond_expr }
+						true_action : codegen.other_code { field : $then_expr }
+						false_action : codegen.other_code { field : $else_expr }
 					}
 				}
 
@@ -2038,10 +2017,10 @@ language_tmpl : Template {
 					}
 					code_value : kws.string_concatenate {
 						first : kws.cast_to_string {
-							source : codegen.other_expression { field : $left }
+							source : codegen.other_code { field : $left }
 						}
 						second : kws.cast_to_string {
-							source : codegen.other_expression { field : $right }
+							source : codegen.other_code { field : $right }
 						}
 					}
 				}
@@ -2064,12 +2043,12 @@ language_tmpl : Template {
 						right : [ known_types.bool ]
 					}
 					code_value : kws.conditional {
-						condition : codegen.other_expression { field : $left }
+						condition : codegen.other_code { field : $left }
 						true_action : kws.numeric_constant {
 							type : known_types.int
 							number : max
 						}
-						false_action : codegen.other_expression { field : $right }
+						false_action : codegen.other_code { field : $right }
 					}
 				}
 
@@ -2091,8 +2070,8 @@ language_tmpl : Template {
 						right : [ known_types.bool ]
 					}
 					code_value : kws.conditional {
-						condition : codegen.other_expression { field : $left }
-						true_action : codegen.other_expression { field : $right }
+						condition : codegen.other_code { field : $left }
+						true_action : codegen.other_code { field : $right }
 						false_action : kws.numeric_constant {
 							type : known_types.int
 							number : min
@@ -2153,8 +2132,8 @@ language_tmpl : Template {
 					}
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
 					code_value : kws.compare {
-						left : codegen.other_expression { field : $left }
-						right : codegen.other_expression { field : $right }
+						left : codegen.other_code { field : $left }
+						right : codegen.other_code { field : $right }
 					}
 				}
 
@@ -2181,10 +2160,10 @@ language_tmpl : Template {
 					}
 					code_value : codegen.push_source_reference {
 						in : kws.frame_new_through {
-							start : codegen.other_expression { field : $left }
-							end : codegen.other_expression { field : $right }
-							container : codegen.parameter { name : $self_frame }
-							context : codegen.parameter { name : $context }
+							start : codegen.other_code { field : $left }
+							end : codegen.other_code { field : $right }
+							container : parameters.self_frame
+							context : parameters.context
 						}
 					}
 				}
@@ -2199,8 +2178,8 @@ language_tmpl : Template {
 						ensure_type_of : propagate { fields : [ $left ] }
 					}
 					code_value : codegen.type_dispatch {
-						of : codegen.other_expression { field : $left }
-						define : $left_result
+						of : codegen.other_code { field : $left }
+						left_result : converted_result
 						choices : [
 							# Int → *
 							choice_tmpl {
@@ -2211,20 +2190,20 @@ language_tmpl : Template {
 										# Int → Int
 										choice_tmpl {
 											type : known_types.int
-											action : codegen.parameter { name : $left_result }
+											action : left_result
 										},
 										# Int → Float
 										choice_tmpl {
 											type : known_types.float
 											action : kws.int_to_float {
-												expr : codegen.parameter { name : $left_result }
+												expr : left_result
 											}
 										},
 										# Int → Str
 										choice_tmpl {
 											type : known_types.str
 											action : kws.cast_to_string {
-												source : codegen.parameter { name : $left_result }
+												source : left_result
 											}
 										}
 									]
@@ -2239,20 +2218,20 @@ language_tmpl : Template {
 										# Float → Float
 										choice_tmpl {
 											type : known_types.float
-											action : codegen.parameter { name : $left_result }
+											action : left_result
 										},
 										# Float → Int
 										choice_tmpl {
 											type : known_types.int
 											action : kws.float_to_int {
-												expr : codegen.parameter { name : $left_result }
+												expr : left_result
 											}
 										},
 										# Float → Str
 										choice_tmpl {
 											type : known_types.str
 											action : kws.cast_to_string {
-												source : codegen.parameter { name : $left_result }
+												source : left_result
 											}
 										}
 									]
@@ -2267,13 +2246,13 @@ language_tmpl : Template {
 										# Bool → Bool
 										choice_tmpl {
 											type : known_types.bool
-											action : codegen.parameter { name : $left_result }
+											action : left_result
 										},
 										# Bool → Str
 										choice_tmpl {
 											type : known_types.str
 											action : kws.cast_to_string {
-												source : codegen.parameter { name : $left_result }
+												source : left_result
 											}
 										}
 									]
@@ -2287,7 +2266,7 @@ language_tmpl : Template {
 									choices : [
 										choice_tmpl {
 											type : known_types.frame
-											action : codegen.parameter { name : $left_result }
+											action : left_result
 										}
 									]
 								}
@@ -2300,7 +2279,7 @@ language_tmpl : Template {
 									choices : [
 										choice_tmpl {
 											type : known_types.template
-											action : codegen.parameter { name : $left_result }
+											action : left_result
 										}
 									]
 								}
@@ -2316,7 +2295,7 @@ language_tmpl : Template {
 						field : $right
 						ensure_type_of : ensure_type.propagate { fields : [ $left ] }
 					}
-					code_value : codegen.other_expression { field : $left }
+					code_value : codegen.other_code { field : $left }
 				}
 				check : Template type_operator {
 					pretty_name : "type check"
@@ -2330,7 +2309,7 @@ language_tmpl : Template {
 							Select choice_tmpl {
 								type : t
 								action : codegen.type_dispatch {
-									of : codegen.other_expression { field : $left }
+									of : codegen.other_code { field : $left }
 									default_action : kws.numeric_constant { type : known_types.bool  number : min }
 									choices : [
 										choice_tmpl {
@@ -2349,8 +2328,8 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.bool {}
 					type_demand : { left : [ known_types.float, known_types.int ] }
 					code_value : codegen.type_dispatch {
-						of : codegen.other_expression { field : $left }
-						define : $left_result
+						of : codegen.other_code { field : $left }
+						left_result : converted_result
 						choices : [
 							choice_tmpl {
 								type : known_types.int
@@ -2362,7 +2341,7 @@ language_tmpl : Template {
 							choice_tmpl {
 								type : known_types.float
 								action : kws.float_is_finite {
-									source : codegen.parameter { name : $left_result }
+									source : left_result
 								}
 							}
 						]
@@ -2375,8 +2354,8 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.bool {}
 					type_demand : { left : [ known_types.float, known_types.int ] }
 					code_value : codegen.type_dispatch {
-						of : codegen.other_expression { field : $left }
-						define : $left_result
+						of : codegen.other_code { field : $left }
+						left_result : converted_result
 						choices : [
 							choice_tmpl {
 								type : known_types.int
@@ -2388,7 +2367,7 @@ language_tmpl : Template {
 							choice_tmpl {
 								type : known_types.float
 								action : kws.float_is_nan {
-									source : codegen.parameter { name : $left_result }
+									source : left_result
 								}
 							}
 						]
@@ -2401,7 +2380,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.bool {}
 					type_demand : { left : known_types }
 					code_value : codegen.type_dispatch {
-						of : codegen.other_expression { field : $left }
+						of : codegen.other_code { field : $left }
 						default_action : kws.numeric_constant {
 							type : known_types.bool
 							number : min
@@ -2426,7 +2405,7 @@ language_tmpl : Template {
 					type_demand : { expr : [ known_types.bool, known_types.float, known_types.int, known_types.str ] }
 					code_value : kws.error {
 						message : kws.cast_to_string {
-							source : codegen.other_expression { field : $expr }
+							source : codegen.other_code { field : $expr }
 						}
 					}
 				}
@@ -2438,7 +2417,7 @@ language_tmpl : Template {
 					type_demand : { expr : [ known_types.bool, known_types.float, known_types.int, known_types.str ] }
 					code_value : kws.string_length {
 						source : kws.cast_to_string {
-							source : codegen.other_expression { field : $expr }
+							source : codegen.other_code { field : $expr }
 						}
 					}
 				}
@@ -2473,7 +2452,7 @@ language_tmpl : Template {
 					code_value : kws.lookup_field {
 						field : $parts
 						source : kws.frame_context {
-							source : codegen.other_expression { field : $expression }
+							source : codegen.other_code { field : $expression }
 						}
 					}
 				}
@@ -2532,13 +2511,12 @@ language_tmpl : Template {
 						]
 					}
 					code_value : codegen.type_dispatch {
-						of : codegen.other_expression { field : $left }
-						define : $left_result
-						default_action : codegen.parameter { name : $left_result }
+						of : codegen.other_code { field : $left }
+						default_action : converted_result
 						choices : [
 							choice_tmpl {
 								type : known_types.unit
-								action : codegen.other_expression { field : $right }
+								action : codegen.other_code { field : $right }
 							}
 						]
 					}
@@ -2577,7 +2555,7 @@ language_tmpl : Template {
 					operator : "!"
 					ensure_type_is : ensure_type.bool { ensure_type_of : propagate { fields : [ $expr ] } }
 					code_value : kws.bool_negate {
-						source : codegen.other_expression { field : $expr }
+						source : codegen.other_code { field : $expr }
 					}
 				}
 				negation : Template unary_tmpl {
@@ -2586,19 +2564,18 @@ language_tmpl : Template {
 					operator : "-"
 					ensure_type_is : ensure_type.number { ensure_type_of : propagate { fields : [ $expr ] } }
 					code_value : codegen.type_dispatch {
-						of : codegen.other_expression { field : $expr }
-						define : $expr_result
+						of : codegen.other_code { field : $expr }
 						choices : [
 							choice_tmpl {
 								type : known_types.int
 								action : kws.int_negate {
-									source : codegen.parameter { name : $expr_result }
+									source : converted_result
 								}
 							},
 							choice_tmpl {
 								type : known_types.float
 								action : kws.float_negate {
-									source : codegen.parameter { name : $expr_result }
+									source : converted_result
 								}
 							}
 						]
@@ -2611,7 +2588,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
 					type_demand : { expr : [ known_types.frame ] }
 					code_value : kws.frame_id {
-						source : codegen.other_expression { field : $expr }
+						source : codegen.other_code { field : $expr }
 					}
 				}
 				template_new : Template expression_tmpl {
@@ -2899,7 +2876,7 @@ language_tmpl : Template {
 					code_value : kws.lookup_field {
 						field : $names
 						source : kws.list_prepend {
-							frame : codegen.other_expression { field : $expr }
+							frame : codegen.other_code { field : $expr }
 							tail : kws.list_null {}
 						}
 					}
@@ -2919,7 +2896,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
-					code_value : codegen.other_expression { field : $expression }
+					code_value : codegen.other_code { field : $expression }
 				}
 				literal_list : Template expression_tmpl {
 					pretty_name : "literal list"
@@ -2948,16 +2925,14 @@ language_tmpl : Template {
 					apply_environment_to : [ environment.list_of { field : $items } ]
 					ensure_type_is : ensure_type.frame { }
 					type_demand_all : { items : known_types }
+					# TODO: code_value
 				}
 
 				container : Template literal_tmpl {
 					pretty_name : "access containing frame"
 					name : "Container"
 					ensure_type_is : ensure_type.frame { }
-					code_value : codegen.parameter {
-						name : $self_frame
-						error : "Already at the outermost frame. “Container” has no meaning here."
-					}
+					code_value : parameters.container_frame
 				}
 				false : Template literal_tmpl {
 					pretty_name : "logical false"
@@ -2991,7 +2966,7 @@ language_tmpl : Template {
 					name : "Id"
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
 					code_value : kws.frame_id {
-						source : codegen.parameter { name : $self_frame }
+						source : parameters.self_frame
 					}
 				}
 				infinity : Template literal_tmpl {
@@ -3034,9 +3009,7 @@ language_tmpl : Template {
 					pretty_name : "current frame"
 					name : "This"
 					ensure_type_is : ensure_type.frame { }
-					code_value : codegen.parameter {
-						name : $self_frame
-					}
+					code_value : parameters.self_frame
 				}
 				true : Template literal_tmpl {
 					pretty_name : "logical truth"
@@ -3066,9 +3039,7 @@ language_tmpl : Template {
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
 					code_value : codegen.fold_others {
-						arguments : {
-							existing : fold_argument
-						}
+						target_flavour : codegen.flavour_accumulate
 						field : $parts
 						initial : kws.numeric_constant {
 							type : known_types.int
@@ -3195,12 +3166,6 @@ language_tmpl : Template {
 					apply_environment_to : [ environment.list_of { field : $parts } ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
 					code_value : codegen.fold_others {
-						arguments : {
-							str : fold_argument
-							context : codegen.parameter { name : $context }
-							self_frame : codegen.parameter { name : $self_frame }
-							container_frame : codegen.parameter { name : $container_frame }
-						}
 						field : $parts
 						initial : kws.string_constant { str : "" }
 					}
