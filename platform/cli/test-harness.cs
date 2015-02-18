@@ -22,8 +22,8 @@ public class Compiler {
 	public static void Main(string[] args) {
 		var uri = new Uri(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase);
 		var directory = Path.GetDirectoryName(uri.LocalPath);
-		DoTests(Path.Combine(directory, "..", "..", "..", "..", "tests"));
-		DoTests(Path.Combine(directory, "..", "..", "tests"));
+		DoTests(Path.Combine(directory, "..", "..", "..", "..", "tests"), "*");
+		DoTests(Path.Combine(directory, "..", "..", "tests"), "I");
 	}
 	public static List<string> GetFiles(string root, string child) {
 		var files = new List<string>();
@@ -37,19 +37,18 @@ public class Compiler {
 		}
 		return files;
 	}
-	public static void DoTests(string root) {
+	public static void DoTests(string root, string type) {
 		if (!Directory.Exists(root)) {
 			System.Console.WriteLine("Skipping non-existent directory: " + root);
 			return;
 		}
 		foreach (var file in GetFiles(root, "malformed")) {
-			System.Console.Write("malformed: " + Path.GetFileNameWithoutExtension(file) + "... ");
 			var parser = Parser.Open(file);
-			System.Console.WriteLine(AstNode.ParseFile(parser) == null ? "ok" : "FAIL");
+			var success = AstNode.ParseFile(parser) == null;
+			System.Console.WriteLine("{0} {1} {2} {3}", success ? "----" : "FAIL", "M", type, Path.GetFileNameWithoutExtension(file));
 		}
 		var collector = new DirtyCollector();
 		foreach (var file in GetFiles(root, "errors")) {
-			System.Console.Write("errors: " + Path.GetFileNameWithoutExtension(file) + "... ");
 			var parser = Parser.Open(file);
 			var ast = AstNode.ParseFile(parser);
 			var success = true;
@@ -60,10 +59,9 @@ public class Compiler {
 				((AstTypeableNode) ast).Analyse(collector);
 				success = collector.Dirty;
 			}
-			System.Console.WriteLine(success ? "ok" : "FAIL");
+			System.Console.WriteLine("{0} {1} {2} {3}", success ? "----" : "FAIL", "E", type, Path.GetFileNameWithoutExtension(file));
 		}
 		foreach (var file in GetFiles(root, "working")) {
-			System.Console.Write("working: " + Path.GetFileNameWithoutExtension(file) + "... ");
 			var parser = Parser.Open(file);
 			var ast = AstNode.ParseFile(parser);
 			var success = true;
@@ -74,7 +72,7 @@ public class Compiler {
 				((AstTypeableNode) ast).Analyse(collector);
 				success = !collector.Dirty;
 			}
-			System.Console.WriteLine(success ? "ok" : "FAIL");
+			System.Console.WriteLine("{0} {1} {2} {3}", success ? "----" : "FAIL", "W", type, Path.GetFileNameWithoutExtension(file));
 		}
 	}
 }
