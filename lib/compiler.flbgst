@@ -223,9 +223,8 @@ environment_tmpl : Template {
 			# The field containing the expression to mask.
 			expr_field ?:
 		}
-		# Create a free name from a name. A free name is one which is present in
-		# the new environment, but not backed by a syntax element.
-		free_name_from_field : Template {
+		# Create a name backed by an override definition.
+		override_name_from_field : Template {
 			# The field containing the name.
 			field ?:
 		}
@@ -1346,7 +1345,7 @@ language_tmpl : Template {
 					apply_environment_to : [ environment.modified_environment {
 						apply_to : [ environment.other_elements { fields : [ $expression ] } ]
 						special_names : [
-							free_name_from_field { field : $temporary_name },
+							override_name_from_field { field : $temporary_name },
 							forbidden_name_from_field { field : $name }
 						]
 						force_back : True

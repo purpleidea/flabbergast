@@ -181,7 +181,7 @@ public abstract class NameInfo {
 }
 public class OpenNameInfo : NameInfo {
 	private Environment Environment;
-	Type RealType = Type.Any;
+	protected Type RealType = Type.Any;
 	public OpenNameInfo(Environment environment, string name) {
 		Environment = environment;
 		Name = name;
@@ -220,6 +220,12 @@ public class OpenNameInfo : NameInfo {
 		generator.Builder.Emit(OpCodes.Call, typeof(Lookup).GetMethod("Notify"));
 		generator.Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot"));
 		return new LoadableCache(lookup_result, RealType, this);
+	}
+}
+public class OverrideNameInfo : OpenNameInfo {
+	public OverrideNameInfo(Environment environment, string name) : base(environment, name) {}
+	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
+		return new LoadableCache(generator.InitialOriginal, RealType, this);
 	}
 }
 public class JunkInfo : NameInfo {
@@ -340,8 +346,8 @@ public class Environment {
 		}
 		return Children[name] = new BoundNameInfo(this, name, expression);
 	}
-	public NameInfo AddFreeName(string name) {
-		return Children[name] = new OpenNameInfo(this, name);
+	public NameInfo AddOverrideName(string name) {
+		return Children[name] = new OverrideNameInfo(this, name);
 	}
 	internal void AddForbiddenName(string name) {
 		Children[name] = null;

@@ -508,8 +508,8 @@ environment : compiler_lib.environment_tmpl {
 		mask_from_fields +: {
 			value : "\t\t\tif(\(name_field).Length > 0) { \(current_environment).AddMask(\(name_field).ToString(), \(expr_field)); }\n"
 		}
-		free_name_from_field +: {
-			value : "\t\t\tif(\(field).Length > 0) { \(current_environment).AddFreeName(\(field).ToString()); }\n"
+		override_name_from_field +: {
+			value : "\t\t\tif(\(field).Length > 0) { \(current_environment).AddOverrideName(\(field).ToString()); }\n"
 		}
 		forbidden_name_from_field : Template {
 			value : "\t\t\tif(\(field).Length > 0) { \(current_environment).AddForbiddenName(\(field).ToString()); }\n"
