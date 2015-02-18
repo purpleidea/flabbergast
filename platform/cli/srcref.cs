@@ -70,8 +70,9 @@ public class JunctionReference : SourceReference {
 	 * A description of how the junction was created (e.g., “instantiated from”).
 	 */
 	public string JunctionType { get; private set; }
-	public JunctionReference(string message, string filename, int start_line, int start_column, int end_line, int end_column, SourceReference caller, SourceReference junction, string JunctionType) : base(message, filename, start_line, start_column, end_line, end_column, caller) {
+	public JunctionReference(string message, string filename, int start_line, int start_column, int end_line, int end_column, SourceReference caller, SourceReference junction, string junction_type) : base(message, filename, start_line, start_column, end_line, end_column, caller) {
 		Junction = junction;
+		JunctionType = junction_type;
 	}
 	public override void Write(TextWriter writer, int indentation, string prefix) {
 		WriteMessage(writer, indentation, prefix);
