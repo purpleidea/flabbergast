@@ -139,9 +139,12 @@ public class Template : IAttributeNames {
 	 */
 	public ComputeValue this[string name] {
 		get {
-			return attributes[name];
+			return attributes.ContainsKey(name) ? attributes[name] : null;
 		}
 		set {
+			if (value == null) {
+				return;
+			}
 			if(attributes.ContainsKey(name)) {
 				throw new InvalidOperationException("Redefinition of attribute " + name + ".");
 			}

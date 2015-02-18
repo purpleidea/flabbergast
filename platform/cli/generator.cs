@@ -201,6 +201,19 @@ public class Generator {
 		// Create a static method that wraps the constructor. This is needed to create a delegate.
 		Initialiser = type_builder.DefineMethod("Init", MethodAttributes.Public | MethodAttributes.Static, typeof(Computation), init_params);
 		var init_builder = Initialiser.GetILGenerator();
+		if (has_original) {
+			// If the thing we are overriding is null, create an error and give up.
+			var has_instance = init_builder.DefineLabel();
+			init_builder.Emit(OpCodes.Ldarg, init_params.Length - 1);
+			init_builder.Emit(OpCodes.Brtrue, has_instance);
+			init_builder.Emit(OpCodes.Ldarg_0);
+			init_builder.Emit(OpCodes.Ldarg_1);
+			init_builder.Emit(OpCodes.Ldstr, "Cannot perform override. No value in source tuple to override!");
+			init_builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("ReportOtherError"));
+			init_builder.Emit(OpCodes.Ldc_I4_0);
+			init_builder.Emit(OpCodes.Ret);
+			init_builder.MarkLabel(has_instance);
+		}
 		for (var it = 0; it < initial_information.Length; it++) {
 			init_builder.Emit(OpCodes.Ldarg, it);
 		}
