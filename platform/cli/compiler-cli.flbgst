@@ -808,11 +808,11 @@ kws : compiler_lib.kws_tmpl {
 	}
 	frame_new +: {
 		opcode : "Newobj"
-		extra_load +original: original &
-			"\(sum_indent)\(generator).GenerateNextId();" &
-			"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));"
 		gen_gen +: {
 			extra_emit : ", typeof(Frame).GetConstructors()[0]"
+			extra_load +original: original &
+				"\(sum_indent)\(generator).GenerateNextId();" &
+				"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));"
 		}
 	}
 	frame_new_through +: {
