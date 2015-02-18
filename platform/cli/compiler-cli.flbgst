@@ -1496,6 +1496,24 @@ codegen : compiler_lib.codegen_tmpl {
 		accumulate_flavour : flavour_accumulate
 		non_accumulate_flavour : Null
 	}
+	flavour_attribute : flavour_complex_tmpl {
+		has_cache : False
+		parameter_names : [ $source_template, $target ]
+		call_site +: {
+			parameter_lookups : [ parameters.source_template, parameters.target ]
+		}
+		accumulate_flavour : flavour_attribute_accumulate
+		non_accumulate_flavour : flavour_attribute
+	}
+	flavour_attribute_accumulate : flavour_complex_tmpl {
+		has_cache : False
+		parameter_names : [ $source_template, $target ]
+		call_site +: {
+			parameter_lookups : [ parameters.source_template, parameters.accumulator ]
+		}
+		accumulate_flavour : flavour_attribute_accumulate
+		non_accumulate_flavour : flavour_attribute
+	}
 }
 
 # The compiler!

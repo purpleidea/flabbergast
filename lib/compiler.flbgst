@@ -788,6 +788,9 @@ codegen_tmpl : Template {
 	# Generate code that is unaware of the environment but has an accumulator for
 	# folding generation.
 	flavour_accumulate ?:
+	# Generate code for an attibute. Attributes do not have any context, but do
+	# have a source template and a target frame/template being generated.
+	flavour_attribute ?:
 }
 # The syntax of the Flabbergast language
 language_tmpl : Template {
