@@ -489,13 +489,17 @@ public class Generator {
 	public LoadableValue PushSourceReference(AstNode node, LoadableValue original_reference) {
 		var reference = MakeField("source_reference", typeof(SourceReference));
 		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(OpCodes.Ldstr, String.Format("expression {0}", node.PrettyName));
+		Builder.Emit(OpCodes.Ldstr, node.PrettyName);
 		Builder.Emit(OpCodes.Ldstr, node.FileName);
 		Builder.Emit(OpCodes.Ldc_I4, node.StartRow);
 		Builder.Emit(OpCodes.Ldc_I4, node.StartColumn);
 		Builder.Emit(OpCodes.Ldc_I4, node.EndRow);
 		Builder.Emit(OpCodes.Ldc_I4, node.EndColumn);
-		original_reference.Load(this);
+		if (original_reference == null) {
+			Builder.Emit(OpCodes.Ldnull);
+		} else {
+			original_reference.Load(this);
+		}
 		Builder.Emit(OpCodes.Newobj, typeof(SourceReference).GetConstructors()[0]);
 		Builder.Emit(OpCodes.Stfld, reference.Field);
 		return reference;

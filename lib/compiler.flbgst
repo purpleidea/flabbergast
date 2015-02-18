@@ -803,6 +803,7 @@ codegen_tmpl : Template {
 	# uninformative entires, but it is needed when new frames are created.
 	push_source_reference : Template gen_tmpl {
 		in ?:
+		inherit : True
 	}
 	# Do some type-dependent behaviour
 	type_dispatch_tmpl : Template gen_tmpl {

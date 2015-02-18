@@ -1525,7 +1525,10 @@ codegen : compiler_lib.codegen_tmpl {
 	push_source_reference +: {
 		storage_name : in.storage_name
 		extra_indent : ""
-		parent_source_reference : Lookup parameters.source_reference.storage_name In Container
+		parent_source_reference :
+			If inherit
+				Then Lookup parameters.source_reference.storage_name In Container
+				Else "null"
 		new_source_reference : Id
 		parameters : {
 			source_reference : codegen.gen_tmpl {
