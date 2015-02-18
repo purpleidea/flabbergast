@@ -18,7 +18,7 @@ public abstract class Computation {
 	/**
 	 * Apply an override to a normal computation resulting in another normal computation.
 	 */
-	public static ComputeValue PerformOverride(ComputeOverride wrapper, ComputeValue original, string filename, int start_line, int start_column, int end_line, int end_column) {
+	public static ComputeValue PerformOverride(string filename, int start_line, int start_column, int end_line, int end_column, ComputeOverride wrapper, ComputeValue original) {
 		return (task_master, reference, context, self, container) => wrapper(task_master, reference, context, self, container, original(task_master, new SourceReference("used by override", filename, start_line, start_column, end_line, end_column, reference), context, self, container));
 	}
 
