@@ -1385,6 +1385,7 @@ language_tmpl : Template {
 	rule_groups : Template {
 		file : Template syntax_group {
 			environment_flavour : environment.flavour_simple
+			generation_flavour : codegen.flavour_empty
 			rules +: {
 				file : Template syntax_element {
 					pretty_name : "file contents"
@@ -1411,6 +1412,20 @@ language_tmpl : Template {
 						top_level : True
 					} ]
 					type_demand_all : { attributes : known_types }
+					code_value : codegen.push_source_reference {
+						inherit : False
+						in : codegen.empty_parameter {
+							parameters : { source_template : emptiness }
+							in : codegen.fold_others {
+								target_flavour : codegen.flavour_attribute_accumulate
+								field : $attributes
+								initial : kws.frame_new {
+									container : kws.frame_null {}
+									context : kws.list_null {}
+								}
+							}
+						}
+					}
 				}
 			}
 		}
