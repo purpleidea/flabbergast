@@ -1304,7 +1304,7 @@ codegen : compiler_lib.codegen_tmpl {
 				specials.gen_gen(
 					indent : indent,
 					code :
-						"\(sum_indent)\(name).GenerateLookupCache(\(generator), \(specials.initial_cache), \(parameters.source_reference.storage_name), \(specials.context.storage_name), (\(lookup_cache)) => {" &
+						"\(sum_indent)\(name ?? "Environment").GenerateLookupCache(\(generator), \(specials.initial_cache), \(parameters.source_reference.storage_name), \(specials.context.storage_name), (\(lookup_cache)) => {" &
 						in.gen_gen(indent : sum_indent & "\t", code : code) &
 						"\(sum_indent)});"
 					)
@@ -1352,7 +1352,7 @@ codegen : compiler_lib.codegen_tmpl {
 					"\(indent)\(generator).Fold(\(parent_lookup_cache), \(field), (\(Id)_index, \(Id)_item, \(Id)_cache, \(Id)_block) =>" &
 					"\(indent)\t\(Id)_item.Generate(\(argument_list)(\(Id)_result) => {" &
 					"\(indent)\t\tvar \(Id)_new_cached = new LookupCache(\(Id)_cache);" &
-					"\(indent)\t\t\(Id)_new_cached[\(name).Lookup(null, System.Linq.Enumerable.Repeat(\(Id)_item.name.ToString(), 1))] = \(Id)_result;" &
+					"\(indent)\t\t\(Id)_new_cached[\(name ?? "Environment").Lookup(null, System.Linq.Enumerable.Repeat(\(Id)_item.name.ToString(), 1))] = \(Id)_result;" &
 					"\(indent)\t\t\(Id)_frame.Load(\(generator));" &
 					"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(Id)_item.name.ToString());" &
 					"\(indent)\t\t\(Id)_result.Load(\(generator));" &
