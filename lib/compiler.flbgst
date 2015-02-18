@@ -1329,13 +1329,14 @@ language_tmpl : Template {
 	}
 	perform_overrides : Template codegen.push_source_reference {
 		source_template ?:
+		new_item ?:
 		in : codegen.type_dispatch {
 			of : source_template
 			choices : [
 				choice_tmpl {
 					type : known_types.template
 					action : kws.iterator {
-						initial : kws.tmpl_new {
+						initial : new_item {
 							context : kws.list_append {
 								head : parameters.context
 								tail : kws.frame_context { source : converted_result }
@@ -1521,6 +1522,7 @@ language_tmpl : Template {
 						with : kws.apply_override {
 							override : kws.create_override_function {
 								returns : perform_overrides {
+									new_item : kws.tmpl_new
 									source_template : parameters.original_value
 								}
 							}
@@ -2871,6 +2873,7 @@ language_tmpl : Template {
 					}
 					type_demand_all : { overrides : known_types }
 					code_value : perform_overrides {
+						new_item : kws.tmpl_new
 						source_template : codegen.other_code { field : $source }
 					}
 				}
