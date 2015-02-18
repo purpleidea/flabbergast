@@ -324,9 +324,11 @@ public class Environment {
 	public int EndRow { get; private set; }
 	public int EndColumn { get; private set; }
 	public int Priority { get; private set; }
+	public bool TopLevel { get { return Parent == null ? top_level : Parent.TopLevel; } }
+	bool top_level;
 	bool ForceBack;
 
-	public Environment(string filename, int start_row, int start_column, int end_row, int end_column, Environment parent = null, bool force_back = false) {
+	public Environment(string filename, int start_row, int start_column, int end_row, int end_column, Environment parent = null, bool force_back = false, bool top_level = false) {
 		if (force_back && parent == null) {
 			throw new ArgumentException("Parent environment cannot be null when forcing parent-backed creation.");
 		}
@@ -338,6 +340,7 @@ public class Environment {
 		ForceBack = force_back;
 		Parent = parent;
 		Priority = (parent == null ? 0 : parent.Priority) + (force_back ? 1 : 2);
+		this.top_level = top_level;
 	}
 
 	internal NameInfo AddMask(string name, ITypeableElement expression) {

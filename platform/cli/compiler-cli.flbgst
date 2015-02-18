@@ -476,7 +476,7 @@ environment : compiler_lib.environment_tmpl {
 	}
 	list_independent +: {
 		class_gen : ""
-		value : "\t\tif (\(field) != null) { foreach (var \(Id) in \(field)) \(Id).Propagate\(target_flavour.name)Environment(_collector, _queue, new Environment(\(Id).FileName, \(Id).StartRow, \(Id).StartColumn, \(Id).EndRow, \(Id).EndColumn, \(If inherit Then current_environment Else "null"), false)); }\n"
+		value : "\t\tif (\(field) != null) { foreach (var \(Id) in \(field)) \(Id).Propagate\(target_flavour.name)Environment(_collector, _queue, new Environment(\(Id).FileName, \(Id).StartRow, \(Id).StartColumn, \(Id).EndRow, \(Id).EndColumn, \(If inherit Then current_environment Else "null"), false, \(If top_level Then "true" Else "false"))); }\n"
 	}
 	blank_environment +: {
 		current_environment : name ?? Id
@@ -514,6 +514,10 @@ environment : compiler_lib.environment_tmpl {
 		forbidden_name_from_field : Template {
 			value : "\t\t\tif(\(field).Length > 0) { \(current_environment).AddForbiddenName(\(field).ToString()); }\n"
 		}
+	}
+	top_level +: {
+		class_gen : ""
+		value : "\t\tif (\(current_environment).TopLevel != \(If desired Then "true" Else "false")) { _collector.RawError(this, \"At file-level scope, \(pretty_name) is now allowed.\"); }"
 	}
 	complex_flavour_tmpl : Template flavour_tmpl {
 		enabled : True

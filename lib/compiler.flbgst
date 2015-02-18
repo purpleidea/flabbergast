@@ -180,6 +180,8 @@ environment_tmpl : Template {
 		field ?:
 		# Whether to start with a blank environment or derive from the current environment.
 		inherit : False
+		# Whether the environment is file-level scope.
+		top_level : False
 		# The flavour that should be applied. Normally the current flavour.
 		target_flavour : flavour
 	}
@@ -235,6 +237,11 @@ environment_tmpl : Template {
 			# The field containing the name.
 			field ?:
 		}
+	}
+	# Check whether the environment is top-level.
+	top_level : Template application_action {
+		# What value is required in the top-levelness of the environment.
+		desired ?:
 	}
 	# Template for the “flavours” of environment.
 	flavour_tmpl : Template {
@@ -1397,7 +1404,10 @@ language_tmpl : Template {
 							space { }
 						]
 					}
-					apply_environment_to : [ environment.list_independent { field : $attributes } ]
+					apply_environment_to : [ environment.list_independent {
+						field : $attributes
+						top_level : True
+					} ]
 					type_demand_all : { attributes : known_types }
 				}
 			}
@@ -3187,6 +3197,7 @@ language_tmpl : Template {
 					pretty_name : "access containing frame"
 					name : "Container"
 					ensure_type_is : ensure_type.frame { }
+					apply_environment_to : [ environment.top_level { desired : False } ]
 					code_value : parameters.container_frame
 				}
 				false : Template literal_tmpl {
