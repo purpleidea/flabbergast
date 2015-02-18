@@ -563,6 +563,53 @@ kws_tmpl : Template {
 	lookup_field : Template lookup_tmpl {
 		field ?:
 	}
+	apply_override : Template base_tmpl {
+		override ?:
+		original ?:
+		arguments : [
+			{ value : override  type : known_vm_types.override_function },
+			{ value : original  type : known_vm_types.function }
+		]
+		return_type : known_vm_types.function
+	}
+	create_function_tmpl : Template codegen.gen_tmpl {
+		returns ?:
+	}
+	create_override_function : Template create_function_tmpl { }
+	create_function : Template create_function_tmpl { }
+	set_frame_or_tmpl_tmpl : Template codegen.gen_tmpl {
+		into ?:
+		with ?:
+		# The result to return, since a value must be returned. This can either be
+		# `into` to return the collection or `with` to return the item added.
+		returns : into
+	}
+	set_frame_or_tmpl : Template set_frame_or_tmpl_tmpl {
+		name ?:
+	}
+	set_frame_or_tmpl_from_field : Template set_frame_or_tmpl_tmpl {
+		name_field ?:
+	}
+
+	tmpl_get : Template base_tmpl {
+		name ?:
+		source ?:
+		arguments : [
+			{ value : source  type : known_types.template },
+			{ value : name  type : known_types.str }
+		]
+		return_type : known_vm_types.function
+	}
+	tmpl_get_from_field : Template base_tmpl {
+		source ?:
+		field ?:
+		arguments : [ { value : source  type : known_types.template } ]
+		return_type : known_vm_types.function
+	}
+	tmpl_new : Template codegen.gen_tmpl {
+		source : Null
+		context ?:
+	}
 
 	cast_to_string : Template codegen.gen_tmpl {
 		source ?:

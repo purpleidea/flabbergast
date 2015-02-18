@@ -151,6 +151,9 @@ public class Template : IAttributeNames {
 			attributes[name] = value;
 		}
 	}
+	public ComputeValue Get(Stringish name) {
+		return this[name.ToString()];
+	}
 	public IEnumerable<string> GetAttributeNames() {
 		return attributes.Keys;
 	}

@@ -739,4 +739,18 @@ public class UnitConstant : LoadableValue {
 		generator.Emit(OpCodes.Ldsfld, typeof(Unit).GetField("NULL"));
 	}
 }
+public class DelegateValue : LoadableValue {
+	private System.Type backing_type;
+	private MethodInfo method;
+	public DelegateValue(MethodInfo method, System.Type backing_type) {
+		this.method = method;
+		this.backing_type = backing_type;
+	}
+	public override System.Type BackingType { get { return backing_type; } }
+	public override void Load(ILGenerator generator) {
+		generator.Emit(OpCodes.Ldnull);
+		generator.Emit(OpCodes.Ldftn, method);
+		generator.Emit(OpCodes.Newobj, backing_type.GetConstructors()[0]);
+	}
+}
 }

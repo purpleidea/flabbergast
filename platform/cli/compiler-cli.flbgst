@@ -723,8 +723,9 @@ kws : compiler_lib.kws_tmpl {
 						"\(sum_indent)if (\(arg.value.storage_name).BackingType != typeof(\(arg.type.real_type))) throw new System.InvalidOperationException();" &
 						"\(sum_indent)\(arg.value.storage_name).Load(\(generator));" &
 						acc
-						With acc :
-							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.\(opcode)\(extra_emit));" & store_result
+						With acc : base_exec
+			base_exec :
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.\(opcode)\(extra_emit));" & store_result
 
 			value :
 				For arg : arguments, arg_indent : arg_indents
@@ -900,6 +901,144 @@ kws : compiler_lib.kws_tmpl {
 				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(field)[\(Id)_iter].ToString());" &
 				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem);" &
 				"\(sum_indent)}"
+		}
+	}
+	apply_override +: {
+		opcode : "Call"
+		gen_gen +: {
+			extra_load +original:
+				original &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, FileName);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, StartRow);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, StartColumn);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, EndRow);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, EndColumn);"
+			extra_emit : ", typeof(Computation).GetMethod(\"PerformOverride\")"
+		}
+	}
+	create_function_tmpl +: {
+		extra_indent : ""
+		parameter_names ?:
+		method ?:
+		delegate_type ?:
+		parent_generator : Lookup generator In Container
+		generator : Id & "_generator"
+		lookup_cache : "null"
+		generation_flavour : codegen.flavour_aware
+		argument_list :
+			For parameter : parameters
+			Reduce acc & ", " & parameter.storage_name
+			With acc : ""
+		parameters :
+			For parameter_name : parameter_names
+			Select parameter_name : codegen.gen_tmpl {
+				extra_indent : ""
+				storage_name : Id & "_" & parameter_name
+			}
+		gen_gen +: {
+			return_indent : indent & "\t" & returns.extra_indent
+			return_code :
+				"\(return_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
+				"\(return_indent)\(returns.storage_name).Load(\(generator));" &
+				"\(return_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, typeof(Computation).GetField(\"result\"));" &
+				"\(return_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_1);" &
+				"\(return_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);"
+
+			value : "\(indent)var \(storage_name) = new DelegateValue(\(parent_generator).Owner.\(method)(null, (\(generator)\(argument_list)) => { " & returns.gen_gen(indent : indent & "\t", code : return_code) & "\(indent)}), typeof(\(delegate_type)));" & code
+		}
+	}
+	create_function +: {
+		method : "CreateFunction"
+		parameter_names : [ $source_reference, $context, $self_frame, $container_frame ]
+		delegate_type : "ComputeValue"
+	}
+	create_override_function +: {
+		method : "CreateFunctionOverride"
+		parameter_names : [ $source_reference, $context, $self_frame, $container_frame, $original_value ]
+		delegate_type : "ComputeOverride"
+	}
+	set_frame_or_tmpl_tmpl +: {
+		string_indent ?:
+		extra_indent : into.extra_indent & with.extra_indent & string_indent
+		storage_name : returns.storage_name
+		gen_gen +: {
+			sum_indent : indent & into.extra_indent & with.extra_indent & string_indent
+			load_name ?:
+			base_code : into.gen_gen(
+				indent : indent & string_indent,
+				code : with.gen_gen(
+					indent : indent & into.extra_indent & string_indent,
+					code :
+						"\(sum_indent)\(into.storage_name).Load(\(generator));" &
+						load_name &
+						"\(sum_indent)\(with.storage_name).Load(\(generator));" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, \(into.storage_name).BackingType.GetMethod(\"set_Item\"));" &
+						code
+					)
+				)
+		}
+	}
+	set_frame_or_tmpl +: {
+		string_indent : name.extra_indent
+		gen_gen +: {
+			value : name.gen_gen(indent : indent, code : base_code)
+			load_name :
+				"\(sum_indent)\(name.storage_name).Load(\(generator));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Stringish).GetMethod(\"ToString\"));"
+		}
+	}
+	set_frame_or_tmpl_from_field +: {
+		string_indent : ""
+		gen_gen +: {
+			value : base_code
+			load_name :
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(name_field).ToString());"
+		}
+	}
+	tmpl_get +: {
+		opcode : "Call"
+		gen_gen +: {
+			extra_emit : ", typeof(Template).GetMethod(\"Get\")"
+		}
+	}
+	tmpl_get_from_field +: {
+		opcode : "Call"
+		gen_gen +: {
+			extra_emit : ", typeof(Template).GetMethod(\"get_Item\")"
+			base_exec +original:
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(field).ToString());" &
+				original
+		}
+	}
+	tmpl_new +: {
+		extra_indent : context.extra_indent & source_extra_indent
+		source_extra_indent : If source Is Null Then "" Else source.extra_indent
+		gen_gen +: {
+			sum_indent : indent & extra_indent
+			base_code : context.gen_gen(
+				indent : indent & source_extra_indent,
+				code :
+					"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"new_template\", typeof(Template));" &
+					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
+					(If context Is Null
+						Then "\(sum_indent)\(parameters.source_reference).Load(\(generator));"
+						Else
+							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \"template creation\");" &
+							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, FileName);" &
+							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, StartRow);" &
+							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, StartColumn);" &
+							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, EndRow);" &
+							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, EndColumn);" &
+							"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));" &
+							"\(sum_indent)\(context.storage_name).Load(\(generator));" &
+							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Template).GetMethod(\"get_SourceReference\"));") &
+							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \"inherits from\");" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(JunctionReference).GetConstructors()[0]);") &
+					"\(sum_indent)\(context.storage_name).Load(\(generator));" &
+					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(Template).GetConstructors()[0]);" &
+					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);" &
+					code
+			value : If source Is Null Then base_code Else souce.gen_gen(indent : indent, code : base_code)
 		}
 	}
 
