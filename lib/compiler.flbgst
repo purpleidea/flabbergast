@@ -2681,7 +2681,7 @@ language_tmpl : Template {
 							space { preferred : True },
 							parser.exact { word : "{" },
 							parser.accumulate_list {
-								field : $attributes
+								field : $overrides
 								type : $attribute
 								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
@@ -2698,11 +2698,17 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [
 						environment.other_elements { fields : [ $source ] },
-						environment.list_independent { field : $attributes }
+						environment.list_independent { field : $overrides }
 					]
 					ensure_type_is : ensure_type.frame {}
 					type_demand : { source : [ known_types.template ] }
-					type_demand_all : { attributes : known_types }
+					type_demand_all : { overrides : known_types }
+					code_value : perform_overrides {
+						new_item : Template kws.frame_new {
+							container : parameters.self_frame
+						}
+						source_template : codegen.other_code { field : $source }
+					}
 				}
 
 				coalesce : Template binary_operator {
@@ -2766,6 +2772,17 @@ language_tmpl : Template {
 					apply_environment_to : [ environment.list_of { field : $attributes } ]
 					ensure_type_is : ensure_type.frame {}
 					type_demand_all : { attributes : known_types }
+					code_value : codegen.empty_parameter {
+						parameters : { source_template : emptiness }
+						in : codegen.fold_others {
+							target_flavour : codegen.flavour_attribute_accumulate
+							field : $attributes
+							initial : kws.frame_new {
+								container : parameters.self_frame
+								context : parameters.context
+							}
+						}
+					}
 				}
 				not : Template unary_tmpl {
 					pretty_name : "logical negation"
@@ -2836,6 +2853,16 @@ language_tmpl : Template {
 					apply_environment_to : [ environment.list_independent { field : $attributes } ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.template ] }
 					type_demand_all : { attributes : known_types }
+					code_value : codegen.empty_parameter {
+						parameters : { source_template : emptiness }
+						in : codegen.fold_others {
+							target_flavour : codegen.flavour_attribute_accumulate
+							field : $attributes
+							initial : kws.tmpl_new {
+								context : parameters.context
+							}
+						}
+					}
 				}
 				template_extend : Template expression_tmpl {
 					pretty_name : "extend existing template"
