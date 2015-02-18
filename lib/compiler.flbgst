@@ -2781,7 +2781,7 @@ language_tmpl : Template {
 							parser.exact { word : "}" }
 						]
 					}
-					apply_environment_to : [ environment.list_of { field : $attributes } ]
+					apply_environment_to : [ environment.list_independent { field : $attributes } ]
 					ensure_type_is : ensure_type.frame {}
 					type_demand_all : { attributes : known_types }
 					code_value : codegen.empty_parameter {
