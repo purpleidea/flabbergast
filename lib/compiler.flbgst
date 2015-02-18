@@ -846,6 +846,8 @@ codegen_tmpl : Template {
 	# Generate code that is aware of the current context, This frame, and
 	# Container frame and has a special accumulator for a folding generation.
 	flavour_aware_accumulate ?:
+	# Generate code that takes no external input.
+	flavour_empty ?:
 	# Generate code that is unaware of the environment but has an accumulator for
 	# folding generation.
 	flavour_accumulate ?:

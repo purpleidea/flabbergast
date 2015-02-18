@@ -1646,6 +1646,15 @@ codegen : compiler_lib.codegen_tmpl {
 		accumulate_flavour : flavour_aware_accumulate
 		non_accumulate_flavour : flavour_aware
 	}
+	flavour_empty : flavour_complex_tmpl {
+		has_cache : False
+		parameter_names : []
+		call_site +: {
+			parameter_lookups : []
+		}
+		accumulate_flavour : flavour_accumulate
+		non_accumulate_flavour : flavour_empty
+	}
 	flavour_accumulate : flavour_complex_tmpl {
 		has_cache : False
 		parameter_names : [ $source_reference, $accumulator ]
@@ -1653,7 +1662,7 @@ codegen : compiler_lib.codegen_tmpl {
 			parameter_lookups : [ parameters.source_reference, parameters.accumulator ]
 		}
 		accumulate_flavour : flavour_accumulate
-		non_accumulate_flavour : Null
+		non_accumulate_flavour : flavour_empty
 	}
 	flavour_attribute : flavour_complex_tmpl {
 		has_cache : False
