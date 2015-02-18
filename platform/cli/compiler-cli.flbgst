@@ -612,6 +612,8 @@ known_types : compiler_lib.known_types_tmpl {
 known_vm_types : compiler_lib.known_vm_types_tmpl {
 	any : { real_type : "object" }
 	list : { real_type : "Flabbergast.Context" }
+	function : { real_type : "Flabbergast.ComputeValue" }
+	override_function : { real_type : "Flabbergast.ComputeOverride" }
 }
 # The mechanism code to do type checking in the compiler. Each syntax element
 # is told what types it may return and it propagates this type information to

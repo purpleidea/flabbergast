@@ -264,6 +264,8 @@ known_types_tmpl : Template {
 known_vm_types_tmpl : Template {
 	any ?:
 	list ?:
+	function ?:
+	override_function ?:
 }
 # The actions that can be performed to check that the required return type is
 # correct.
