@@ -1322,6 +1322,47 @@ language_tmpl : Template {
 			value_pattern { }
 		]
 	}
+	perform_overrides : Template codegen.push_source_reference {
+		source_template ?:
+		in : codegen.type_dispatch {
+			of : source_template
+			choices : [
+				choice_tmpl {
+					type : known_types.template
+					action : kws.iterator {
+						initial : kws.tmpl_new {
+							context : kws.list_append {
+								head : parameters.context
+								tail : kws.frame_context { source : converted_result }
+							}
+						}
+						inputs : [ converted_result ]
+						cases : [ list_case {
+							field : $overrides
+							name_field : $name
+							action : codegen.other_code {
+								parameters : {
+									source_template : converted_result
+									target : current_accumulator
+								}
+								field : current_element
+								target_flavour : codegen.flavour_attribute
+							}
+						}]
+						default_case : kws.set_frame_or_tmpl {
+							name : current_name
+							returns : into
+							into : converted_result
+							with : kws.tmpl_get {
+								name : current_name
+								source : converted_result
+							}
+						}
+					}
+				}
+			]
+		}
+	}
 
 	# All the groups in the language. For details, see the specification.
 	rule_groups : Template {
@@ -1357,6 +1398,7 @@ language_tmpl : Template {
 		attribute : Template syntax_group {
 			include_base_parser : False
 			environment_flavour : environment.flavour_simple
+			generation_flavour : codegen.flavour_attribute
 			is_typeable : True
 			common +: {
 				comment : common_fields.str
@@ -1376,6 +1418,17 @@ language_tmpl : Template {
 						}
 					]
 					ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
+					code_value : kws.set_frame_or_tmpl_from_field {
+						name_field : $name
+						returns : into
+						into : parameters.target
+						with : kws.create_function {
+							returns : codegen.prepare_lookup_cache {
+								in : codegen.other_code { field : $expression }
+								name : Null
+							}
+						}
+					}
 				}
 				named_override : Template syntax_element {
 					pretty_name : "attribute with named override"
@@ -1406,6 +1459,25 @@ language_tmpl : Template {
 						name : Null
 					} ]
 					ensure_type_is : ensure_type.stop {}
+					code_value :  kws.set_frame_or_tmpl_from_field {
+						name_field : $name
+						returns : into
+						into : parameters.target
+						with : kws.apply_override {
+							override : kws.create_override_function {
+								returns : codegen.push_source_reference {
+									in : codegen.prepare_lookup_cache {
+										in : codegen.other_code { field : $expression }
+										name : Null
+									}
+								}
+							}
+							original : kws.tmpl_get_from_field {
+								field : $name
+								source : parameters.source_template
+							}
+						}
+					}
 				}
 				template_override : Template syntax_element {
 					pretty_name : "attribute overriding a template"
@@ -1437,6 +1509,22 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.list_independent { field : $overrides } ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.template ] }
+					code_value : kws.set_frame_or_tmpl_from_field {
+						name_field : $name
+						returns : into
+						into : parameters.target
+						with : kws.apply_override {
+							override : kws.create_override_function {
+								returns : perform_overrides {
+									source_template : parameters.original_value
+								}
+							}
+							original : kws.tmpl_get_from_field {
+									field : $name
+									source : parameters.source_template
+							}
+						}
+					}
 				}
 				missing_attribute : Template syntax_element {
 					pretty_name : "attribute requiring override"
@@ -1451,6 +1539,24 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.stop {}
+					code_value : kws.set_frame_or_tmpl_from_field {
+						name_field : $name
+						returns : into
+						into : parameters.target
+						with : kws.create_function {
+							returns : codegen.push_source_reference {
+								in : kws.error {
+									message : kws.string_concatenate {
+										first : kws.string_constant { str : "Attribute “" }
+										second : kws.string_concatenate {
+											first : kws.string_constant_from_field { field : $name }
+											second : kws.string_constant { str : "” must be overridden." }
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 				informative_attribute : Template syntax_element {
 					pretty_name : "informative attribute"
@@ -1465,6 +1571,15 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.stop {}
+					code_value : kws.set_frame_or_tmpl_from_field {
+						name_field : $name
+						returns : into
+						into : parameters.target
+						with : kws.tmpl_get_from_field {
+							field : $name
+							source : parameters.source_template
+						}
+					}
 				}
 				remove_attribute : Template syntax_element {
 					pretty_name : "removal attribute"
@@ -1479,6 +1594,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.stop {}
+					code_value : parameters.target
 				}
 			}
 		}
@@ -2725,7 +2841,7 @@ language_tmpl : Template {
 							space { preferred : True },
 							parser.exact { word : "{" },
 								parser.accumulate_list {
-								field : $attributes
+								field : $overrides
 								type : $attribute
 								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
@@ -2742,13 +2858,16 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [
 						environment.other_elements { fields : [ $source ] },
-						environment.list_independent { field : $attributes }
+						environment.list_independent { field : $overrides }
 					]
 					ensure_type_is : ensure_type.filter {
 						types : [ known_types.template ]
 						ensure_type_of : propagate { fields : [ $source ] }
 					}
-					type_demand_all : { attributes : known_types }
+					type_demand_all : { overrides : known_types }
+					code_value : perform_overrides {
+						source_template : codegen.other_code { field : $source }
+					}
 				}
 
 				function_anonymous : Template expression_tmpl {
