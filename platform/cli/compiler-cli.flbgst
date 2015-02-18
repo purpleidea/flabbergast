@@ -824,6 +824,10 @@ kws : compiler_lib.kws_tmpl {
 			extra_emit : ", typeof(Frame).GetMethod(\"Through\")"
 		}
 	}
+	frame_null +: {
+		extra_indent : ""
+		storage_name : "LoadableValue.NULL_FRAME"
+	}
 	frame_id +: {
 		opcode : "Call"
 		gen_gen +: {

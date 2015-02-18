@@ -523,6 +523,7 @@ kws_tmpl : Template {
 		]
 		return_type : known_types.frame
 	}
+	frame_null : Template codegen.gen_tmpl {}
 	frame_id : Template base_tmpl {
 		source ?:
 		arguments : [ { value : source  type : known_types.frame } ]

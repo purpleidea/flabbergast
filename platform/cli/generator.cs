@@ -651,15 +651,20 @@ public class LookupCache {
 	}
 }
 public abstract class LoadableValue {
-	public static LoadableValue NULL_LIST = new NullList();
+	public static LoadableValue NULL_LIST = new NullValue(typeof(Context));
+	public static LoadableValue NULL_FRAME = new NullValue(typeof(Frame));
 	public abstract System.Type BackingType { get; }
 	public abstract void Load(ILGenerator generator);
 	public void Load(Generator generator) {
 		Load(generator.Builder);
 	}
 }
-internal class NullList : LoadableValue {
-	public override System.Type BackingType { get { return typeof(Context); } }
+internal class NullValue : LoadableValue {
+	public override System.Type BackingType { get { return backing; } }
+	private System.Type backing;
+	public NullValue(System.Type backing) {
+		this.backing = backing;
+	}
 	public override void Load(ILGenerator generator) {
 		generator.Emit(OpCodes.Ldnull);
 	}
