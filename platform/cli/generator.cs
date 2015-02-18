@@ -272,7 +272,7 @@ public class Generator {
 	 * Copies the contents of one field to another, boxing or unboxing based on
 	 * the field types.
 	 */
-	void CopyField(LoadableValue source, FieldValue target) {
+	public void CopyField(LoadableValue source, FieldValue target) {
 		CopyField(source, target.Field);
 	}
 	void CopyField(LoadableValue source, FieldInfo target) {

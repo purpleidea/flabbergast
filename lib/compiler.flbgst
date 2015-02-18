@@ -656,6 +656,8 @@ kws_tmpl : Template {
 		# The current position of the iterator. This may only be used in
 		# `default_case` and `cases`.
 		current_ordinal ?:
+		# The current accumulated value in the iterator.
+		current_accumulator ?:
 
 		# The base template for a “special case”. Not to be used directly.
 		base_case_tmpl : Template {
@@ -663,24 +665,24 @@ kws_tmpl : Template {
 			action ?:
 		}
 		# The attribute name of the special case is a literal.
-		literal_case_tmpl : Template base_case_tmpl {
+		literal_case : Template base_case_tmpl {
 			# The attribute name.
 			name ?:
 		}
 		# The attribute name of the special case is defined in a field of another element.
-		remote_field_case_tmpl : Template base_case_tmpl {
+		remote_field_case : Template base_case_tmpl {
 			# The field containing the element of interest.
 			field ?:
 			# The field in the element of interest containing the name.
 			name_field ?:
 		}
 		# The attributes are many based on a list of other syntax elements.
-		list_case_tmpl : Template base_case_tmpl {
+		list_case : Template base_case_tmpl {
 			# The field containing the list of elements of interest.
 			field ?:
 			# The field in the element of interest containing the name.
 			name_field ?:
-			# A name, which may be used in a `parameter` to access the element in the
+			# A name, which may be used in a `other_code` to access the element in the
 			# list in `action`.
 			current_element ?:
 		}

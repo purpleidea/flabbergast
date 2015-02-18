@@ -1074,8 +1074,8 @@ kws : compiler_lib.kws_tmpl {
 			base_code :
 				# Create new fields for all the bits of stuff we need.
 				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_accumulator\", \(initial.storage_name).BackingType);" &
-				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_key\", typeof(string));" &
-				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_ordinal\", typeof(long));" &
+				"\(sum_indent)var \(iterator_key) = \(generator).MakeField(\"\(rule_name)_iterator_key\", typeof(string));" &
+				"\(sum_indent)var \(iterator_ordinal) = \(generator).MakeField(\"\(rule_name)_iterator_ordinal\", typeof(long));" &
 				"\(sum_indent)\(generator).CopyField(\(initial.storage_name), \(storage_name));" &
 				"\(sum_indent)var \(iterator_instance) = \(generator).MakeField(\"\(rule_name)_iterator\", typeof(MergeIterator));" &
 				"\(sum_indent)var \(iterator_state) = \(generator).DefineState();" &
@@ -1101,24 +1101,23 @@ kws : compiler_lib.kws_tmpl {
 				"\(sum_indent)\(generator).SlotSleep(\(iterator_instance));" &
 				"\(sum_indent)\(generator).FlushBlocks();" &
 				"\(sum_indent)\(generator).MarkState(\(iterator_state));" &
-				"\(sum_indent)\(generator).EraseField(\(iterator_instance));" &
 				code
 
-			dispatch_code : default_dispatcher.gen_gen(
+			dispatch_code : default_case.gen_gen(
 				indent : sum_indent & "\t",
 				code :
-					"\(sum_indent)\(default_dispatcher.extra_indent)\t\(generator).CopyField(\(default_dispatcher.storage_name), \(storage_name));" &
-					"\(sum_indent)\(default_dispatcher.extra_indent)\t\(generator).SetState(\(iterator_state));" &
-					"\(sum_indent)\(default_dispatcher.extra_indent)\t\(generator).SlotSleep(\(iterator_instance));"
+					"\(sum_indent)\(default_case.extra_indent)\t\(generator).CopyField(\(default_case.storage_name), \(storage_name));" &
+					"\(sum_indent)\(default_case.extra_indent)\t\(generator).SetState(\(iterator_state));" &
+					"\(sum_indent)\(default_case.extra_indent)\t\(generator).SlotSleep(\(iterator_instance));"
 					)
 
 			input_loads :
 				For input : inputs, index : Ordinal
 				Reduce acc &
-					"\(sum_indent)if (!typeof(IAttributeNames).IsAssignableFrom(\(input.value.storage_name).BackingType)) throw new System.InvalidOperationException();" &
+					"\(sum_indent)if (!typeof(IAttributeNames).IsAssignableFrom(\(input.storage_name).BackingType)) throw new System.InvalidOperationException();" &
 					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
 					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(index - 1));" &
-					"\(sum_indent)\(input.value.storage_name).Load(\(generator));" &
+					"\(sum_indent)\(input.storage_name).Load(\(generator));" &
 					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem);"
 				With acc : ""
 
@@ -1142,7 +1141,7 @@ kws : compiler_lib.kws_tmpl {
 				value ?:
 			}
 		}
-		literal_case_tmpl +: {
+		literal_case +: {
 			gen_gen +: {
 				value :
 					"\(indent)\(generator).CreateIteratorBlock(\(iterator_instance), \"\(name)\", () => {" &
@@ -1151,7 +1150,7 @@ kws : compiler_lib.kws_tmpl {
 					"\(indent)});"
 			}
 		}
-		remote_field_case_tmpl +: {
+		remote_field_case +: {
 			gen_gen +: {
 				value :
 					"\(indent)\(generator).CreateIteratorBlock(\(iterator_instance), \(field).\(name_field).ToString(), () => {" &
@@ -1160,19 +1159,29 @@ kws : compiler_lib.kws_tmpl {
 					"\(indent)});"
 			}
 		}
-		list_case_tmpl +: {
+		list_case +: {
 			current_element : Id
 			gen_gen +: {
 				value :
-					"\(indent)foreach (var \(current_element) in \(field)) \(generator).CreateIteratorBlock(\(iterator_instance), \(current_field_name).\(name_field).ToString(), () => {" &
+					"\(indent)foreach (var \(current_element) in \(field)) \(generator).CreateIteratorBlock(\(iterator_instance), \(current_element).\(name_field).ToString(), () => {" &
 					load_key &
 					action.gen_gen(indent : indent & "\t", code : base_code) &
 					"\(indent)});"
 			}
 		}
 
-		current_name : codegen.gen_tmpl { storage_name : iterator_key }
-		current_ordinal : codegen.gen_tmpl { storage_name : iterator_key }
+		current_name : codegen.gen_tmpl {
+			extra_indent : ""
+			storage_name : iterator_key
+		}
+		current_ordinal : codegen.gen_tmpl {
+			extra_indent : ""
+			storage_name : iterator_ordinal
+		}
+		current_accumulator : codegen.gen_tmpl {
+			extra_indent : ""
+			storage_name : Lookup storage_name In Container
+		}
 	}
 }
 # Generate hideously complicated flows in the compiler's code generation routines.
