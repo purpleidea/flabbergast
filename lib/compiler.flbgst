@@ -742,6 +742,11 @@ kws_tmpl : Template {
 codegen_tmpl : Template {
 	# Base template for all code generation templates and KWS VM templates.
 	gen_tmpl : Template {}
+	# Create a null parameter.
+	empty_parameter : Template gen_tmpl {
+		in ?:
+		emptiness ?:
+	}
 	# Given a list of syntax elements, fold them to return a single value.
 	#
 	# Start by computing an initial value. For ever item in the list, call the

@@ -1345,6 +1345,15 @@ codegen : compiler_lib.codegen_tmpl {
 			value : code
 		}
 	}
+	empty_parameter +: {
+		extra_indent : ""
+		storage_name : in.storage_name
+		gen_gen : in.gen_gen
+		emptiness : gen_tmpl {
+			extra_indent : ""
+			storage_name : "null"
+		}
+	}
 	# This nasty customer does a fold over a list of syntax elements. It
 	# accomplishes this using the painfully obtuse `Generator.Fold` function.
 	fold_others +: {
