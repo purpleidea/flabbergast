@@ -2946,7 +2946,9 @@ language_tmpl : Template {
 					}
 					type_demand_all : { overrides : known_types }
 					code_value : perform_overrides {
-						new_item : kws.tmpl_new
+						new_item : Template kws.tmpl_new {
+							source : converted_result
+						}
 						source_template : codegen.other_code { field : $source }
 					}
 				}
