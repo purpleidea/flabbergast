@@ -2986,6 +2986,43 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.any { }
 					type_demand : { func_expr : [ known_types.template ] }
 					type_demand_all : { args : known_types }
+					code_value : codegen.type_dispatch {
+						of : codegen.other_code { field : $func_expr }
+						choices : [
+							choice_tmpl {
+								type : known_types.template
+								action : kws.iterator {
+									inputs : [ converted_result ]
+									initial : codegen.push_source_reference {
+										in : kws.frame_new {
+											container : kws.tmpl_container { source : converted_result }
+											context : kws.tmpl_context { source : converted_result }
+										}
+									}
+									cases : [ literal_case {
+										name : $args
+										action : kws.set_frame_or_tmpl {
+											name : current_name
+											returns : into
+											into : current_accumulator
+											with : codegen.fold_into_frame {
+												field : $args
+											}
+										}
+									} ]
+									default_case : kws.set_frame_or_tmpl {
+										name : current_name
+										returns : into
+										into : current_accumulator
+										with : kws.tmpl_get {
+											name : current_name
+											source : converted_result
+										}
+									}
+								}
+							}
+						]
+					}
 				}
 				function_named : Template expression_tmpl {
 					pretty_name : "function-like template instantiation (named arguments)"
