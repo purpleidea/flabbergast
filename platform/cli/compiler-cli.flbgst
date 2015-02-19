@@ -1367,17 +1367,19 @@ codegen : compiler_lib.codegen_tmpl {
 	fold_others +: {
 		extra_indent : initial.extra_indent & "\t"
 		fold_name : "\(Id)_left"
+		call_arguments : target_flavour.accumulate_flavour.call_site {}
 		argument_list : "\(generator), " &
 			(If target_flavour.accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
-			(target_flavour.accumulate_flavour.call_site {}).value
+			call_arguments.value
 
 		gen_gen +: {
 			sum_indent : indent & initial.extra_indent
+			expand : "\(Id)_block"
 			value :
 				initial.gen_gen(
 					indent : indent,
 					code :
-						"\(sum_indent)_generator.Fold((LoadableValue) \(initial.storage_name), \(field), (\(Id)_index, \(Id)_item, \(fold_name), \(Id)_block) => \(Id)_item.Generate(\(argument_list)\(Id)_block), (\(storage_name)) => {\(code)\(sum_indent)});"
+						"\(sum_indent)_generator.Fold((LoadableValue) \(initial.storage_name), \(field), (\(Id)_index, \(Id)_item, \(fold_name), \(Id)_block) => \(Id)_item.Generate(\(argument_list)\(expand)), (\(storage_name)) => {\(code)\(sum_indent)});"
 						)
 		}
 		parameters : {
@@ -1385,6 +1387,21 @@ codegen : compiler_lib.codegen_tmpl {
 				extra_indent : ""
 				storage_name : fold_name
 			}
+		}
+	}
+	fold_into_frame +: {
+		call_arguments : target_flavour.non_accumulate_flavour.call_site {}
+		gen_gen +: {
+			expand :
+				"(\(Id)_result) => {" &
+				"\(sum_indent)\t\(fold_name).Load(\(generator));" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I8, \(Id)_index);" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(TaskMaster).GetMethod(\"OrdinalName\"));" &
+				"\(sum_indent)\t\(Id)_result.Load(\(generator));" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Box);" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Frame).GetMethod(\"set_Item\"));" &
+				"\(sum_indent)\t\(Id)_block(\(fold_name));" &
+				"\(sum_indent)}"
 		}
 	}
 	lookup_cached +: {
