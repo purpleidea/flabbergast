@@ -1009,6 +1009,18 @@ kws : compiler_lib.kws_tmpl {
 			extra_emit : ", typeof(Template).GetMethod(\"Get\")"
 		}
 	}
+	tmpl_container +: {
+		opcode : "Call"
+		gen_gen +: {
+			extra_emit : ", typeof(Template).GetMethod(\"get_Container\")"
+		}
+	}
+	tmpl_context +: {
+		opcode : "Call"
+		gen_gen +: {
+			extra_emit : ", typeof(Template).GetMethod(\"get_Context\")"
+		}
+	}
 	tmpl_get_from_field +: {
 		opcode : "Call"
 		gen_gen +: {

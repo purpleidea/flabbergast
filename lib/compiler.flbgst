@@ -608,6 +608,16 @@ kws_tmpl : Template {
 		]
 		return_type : known_vm_types.function
 	}
+	tmpl_container : Template base_tmpl {
+		source ?:
+		arguments : [ { value : source  type : known_types.template } ]
+		return_type : known_types.frame
+	}
+	tmpl_context : Template base_tmpl {
+		source ?:
+		arguments : [ { value : source  type : known_types.template } ]
+		return_type : known_vm_types.list
+	}
 	tmpl_get_from_field : Template base_tmpl {
 		source ?:
 		field ?:
