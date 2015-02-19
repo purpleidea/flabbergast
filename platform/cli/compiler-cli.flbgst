@@ -17,6 +17,11 @@ compiler_lib : From lib:compiler
 # indentation. Parser components can redefine `parse_complete` as needed to
 # define the behaviour of their children.
 parser : compiler_lib.parser_tmpl {
+	nop +: {
+		class_gen : ""
+		copy_instance : ""
+		parser_gen : parse_complete(ok : True, indent : indent )
+	}
 	# Call `ParserPosition.Match` and record a failure otherwise.
 	exact +: {
 		class_gen : ""

@@ -2,6 +2,8 @@
 # combinators that are rendered into a parser in the target language. This
 # describes the interface expected.
 parser_tmpl : Template {
+	# Parses nothing, always succeeds.
+	nop : Template {}
 	# Match a literal string, exactly as provided.
 	exact : Template { word ?: }
 	# Match another parse element, but, if parsing fails, back up the parser and
