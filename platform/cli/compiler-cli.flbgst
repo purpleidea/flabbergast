@@ -532,6 +532,7 @@ environment : compiler_lib.environment_tmpl {
 
 			class_gen :
 				For application : apply_environment_to
+					Where !(application Is Null)
 					Reduce acc & application.class_gen
 					With acc : ""
 
@@ -543,7 +544,7 @@ environment : compiler_lib.environment_tmpl {
 					"\t\t\(current_flavour.target_field) = _environment;\n" &
 					(If current_flavour.queued Then "\t\t_queue.Add(this);\n" Else "") &
 					(For application : apply_environment_to
-						Where application.flavour.id == current_flavour.id
+						Where !(application Is Null) && application.flavour.id == current_flavour.id
 						Reduce acc & application.value
 						With acc : "")
 					& "\t}\n"
@@ -1296,6 +1297,7 @@ kws : compiler_lib.kws_tmpl {
 
 			add_cases :
 				For case : cases
+				Where !(case Is Null)
 				Reduce
 					acc &
 					case.gen_gen(indent : sum_indent)
@@ -1761,7 +1763,9 @@ compiler : compiler_lib.language_tmpl {
 						");\n"
 					With ensure_acc : "") &
 				(For field : Name, types : type_demand_all
-					Reduce "\(ensure_acc)\t\tif (\(field) != null) foreach (var _item in \(field)) _item.EnsureType(collector, " &
+					Where !(types Is Null)
+					Reduce
+						"\(ensure_acc)\t\tif (\(field) != null) foreach (var _item in \(field)) _item.EnsureType(collector, " &
 						(For t : types Reduce acc & " | " & t.union_type With acc : "0") &
 						");\n"
 					With ensure_acc : "") &
