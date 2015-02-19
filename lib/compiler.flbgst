@@ -1357,6 +1357,134 @@ language_tmpl : Template {
 			value_pattern { }
 		]
 	}
+	function_tmpl : Template expression_tmpl {
+		level : 17
+		has_anon_args ?:
+		has_named_args ?:
+		parse_anonymous : Template parser.accumulate_list {
+			field : $anon_args
+			type : $expression
+			in : parser.many_word {
+				of : parser.sequence {
+					of : [
+						space { preferred : True },
+						top_expression { field : Null },
+						space { },
+						parser.except { char : ":" }
+					]
+				}
+				separator_word : ","
+			}
+		}
+		parse_named : Template parser.accumulate_list {
+			field : $named_args
+			type : $named_definition
+			deduplicate : expanded_groups.named_definition.expanded_common.name
+			forbid :
+				If has_anon_args
+					Then [ $args, $value ]
+					Else [ $value ]
+			in : parser.many_word {
+				nonempty : True
+				of : parser.sequence {
+					of : [
+						parser.other {
+							type : $named_definition
+							field : Null
+						},
+						space { }
+					]
+				}
+				separator_word : ","
+			}
+		}
+
+		pattern : parser.sequence {
+			of : [
+				child_expression { field : $func_expr },
+				space { },
+				parser.exact { word : "(" },
+				If has_anon_args Then parse_anonymous {} Else parser.nop {},
+				If has_anon_args && has_named_args Then parser.exact { word : "," } Else parser.nop {},
+				If has_named_args Then parse_named {} Else parser.nop {},
+				space { },
+				parser.exact { word : ")" }
+			]
+		}
+		apply_environment_to : [
+			environment.other_elements { fields : [ $func_expr ] },
+			If has_anon_args Then environment.list_of { field : $anon_args } Else Null,
+			If has_named_args Then environment.list_of { field : $named_args } Else Null
+		]
+		ensure_type_is : ensure_type.any { }
+		type_demand : { func_expr : [ known_types.template ] }
+		type_demand_all : {
+			anon_args : If has_anon_args Then known_types Else Null
+			named_args : If has_named_args Then known_types Else Null
+		}
+		code_value : kws.lookup_literal {
+			name : $value
+			source : kws.list_prepend {
+				tail : kws.list_null {}
+				frame : codegen.type_dispatch {
+					of : codegen.other_code { field : $func_expr }
+					choices : [
+						choice_tmpl {
+							type : known_types.template
+							action : kws.iterator {
+								inputs : [ converted_result ]
+								initial : codegen.push_source_reference {
+									in : kws.frame_new {
+										container : kws.tmpl_container { source : converted_result }
+										context : kws.tmpl_context { source : converted_result }
+									}
+								}
+								cases : [
+									If has_anon_args
+										Then literal_case {
+											name : $args
+											action : kws.set_frame_or_tmpl {
+												name : current_name
+												returns : into
+												into : current_accumulator
+												with : codegen.fold_into_frame {
+													field : $anon_args
+												}
+											}
+										}
+										Else Null,
+									If has_named_args
+										Then list_case {
+											field : $named_args
+											name_field : $name
+											action : kws.set_frame_or_tmpl {
+												name : current_name
+												returns : into
+												into : current_accumulator
+												with : codegen.other_code {
+													field : current_element
+												}
+											}
+										}
+										Else Null
+								]
+								default_case : kws.set_frame_or_tmpl {
+									name : current_name
+									returns : into
+									into : current_accumulator
+									with : kws.tmpl_get {
+										name : current_name
+										source : converted_result
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		}
+	}
+
 	perform_overrides : Template codegen.push_source_reference {
 		source_template ?:
 		new_item ?:
@@ -2955,172 +3083,20 @@ language_tmpl : Template {
 					}
 				}
 
-				function_anonymous : Template expression_tmpl {
+				function_anonymous : Template function_tmpl {
 					pretty_name : "function-like template instantiation (unnamed arguments)"
-					level : 17
-					pattern : parser.sequence {
-						of : [
-							child_expression { field : $func_expr },
-							space { },
-							parser.exact { word : "(" },
-							parser.accumulate_list {
-								field : $args
-								type : $expression
-								in : parser.many_word {
-									of : parser.sequence {
-										of : [
-											space { preferred : True },
-											top_expression { field : Null },
-											space { }
-										]
-									}
-									separator_word : ","
-								}
-							},
-							space { },
-							parser.exact { word : ")" }
-						]
-					}
-					apply_environment_to : [
-						environment.other_elements { fields : [ $func_expr ] },
-						environment.list_of { field : $args }
-					]
-					ensure_type_is : ensure_type.any { }
-					type_demand : { func_expr : [ known_types.template ] }
-					type_demand_all : { args : known_types }
-					code_value : codegen.type_dispatch {
-						of : codegen.other_code { field : $func_expr }
-						choices : [
-							choice_tmpl {
-								type : known_types.template
-								action : kws.iterator {
-									inputs : [ converted_result ]
-									initial : codegen.push_source_reference {
-										in : kws.frame_new {
-											container : kws.tmpl_container { source : converted_result }
-											context : kws.tmpl_context { source : converted_result }
-										}
-									}
-									cases : [ literal_case {
-										name : $args
-										action : kws.set_frame_or_tmpl {
-											name : current_name
-											returns : into
-											into : current_accumulator
-											with : codegen.fold_into_frame {
-												field : $args
-											}
-										}
-									} ]
-									default_case : kws.set_frame_or_tmpl {
-										name : current_name
-										returns : into
-										into : current_accumulator
-										with : kws.tmpl_get {
-											name : current_name
-											source : converted_result
-										}
-									}
-								}
-							}
-						]
-					}
+					has_anon_args : True
+					has_named_args : False
 				}
-				function_named : Template expression_tmpl {
+				function_named : Template function_tmpl {
 					pretty_name : "function-like template instantiation (named arguments)"
-					level : 17
-					pattern : parser.sequence {
-						of : [
-							child_expression { field : $func_expr },
-							space { },
-							parser.exact { word : "(" },
-							parser.accumulate_list {
-								field : $args
-								type : $named_definition
-								deduplicate : expanded_groups.named_definition.expanded_common.name
-								forbid : [ $value ]
-								in : parser.many_word {
-									of : parser.sequence {
-										of : [
-											parser.other {
-												type : $named_definition
-												field : Null
-											},
-											space { }
-										]
-									}
-									separator_word : ","
-								}
-							},
-							parser.exact { word : ")" }
-						]
-					}
-					apply_environment_to : [
-						environment.other_elements { fields : [ $func_expr ] },
-						environment.list_of { field : $args }
-					]
-					ensure_type_is : ensure_type.any { }
-					type_demand : { func_expr : [ known_types.template ] }
-					type_demand_all : { args : known_types }
+					has_anon_args : False
+					has_named_args : True
 				}
-				function_mixed : Template expression_tmpl {
+				function_mixed : Template function_tmpl {
 					pretty_name : "function-like template instantiation (named and unnamed arguments)"
-					level : 17
-					pattern : parser.sequence {
-						of : [
-							child_expression { field : $func_expr },
-							space { },
-							parser.exact { word : "(" },
-							parser.accumulate_list {
-								field : $anon_args
-								type : $expression
-								in : parser.many_word {
-									nonempty : True
-									of : parser.sequence {
-										of : [
-											space { preferred : True },
-											top_expression { field : Null },
-											space { },
-											parser.except { char : ":" }
-										]
-									}
-									separator_word : ","
-								}
-							},
-							parser.exact { word : "," },
-							parser.accumulate_list {
-								field : $named_args
-								type : $named_definition
-								deduplicate : expanded_groups.named_definition.expanded_common.name
-								forbid : [ $args, $value ]
-								in : parser.many_word {
-									nonempty : True
-									of : parser.sequence {
-										of : [
-											parser.other {
-												type : $named_definition
-												field : Null
-											},
-											space { }
-										]
-									}
-									separator_word : ","
-								}
-							},
-							parser.exact { word : ")" }
-						]
-					}
-					apply_environment_to : [
-						environment.other_elements { fields : [ $func_expr ] },
-						environment.list_of { field : $anon_args },
-						environment.list_of { field : $named_args }
-					]
-					ensure_type_is : ensure_type.any { }
-					type_demand : { func_expr : [ known_types.template ] }
-					type_demand_all : {
-						anon_args : known_types
-						named_args : known_types
-					}
+					has_anon_args : True
+					has_named_args : True
 				}
 
 				contextual_lookup : Template expression_tmpl {
