@@ -1019,34 +1019,43 @@ kws : compiler_lib.kws_tmpl {
 		}
 	}
 	tmpl_new +: {
-		extra_indent : context.extra_indent & source_extra_indent
+		extra_indent : container.extra_indent & context.extra_indent & source_extra_indent
 		source_extra_indent : If source Is Null Then "" Else source.extra_indent
 		gen_gen +: {
 			sum_indent : indent & extra_indent
-			base_code : context.gen_gen(
-				indent : indent & source_extra_indent,
-				code :
-					"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"new_template\", typeof(Template));" &
-					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
-					(If context Is Null
-						Then "\(sum_indent)\(parameters.source_reference).Load(\(generator));"
-						Else
-							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \"template creation\");" &
-							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, FileName);" &
-							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, StartRow);" &
-							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, StartColumn);" &
-							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, EndRow);" &
-							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, EndColumn);" &
-							"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));" &
-							"\(sum_indent)\(context.storage_name).Load(\(generator));" &
-							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Template).GetMethod(\"get_SourceReference\"));") &
-							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \"inherits from\");" &
-						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(JunctionReference).GetConstructors()[0]);") &
-					"\(sum_indent)\(context.storage_name).Load(\(generator));" &
-					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(Template).GetConstructors()[0]);" &
-					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);" &
-					code
-			value : If source Is Null Then base_code Else souce.gen_gen(indent : indent, code : base_code)
+			base_code :
+				container.gen_gen(
+					indent : indent & source_extra_indent,
+					code : context.gen_gen(
+						indent : indent & source_extra_indent & container.extra_indent,
+						code : inner_code
+					)
+				)
+			load_source_reference :
+				If context Is Null
+					Then "\(sum_indent)\(parameters.source_reference).Load(\(generator));"
+					Else
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \"template ammendment\");" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, FileName);" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, StartRow);" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, StartColumn);" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, EndRow);" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, EndColumn);" &
+						"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));" &
+						"\(sum_indent)\(context.storage_name).Load(\(generator));" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Template).GetMethod(\"get_SourceReference\"));" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \"inherits from\");" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(JunctionReference).GetConstructors()[0]);"
+			inner_code :
+				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"new_template\", typeof(Template));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
+				load_source_reference &
+				"\(sum_indent)\(context.storage_name).Load(\(generator));" &
+				"\(sum_indent)\(container.storage_name).Load(\(generator));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(Template).GetConstructors()[0]);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);" &
+				code
+			value : If source Is Null Then base_code Else source.gen_gen(indent : indent, code : base_code)
 		}
 	}
 

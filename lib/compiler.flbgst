@@ -617,6 +617,7 @@ kws_tmpl : Template {
 	tmpl_new : Template codegen.gen_tmpl {
 		source : Null
 		context ?:
+		container : parameters.self_frame
 	}
 
 	cast_to_string : Template codegen.gen_tmpl {

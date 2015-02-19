@@ -111,6 +111,10 @@ public interface IAttributeNames {
 public class Template : IAttributeNames {
 	private IDictionary<string, ComputeValue> attributes = new SortedDictionary<string, ComputeValue>();
 
+	public Frame Container {
+		get;
+		private set;
+	}
 	/**
 	 * The context in which this template was created.
 	 */
@@ -127,9 +131,10 @@ public class Template : IAttributeNames {
 		private set;
 	}
 
-	public Template(SourceReference source_ref, Context context) {
+	public Template(SourceReference source_ref, Context context, Frame container) {
 		this.SourceReference = source_ref;
 		this.Context = context;
+		this.Container = container;
 	}
 
 	/**
