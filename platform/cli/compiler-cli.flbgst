@@ -1407,7 +1407,7 @@ codegen : compiler_lib.codegen_tmpl {
 				initial.gen_gen(
 					indent : indent,
 					code :
-						"\(sum_indent)_generator.Fold((LoadableValue) \(initial.storage_name), \(field), (\(Id)_index, \(Id)_item, \(fold_name), \(Id)_block) => \(Id)_item.Generate(\(argument_list)\(expand)), (\(storage_name)) => {\(code)\(sum_indent)});"
+						"\(sum_indent)\(generator).Fold((LoadableValue) \(initial.storage_name), \(field), (\(Id)_index, \(Id)_item, \(fold_name), \(Id)_block) => \(Id)_item.Generate(\(argument_list)\(expand)), (\(storage_name)) => {\(code)\(sum_indent)});"
 						)
 		}
 		parameters : {
@@ -1474,7 +1474,7 @@ codegen : compiler_lib.codegen_tmpl {
 	}
 	other_code +: {
 		extra_indent : "\t"
-		argument_list :"\(generator), " &
+		argument_list : "\(generator), " &
 			(If target_flavour.non_accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
 			(target_flavour.non_accumulate_flavour.call_site {}).value
 
