@@ -1025,8 +1025,6 @@ language_tmpl : Template {
 		# the specification.
 		level ?:
 		alternatives : For x : [ level ] Select "expression\(x)" : Null
-		# TODO: Remove this once all the expressions have code generators
-		code_value : codegen.not_implemented {}
 		# A parser for a top-level expression
 		top_expression : Template parser.other {
 			accumulate : True
@@ -2308,6 +2306,8 @@ language_tmpl : Template {
 						where_expr : [ known_types.bool ]
 						each_expr : [ known_types.frame ]
 					}
+					# TODO: code_value
+					code_value : codegen.not_implemented {}
 				}
 				for_merge : Template expression_tmpl {
 					pretty_name : "fricasée merge expression"
@@ -2344,6 +2344,8 @@ language_tmpl : Template {
 					type_demand : {
 						where_expr : [ known_types.bool ]
 					}
+					# TODO: code_value
+					code_value : codegen.not_implemented {}
 				}
 
 				if : Template expression_tmpl {
