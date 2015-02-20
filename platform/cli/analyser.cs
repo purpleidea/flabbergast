@@ -90,13 +90,13 @@ public abstract class AstTypeableNode : AstNode {
 		}
 	}
 	public static Type TypeFromClrType(System.Type clr_type) {
-		if (clr_type == typeof(bool) || clr_type == typeof(Boolean)) {
+		if (clr_type == typeof(bool)) {
 				return Type.Bool;
-		} else if ( clr_type == typeof(sbyte) || clr_type == typeof(short) || clr_type == typeof(int) || clr_type == typeof(long) || clr_type == typeof(SByte) || clr_type == typeof(Int16) || clr_type == typeof(Int32) || clr_type == typeof(Int64)) {
+		} else if (clr_type == typeof(sbyte) || clr_type == typeof(short) || clr_type == typeof(int) || clr_type == typeof(long) || clr_type == typeof(byte) || clr_type == typeof(ushort) || clr_type == typeof(uint) || clr_type == typeof(ulong)) {
 			return Type.Int;
-		} else if (clr_type == typeof(float) || clr_type == typeof(double) || clr_type == typeof(Single) || clr_type == typeof(Double)) {
+		} else if (clr_type == typeof(float) || clr_type == typeof(double)) {
 			return Type.Float;
-		} else if (clr_type == typeof(string) || clr_type == typeof(String) || clr_type == typeof(Stringish)) {
+		} else if (clr_type == typeof(string) || clr_type == typeof(Stringish)) {
 			return Type.Str;
 		} else if (clr_type == typeof(Frame)) {
 			return Type.Frame;
