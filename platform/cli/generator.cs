@@ -30,10 +30,18 @@ public class CompilationUnit {
 	public System.Diagnostics.SymbolStore.ISymbolDocumentWriter SymbolDocument { get; private set; }
 
 	internal Dictionary<string, bool> externals = new Dictionary<string, bool>();
+
 	/**
-	 * Counter for generating unique class names.
+	 * For generating unique class names.
 	 */
-	private int type_count = 0;
+	private System.Runtime.Serialization.ObjectIDGenerator id_gen = new System.Runtime.Serialization.ObjectIDGenerator();
+	/**
+	 * Functions and override functions we have generated before.
+	 *
+	 * Since the surrounding syntax cannot affect a function, we cache the
+	 * functions to avoid regenerating them.
+	 */
+	private Dictionary<string, MethodInfo> functions = new Dictionary<string, MethodInfo>();
 
 	public CompilationUnit(string filename, ModuleBuilder module_builder, bool debuggable) {
 		ModuleBuilder = module_builder;
@@ -43,26 +51,38 @@ public class CompilationUnit {
 	/**
 	 * Create a new function, and use the provided block to fill it with code.
 	 */
-	public MethodInfo CreateFunction(string name, FunctionBlock block) {
+	public MethodInfo CreateFunction(AstNode instance, string syntax_id, FunctionBlock block) {
+		bool used;
+		var name = String.Concat(id_gen.GetId(instance, out used) + syntax_id);
+		if (functions.ContainsKey(name)) {
+			return functions[name];
+		}
 		var generator = CreateFunctionGenerator(name, false);
 		block(generator, generator.InitialSourceReference, generator.InitialContext, generator.InitialSelfFrame, generator.InitialContainerFrame);
 		generator.GenerateSwitchBlock();
+		functions[name] = generator.Initialiser;
 
 		return generator.Initialiser;
 	}
 	/**
 	 * Create a new override function, and use the provided block to fill it with code.
 	 */
-	public MethodInfo CreateFunctionOverride(string name, FunctionOverrideBlock block) {
-		var generator = CreateFunctionGenerator(name, true);
+	public MethodInfo CreateFunctionOverride(AstNode instance, string syntax_id, FunctionOverrideBlock block) {
+		bool used;
+		var name = String.Concat(id_gen.GetId(instance, out used) + syntax_id);
+		if (functions.ContainsKey(name)) {
+			return functions[name];
+		}
+		 var generator = CreateFunctionGenerator(name, true);
 		block(generator, generator.InitialSourceReference, generator.InitialContext, generator.InitialSelfFrame, generator.InitialContainerFrame, generator.InitialOriginal);
 		generator.GenerateSwitchBlock();
+		functions[name] = generator.Initialiser;
 
 		return generator.Initialiser;
 	}
 
 	private Generator CreateFunctionGenerator(string name, bool has_original) {
-		var type_builder = ModuleBuilder.DefineType(name ?? ("Function" + type_count++), TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.NotPublic | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
+		var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.NotPublic | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
 		return new Generator(this, type_builder, has_original);
 	}
 }

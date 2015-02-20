@@ -958,7 +958,7 @@ kws : compiler_lib.kws_tmpl {
 				"\(return_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_1);" &
 				"\(return_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);"
 
-			value : "\(indent)var \(storage_name) = new DelegateValue(\(parent_generator).Owner.\(method)(null, (\(generator)\(argument_list)) => { " & returns.gen_gen(indent : indent & "\t", code : return_code) & "\(indent)}), typeof(\(delegate_type)));" & code
+			value : "\(indent)var \(storage_name) = new DelegateValue(\(parent_generator).Owner.\(method)(this, \"\(Id)\", (\(generator)\(argument_list)) => { " & returns.gen_gen(indent : indent & "\t", code : return_code) & "\(indent)}), typeof(\(delegate_type)));" & code
 		}
 	}
 	create_function +: {
