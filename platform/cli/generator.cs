@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System;
@@ -448,6 +449,105 @@ public class Generator {
 		Builder.Emit(OpCodes.Switch, entry_points.ToArray());
 		Builder.ThrowException(typeof(ArgumentOutOfRangeException));
 	}
+	private bool InvokeParameterPenalty(System.Type method, System.Type given, ref int penalty) {
+		if (method == given) {
+			return true;
+		}
+		if (method == typeof(string) && given == typeof(Stringish)) {
+			return true;
+		}
+		if (given == typeof(long)) {
+			if (method == typeof(sbyte) || method == typeof(byte)) {
+				penalty += sizeof(long) - sizeof(byte);
+				return true;
+			} else if (method == typeof(short) || method == typeof(ushort)) {
+				penalty += sizeof(long) - sizeof(short);
+				return true;
+			} else if (method == typeof(int) || method == typeof(uint)) {
+				penalty += sizeof(long) - sizeof(int);
+				return true;
+			} else if (method == typeof(ulong)) {
+				return true;
+			}
+		} else if (given == typeof(double)) {
+			if (method == typeof(float)) {
+				penalty += sizeof(double) - sizeof(float);
+				return true;
+			}
+		}
+		return false;
+	}
+	public LoadableValue InvokeNative(LoadableValue source_reference, List<System.Reflection.MethodInfo> methods, LoadableValue[] arguments) {
+		System.Reflection.MethodInfo best_method = null;
+		var best_penalty = int.MaxValue;
+		foreach (var method in methods) {
+			var penalty = 0;
+			var parameters = method.GetParameters();
+			if (!method.IsStatic && !InvokeParameterPenalty(method.ReflectedType, arguments[0].BackingType, ref penalty)) {
+				break;
+			}
+			bool possible = true;
+			for (var it = 0; it < parameters.Length && possible; it++) {
+				possible = InvokeParameterPenalty(parameters[it].ParameterType, arguments[it + (method.IsStatic ? 0 : 1)].BackingType, ref penalty);
+			}
+			if (possible && penalty < best_penalty) {
+				best_method = method;
+			}
+		}
+		if (best_method == null) {
+			LoadTaskMaster();
+			source_reference.Load(Builder);
+			Builder.Emit(OpCodes.Ldstr, String.Format("Cannot find overloaded matching method for {0}.{1}({3}).", methods[0].Name, methods[0].ReflectedType.Name, String.Join(",", arguments.Select(a => a.BackingType.Name)))); 
+			Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError"));
+			Builder.Emit(OpCodes.Ldc_I4_0);
+			Builder.Emit(OpCodes.Ret);
+			return null;
+		}
+		var method_parameters = best_method.GetParameters();
+		var method_arguments = new System.Type[method_parameters.Length + (best_method.IsStatic ? 0 : 1)];
+		if (!best_method.IsStatic) {
+			method_arguments[0] = best_method.ReflectedType;
+		}
+		for (var it = 0; it < method_parameters.Length; it++) {
+			method_arguments[it + (best_method.IsStatic ? 0 : 1)] = method_parameters[it].ParameterType;
+		}
+
+		var result = MakeField(best_method.Name, AstTypeableNode.ClrTypeFromType(AstTypeableNode.TypeFromClrType(best_method.ReturnType))[0]);
+		Builder.Emit(OpCodes.Ldarg_0);
+		for(var it = 0; it < arguments.Length; it++) {
+			arguments[it].Load(this);
+			if (arguments[it].BackingType != method_arguments[it]) {
+				if (method_arguments[it] == typeof(sbyte) || method_arguments[it] == typeof(byte)) {
+					Builder.Emit(OpCodes.Conv_I1);
+				} else if (method_arguments[it] == typeof(short) || method_arguments[it] == typeof(ushort)) {
+					Builder.Emit(OpCodes.Conv_I2);
+				} else if (method_arguments[it] == typeof(int) || method_arguments[it] == typeof(uint)) {
+					Builder.Emit(OpCodes.Conv_I4);
+				} else if (method_arguments[it] == typeof(ulong)) {
+				} else if (method_arguments[it] == typeof(float)) {
+					Builder.Emit(OpCodes.Conv_R4);
+				} else if (method_arguments[it] == typeof(string)) {
+					Builder.Emit(OpCodes.Call, typeof(Stringish).GetMethod("ToString"));
+				} else {
+					throw new InvalidOperationException(String.Format("No conversation from {0} to {1} while invoking {2}.{3}.", arguments[it].BackingType.Name, method_arguments[it].Name, best_method.ReflectedType.Name, best_method.Name));
+				}
+			}
+		}
+		Builder.Emit(OpCodes.Call, best_method);
+		if (result.BackingType != best_method.ReturnType) {
+				if (result.BackingType == typeof(long)) {
+					Builder.Emit(OpCodes.Conv_I8);
+				} else if (result.BackingType == typeof(double)) {
+					Builder.Emit(OpCodes.Conv_R8);
+				} else if (result.BackingType == typeof(Stringish)) {
+					Builder.Emit(OpCodes.Newobj, typeof(SimpleStringish).GetConstructors()[0]);
+				} else {
+					throw new InvalidOperationException(String.Format("No conversation from {0} to {1} while invoking {2}.{3}.", best_method.ReturnType.Name, result.BackingType.Name, best_method.ReflectedType.Name, best_method.Name));
+				}
+		}
+		Builder.Emit(OpCodes.Stfld, result.Field);
+		return result;
+	}
 	/**
 	 * Load the key and ordinal from an iterator instance and place them in the appropriate fields.
 	 */
@@ -760,6 +860,27 @@ public class DelegateValue : LoadableValue {
 		generator.Emit(OpCodes.Ldnull);
 		generator.Emit(OpCodes.Ldftn, method);
 		generator.Emit(OpCodes.Newobj, backing_type.GetConstructors()[0]);
+	}
+}
+internal class RevCons<T> {
+	private T head;
+	private RevCons<T> tail;
+	private int index;
+	internal RevCons(T item, RevCons<T> tail) {
+		head = item;
+		this.tail = tail;
+		index = tail == null ? 0 : (tail.index + 1);
+	}
+	private void Assign(T[] array) {
+		array[index] = head;
+		if (tail != null) {
+			tail.Assign(array);
+		}
+	}
+	internal T[] ToArray() {
+		var array = new T[index + 1];
+		Assign(array);
+		return array;
 	}
 }
 }

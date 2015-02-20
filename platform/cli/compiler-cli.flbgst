@@ -2005,6 +2005,20 @@ compiler : compiler_lib.language_tmpl {
 					ensure_type_is : {
 						value : "\(indent)CheckReflectedMethod(collector, this, Methods, arguments, \(current_type));"
 					}
+					code_value : codegen.gen_tmpl {
+						extra_indent : "\t"
+						argument_list : "\(generator), " &
+							(If generation_flavour.non_accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
+							(generation_flavour.non_accumulate_flavour.call_site {}).value
+
+						gen_gen +: {
+							value :
+								"\(indent)\(generator).Fold((RevCons<LoadableValue>) null, arguments, (\(Id)_index, \(Id)_item, \(Id)_tail, \(Id)_block) => \(Id)_item.Generate(\(argument_list)(\(Id)_result) => \(Id)_block(new RevCons<LoadableValue>(\(Id)_result, \(Id)_tail))), (\(Id)_args) => {" &
+								"\(indent)\tvar \(storage_name) = \(generator).InvokeNative(\(parameters.source_reference.storage_name), Methods, \(Id)_args.ToArray()); " &
+								code &
+								"\(indent)});"
+						}
+					}
 				}
 			}
 		}
