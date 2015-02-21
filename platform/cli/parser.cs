@@ -13,39 +13,14 @@ internal delegate bool ParseRule<T>(ref ParserPosition position, out T result);
  * This is present to hold all the fields needed to locate the syntax element
  * in the original file for generating debugging and error information.
  */
-public abstract class AstNode {
-	public int StartRow;
-	public int StartColumn;
-	public int EndRow;
-	public int EndColumn;
-	public string FileName;
+internal abstract class AstNode : CodeRegion {
+	public int StartRow { get; internal set; }
+	public int StartColumn { get; internal set; }
+	public int EndRow { get; internal set; }
+	public int EndColumn { get; internal set; }
+	public string FileName { get; internal set; }
 
 	public abstract string PrettyName { get; }
-
-	/**
-	 * Parse in the “file” context defined in the language specification.
-	 */
-	public static AstNode ParseFile(Parser parser) {
-		file result;
-		var position = new ParserPosition(parser);
-		if (Flabbergast.file.ParseRule_Base(ref position, out result) && position.Finished) {
-			return result;
-		} else {
-			return null;
-		}
-	}
-	/**
-	 * Parse an “expression” defined in the language specification.
-	 */
-	public static AstNode ParseExpression(Parser parser) {
-		expression result;
-		var position = new ParserPosition(parser);
-		if (Flabbergast.expression.ParseRule_expression0(ref position, out result) && position.Finished) {
-			return result;
-		} else {
-			return null;
-		}
-	}
 }
 /**
  * The input being parsed along with all the memorised information from the pack-rat parsing.
@@ -80,7 +55,9 @@ public class Parser {
 	 *
 	 * This may have a value even if the parse was successful.
 	 */
-	public string Message { get; internal set; }
+	internal string Message;
+	internal int Row;
+	internal int Column;
 	/**
 	 * Whether to produce copious junk on standard output.
 	 */
@@ -111,6 +88,22 @@ public class Parser {
 		FileName = filename;
 		Input = input;
 	}
+	/**
+	 * Parse in the “file” context defined in the language specification.
+	 */
+	public System.Type ParseFile(ErrorCollector collector, System.Reflection.Emit.ModuleBuilder module_builder, string type_name, bool debuggable) {
+		file result;
+		var position = new ParserPosition(this, collector);
+		if (file.ParseRule_Base(ref position, out result) && position.Finished) {
+			if (result.Analyse(collector)) {
+				var unit = new CompilationUnit(FileName, module_builder, debuggable);
+				return unit.CreateRootGenerator(type_name, (generator) => result.Generate(generator, generator.Return));
+			}
+		} else {
+			collector.ReportParseError(FileName, Index, Row, Column, Message);
+		}
+		return null;
+	}
 }
 /**
  * The current position during parsing
@@ -121,13 +114,15 @@ internal class ParserPosition {
 	internal int Row { get; private set; }
 	internal int Column { get; private set; }
 	internal bool Finished { get { return Index >= Parser.Input.Length; } }
+	private ErrorCollector error_collector;
 	private int TraceDepth;
-	internal ParserPosition(Parser parser) {
+	internal ParserPosition(Parser parser, ErrorCollector error_collector) {
 		Parser = parser;
 		Index = 0;
 		Row = 1;
 		Column = 1;
 		TraceDepth = 0;
+		this.error_collector = error_collector;
 	}
 	/**
 	 * Determine if the current position has been parsed based on the type of the rule.
@@ -196,7 +191,7 @@ internal class ParserPosition {
 		Parser.AlternateCache[start_index][name] = new Parser.Memory() { Result = result, Index = Index, Row = Row, Column = Column };
 	}
 	internal ParserPosition Clone() {
-		var child = new ParserPosition(Parser);
+		var child = new ParserPosition(Parser, error_collector);
 		child.Index = Index;
 		child.Row = Row;
 		child.Column = Column;
@@ -288,15 +283,15 @@ internal class ParserPosition {
 	 */
 	internal void Update(string message, string syntax_name) {
 		if (Index > Parser.Index + 1) {
-			Parser.Message = Parser.FileName + ":" + Row + ":" + Column + ": Expected " + message + " while parsing " + syntax_name + " but got " + Parser.ToLiteral(PeekLast().ToString()) + " instead.";
+			Parser.Message = "Expected " + message + " while parsing " + syntax_name + " but got " + Parser.ToLiteral(PeekLast().ToString()) + " instead.";
+			Parser.Row = Row;
+			Parser.Column = Column;
 			Parser.Index = Index;
 		}
 	}
 
 	internal void NameConstraint(string name) {
-		Parser.Message = Parser.FileName + ":" + Row + ":" + Column + ": The name " + name + " is already in use in this context.";
-		Parser.Index = Parser.Input.Length;
-
+		error_collector.ReportParseError(Parser.FileName, Index, Row, Column, "The name " + name + " is already in use in this context.");
 	}
 }
 }

@@ -9,7 +9,7 @@ namespace Flabbergast {
 /**
  * A handle for generating the needed components in an assembly.
  */
-public class CompilationUnit {
+internal class CompilationUnit {
 	/**
 	 * A call back that will populate a function with generated code.
 	 */
@@ -85,16 +85,25 @@ public class CompilationUnit {
 		var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.NotPublic | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
 		return new Generator(this, type_builder, has_original);
 	}
+
+	public System.Type CreateRootGenerator(string name, Generator.Block block) {
+		var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
+		var generator = new Generator(this, type_builder);
+		block(generator);
+		generator.GenerateSwitchBlock();
+
+		return type_builder.CreateType();
+	}
 }
 
 /**
  * Helper to generate code for a particular function or override function.
  */
-public class Generator {
+internal class Generator {
 	/**
 	 * Generate code with no input.
 	 */
-	public delegate void Block();
+	public delegate void Block(Generator generator);
 	/**
 	 * Generate code for an item during a fold operation, using an initial value
 	 * and passing the output to a result block.
@@ -172,6 +181,28 @@ public class Generator {
 	 */
 	private Label switch_label;
 
+	internal Generator(CompilationUnit owner, TypeBuilder type_builder) {
+		Owner = owner;
+		TypeBuilder = type_builder;
+		state_field = TypeBuilder.DefineField("state", typeof(long), FieldAttributes.Private);
+		interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
+		task_master = TypeBuilder.DefineField("task_master", typeof(TaskMaster), FieldAttributes.Private);
+		var ctor = type_builder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new System.Type[] { typeof(TaskMaster) });
+		var ctor_builder = ctor.GetILGenerator();
+		ctor_builder.Emit(OpCodes.Ldarg_0);
+		ctor_builder.Emit(OpCodes.Ldarg_1);
+		ctor_builder.Emit(OpCodes.Stfld, task_master);
+		ctor_builder.Emit(OpCodes.Ldarg_0);
+		ctor_builder.Emit(OpCodes.Ldc_I4_0);
+		ctor_builder.Emit(OpCodes.Stfld, state_field);
+		ctor_builder.Emit(OpCodes.Ret);
+		Builder = type_builder.DefineMethod("Run", MethodAttributes.Public | MethodAttributes.Virtual, typeof(bool), new System.Type[0]).GetILGenerator();
+		switch_label = Builder.DefineLabel();
+		var start_label = Builder.DefineLabel();
+		entry_points.Add(start_label);
+		Builder.Emit(OpCodes.Br, switch_label);
+		Builder.MarkLabel(start_label);
+	}
 	internal Generator(CompilationUnit owner, TypeBuilder type_builder, bool has_original) {
 		Owner = owner;
 		TypeBuilder = type_builder;
@@ -691,7 +722,7 @@ public class Generator {
 		}
 	}
 }
-public class LookupCache {
+internal class LookupCache {
 	private LookupCache parent;
 	private Dictionary<NameInfo, LoadableValue> defined_values = new Dictionary<NameInfo, LoadableValue>();
 
@@ -712,7 +743,7 @@ public class LookupCache {
 		set { defined_values[name_info] = value; }
 	}
 }
-public abstract class LoadableValue {
+internal abstract class LoadableValue {
 	public static LoadableValue NULL_LIST = new NullValue(typeof(Context));
 	public static LoadableValue NULL_FRAME = new NullValue(typeof(Frame));
 	public abstract System.Type BackingType { get; }
@@ -731,7 +762,7 @@ internal class NullValue : LoadableValue {
 		generator.Emit(OpCodes.Ldnull);
 	}
 }
-public class FieldValue : LoadableValue {
+internal class FieldValue : LoadableValue {
 	public FieldInfo Field { get; private set; }
 	public override System.Type BackingType { get { return Field.FieldType; } }
 	public FieldValue(FieldInfo field) {
@@ -742,7 +773,7 @@ public class FieldValue : LoadableValue {
 		generator.Emit(OpCodes.Ldfld, Field);
 	}
 }
-public class AutoUnboxValue : LoadableValue {
+internal class AutoUnboxValue : LoadableValue {
 	private System.Type unbox_type;
 	private LoadableValue backing_value;
 	public override System.Type BackingType { get { return unbox_type; } }
@@ -755,7 +786,7 @@ public class AutoUnboxValue : LoadableValue {
 		generator.Emit(OpCodes.Unbox_Any, unbox_type);
 	}
 }
-public class BoolConstant : LoadableValue {
+internal class BoolConstant : LoadableValue {
 	private bool number;
 	public override System.Type BackingType { get { return typeof(bool); } }
 	public BoolConstant(bool number) {
@@ -765,7 +796,7 @@ public class BoolConstant : LoadableValue {
 		generator.Emit(number ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
 	}
 }
-public class FloatConstant : LoadableValue {
+internal class FloatConstant : LoadableValue {
 	private double number;
 	public readonly static FloatConstant NAN = new FloatConstant(Double.NaN);
 	public readonly static FloatConstant INFINITY = new FloatConstant(Double.PositiveInfinity);
@@ -777,7 +808,7 @@ public class FloatConstant : LoadableValue {
 		generator.Emit(OpCodes.Ldc_R8, number);
 	}
 }
-public class IntConstant : LoadableValue {
+internal class IntConstant : LoadableValue {
 	private long number;
 	public IntConstant(long number) {
 		this.number = number;
@@ -787,7 +818,7 @@ public class IntConstant : LoadableValue {
 		generator.Emit(OpCodes.Ldc_I8, number);
 	}
 }
-public class StringishValue : LoadableValue {
+internal class StringishValue : LoadableValue {
 	private string str;
 	public StringishValue(string str) {
 		this.str = str;
@@ -798,7 +829,7 @@ public class StringishValue : LoadableValue {
 		generator.Emit(OpCodes.Newobj, typeof(SimpleStringish).GetConstructors()[0]);
 	}
 }
-public class UnitConstant : LoadableValue {
+internal class UnitConstant : LoadableValue {
 	public readonly static UnitConstant NULL = new UnitConstant();
 	private UnitConstant() {}
 	public override System.Type BackingType { get { return typeof(Unit); } }
@@ -806,7 +837,7 @@ public class UnitConstant : LoadableValue {
 		generator.Emit(OpCodes.Ldsfld, typeof(Unit).GetField("NULL"));
 	}
 }
-public class DelegateValue : LoadableValue {
+internal class DelegateValue : LoadableValue {
 	private System.Type backing_type;
 	private MethodInfo method;
 	public DelegateValue(MethodInfo method, System.Type backing_type) {
@@ -820,7 +851,7 @@ public class DelegateValue : LoadableValue {
 		generator.Emit(OpCodes.Newobj, backing_type.GetConstructors()[0]);
 	}
 }
-public class MethodValue : LoadableValue {
+internal class MethodValue : LoadableValue {
 	private LoadableValue instance;
 	private MethodInfo method;
 	public MethodValue(LoadableValue instance, MethodInfo method) {

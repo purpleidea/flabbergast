@@ -15,15 +15,16 @@ public enum Type {
 	Unit = 64,
 	Any = 127
 }
-public abstract class AstTypeableNode : AstNode {
+internal abstract class AstTypeableNode : AstNode {
 	protected Environment Environment;
 	internal virtual int EnvironmentPriority { get { return Environment.Priority; } }
-	internal abstract void PropagateEnvironment(ErrorCollector collector, List<AstTypeableNode> queue, Environment environment);
-	internal abstract void MakeTypeDemands(ErrorCollector collector);
-	public void Analyse(ErrorCollector collector) {
+	internal abstract void PropagateEnvironment(ErrorCollector collector, List<AstTypeableNode> queue, Environment environment, ref bool success);
+	internal abstract void MakeTypeDemands(ErrorCollector collector, ref bool _success);
+	public bool Analyse(ErrorCollector collector) {
 		var environment = new Environment (FileName, StartRow, StartColumn, EndRow, EndColumn, null, false);
 		var queue = new List<AstTypeableNode>();
-		PropagateEnvironment(collector, queue, environment);
+		var success = true;
+		PropagateEnvironment(collector, queue, environment, ref success);
 		var sorted_nodes = new SortedDictionary<int, Dictionary<AstTypeableNode, bool>>();
 
 		foreach (var element in queue) {
@@ -34,14 +35,16 @@ public abstract class AstTypeableNode : AstNode {
 		}
 		foreach (var items in sorted_nodes.Values) {
 			foreach (var element in items.Keys) {
-				element.MakeTypeDemands(collector);
+				element.MakeTypeDemands(collector, ref success);
 			}
 		}
+		return success;
 	}
-	internal static void ReflectMethod(ErrorCollector collector, AstNode where, string type_name, string method_name, int arity, List<System.Reflection.MethodInfo> methods) {
+	internal static void ReflectMethod(ErrorCollector collector, AstNode where, string type_name, string method_name, int arity, List<System.Reflection.MethodInfo> methods, ref bool success) {
 		var reflected_type = System.Type.GetType(type_name, false);
 		if (reflected_type == null) {
-			collector.RawError(where, "No such type " + type_name + " found. Perhaps you are missing an assembly reference.");
+			success = false;
+			collector.ReportRawError(where, "No such type " + type_name + " found. Perhaps you are missing an assembly reference.");
 		} else {
 			foreach (var method in reflected_type.GetMethods()) {
 				var adjusted_arity = method.GetParameters().Length + (method.IsStatic ? 0 : 1);
@@ -50,7 +53,8 @@ public abstract class AstTypeableNode : AstNode {
 				}
 			}
 			if (methods.Count == 0) {
-				collector.RawError(where, "The type " + type_name + " has no public method named " + method_name + " which takes " + arity + " parameters.");
+				success = false;
+				collector.ReportRawError(where, "The type " + type_name + " has no public method named " + method_name + " which takes " + arity + " parameters.");
 			}
 		}
 	}
@@ -62,7 +66,7 @@ public abstract class AstTypeableNode : AstNode {
 		}
 		return true;
 	}
-	internal static void CheckReflectedMethod(ErrorCollector collector, AstNode where, List<System.Reflection.MethodInfo> methods, List<expression> arguments, Type return_type) {
+	internal static void CheckReflectedMethod(ErrorCollector collector, AstNode where, List<System.Reflection.MethodInfo> methods, List<expression> arguments, Type return_type, ref bool success) {
 		/* If there are no candidate methods, don't bother checking the types. */
 		if (methods.Count == 0)
 			return;
@@ -76,7 +80,7 @@ public abstract class AstTypeableNode : AstNode {
 			foreach (var method in methods) {
 				candiate_return |= TypeFromClrType(method.ReturnType);
 			}
-			collector.ReportTypeError(where, return_type, candiate_return);
+			collector.ReportExpressionTypeError(where, return_type, candiate_return);
 			return;
 		}
 		/* Check that the arguments match the union of the parameters of all the methods. This means that we might still not have a valid method, but we can check again during codegen. */
@@ -86,7 +90,7 @@ public abstract class AstTypeableNode : AstNode {
 				var param_type = method.IsStatic ? method.GetParameters()[it].ParameterType : (it == 0 ? method.ReflectedType : method.GetParameters()[it - 1].ParameterType);
 					candidate_parameter_type |= TypeFromClrType(param_type);
 			}
-			arguments[it].EnsureType(collector, candidate_parameter_type);
+			arguments[it].EnsureType(collector, candidate_parameter_type, ref success);
 		}
 	}
 	public static Type TypeFromClrType(System.Type clr_type) {
@@ -118,14 +122,8 @@ public abstract class AstTypeableNode : AstNode {
 		return types;
 	}
 }
-public interface ErrorCollector {
-	void ReportTypeError(AstNode where, Type new_type, Type existing_type);
-	void ReportTypeError(Environment environment, string name, Type new_type, Type existing_type);
-	void ReportForbiddenNameAccess(Environment environment, string name);
-	void RawError(AstNode where, string message);
-}
-public interface ITypeableElement {
-	void EnsureType(ErrorCollector collector, Type type);
+internal interface ITypeableElement {
+	void EnsureType(ErrorCollector collector, Type type, ref bool success);
 }
 internal abstract class AstTypeableSpecialNode : AstTypeableNode {
 	protected Environment SpecialEnvironment;
@@ -136,29 +134,29 @@ internal abstract class AstTypeableSpecialNode : AstTypeableNode {
 			return Math.Max(ep, esp);
 		}
 	}
-	internal abstract void PropagateSpecialEnvironment(ErrorCollector collector, List<AstTypeableNode> queue, Environment special_environment);
+	internal abstract void PropagateSpecialEnvironment(ErrorCollector collector, List<AstTypeableNode> queue, Environment special_environment, ref bool success);
 }
 internal class EnvironmentPrioritySorter : IComparer<AstTypeableNode> {
 	public int Compare(AstTypeableNode x, AstTypeableNode y) {
 		return x.EnvironmentPriority - y.EnvironmentPriority;
 	}
 }
-public abstract class NameInfo {
+internal abstract class NameInfo {
 	protected Dictionary<string, NameInfo> Children = new Dictionary<string, NameInfo>();
 	public string Name { get; protected set; }
-	internal NameInfo Lookup(ErrorCollector collector, string name) {
-		EnsureType(collector, Type.Frame);
+	internal NameInfo Lookup(ErrorCollector collector, string name, ref bool success) {
+		EnsureType(collector, Type.Frame, ref success);
 		if (!Children.ContainsKey(name)) {
-			CreateChild(collector, name, Name);
+			CreateChild(collector, name, Name, ref success);
 		}
 		return Children[name];
 	}
-	internal NameInfo Lookup(ErrorCollector collector, IEnumerator<string> names) {
+	internal NameInfo Lookup(ErrorCollector collector, IEnumerator<string> names, ref bool success) {
 		var info = this;
 		while (names.MoveNext()) {
-			info.EnsureType(collector, Type.Frame);
+			info.EnsureType(collector, Type.Frame, ref success);
 			if (!info.Children.ContainsKey(names.Current)) {
-				info.CreateChild(collector, names.Current, this.Name);
+				info.CreateChild(collector, names.Current, this.Name, ref success);
 			}
 			info = info.Children[names.Current];
 		}
@@ -167,8 +165,8 @@ public abstract class NameInfo {
 	public virtual bool HasName(string name) {
 		return Children.ContainsKey(name);
 	}
-	public abstract void EnsureType(ErrorCollector collector, Type type);
-	public abstract void CreateChild(ErrorCollector collector, string name, string root);
+	public abstract void EnsureType(ErrorCollector collector, Type type, ref bool success);
+	public abstract void CreateChild(ErrorCollector collector, string name, string root, ref bool success);
 	public virtual LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
 	return null;
 }
@@ -179,21 +177,22 @@ public abstract class NameInfo {
 		return false;
 	}
 }
-public class OpenNameInfo : NameInfo {
+internal class OpenNameInfo : NameInfo {
 	private Environment Environment;
 	protected Type RealType = Type.Any;
 	public OpenNameInfo(Environment environment, string name) {
 		Environment = environment;
 		Name = name;
 	}
-	public override void EnsureType(ErrorCollector collector, Type type) {
+	public override void EnsureType(ErrorCollector collector, Type type, ref bool success) {
 		if ((RealType & type) == 0) {
-			collector.ReportTypeError(Environment, Name, RealType, type);
+			success = false;
+			collector.ReportLookupTypeError(Environment, Name, RealType, type);
 		} else {
 			RealType &= type;
 		}
 	}
-	public override void CreateChild(ErrorCollector collector, string name, string root) {
+	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
 	}
 	public override bool NeedsLoad() {
@@ -222,18 +221,18 @@ public class OpenNameInfo : NameInfo {
 		return new LoadableCache(lookup_result, RealType, this);
 	}
 }
-public class OverrideNameInfo : OpenNameInfo {
+internal class OverrideNameInfo : OpenNameInfo {
 	public OverrideNameInfo(Environment environment, string name) : base(environment, name) {}
 	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
 		return new LoadableCache(generator.InitialOriginal, RealType, this);
 	}
 }
-public class JunkInfo : NameInfo {
+internal class JunkInfo : NameInfo {
 	public JunkInfo() {
 	}
-	public override void EnsureType(ErrorCollector collector, Type type) {
+	public override void EnsureType(ErrorCollector collector, Type type, ref bool success) {
 	}
-	public override void CreateChild(ErrorCollector collector, string name, string root) {
+	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		Children[name] = new JunkInfo();
 	}
 	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
@@ -248,10 +247,10 @@ internal class BoundNameInfo : NameInfo {
 		Name = name;
 		Target = target;
 	}
-	public override void EnsureType(ErrorCollector collector, Type type) {
-		Target.EnsureType(collector, type);
+	public override void EnsureType(ErrorCollector collector, Type type, ref bool success) {
+		Target.EnsureType(collector, type, ref success);
 	}
-	public override void CreateChild(ErrorCollector collector, string name, string root) {
+	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
 	}
 }
@@ -267,22 +266,23 @@ internal class CopyFromParentInfo : NameInfo {
 		Source = source;
 		ForceBack = force_back;
 	}
-	public override void EnsureType(ErrorCollector collector, Type type) {
+	public override void EnsureType(ErrorCollector collector, Type type, ref bool success) {
 		if (ForceBack) {
-			Source.EnsureType(collector, type);
+			Source.EnsureType(collector, type, ref success);
 		} else {
 			if ((Mask & type) == 0) {
-				collector.ReportTypeError(Environment, Name, Mask, type);
+				success = false;
+				collector.ReportLookupTypeError(Environment, Name, Mask, type);
 			}
 			Mask &= type;
 		}
 	}
-	public override void CreateChild(ErrorCollector collector, string name, string root) {
+	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		if (ForceBack) {
-			Source.CreateChild(collector, name, root);
+			Source.CreateChild(collector, name, root, ref success);
 		}
 		if (Source.HasName(name)) {
-			Children[name] = new CopyFromParentInfo(Environment, root + "." + name, Source.Lookup(collector, name), ForceBack);
+			Children[name] = new CopyFromParentInfo(Environment, root + "." + name, Source.Lookup(collector, name, ref success), ForceBack);
 		} else {
 			Children[name] = new OpenNameInfo(Environment, root + "." + name);
 		}
@@ -301,7 +301,7 @@ internal class CopyFromParentInfo : NameInfo {
 		}
 	}
 }
-public class LoadableCache {
+internal class LoadableCache {
 	public LoadableValue Value { get; private set; }
 	public Type PossibleTypes { get; private set; }
 	public NameInfo NameInfo { get; private set; }
@@ -314,7 +314,7 @@ public class LoadableCache {
 		Types = AstTypeableNode.ClrTypeFromType(type);
 	}
 }
-public class Environment {
+internal class Environment : CodeRegion {
 	Environment Parent;
 	Dictionary<string, NameInfo> Children = new Dictionary<string, NameInfo>();
 	Dictionary<ITypeableElement, Type> IntrinsicTypes = new Dictionary<ITypeableElement, Type>();
@@ -416,7 +416,7 @@ public class Environment {
 			GenerateLookupPermutation(generator, sub_cache, index + 1, values, source_reference, block);
 		}
 	}
-	public NameInfo Lookup(ErrorCollector collector, IEnumerable<string> names) {
+	public NameInfo Lookup(ErrorCollector collector, IEnumerable<string> names, ref bool success) {
 		IEnumerator<string> enumerator = names.GetEnumerator();
 		if (!enumerator.MoveNext()) {
 			throw new ArgumentOutOfRangeException("List of names cannot be empty.");
@@ -426,17 +426,17 @@ public class Environment {
 				collector.ReportForbiddenNameAccess(this, enumerator.Current);
 				return new JunkInfo();
 			}
-			return Children[enumerator.Current].Lookup(collector, enumerator);
+			return Children[enumerator.Current].Lookup(collector, enumerator, ref success);
 		}
 		if (ForceBack) {
-			Parent.Lookup(collector, names);
+			Parent.Lookup(collector, names, ref success);
 		}
 		if (Parent != null && Parent.HasName(enumerator.Current)) {
-			return Lookback(enumerator.Current).Lookup(collector, enumerator);
+			return Lookback(enumerator.Current).Lookup(collector, enumerator, ref success);
 		}
 		var info = new OpenNameInfo(this, enumerator.Current);
 		Children[enumerator.Current] = info;
-		return info.Lookup(collector, enumerator);
+		return info.Lookup(collector, enumerator, ref success);
 	}
 	public bool HasName(string name) {
 		return Children.ContainsKey(name) || Parent != null && Parent.HasName(name);
@@ -449,12 +449,13 @@ public class Environment {
 		Children[name] = copy_info;
 		return copy_info;
 	}
-	internal void EnsureIntrinsic<T>(ErrorCollector collector, T node, Type type) where T:AstNode, ITypeableElement {
+	internal void EnsureIntrinsic<T>(ErrorCollector collector, T node, Type type, ref bool success) where T:AstNode, ITypeableElement {
 		if (IntrinsicTypes.ContainsKey(node)) {
 			var original_type = IntrinsicTypes[node];
 			var result = original_type & type;
 			if (result == 0) {
-				collector.ReportTypeError(node, original_type, type);
+				success = false;
+				collector.ReportExpressionTypeError(node, original_type, type);
 			} else {
 				IntrinsicTypes[node] = result;
 			}

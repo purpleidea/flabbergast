@@ -472,16 +472,16 @@ environment : compiler_lib.environment_tmpl {
 	other_elements +: {
 		class_gen : ""
 		value : For field : fields
-			Reduce acc & "\t\tif (\(field) != null) { \(field).Propagate\(target_flavour.name)Environment(_collector, _queue, \(current_environment)); }\n"
+			Reduce acc & "\t\tif (\(field) != null) { \(field).Propagate\(target_flavour.name)Environment(_collector, _queue, \(current_environment), ref _success); }\n"
 			With acc : ""
 	}
 	list_of +: {
 		class_gen : ""
-		value : "\t\tif (\(field) != null) { foreach (var \(Id) in \(field)) \(Id).Propagate\(target_flavour.name)Environment(_collector, _queue, \(current_environment)); }\n"
+		value : "\t\tif (\(field) != null) { foreach (var \(Id) in \(field)) \(Id).Propagate\(target_flavour.name)Environment(_collector, _queue, \(current_environment), ref _success); }\n"
 	}
 	list_independent +: {
 		class_gen : ""
-		value : "\t\tif (\(field) != null) { foreach (var \(Id) in \(field)) \(Id).Propagate\(target_flavour.name)Environment(_collector, _queue, new Environment(\(Id).FileName, \(Id).StartRow, \(Id).StartColumn, \(Id).EndRow, \(Id).EndColumn, \(If inherit Then current_environment Else "null"), false, \(If top_level Then "true" Else "false"))); }\n"
+		value : "\t\tif (\(field) != null) { foreach (var \(Id) in \(field)) \(Id).Propagate\(target_flavour.name)Environment(_collector, _queue, new Environment(\(Id).FileName, \(Id).StartRow, \(Id).StartColumn, \(Id).EndRow, \(Id).EndColumn, \(If inherit Then current_environment Else "null"), false, \(If top_level Then "true" Else "false")), ref _success); }\n"
 	}
 	blank_environment +: {
 		current_environment : name ?? Id
@@ -522,7 +522,7 @@ environment : compiler_lib.environment_tmpl {
 	}
 	top_level +: {
 		class_gen : ""
-		value : "\t\tif (\(current_environment).TopLevel != \(If desired Then "true" Else "false")) { _collector.RawError(this, \"At file-level scope, \(pretty_name) is now allowed.\"); }"
+		value : "\t\tif (\(current_environment).TopLevel != \(If desired Then "true" Else "false")) { _success = false; _collector.ReportRawError(this, \"At file-level scope, \(pretty_name) is now allowed.\"); }"
 	}
 	complex_flavour_tmpl : Template flavour_tmpl {
 		enabled : True
@@ -540,7 +540,7 @@ environment : compiler_lib.environment_tmpl {
 				For current_flavour : known_flavours
 				Reduce
 					method_acc &
-					"\tinternal override void Propagate\(current_flavour.name)Environment(ErrorCollector _collector, System.Collections.Generic.List<AstTypeableNode> _queue, Environment _environment) {\n" &
+					"\tinternal override void Propagate\(current_flavour.name)Environment(ErrorCollector _collector, System.Collections.Generic.List<AstTypeableNode> _queue, Environment _environment, ref bool _success) {\n" &
 					"\t\t\(current_flavour.target_field) = _environment;\n" &
 					(If current_flavour.queued Then "\t\t_queue.Add(this);\n" Else "") &
 					(For application : apply_environment_to
@@ -642,7 +642,8 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 
 		value : "\(parent_indent)var \(Id) = \(parent_type) & (\(type_bits));" &
 			"\(parent_indent)if (\(Id) == 0) {" &
-			"\(indent)collector.ReportTypeError(this, \(type_bits), \(parent_type));" &
+			"\(indent)_success = false;" &
+			"\(indent)_collector.ReportExpressionTypeError(this, \(type_bits), \(parent_type));" &
 			"\(parent_indent)} else {" &
 			ensure_type_of.value &
 			"\(parent_indent)}"
@@ -650,12 +651,12 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 	# Pass this type to a child node.
 	propagate +: {
 		allowed_type_bits : For t : extra_types Reduce acc & " | " & t.union_type With acc : current_type
-		value : For field : fields Reduce acc & "\(indent)if (\(field) != null) \(field).EnsureType(collector, \(allowed_type_bits));" With acc : ""
+		value : For field : fields Reduce acc & "\(indent)if (\(field) != null) \(field).EnsureType(_collector, \(allowed_type_bits), ref _success);" With acc : ""
 	}
 	# Pass this type to all child nodes in a list.
 	propagate_all +: {
 		allowed_type_bits : For t : extra_types Reduce acc & " | " & t.union_type With acc : current_type
-		value : "\(indent)if (\(field) != null) foreach (var \(Id) in \(field)) \(Id).EnsureType(collector, \(allowed_type_bits));"
+		value : "\(indent)if (\(field) != null) foreach (var \(Id) in \(field)) \(Id).EnsureType(_collector, \(allowed_type_bits), ref _success);"
 	}
 	# This works similarly to filter, but takes the type from a syntax node
 	# rather than a literal in the compiler.
@@ -669,18 +670,19 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 		type_bits : "\(field).\(If propagate_castable Then "CastableFrom" Else "TypeId")"
 		value : "\(parent_indent)var \(Id) = \(parent_type) & \(type_bits);" &
 			"\(parent_indent)if (\(Id) == 0) {" &
-			"\(indent)collector.ReportTypeError(this, \(type_bits), \(parent_type));" &
+			"\(indent)_success = false; " &
+			"\(indent)_collector.ReportExpressionTypeError(this, \(type_bits), \(parent_type));" &
 			"\(parent_indent)} else {" &
 			ensure_type_of.value &
 			"\(parent_indent)}"
 	}
 	# Stores the type information in the environment by lookup name.
 	stored +: {
-		value : "\(indent)Environment.Lookup(collector, \(field).Select((s) => s.ToString())).EnsureType(collector, \(current_type));"
+		value : "\(indent)Environment.Lookup(_collector, \(field).Select((s) => s.ToString()), ref _success).EnsureType(_collector, \(current_type), ref _success);"
 	}
 	# Stores the type information in the environment by syntax node.
 	intrinsic +: {
-		value : "\(indent)Environment.EnsureIntrinsic(collector, this, \(current_type));"
+		value : "\(indent)Environment.EnsureIntrinsic(_collector, this, \(current_type), ref _success);"
 	}
 	stop +: { value : "" }
 	multiple +: {
@@ -1458,7 +1460,10 @@ codegen : compiler_lib.codegen_tmpl {
 	lookup_cached +: {
 		extra_indent : ""
 		gen_gen +: {
-			value : "\(indent)var \(storage_name) = \(lookup_cache)[\(generation_environment).Lookup(null, \(field).Select((s) => s.ToString()))];\(code)"
+			value :
+				"\(indent)bool \(Id)_junk = true;" &
+				"\(indent)var \(storage_name) = \(lookup_cache)[\(generation_environment).Lookup(null, \(field).Select((s) => s.ToString()), ref \(Id)_junk)];" &
+				code
 		}
 	}
 	# This changes the value of parameters by renaming them, then restoring the names.
@@ -1576,7 +1581,8 @@ codegen : compiler_lib.codegen_tmpl {
 					"\(indent)\(generator).Fold(\(parent_lookup_cache), \(field), (\(Id)_index, \(Id)_item, \(Id)_cache, \(Id)_block) =>" &
 					"\(indent)\t\(Id)_item.Generate(\(argument_list)(\(Id)_result) => {" &
 					"\(indent)\t\tvar \(Id)_new_cached = new LookupCache(\(Id)_cache);" &
-					"\(indent)\t\t\(Id)_new_cached[\(name ?? "Environment").Lookup(null, System.Linq.Enumerable.Repeat(\(Id)_item.name.ToString(), 1))] = \(Id)_result;" &
+					"\(indent)bool \(Id)_junk = true;" &
+					"\(indent)\t\t\(Id)_new_cached[\(name ?? "Environment").Lookup(null, System.Linq.Enumerable.Repeat(\(Id)_item.name.ToString(), 1), ref \(Id)_junk)] = \(Id)_result;" &
 					"\(indent)\t\t\(Id)_frame.Load(\(generator));" &
 					"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(Id)_item.name.ToString());" &
 					"\(indent)\t\t\(Id)_result.Load(\(generator));" &
@@ -1776,21 +1782,21 @@ compiler : compiler_lib.language_tmpl {
 
 		current_type : "_type"
 		type_assurance : If is_typeable
-			Then "\tpublic override void EnsureType(ErrorCollector collector, Type _type) {\(ensure_type_is.value)\n\t}\n"
+			Then "\tpublic override void EnsureType(ErrorCollector _collector, Type _type, ref bool _success) {\(ensure_type_is.value)\n\t}\n"
 			Else ""
 		type_demands : If environment_flavour.enabled
-			Then "\tinternal override void MakeTypeDemands(ErrorCollector collector) {\n" &
+			Then "\tinternal override void MakeTypeDemands(ErrorCollector _collector, ref bool _success) {\n" &
 				(For field : Name, types : type_demand
-					Reduce "\(ensure_acc)\t\tif (\(field) != null) \(field).EnsureType(collector, " &
+					Reduce "\(ensure_acc)\t\tif (\(field) != null) \(field).EnsureType(_collector, " &
 						(For t : types Reduce acc & " | " & t.union_type With acc : "0") &
-						");\n"
+						", ref _success);\n"
 					With ensure_acc : "") &
 				(For field : Name, types : type_demand_all
 					Where !(types Is Null)
 					Reduce
-						"\(ensure_acc)\t\tif (\(field) != null) foreach (var _item in \(field)) _item.EnsureType(collector, " &
+						"\(ensure_acc)\t\tif (\(field) != null) foreach (var _item in \(field)) _item.EnsureType(_collector, " &
 						(For t : types Reduce acc & " | " & t.union_type With acc : "0") &
-						");\n"
+						", ref _success);\n"
 					With ensure_acc : "") &
 				"\t}\n"
 			Else ""
@@ -1902,7 +1908,7 @@ compiler : compiler_lib.language_tmpl {
 			Where rule.is_real_element
 			Reduce acc & rule.class_gen
 			With acc : "internal abstract class \(group_name) : \(environment_flavour.class_name)\(If is_typeable Then ", ITypeableElement" Else "") {\n" &
-				(If is_typeable Then "\tpublic abstract void EnsureType(ErrorCollector collector, Type _type);\n" Else "") &
+				(If is_typeable Then "\tpublic abstract void EnsureType(ErrorCollector _collector, Type _type, ref bool _success);\n" Else "") &
 				common_field_class_gen &
 				super_class_extra &
 				parse_base &
@@ -2022,11 +2028,11 @@ compiler : compiler_lib.language_tmpl {
 						environment.application_action {
 							class_gen : ""
 							value :
-								"\t\tReflectMethod(_collector, this, type_name.ToString(), method_name.ToString(), arguments.Count, Methods);\n"
+								"\t\tReflectMethod(_collector, this, type_name.ToString(), method_name.ToString(), arguments.Count, Methods, ref _success);\n"
 						}
 					]
 					ensure_type_is : {
-						value : "\(indent)CheckReflectedMethod(collector, this, Methods, arguments, \(current_type));"
+						value : "\(indent)CheckReflectedMethod(_collector, this, Methods, arguments, \(current_type), ref _success);"
 					}
 					code_value : codegen.gen_tmpl {
 						extra_indent : "\t"
