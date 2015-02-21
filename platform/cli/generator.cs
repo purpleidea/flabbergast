@@ -9,15 +9,15 @@ namespace Flabbergast {
 /**
  * A handle for generating the needed components in an assembly.
  */
-internal class CompilationUnit {
+public class CompilationUnit {
 	/**
 	 * A call back that will populate a function with generated code.
 	 */
-	public delegate void FunctionBlock(Generator generator, LoadableValue source_reference, LoadableValue context, LoadableValue self, LoadableValue container);
+	internal delegate void FunctionBlock(Generator generator, LoadableValue source_reference, LoadableValue context, LoadableValue self, LoadableValue container);
 	/**
 	 * A call back that will populate a function with generated code.
 	 */
-	public delegate void FunctionOverrideBlock(Generator generator, LoadableValue source_reference, LoadableValue context, LoadableValue self, LoadableValue container, LoadableValue original);
+	internal delegate void FunctionOverrideBlock(Generator generator, LoadableValue source_reference, LoadableValue context, LoadableValue self, LoadableValue container, LoadableValue original);
 
 	public IEnumerable<string> ExternalUris { get { return externals.Keys; } }
 	/**
@@ -51,32 +51,34 @@ internal class CompilationUnit {
 	/**
 	 * Create a new function, and use the provided block to fill it with code.
 	 */
-	public MethodInfo CreateFunction(AstNode instance, string syntax_id, FunctionBlock block) {
+	internal MethodInfo CreateFunction(AstNode instance, string syntax_id, FunctionBlock block) {
 		bool used;
-		var name = String.Concat(id_gen.GetId(instance, out used) + syntax_id);
+		var name = String.Concat("Function", id_gen.GetId(instance, out used), syntax_id);
 		if (functions.ContainsKey(name)) {
 			return functions[name];
 		}
 		var generator = CreateFunctionGenerator(name, false);
-		block(generator, generator.InitialSourceReference, generator.InitialContext, generator.InitialSelfFrame, generator.InitialContainerFrame);
+		block(generator, generator.InitialContainerFrame, generator.InitialContext, generator.InitialSelfFrame, generator.InitialSourceReference);
 		generator.GenerateSwitchBlock();
 		functions[name] = generator.Initialiser;
+		generator.TypeBuilder.CreateType();
 
 		return generator.Initialiser;
 	}
 	/**
 	 * Create a new override function, and use the provided block to fill it with code.
 	 */
-	public MethodInfo CreateFunctionOverride(AstNode instance, string syntax_id, FunctionOverrideBlock block) {
+	internal MethodInfo CreateFunctionOverride(AstNode instance, string syntax_id, FunctionOverrideBlock block) {
 		bool used;
-		var name = String.Concat(id_gen.GetId(instance, out used) + syntax_id);
+		var name = String.Concat("Override", id_gen.GetId(instance, out used), syntax_id);
 		if (functions.ContainsKey(name)) {
 			return functions[name];
 		}
 		 var generator = CreateFunctionGenerator(name, true);
-		block(generator, generator.InitialSourceReference, generator.InitialContext, generator.InitialSelfFrame, generator.InitialContainerFrame, generator.InitialOriginal);
+		block(generator, generator.InitialContainerFrame, generator.InitialContext, generator.InitialOriginal, generator.InitialSelfFrame, generator.InitialSourceReference);
 		generator.GenerateSwitchBlock();
 		functions[name] = generator.Initialiser;
+		generator.TypeBuilder.CreateType();
 
 		return generator.Initialiser;
 	}
@@ -86,12 +88,12 @@ internal class CompilationUnit {
 		return new Generator(this, type_builder, has_original);
 	}
 
-	public System.Type CreateRootGenerator(string name, Generator.Block block) {
+	internal System.Type CreateRootGenerator(string name, Generator.Block block) {
 		var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
 		var generator = new Generator(this, type_builder);
 		block(generator);
 		generator.GenerateSwitchBlock();
-
+		//TODO proactively load externals
 		return type_builder.CreateType();
 	}
 }
@@ -181,6 +183,10 @@ internal class Generator {
 	 */
 	private Label switch_label;
 
+	public static bool IsNumeric(System.Type type) {
+		return type == typeof(double) || type == typeof(long);
+	}
+
 	internal Generator(CompilationUnit owner, TypeBuilder type_builder) {
 		Owner = owner;
 		TypeBuilder = type_builder;
@@ -252,7 +258,7 @@ internal class Generator {
 			init_builder.Emit(OpCodes.Ldarg_0);
 			init_builder.Emit(OpCodes.Ldarg_1);
 			init_builder.Emit(OpCodes.Ldstr, "Cannot perform override. No value in source tuple to override!");
-			init_builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("ReportOtherError"));
+			init_builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
 			init_builder.Emit(OpCodes.Ldc_I4_0);
 			init_builder.Emit(OpCodes.Ret);
 			init_builder.MarkLabel(has_instance);
@@ -263,15 +269,13 @@ internal class Generator {
 		init_builder.Emit(OpCodes.Newobj, ctor);
 
 		// If overriding, attach the overriding function to the original computation.
+		FieldInfo original_computation = null;
 		if (has_original) {
-			var init_this = init_builder.DeclareLocal(TypeBuilder);
-			init_builder.Emit(OpCodes.Stloc, init_this);
-
+			InitialOriginal = new FieldValue(TypeBuilder.DefineField("original", typeof(object), FieldAttributes.Private));
+			original_computation = TypeBuilder.DefineField("original", typeof(object), FieldAttributes.Private);
+			init_builder.Emit(OpCodes.Dup);
 			init_builder.Emit(OpCodes.Ldarg, initial_information.Length);
-			init_builder.Emit(OpCodes.Ldloc, init_this);
-			GenerateConsumeResult(InitialOriginal, init_builder, false, false);
-			init_builder.Emit(OpCodes.Callvirt, typeof(Computation).GetMethod("Notify"));
-			init_builder.Emit(OpCodes.Ldloc, init_this);
+			init_builder.Emit(OpCodes.Stfld, original_computation);
 		}
 
 		init_builder.Emit(OpCodes.Ret);
@@ -283,6 +287,20 @@ internal class Generator {
 		entry_points.Add(start_label);
 		Builder.Emit(OpCodes.Br, switch_label);
 		Builder.MarkLabel(start_label);
+		if (has_original) {
+			var state = DefineState();
+			SetState(state);
+			LoadTaskMaster();
+			Builder.Emit(OpCodes.Ldarg_0);
+			Builder.Emit(OpCodes.Ldfld, original_computation);
+			Builder.Emit(OpCodes.Dup);
+			GenerateConsumeResult(InitialOriginal);
+			Builder.Emit(OpCodes.Call, typeof(Computation).GetMethod("Notify", new System.Type[] { typeof(ConsumeResult) }));
+			Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new System.Type[] { typeof(Computation) }));
+			Builder.Emit(OpCodes.Ldc_I4_0);
+			Builder.Emit(OpCodes.Ret);
+			MarkState(state);
+		}
 	}
 
 	/**
@@ -311,6 +329,28 @@ internal class Generator {
 		Builder.Emit(OpCodes.Ldc_I4_M1);
 		Builder.Emit(OpCodes.Call, typeof(Math).GetMethod("Max", new System.Type[] { typeof(int), typeof(int) }));
 	}
+	public LoadableValue Compare(LoadableValue left, LoadableValue right, LoadableValue source_reference) {
+		if (left.BackingType == typeof(object) || right.BackingType == typeof(object)) {
+			throw new System.InvalidOperationException(System.String.Format("Can't compare values of type {0} and {1}.", left.BackingType, right.BackingType));
+		}
+		if (left.BackingType != right.BackingType) {
+			if (IsNumeric(left.BackingType) && IsNumeric(right.BackingType)) {
+				return Compare(new UpgradeValue(left), new UpgradeValue(right), source_reference);
+			} else {
+				EmitTypeError(source_reference, "Cannot compare value of type {0} and type {1}.", left, right);
+				return null;
+			}
+		} else {
+			Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+			left.Load(Builder);
+			right.Load(Builder);
+			Builder.Emit(System.Reflection.Emit.OpCodes.Call, left.BackingType.GetMethod("CompareTo", new System.Type[] { left.BackingType }));
+			Clamp();
+			var result = MakeField("compare", typeof(long));
+			Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, result.Field);
+			return result;
+		}
+	}
 	/**
 	 * Copies the contents of one field to another, boxing or unboxing based on
 	 * the field types.
@@ -320,20 +360,14 @@ internal class Generator {
 	}
 	void CopyField(LoadableValue source, FieldInfo target) {
 		Builder.Emit(OpCodes.Ldarg_0);
-		source.Load(Builder);
-		if (source.BackingType != target.FieldType) {
-			if (target.FieldType == typeof(object)) {
-				Builder.Emit(OpCodes.Box);
-			} else {
-				Builder.Emit(OpCodes.Unbox_Any, target.FieldType);
-			}
-		}
+		LoadReboxed(source, target.FieldType);
 		Builder.Emit(OpCodes.Stfld, target);
 	}
+
 	/**
 	 * Insert debugging information based on an AST node.
 	 */
-	public void DebugPosition(AstNode node) {
+	public void DebugPosition(CodeRegion node) {
 		if (Owner.SymbolDocument != null) {
 			Builder.MarkSequencePoint(Owner.SymbolDocument, node.StartRow, node.StartColumn, node.EndRow, node.EndColumn);
 		}
@@ -341,13 +375,13 @@ internal class Generator {
 	public void DecrementInterlock(ILGenerator builder, Label skip) {
 		builder.Emit(OpCodes.Ldarg_0);
 		builder.Emit(OpCodes.Ldflda, interlock_field);
-		builder.Emit(OpCodes.Call, typeof(System.Threading.Interlocked).GetMethod("Decrement", new System.Type[] { typeof(int) }));
+		builder.Emit(OpCodes.Call, typeof(System.Threading.Interlocked).GetMethod("Decrement", new System.Type[] { typeof(int).MakeByRefType() }));
 		builder.Emit(OpCodes.Brtrue, skip);
 	}
 	/**
 	 * Generate a runtime dispatch that checks each of the provided types.
 	 */
-	void DynamicTypeDispatch(LoadableValue original, LoadableValue source_reference, System.Type[] types, ParameterisedBlock<LoadableValue> block) {
+	public void DynamicTypeDispatch(LoadableValue original, LoadableValue source_reference, System.Type[] types, ParameterisedBlock<LoadableValue> block) {
 		var labels = new Label[types.Length];
 		for(var it = 0; it < types.Length; it++) {
 			labels[it] = Builder.DefineLabel();
@@ -359,9 +393,7 @@ internal class Generator {
 
 		for(var it = 0; it < types.Length; it++) {
 			Builder.MarkLabel(labels[it]);
-			var converted_field = MakeField("converted", types[it]);
-			CopyField(original, converted_field);
-			block(converted_field);
+			block(new AutoUnboxValue(original, types[it]));
 		}
 	}
 	/**
@@ -376,6 +408,9 @@ internal class Generator {
 		return id;
 	}
 	public void EmitTypeError(LoadableValue source_reference, string message, params LoadableValue[] data) {
+		if (data.Length == 0) {
+			throw new InvalidOperationException("Type errors must have at least one argument.");
+		}
 		LoadTaskMaster();
 		source_reference.Load(Builder);
 		Builder.Emit(OpCodes.Ldstr, message);
@@ -389,7 +424,7 @@ internal class Generator {
 			signature[it + 1] =  typeof(object);
 		}
 		Builder.Emit(OpCodes.Call, typeof(String).GetMethod("Format", signature));
-		Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError"));
+		Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
 		Builder.Emit(OpCodes.Ldc_I4_0);
 		Builder.Emit(OpCodes.Ret);
 	}
@@ -411,10 +446,7 @@ internal class Generator {
 	 * Generate a function to receive a value and request continued computation from the task master.
 	 */
 	public void GenerateConsumeResult(FieldValue result_target, bool interlocked = false) {
-		GenerateConsumeResult(result_target, Builder, true, interlocked);
-	}
-	private void GenerateConsumeResult(FieldValue result_target, ILGenerator builder, bool load_instance, bool interlocked) {
-		var method = TypeBuilder.DefineMethod("ConsumeResult" + result_consumer++, MethodAttributes.Public, typeof(void), new System.Type[] { typeof(object)});
+		var method = TypeBuilder.DefineMethod("ConsumeResult" + result_consumer++, MethodAttributes.Public, typeof(void), new System.Type[] { typeof(object) });
 		var consume_builder = method.GetILGenerator();
 		if (result_target != null) {
 			consume_builder.Emit(OpCodes.Ldarg_0);
@@ -427,14 +459,12 @@ internal class Generator {
 			DecrementInterlock(consume_builder, return_label);
 		}
 		consume_builder.Emit(OpCodes.Ldarg_0);
-		consume_builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("Slot"));
+		consume_builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new System.Type[] { typeof(Computation) }));
 		consume_builder.MarkLabel(return_label);
 		consume_builder.Emit(OpCodes.Ret);
-		if (load_instance) {
-			builder.Emit(OpCodes.Ldarg_0);
-		}
-		builder.Emit(OpCodes.Ldftn, method);
-		builder.Emit(OpCodes.Newobj, typeof(ConsumeResult).GetConstructors()[0]);
+		Builder.Emit(OpCodes.Ldarg_0);
+		Builder.Emit(OpCodes.Ldftn, method);
+		Builder.Emit(OpCodes.Newobj, typeof(ConsumeResult).GetConstructors()[0]);
 	}
 	public void GenerateNextId() {
 		LoadTaskMaster();
@@ -446,6 +476,7 @@ internal class Generator {
 	 * switch (computed goto).
 	 */
 	internal void GenerateSwitchBlock() {
+		Builder.MarkLabel(switch_label);
 		Builder.Emit(OpCodes.Ldarg_0);
 		Builder.Emit(OpCodes.Ldfld, state_field);
 		Builder.Emit(OpCodes.Switch, entry_points.ToArray());
@@ -500,7 +531,7 @@ internal class Generator {
 			LoadTaskMaster();
 			source_reference.Load(Builder);
 			Builder.Emit(OpCodes.Ldstr, String.Format("Cannot find overloaded matching method for {0}.{1}({3}).", methods[0].Name, methods[0].ReflectedType.Name, String.Join(",", arguments.Select(a => a.BackingType.Name)))); 
-			Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError"));
+			Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
 			Builder.Emit(OpCodes.Ldc_I4_0);
 			Builder.Emit(OpCodes.Ret);
 			return null;
@@ -551,6 +582,25 @@ internal class Generator {
 		return result;
 	}
 	/**
+	 * Loads a value and repackages to match the target type, as needed.
+	 *
+	 * This can be boxing, unboxing, or casting.
+	 */
+	public void LoadReboxed(LoadableValue source, System.Type target_type) {
+		source.Load(Builder);
+		if (source.BackingType != target_type) {
+			if (target_type == typeof(object)) {
+				if (source.BackingType == typeof(bool) || source.BackingType == typeof(double) ||source.BackingType == typeof(long)) {
+					Builder.Emit(OpCodes.Box, source.BackingType);
+				} else {
+					Builder.Emit(OpCodes.Castclass, typeof(object));
+				}
+			} else {
+				Builder.Emit(OpCodes.Unbox_Any, target_type);
+			}
+		}
+	}
+	/**
 	 * Load the task master in the `Run` function.
 	 */
 	public void LoadTaskMaster() {
@@ -560,8 +610,8 @@ internal class Generator {
 	 * Load the task master in any method of this class.
 	 */
 	public void LoadTaskMaster(ILGenerator builder) {
-		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(System.Reflection.Emit.OpCodes.Ldfld, task_master);
+		builder.Emit(OpCodes.Ldarg_0);
+		builder.Emit(System.Reflection.Emit.OpCodes.Ldfld, task_master);
 	}
 	/**
 	 * Create an anonymous field with the specified type.
@@ -601,7 +651,7 @@ internal class Generator {
 		LoadTaskMaster();
 		source_reference.Load(this);
 		GenerateConsumeResult(library_field);
-		Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("GetExternal"));
+		Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("GetExternal", new System.Type[] { typeof (SourceReference), typeof(string), typeof(ConsumeResult) }));
 		Builder.Emit(OpCodes.Ldc_I4_0);
 		Builder.Emit(OpCodes.Ret);
 		MarkState(state);
@@ -624,7 +674,7 @@ internal class Generator {
 	public void Slot(LoadableValue target) {
 		LoadTaskMaster();
 		target.Load(Builder);
-		Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot"));
+		Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new System.Type[] { typeof(Computation) }));
 	}
 	/**
 	 * Slot a computation for execution and stop execution.
@@ -662,10 +712,10 @@ internal class Generator {
 				result.Load(Builder);
 			}
 			LoadTaskMaster();
-			Builder.Emit(OpCodes.Callvirt, typeof(Frame).GetMethod("Slot"));
+			Builder.Emit(OpCodes.Call, typeof(Frame).GetMethod("Slot", new System.Type[] { typeof(TaskMaster) }));
 			Builder.MarkLabel(end);
 		}
-		CopyField(result, typeof(Computation).GetField("result"));
+		CopyField(result, typeof(Computation).GetField("result", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
 		Builder.Emit(OpCodes.Ldc_I4_1);
 		Builder.Emit(System.Reflection.Emit.OpCodes.Ret);
 	}
@@ -682,7 +732,7 @@ internal class Generator {
 		if (boxed) {
 			Builder.Emit(OpCodes.Unbox_Any, typeof(bool));
 		}
-		Builder.Emit(OpCodes.Ldelem);
+		Builder.Emit(OpCodes.Ldelem, typeof(Stringish));
 	}
 	private void ToStringishHelperStringish(bool boxed, LoadableValue source) {
 		source.Load(Builder);
@@ -693,8 +743,8 @@ internal class Generator {
 	public void ToStringish(LoadableValue source, LoadableValue source_reference) {
 		var boxed = source.BackingType == typeof(object);
 		var converters = new Dictionary<System.Type, Action>() {
-			{ typeof(bool), () => ToStringishHelper<double>(boxed, source) },
-			{ typeof(bool), () => ToStringishHelper<long>(boxed, source) },
+			{ typeof(double), () => ToStringishHelper<double>(boxed, source) },
+			{ typeof(long), () => ToStringishHelper<long>(boxed, source) },
 			{ typeof(bool), () => ToStringishHelperBool(boxed, source) },
 			{ typeof(Stringish), () => ToStringishHelperStringish(boxed, source) }
 		};
@@ -866,6 +916,19 @@ internal class MethodValue : LoadableValue {
 			instance.Load(generator);
 		}
 		generator.Emit(OpCodes.Call, method);
+	}
+}
+internal class UpgradeValue : LoadableValue {
+	private LoadableValue original;
+	public UpgradeValue(LoadableValue original) {
+		this.original = original;
+	}
+	public override System.Type BackingType { get { return typeof(double); } }
+	public override void Load(ILGenerator generator) {
+		original.Load(generator);
+		if (original.BackingType == typeof(long)) {
+			generator.Emit(OpCodes.Conv_R8);
+		}
 	}
 }
 internal class RevCons<T> {

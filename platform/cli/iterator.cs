@@ -14,6 +14,9 @@ public abstract class MergeIterator {
 	public string Current {
 		get { return enumerator.Current.Key; }
 	}
+	public Stringish Currentish {
+		get { return new SimpleStringish(enumerator.Current.Key); }
+	}
 	/**
 	 * The current attribute ordinal, 1-based per the language spec.
 	 */

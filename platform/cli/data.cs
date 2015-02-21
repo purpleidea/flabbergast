@@ -226,6 +226,9 @@ public class Frame : DynamicObject, IAttributeNames {
 			return attributes[name];
 		}
 		set {
+			if (value == null) {
+				return;
+			}
 			if (pending.ContainsKey(name) || attributes.ContainsKey(name)) {
 				throw new InvalidOperationException("Redefinition of attribute " + name + ".");
 			}

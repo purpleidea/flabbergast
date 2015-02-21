@@ -12,8 +12,7 @@ public enum Type {
 	Int = 8,
 	Str = 16,
 	Template = 32,
-	Unit = 64,
-	Any = 127
+	Unit = 64
 }
 internal abstract class AstTypeableNode : AstNode {
 	protected Environment Environment;
@@ -111,12 +110,17 @@ internal abstract class AstTypeableNode : AstNode {
 		}
 	}
 	public static System.Type[] ClrTypeFromType(Type type) {
-		var types = new System.Type[(((ulong) type) * 0x200040008001UL & 0x111111111111111UL) % 0xf];
+		int count = 0;
+		for (var n = (int) type; n > 0; n &= (n - 1)) {
+				count++;
+		}
+		var types = new System.Type[count];
 		var index = 0;
 		if (type.HasFlag(Type.Bool)) types[index++] = typeof(bool);
 		if (type.HasFlag(Type.Float)) types[index++] = typeof(double);
 		if (type.HasFlag(Type.Frame)) types[index++] = typeof(Frame);
 		if (type.HasFlag(Type.Int)) types[index++] = typeof(long);
+		if (type.HasFlag(Type.Str)) types[index++] = typeof(Stringish);
 		if (type.HasFlag(Type.Template)) types[index++] = typeof(Template);
 		if (type.HasFlag(Type.Unit)) types[index++] = typeof(Unit);
 		return types;
@@ -142,8 +146,15 @@ internal class EnvironmentPrioritySorter : IComparer<AstTypeableNode> {
 	}
 }
 internal abstract class NameInfo {
+	public const Type AnyType = Type.Bool | Type.Float | Type.Frame | Type.Int | Type.Str | Type.Template | Type.Unit;
 	protected Dictionary<string, NameInfo> Children = new Dictionary<string, NameInfo>();
 	public string Name { get; protected set; }
+	internal void AddAll(List<NameInfo> target) {
+		target.Add(this);
+		foreach (var child in Children.Values) {
+			child.AddAll(target);
+		}
+	}
 	internal NameInfo Lookup(ErrorCollector collector, string name, ref bool success) {
 		EnsureType(collector, Type.Frame, ref success);
 		if (!Children.ContainsKey(name)) {
@@ -179,7 +190,7 @@ internal abstract class NameInfo {
 }
 internal class OpenNameInfo : NameInfo {
 	private Environment Environment;
-	protected Type RealType = Type.Any;
+	protected Type RealType = AnyType;
 	public OpenNameInfo(Environment environment, string name) {
 		Environment = environment;
 		Name = name;
@@ -211,13 +222,13 @@ internal class OpenNameInfo : NameInfo {
 			generator.Builder.Emit(OpCodes.Dup);
 			generator.Builder.Emit(OpCodes.Ldc_I4, it);
 			generator.Builder.Emit(OpCodes.Ldstr, name_parts[it]);
-			generator.Builder.Emit(OpCodes.Stelem);
+			generator.Builder.Emit(OpCodes.Stelem, typeof(string));
 		}
 		generator.Builder.Emit(OpCodes.Newobj, typeof(Lookup).GetConstructors()[0]);
 		generator.Builder.Emit(OpCodes.Dup);
 		generator.GenerateConsumeResult(lookup_result, true);
-		generator.Builder.Emit(OpCodes.Call, typeof(Lookup).GetMethod("Notify"));
-		generator.Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot"));
+		generator.Builder.Emit(OpCodes.Call, typeof(Lookup).GetMethod("Notify", new System.Type[] { typeof(ConsumeResult) }));
+		generator.Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new System.Type[] { typeof(Computation) }));
 		return new LoadableCache(lookup_result, RealType, this);
 	}
 }
@@ -257,7 +268,7 @@ internal class BoundNameInfo : NameInfo {
 internal class CopyFromParentInfo : NameInfo {
 	Environment Environment;
 	NameInfo Source;
-	Type Mask = Type.Any;
+	Type Mask = AnyType;
 	bool ForceBack;
 
 	public CopyFromParentInfo(Environment environment, string name, NameInfo source, bool force_back) {
@@ -305,7 +316,7 @@ internal class LoadableCache {
 	public LoadableValue Value { get; private set; }
 	public Type PossibleTypes { get; private set; }
 	public NameInfo NameInfo { get; private set; }
-	public bool SinglyTyped { get { return (PossibleTypes & (PossibleTypes - 1)) == 0; } }
+	public bool SinglyTyped { get { return Types.Length == 1; } }
 	public System.Type[] Types { get; private set; }
 	public LoadableCache(LoadableValue loadable_value, Type type, NameInfo name_info) {
 		Value = loadable_value;
@@ -317,7 +328,7 @@ internal class LoadableCache {
 internal class Environment : CodeRegion {
 	Environment Parent;
 	Dictionary<string, NameInfo> Children = new Dictionary<string, NameInfo>();
-	Dictionary<ITypeableElement, Type> IntrinsicTypes = new Dictionary<ITypeableElement, Type>();
+	Dictionary<AstNode, Type> IntrinsicTypes = new Dictionary<AstNode, Type>();
 	public string FileName { get; private set; }
 	public int StartRow { get; private set; }
 	public int StartColumn { get; private set; }
@@ -356,9 +367,17 @@ internal class Environment : CodeRegion {
 		Children[name] = null;
 	}
 	internal void GenerateLookupCache(Generator generator, LookupCache current, LoadableValue source_reference, LoadableValue context, Generator.ParameterisedBlock<LookupCache> block) {
+		generator.DebugPosition(this);
 		var base_lookup_cache = new LookupCache(current);
+		var all_children = new List<NameInfo>();
 		string narrow_error = null;
 		foreach (var info in Children.Values) {
+			if (info == null) {
+				continue;
+			}
+			info.AddAll(all_children);
+		}
+		foreach (var info in all_children) {
 			var current_narrow_error = info.CheckValidNarrowing(base_lookup_cache, current);
 			if (narrow_error != null && current_narrow_error != null) {
 				narrow_error = narrow_error + current_narrow_error;
@@ -368,19 +387,19 @@ internal class Environment : CodeRegion {
 		}
 		if (narrow_error != null) {
 			generator.Builder.Emit(OpCodes.Ldstr, narrow_error);
-			generator.Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError"));
+			generator.Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
 			generator.Builder.Emit(OpCodes.Ldc_I4_0);
 			generator.Builder.Emit(OpCodes.Ret);
 			return;
 		}
 		var load_count = 0;
-		foreach (var info in Children.Values) {
+		foreach (var info in all_children) {
 			load_count += info.NeedsLoad() ? 1 : 0;
 		}
 		var lookup_results = new List<LoadableCache>();
 		if (load_count > 0) {
 			generator.StartInterlock(load_count);
-			foreach (var info in Children.Values) {
+			foreach (var info in all_children) {
 				lookup_results.Add(info.Load(generator, source_reference, context));
 			}
 			generator.StopInterlock();
@@ -391,7 +410,7 @@ internal class Environment : CodeRegion {
 			lookup_result.Value.Load(generator);
 			generator.Builder.Emit(OpCodes.Isinst, lookup_result.Types[0]);
 			generator.Builder.Emit(OpCodes.Brtrue, label);
-			generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", lookup_result.Value, lookup_result.NameInfo.Name, "{0}"));
+			generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", lookup_result.Value, lookup_result.NameInfo.Name, "{0}"), lookup_result.Value);
 			generator.Builder.MarkLabel(label);
 		}
 		GenerateLookupPermutation(generator, base_lookup_cache, 0, lookup_results.Where(x => !x.SinglyTyped).ToArray(), source_reference, block);
@@ -399,6 +418,7 @@ internal class Environment : CodeRegion {
 	private void GenerateLookupPermutation(Generator generator, LookupCache cache, int index, LoadableCache[] values, LoadableValue source_reference, Generator.ParameterisedBlock<LookupCache> block) {
 		if (index >= values.Length) {
 			block(cache);
+			generator.DebugPosition(this);
 			return;
 		}
 		var labels = new Label[values[index].Types.Length];
@@ -407,8 +427,8 @@ internal class Environment : CodeRegion {
 			values[index].Value.Load(generator);
 			generator.Builder.Emit(OpCodes.Isinst, values[index].Types[it]);
 			generator.Builder.Emit(OpCodes.Brtrue, labels[it]);
-			generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", values[it].Value, values[it].NameInfo.Name, "{0}"));
 		}
+		generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", values[index].Value, values[index].NameInfo.Name, "{0}"), values[index].Value);
 		for (var it = 0; it < labels.Length; it++) {
 			generator.Builder.MarkLabel(labels[it]);
 			var sub_cache = new LookupCache(cache);
@@ -423,6 +443,7 @@ internal class Environment : CodeRegion {
 		}
 		if (Children.ContainsKey(enumerator.Current)) {
 			if (Children[enumerator.Current] == null) {
+				success = false;
 				collector.ReportForbiddenNameAccess(this, enumerator.Current);
 				return new JunkInfo();
 			}
@@ -449,7 +470,7 @@ internal class Environment : CodeRegion {
 		Children[name] = copy_info;
 		return copy_info;
 	}
-	internal void EnsureIntrinsic<T>(ErrorCollector collector, T node, Type type, ref bool success) where T:AstNode, ITypeableElement {
+	internal void EnsureIntrinsic(ErrorCollector collector, AstNode node, Type type, ref bool success) {
 		if (IntrinsicTypes.ContainsKey(node)) {
 			var original_type = IntrinsicTypes[node];
 			var result = original_type & type;
@@ -461,6 +482,16 @@ internal class Environment : CodeRegion {
 			}
 		} else {
 			IntrinsicTypes[node] = type;
+		}
+	}
+	internal void IntrinsicDispatch(Generator generator, AstNode node, LoadableValue original, Generator.ParameterisedBlock<LoadableValue> block) {
+		foreach (var type in AstTypeableNode.ClrTypeFromType(IntrinsicTypes[node])) {
+			var next_label = generator.Builder.DefineLabel();
+			original.Load(generator);
+			generator.Builder.Emit(OpCodes.Isinst, type);
+			generator.Builder.Emit(OpCodes.Brfalse, next_label);
+			block(new AutoUnboxValue(original, type));
+			generator.Builder.MarkLabel(next_label);
 		}
 	}
 }

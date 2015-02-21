@@ -91,12 +91,11 @@ public class Parser {
 	/**
 	 * Parse in the “file” context defined in the language specification.
 	 */
-	public System.Type ParseFile(ErrorCollector collector, System.Reflection.Emit.ModuleBuilder module_builder, string type_name, bool debuggable) {
+	public System.Type ParseFile(ErrorCollector collector, CompilationUnit unit, string type_name) {
 		file result;
 		var position = new ParserPosition(this, collector);
 		if (file.ParseRule_Base(ref position, out result) && position.Finished) {
 			if (result.Analyse(collector)) {
-				var unit = new CompilationUnit(FileName, module_builder, debuggable);
 				return unit.CreateRootGenerator(type_name, (generator) => result.Generate(generator, generator.Return));
 			}
 		} else {

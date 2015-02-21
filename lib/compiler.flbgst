@@ -564,7 +564,7 @@ kws_tmpl : Template {
 	}
 	lookup_tmpl : Template base_tmpl {
 		source ?:
-		arguments : [ { value : source  type : known_types.frame } ]
+		arguments : [ { value : source  type : known_vm_types.list } ]
 		return_type : known_vm_types.any
 	}
 	lookup_literal : Template lookup_tmpl {
@@ -807,11 +807,6 @@ codegen_tmpl : Template {
 
 		target_flavour : generation_flavour
 	}
-	# Use a parameter passed to this syntax group or defined in a containing code generator.
-	parameter : Template gen_tmpl {
-		name ?:
-		error_message : "Parameter \(name) is not defined."
-	}
 	prepare_lookup_cache : Template gen_tmpl {
 		in ?:
 		name ?:
@@ -830,6 +825,11 @@ codegen_tmpl : Template {
 	push_source_reference : Template gen_tmpl {
 		in ?:
 		inherit : True
+	}
+	# Return all possible future types given the limits that were discovered
+	# during analysis.
+	return_intrinsic_dispatch : Template gen_tmpl {
+		of ?:
 	}
 	# Do some type-dependent behaviour
 	type_dispatch_tmpl : Template gen_tmpl {
@@ -1231,7 +1231,7 @@ language_tmpl : Template {
 					},
 					# Left is float
 					choice_tmpl {
-						type : known_types.int
+						type : known_types.float
 						action : codegen.type_dispatch {
 							of : codegen.other_code { field : $expression }
 							right_operation : converted_result
@@ -1414,70 +1414,72 @@ language_tmpl : Template {
 			If has_anon_args Then environment.list_of { field : $anon_args } Else Null,
 			If has_named_args Then environment.list_of { field : $named_args } Else Null
 		]
-		ensure_type_is : ensure_type.any { }
+		ensure_type_is : ensure_type.intrinsic { }
 		type_demand : { func_expr : [ known_types.template ] }
 		type_demand_all : {
 			anon_args : If has_anon_args Then known_types Else Null
 			named_args : If has_named_args Then known_types Else Null
 		}
-		code_value : kws.lookup_literal {
-			name : $value
-			source : kws.list_prepend {
-				tail : kws.list_null {}
-				frame : codegen.type_dispatch {
-					of : codegen.other_code { field : $func_expr }
-					choices : [
-						choice_tmpl {
-							type : known_types.template
-							action : kws.iterator {
-								inputs : [ converted_result ]
-								initial : codegen.push_source_reference {
-									in : kws.frame_new {
-										container : kws.tmpl_container { source : converted_result }
-										context : kws.tmpl_context { source : converted_result }
+		code_value : codegen.return_intrinsic_dispatch {
+			of : kws.lookup_literal {
+				name : [ $value ]
+				source : kws.list_prepend {
+					tail : kws.list_null {}
+					frame : codegen.type_dispatch {
+						of : codegen.other_code { field : $func_expr }
+						choices : [
+							choice_tmpl {
+								type : known_types.template
+								action : kws.iterator {
+									inputs : [ converted_result ]
+									initial : codegen.push_source_reference {
+										in : kws.frame_new {
+											container : kws.tmpl_container { source : converted_result }
+											context : kws.tmpl_context { source : converted_result }
+										}
 									}
-								}
-								cases : [
-									If has_anon_args
-										Then literal_case {
-											name : $args
-											action : kws.set_frame_or_tmpl {
-												name : current_name
-												returns : into
-												into : current_accumulator
-												with : codegen.fold_into_frame {
-													field : $anon_args
+									cases : [
+										If has_anon_args
+											Then literal_case {
+												name : $args
+												action : kws.set_frame_or_tmpl {
+													name : current_name
+													returns : into
+													into : current_accumulator
+													with : codegen.fold_into_frame {
+														field : $anon_args
+													}
 												}
 											}
-										}
-										Else Null,
-									If has_named_args
-										Then list_case {
-											field : $named_args
-											name_field : $name
-											action : kws.set_frame_or_tmpl {
-												name : current_name
-												returns : into
-												into : current_accumulator
-												with : codegen.other_code {
-													field : current_element
+											Else Null,
+										If has_named_args
+											Then list_case {
+												field : $named_args
+												name_field : $name
+												action : kws.set_frame_or_tmpl {
+													name : current_name
+													returns : into
+													into : current_accumulator
+													with : codegen.other_code {
+														field : current_element
+													}
 												}
 											}
-										}
-										Else Null
-								]
-								default_case : kws.set_frame_or_tmpl {
-									name : current_name
-									returns : into
-									into : current_accumulator
-									with : kws.tmpl_get {
+											Else Null
+									]
+									default_case : kws.set_frame_or_tmpl {
 										name : current_name
-										source : converted_result
+										returns : into
+										into : current_accumulator
+										with : kws.tmpl_get {
+											name : current_name
+											source : converted_result
+										}
 									}
 								}
 							}
-						}
-					]
+						]
+					}
 				}
 			}
 		}
@@ -1495,7 +1497,7 @@ language_tmpl : Template {
 						initial : new_item {
 							context : kws.list_append {
 								head : parameters.context
-								tail : kws.frame_context { source : converted_result }
+								tail : kws.tmpl_context { source : converted_result }
 							}
 						}
 						inputs : [ converted_result ]
@@ -1594,7 +1596,7 @@ language_tmpl : Template {
 							apply_to : [ environment.other_elements { fields : [ $expression ] } ]
 							special_names : [ forbidden_name_from_field { field : $name } ]
 							force_back : True
-							name : Null
+							name : $inner_environment
 						}
 					]
 					ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
@@ -1604,7 +1606,10 @@ language_tmpl : Template {
 						into : parameters.target
 						with : kws.create_function {
 							returns : codegen.prepare_lookup_cache {
-								in : codegen.other_code { field : $expression }
+								in : codegen.prepare_lookup_cache {
+									in : codegen.other_code { field : $expression }
+									name : $inner_environment
+								}
 								name : Null
 							}
 						}
@@ -1636,10 +1641,10 @@ language_tmpl : Template {
 							forbidden_name_from_field { field : $name }
 						]
 						force_back : True
-						name : Null
+						name : $inner_environment
 					} ]
 					ensure_type_is : ensure_type.stop {}
-					code_value :  kws.set_frame_or_tmpl_from_field {
+					code_value : kws.set_frame_or_tmpl_from_field {
 						name_field : $name
 						returns : into
 						into : parameters.target
@@ -1647,7 +1652,10 @@ language_tmpl : Template {
 							override : kws.create_override_function {
 								returns : codegen.push_source_reference {
 									in : codegen.prepare_lookup_cache {
-										in : codegen.other_code { field : $expression }
+										in : codegen.prepare_lookup_cache {
+											in : codegen.other_code { field : $expression }
+											name : $inner_environment
+										}
 										name : Null
 									}
 								}
@@ -1697,12 +1705,15 @@ language_tmpl : Template {
 							override : kws.create_override_function {
 								returns : perform_overrides {
 									new_item : kws.tmpl_new
-									source_template : parameters.original_value
+									source_template : kws.dynamic_type_dispatch {
+										allow_types : [ known_types.template ]
+										of : parameters.original_value
+									}
 								}
 							}
 							original : kws.tmpl_get_from_field {
-									field : $name
-									source : parameters.source_template
+								field : $name
+								source : parameters.source_template
 							}
 						}
 					}
@@ -2065,51 +2076,58 @@ language_tmpl : Template {
 					pretty_name : "string literal"
 					pattern : parser.accumulate_string {
 						field : $text
-						in : parser.alternate {
-							of : [
-								string_escape_tmpl { char : "a"  codepoint : 7 },
-								string_escape_tmpl { char : "b"  codepoint : 8 },
-								string_escape_tmpl { char : "f"  codepoint : 12 },
-								string_escape_tmpl { char : "n" codepoint : 10 },
-								string_escape_tmpl { char : "r" codepoint : 13 },
-								string_escape_tmpl { char : "t" codepoint : 9 },
-								string_escape_tmpl { char : "v"  codepoint : 11 },
-								string_escape_tmpl { char : "\\\""  codepoint : 34 },
-								string_escape_tmpl { char : "\\\\"  codepoint : 92 },
-								parser.accumulate_unichar_integer {
-									multiplier : 8
-									offset : 48
-									in : parser.sequence {
-										of : [
-											parser.exact { word : "\\\\" },
-											parser.range { from : "0"  to : "7"  accumulate : True},
-											parser.range { from : "0"  to : "7"  accumulate : True},
-											parser.range { from : "0"  to : "7"  accumulate : True}
-										]
+						in : parser.many {
+							nonempty : True
+							of : parser.alternate {
+								of : [
+									string_escape_tmpl { char : "a"  codepoint : 7 },
+									string_escape_tmpl { char : "b"  codepoint : 8 },
+									string_escape_tmpl { char : "f"  codepoint : 12 },
+									string_escape_tmpl { char : "n" codepoint : 10 },
+									string_escape_tmpl { char : "r" codepoint : 13 },
+									string_escape_tmpl { char : "t" codepoint : 9 },
+									string_escape_tmpl { char : "v"  codepoint : 11 },
+									string_escape_tmpl { char : "\\\""  codepoint : 34 },
+									string_escape_tmpl { char : "\\\\"  codepoint : 92 },
+									parser.accumulate_unichar_integer {
+										multiplier : 8
+										offset : 48
+										in : parser.sequence {
+											of : [
+												parser.exact { word : "\\\\" },
+												parser.range { from : "0"  to : "7"  accumulate : True},
+												parser.range { from : "0"  to : "7"  accumulate : True},
+												parser.range { from : "0"  to : "7"  accumulate : True}
+											]
+										}
+									},
+									parser.accumulate_unichar_integer {
+										in : parser.sequence {
+											of : [
+												parser.exact { word : "\\\\x" },
+												hex_digit { },
+												hex_digit { }
+											]
+										}
+									},
+									parser.accumulate_unichar_integer {
+										in : parser.sequence {
+											of : [
+												parser.exact { word : "\\\\u" },
+												hex_digit { },
+												hex_digit { },
+												hex_digit { },
+												hex_digit { }
+											]
+										}
+									},
+									parser.single {
+										char : "\\\\\\\""
+										invert_match : True
+										accumulate : True
 									}
-								},
-								parser.accumulate_unichar_integer {
-									in : parser.sequence {
-										of : [
-											parser.exact { word : "\\\\x" },
-											hex_digit { },
-											hex_digit { }
-										]
-									}
-								},
-								parser.accumulate_unichar_integer {
-									in : parser.sequence {
-										of : [
-											parser.exact { word : "\\\\u" },
-											hex_digit { },
-											hex_digit { },
-											hex_digit { },
-											hex_digit { }
-										]
-									}
-								},
-								parser.single { char : "\\\\\\\""  invert_match : True }
-							]
+								]
+							}
 						}
 					}
 					apply_environment_to : [ ]
@@ -2432,7 +2450,7 @@ language_tmpl : Template {
 					code_value : kws.conditional {
 						condition : codegen.other_code { field : $left }
 						true_action : kws.numeric_constant {
-							type : known_types.int
+							type : known_types.bool
 							number : max
 						}
 						false_action : codegen.prepare_lookup_cache {
@@ -2466,7 +2484,7 @@ language_tmpl : Template {
 							name : $optional_environment
 						}
 						false_action : kws.numeric_constant {
-							type : known_types.int
+							type : known_types.bool
 							number : min
 						}
 					}
@@ -2688,7 +2706,35 @@ language_tmpl : Template {
 						field : $right
 						ensure_type_of : ensure_type.propagate { fields : [ $left ] }
 					}
-					code_value : codegen.other_code { field : $left }
+					# This is here because we slightly tell lies. Normally, type
+					# propagation has ensure that the value of the left expression is of
+					# the correct type. However, for numeric operations, the operation
+					# can be always include integers. Normally, the downstream operation
+					# does not care whether the result is an integer or floating point
+					# number, but in this rare scenario, it does. Therefore, if the
+					# result is an integer, upgrade it to a float.
+					code_value : codegen.type_dispatch_parsed {
+						field : $right
+						choices : [
+							choice_tmpl {
+								type : known_types.float
+								action : codegen.type_dispatch {
+									of : codegen.other_code { field : $left }
+									allow_types : [ known_types.float, known_types.int ]
+									choices : [
+										choice_tmpl {
+											type : known_types.int
+											action : kws.int_to_float {
+												expr : converted_result
+											}
+										}
+									]
+									default_action : converted_result
+								}
+							}
+						]
+						default_action : codegen.other_code { field : $left }
+					}
 				}
 				check : Template type_operator {
 					pretty_name : "type check"
@@ -2840,12 +2886,14 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
-					ensure_type_is : ensure_type.any {}
+					ensure_type_is : ensure_type.intrinsic {}
 					type_demand : { expression : [ known_types.frame ] }
-					code_value : kws.lookup_field {
-						field : $parts
-						source : kws.frame_context {
-							source : codegen.other_code { field : $expression }
+					code_value : codegen.return_intrinsic_dispatch {
+						of : kws.lookup_field {
+							field : $names
+							source : kws.frame_context {
+								source : codegen.other_code { field : $expression }
+							}
 						}
 					}
 				}
@@ -3189,13 +3237,15 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expr ] } ]
-					ensure_type_is : ensure_type.any {}
+					ensure_type_is : ensure_type.intrinsic {}
 					type_demand : { expr : [ known_types.frame ] }
-					code_value : kws.lookup_field {
-						field : $names
-						source : kws.list_prepend {
-							frame : codegen.other_code { field : $expr }
-							tail : kws.list_null {}
+					code_value : codegen.return_intrinsic_dispatch {
+						of : kws.lookup_field {
+							field : $names
+							source : kws.list_prepend {
+								frame : codegen.other_code { field : $expr }
+								tail : kws.list_null {}
+							}
 						}
 					}
 				}

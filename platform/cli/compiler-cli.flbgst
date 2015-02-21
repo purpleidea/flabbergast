@@ -484,24 +484,24 @@ environment : compiler_lib.environment_tmpl {
 		value : "\t\tif (\(field) != null) { foreach (var \(Id) in \(field)) \(Id).Propagate\(target_flavour.name)Environment(_collector, _queue, new Environment(\(Id).FileName, \(Id).StartRow, \(Id).StartColumn, \(Id).EndRow, \(Id).EndColumn, \(If inherit Then current_environment Else "null"), false, \(If top_level Then "true" Else "false")), ref _success); }\n"
 	}
 	blank_environment +: {
-		current_environment : name ?? Id
+		current_environment : name
 		class_gen :
 			For application : apply_to
 				Reduce acc & application.class_gen
-				With acc : If name Is Null Then "" Else "\t\tEnvironment \(name);\n"
+				With acc : "\tEnvironment \(name);\n"
 
 		value :
-			"\t\tvar \(name ?? Id) = new Environment(FileName, StartRow, StartColumn, EndRow, EndColumn, null, false);" &
+			"\t\t\(name) = new Environment(FileName, StartRow, StartColumn, EndRow, EndColumn, null, false);" &
 			(For application : apply_to Reduce acc & application.value With acc : "")
 	}
 	modified_environment +: {
-		current_environment : name ?? Id
+		current_environment : name
 		class_gen :
 			For application : apply_to
 				Reduce acc & application.class_gen
-				With acc : If name Is Null Then "" Else "\t\tEnvironment \(name);\n"
+				With acc : "\tEnvironment \(name);\n"
 		value :
-			"\t\tvar \(name ?? Id) = new Environment(FileName, StartRow, StartColumn, EndRow, EndColumn, \(Lookup current_environment In Container), \(If force_back Then "true" Else "false"));\n" &
+			"\t\t\(name) = new Environment(FileName, StartRow, StartColumn, EndRow, EndColumn, \(Lookup current_environment In Container), \(If force_back Then "true" Else "false"));\n" &
 			(For special_name : special_names Reduce acc & special_name.value With acc : "") &
 			(For application : apply_to Reduce acc & application.value With acc : "")
 
@@ -511,13 +511,13 @@ environment : compiler_lib.environment_tmpl {
 				"\t\t}\n"
 		}
 		mask_from_fields +: {
-			value : "\t\t\tif(\(name_field).Length > 0) { \(current_environment).AddMask(\(name_field).ToString(), \(expr_field)); }\n"
+			value : "\t\t\(current_environment).AddMask(\(name_field).ToString(), \(expr_field));\n"
 		}
 		override_name_from_field +: {
-			value : "\t\t\tif(\(field).Length > 0) { \(current_environment).AddOverrideName(\(field).ToString()); }\n"
+			value : "\t\t\(current_environment).AddOverrideName(\(field).ToString());\n"
 		}
-		forbidden_name_from_field : Template {
-			value : "\t\t\tif(\(field).Length > 0) { \(current_environment).AddForbiddenName(\(field).ToString()); }\n"
+		forbidden_name_from_field +: {
+			value : "\t\t\(current_environment).AddForbiddenName(\(field).ToString());\n"
 		}
 	}
 	top_level +: {
@@ -587,7 +587,7 @@ known_types : compiler_lib.known_types_tmpl {
 		constant_creator : "BoolConstant"
 	}
 	float : {
-		union_type : "Flabbergast.Type.Int"
+		union_type : "Flabbergast.Type.Float"
 		real_type : "double"
 		max : "System.Double.MaxValue"
 		min : "System.Double.MinValue"
@@ -598,7 +598,7 @@ known_types : compiler_lib.known_types_tmpl {
 		real_type : "Flabbergast.Frame"
 	}
 	int : {
-		union_type : "Flabbergast.Type.Float"
+		union_type : "Flabbergast.Type.Int"
 		real_type : "long"
 		max : "System.Int64.MaxValue"
 		min : "System.Int64.MinValue"
@@ -732,7 +732,7 @@ kws : compiler_lib.kws_tmpl {
 				For arg : arguments
 					Reverse
 					Reduce
-						"\(sum_indent)if (\(arg.value.storage_name).BackingType != typeof(\(arg.type.real_type))) throw new System.InvalidOperationException();" &
+						"\(sum_indent)if (\(arg.value.storage_name).BackingType != typeof(\(arg.type.real_type))) throw new System.InvalidOperationException(System.String.Format(\"Expected {0} but got {1} in \(opcode).\", typeof(\(arg.type.real_type)), \(arg.value.storage_name).BackingType));" &
 						"\(sum_indent)\(arg.value.storage_name).Load(\(generator));" &
 						acc
 						With acc : base_exec
@@ -755,10 +755,10 @@ kws : compiler_lib.kws_tmpl {
 		}
 	}
 	error +: {
-		opcode : "Callvirt"
+		opcode : "Call"
 		gen_gen +: {
 			extra_load : "\(sum_indent)\(generator).LoadTaskMaster();\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));"
-			extra_emit : ", typeof(TaskMaster).GetMethod(\"ReportOtherError\")"
+			extra_emit : ", typeof(TaskMaster).GetMethod(\"ReportOtherError\", new System.Type[] { typeof(SourceReference), typeof(string) })"
 			store_result : "\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);"
 		}
 	}
@@ -767,7 +767,7 @@ kws : compiler_lib.kws_tmpl {
 	float_is_finite +: {
 		opcode : "Call"
 		gen_gen +: {
-			extra_emit : ", typeof(double).GetMethod(\"IsInfinity\")"
+			extra_emit : ", typeof(double).GetMethod(\"IsInfinity\", new System.Type[] { typeof(double) })"
 			store_result +original:
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ceq);" &
@@ -777,7 +777,7 @@ kws : compiler_lib.kws_tmpl {
 	float_is_nan +: {
 		opcode : "Call"
 		gen_gen +: {
-			extra_emit : ", typeof(double).GetMethod(\"IsNaN\")"
+			extra_emit : ", typeof(double).GetMethod(\"IsNaN\", new System.Type[] { typeof(double) })"
 		}
 	}
 	float_modulus +: { opcode : "Rem" }
@@ -805,7 +805,7 @@ kws : compiler_lib.kws_tmpl {
 				original
 		}
 	}
-	int_to_float +: { opcode : "Conv_R4" }
+	int_to_float +: { opcode : "Conv_R8" }
 	string_concatenate +: {
 		opcode : "Newobj"
 		gen_gen +: {
@@ -815,7 +815,7 @@ kws : compiler_lib.kws_tmpl {
 	string_ordinal +: {
 		opcode : "Call"
 		gen_gen +: {
-			extra_emit : ", typeof(TaskMaster).GetMethod(\"OrdinalName\")"
+			extra_emit : ", typeof(TaskMaster).GetMethod(\"OrdinalName\", new System.Type[] { typeof(long) })"
 		}
 	}
 	frame_new +: {
@@ -833,7 +833,7 @@ kws : compiler_lib.kws_tmpl {
 			extra_load +original: original &
 				"\(sum_indent)\(generator).GenerateNextId();" &
 				"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));"
-			extra_emit : ", typeof(Frame).GetMethod(\"Through\")"
+			extra_emit : ", typeof(Frame).GetMethod(\"Through\", new System.Type[] { typeof(long), typeof(long) })"
 		}
 	}
 	frame_null +: {
@@ -859,31 +859,33 @@ kws : compiler_lib.kws_tmpl {
 	list_prepend +: {
 		opcode : "Call"
 		gen_gen +: {
-			extra_emit : ", typeof(Context).GetMethod(\"Prepend\")"
+			extra_emit : ", typeof(Context).GetMethod(\"Prepend\", new System.Type[] { typeof(Frame), typeof(Context) })"
 		}
 	}
 	list_append +: {
 		opcode : "Call"
 		gen_gen +: {
-			extra_emit : ", typeof(Context).GetMethod(\"Append\")"
+			extra_emit : ", typeof(Context).GetMethod(\"Append\", new System.Type[] { typeof(Context), typeof(Context) })"
 		}
 	}
 	lookup_tmpl +: {
 		opcode : "Newobj"
 		gen_gen +: {
+			load_names ?:
 			extra_load :
 				"\(sum_indent)\(generator).LoadTaskMaster();" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
-				"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));"
+				"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));" &
+				load_names
 			extra_emit : ", typeof(Lookup).GetConstructors()[0]"
 			store_result :
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
-				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"lookup\",typeof(object));" &
-				"\(sum_indent)\(generator).GenerateConsumeResult(\(storage_name));" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Lookup).GetMethod(\"Notify\"));" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(TaskMaster).GetMethod(\"Slot\"));" &
 				"\(sum_indent)var \(Id)_state = \(generator).DefineState();" &
 				"\(sum_indent)\(generator).SetState(\(Id)_state);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
+				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"lookup\", typeof(object));" &
+				"\(sum_indent)\(generator).GenerateConsumeResult(\(storage_name));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Lookup).GetMethod(\"Notify\", new System.Type[] { typeof(ConsumeResult) }));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(TaskMaster).GetMethod(\"Slot\", new System.Type[] { typeof(Computation) }));" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);" &
 				"\(sum_indent)\(generator).MarkState(\(Id)_state);" &
@@ -900,7 +902,7 @@ kws : compiler_lib.kws_tmpl {
 						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
 						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(index - 1));" &
 						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \"\(n)\");" &
-						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem);"
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem, typeof(string));"
 					With acc :
 						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(names_length));" &
 						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newarr, typeof(string));"
@@ -915,7 +917,7 @@ kws : compiler_lib.kws_tmpl {
 				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
 				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(Id)_iter);" &
 				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(field)[\(Id)_iter].ToString());" &
-				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem);" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem, typeof(string));" &
 				"\(sum_indent)}"
 		}
 	}
@@ -929,7 +931,7 @@ kws : compiler_lib.kws_tmpl {
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, StartColumn);" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, EndRow);" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, EndColumn);"
-			extra_emit : ", typeof(Computation).GetMethod(\"PerformOverride\")"
+			extra_emit : ", typeof(Computation).GetMethod(\"PerformOverride\", new System.Type[] { typeof(string), typeof(int), typeof(int), typeof(int), typeof(int), typeof(ComputeOverride), typeof(ComputeValue) })"
 		}
 	}
 	create_function_tmpl +: {
@@ -954,13 +956,14 @@ kws : compiler_lib.kws_tmpl {
 		gen_gen +: {
 			return_indent : indent & "\t" & returns.extra_indent
 			return_code :
-				"\(return_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
-				"\(return_indent)\(returns.storage_name).Load(\(generator));" &
-				"\(return_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, typeof(Computation).GetField(\"result\"));" &
-				"\(return_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_1);" &
-				"\(return_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);"
+				"\(return_indent)\(generator).Return(\(returns.storage_name));"
 
-			value : "\(indent)var \(storage_name) = new DelegateValue(\(parent_generator).Owner.\(method)(this, \"\(Id)\", (\(generator)\(argument_list)) => { " & returns.gen_gen(indent : indent & "\t", code : return_code) & "\(indent)}), typeof(\(delegate_type)));" & code
+			value :
+				"\(indent)var \(storage_name) = new DelegateValue(\(parent_generator).Owner.\(method)(this, \"\(Id)\", (\(generator)\(argument_list)) => {"	&
+				"\(indent)\t\t\(generator).DebugPosition(this);" &
+				returns.gen_gen(indent : indent & "\t", code : return_code) &
+				"\(indent)}), typeof(\(delegate_type)));" &
+				code
 		}
 	}
 	create_function +: {
@@ -988,7 +991,7 @@ kws : compiler_lib.kws_tmpl {
 						"\(sum_indent)\(into.storage_name).Load(\(generator));" &
 						load_name &
 						"\(sum_indent)\(with.storage_name).Load(\(generator));" &
-						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, \(into.storage_name).BackingType.GetMethod(\"set_Item\"));" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, \(into.storage_name).BackingType.GetMethod(\"set_Item\", new System.Type[] { typeof(string), \(into.storage_name).BackingType == typeof(Frame) ? typeof(object) : typeof(ComputeValue) }));" &
 						code
 					)
 				)
@@ -1014,7 +1017,7 @@ kws : compiler_lib.kws_tmpl {
 	tmpl_get +: {
 		opcode : "Call"
 		gen_gen +: {
-			extra_emit : ", typeof(Template).GetMethod(\"Get\")"
+			extra_emit : ", typeof(Template).GetMethod(\"Get\", new System.Type[] { typeof(Stringish) })"
 		}
 	}
 	tmpl_container +: {
@@ -1032,7 +1035,7 @@ kws : compiler_lib.kws_tmpl {
 	tmpl_get_from_field +: {
 		opcode : "Call"
 		gen_gen +: {
-			extra_emit : ", typeof(Template).GetMethod(\"get_Item\")"
+			extra_emit : ", typeof(Template).GetMethod(\"get_Item\", new System.Type[] { typeof(string) })"
 			base_exec +original:
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(field).ToString());" &
 				original
@@ -1159,18 +1162,8 @@ kws : compiler_lib.kws_tmpl {
 		gen_gen +: {
 			sum_indent : indent & extra_indent
 			base_code :
-				"\(sum_indent)if (\(left.storage_name).BackingType == typeof(object) || \(right.storage_name).BackingType == typeof(object)) {" &
-				"\(sum_indent)\tthrow new System.InvalidOperationException();" &
-				"\(sum_indent)} else if (\(left.storage_name).BackingType != \(right.storage_name).BackingType) {" &
-				"\(sum_indent)\t\(generator).EmitTypeError(\(parameters.source_reference.storage_name), \"Cannot compare value of type {0} and type {1}.\", \(left.storage_name), \(right.storage_name));" &
-				"\(sum_indent)} else {" &
-				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
-				"\(sum_indent)\t\(left.storage_name).Load(\(generator));" &
-				"\(sum_indent)\t\(right.storage_name).Load(\(generator));" &
-				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, \(left.storage_name).BackingType.GetMethod(\"CompareTo\"));" &
-				"\(sum_indent)\t\(generator).Clamp();" &
-				"\(sum_indent)\tvar \(storage_name) = \(generator).MakeField(\"compare\", typeof(long));" &
-				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);" &
+				"\(sum_indent)\tvar \(storage_name) = \(generator).Compare(\(left.storage_name), \(right.storage_name), \(parameters.source_reference.storage_name));" &
+				"\(sum_indent)if (\(storage_name) != null) {" &
 				code &
 				"\(sum_indent)}"
 
@@ -1193,7 +1186,7 @@ kws : compiler_lib.kws_tmpl {
 				indent : indent,
 				code :
 					"\(sum_indent)Generator.ParameterisedBlock<LoadableValue> \(callback) = (\(storage_name)) => {\(code)\(sum_indent)};" &
-					"\(sum_indent)if (!typeof(bool).IsAssignableFrom(\(condition.storage_name).BackingType)) throw new System.InvalidOperationException();" &
+					"\(sum_indent)if (!typeof(bool).IsAssignableFrom(\(condition.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Use of non-Boolean type {0} in conditional.\", \(condition.storage_name).BackingType));" &
 					"\(sum_indent)\(condition.storage_name).Load(\(generator));" &
 					"\(sum_indent)var \(Id)_else = \(generator).Builder.DefineLabel(); " &
 					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Brtrue, \(Id)_else);" &
@@ -1206,15 +1199,16 @@ kws : compiler_lib.kws_tmpl {
 	dynamic_type_dispatch +: {
 		extra_indent : of.extra_indent & "\t"
 		type_list :
-			For type : allow_types
-			Reduce type.real_type & ", " & acc
+			For type : allow_types, pos : Ordinal
+			Reduce If pos > 1 Then "typeof(\(type.real_type)), \(acc)" Else "typeof(\(type.real_type))"
 			With acc : ""
 
 		gen_gen +: {
 			sum_indent : indent & extra_indent
 			value :
 				of.gen_gen(indent : indent, code :
-					"\(sum_indent)_generator.DynamicTypeDispatch(\(of.storage_name), \(parameters.source_reference.storage_name), new System.Type[] { \(type_list) }, (\(storage_name)) {" &
+					"\(sum_indent)\(generator).DynamicTypeDispatch(\(of.storage_name), \(parameters.source_reference.storage_name), new System.Type[] { \(type_list) }, (\(storage_name)) => {" &
+					"\(sum_indent)\(generator).DebugPosition(this);" &
 					code &
 					"\(sum_indent)});")
 		}
@@ -1254,7 +1248,7 @@ kws : compiler_lib.kws_tmpl {
 				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_accumulator\", \(initial.storage_name).BackingType);" &
 				"\(sum_indent)var \(iterator_instance) = \(generator).MakeField(\"\(rule_name)_iterator\", typeof(MergeIterator));" &
 				"\(sum_indent)#pragma warning disable 219" &
-				"\(sum_indent)var \(iterator_key) = new MethodValue(\(iterator_instance), typeof(MergeIterator).GetMethod(\"get_Current\"));" &
+				"\(sum_indent)var \(iterator_key) = new MethodValue(\(iterator_instance), typeof(MergeIterator).GetMethod(\"get_Currentish\"));" &
 				"\(sum_indent)var \(iterator_ordinal) = new MethodValue(\(iterator_instance), typeof(MergeIterator).GetMethod(\"get_Position\"));" &
 				"\(sum_indent)#pragma warning restore 219" &
 				"\(sum_indent)\(generator).CopyField(\(initial.storage_name), \(storage_name));" &
@@ -1277,6 +1271,7 @@ kws : compiler_lib.kws_tmpl {
 				"\(sum_indent)\(iterator_instance).Load(\(generator));" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(MergeIterator).GetMethod(\"Next\"));" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Switch, \(iterator_dispatchers));" &
+				"\(sum_indent)\(generator).Builder.ThrowException(typeof(System.ArgumentOutOfRangeException));" &
 				# Create a block for the default dispatcher and put a delegate on the stack.
 				"\(sum_indent)\(generator).Builder.MarkLabel(\(iterator_dispatchers)[1]);" &
 				dispatch_code &
@@ -1294,11 +1289,11 @@ kws : compiler_lib.kws_tmpl {
 			input_loads :
 				For input : inputs, index : Ordinal
 				Reduce acc &
-					"\(sum_indent)if (!typeof(IAttributeNames).IsAssignableFrom(\(input.storage_name).BackingType)) throw new System.InvalidOperationException();" &
+					"\(sum_indent)if (!typeof(IAttributeNames).IsAssignableFrom(\(input.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Use of non-collection {0} in iteration.\", \(input.storage_name).BackingType));" &
 					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
 					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(index - 1));" &
 					"\(sum_indent)\(input.storage_name).Load(\(generator));" &
-					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem);"
+					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem, typeof(IAttributeNames));"
 				With acc : ""
 
 			num_cases :
@@ -1332,7 +1327,7 @@ kws : compiler_lib.kws_tmpl {
 					"\(indent)\(loop_tab)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
 					"\(indent)\(loop_tab)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(name_str));" &
 					"\(indent)\(loop_tab)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(position)++);" &
-					"\(indent)\(loop_tab)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(MergeIterator).GetMethod(\"AddDispatcher\"));"
+					"\(indent)\(loop_tab)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(MergeIterator).GetMethod(\"AddDispatcher\", new System.Type[] { typeof(string), typeof(int) }));"
 			}
 			gen_gen : Template {
 				indent ?:
@@ -1447,12 +1442,12 @@ codegen : compiler_lib.codegen_tmpl {
 		gen_gen +: {
 			expand :
 				"(\(Id)_result) => {" &
+				"\(sum_indent)\t\(generator).DebugPosition(this);" &
 				"\(sum_indent)\t\(fold_name).Load(\(generator));" &
 				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I8, \(Id)_index);" &
-				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(TaskMaster).GetMethod(\"OrdinalName\"));" &
-				"\(sum_indent)\t\(Id)_result.Load(\(generator));" &
-				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Box);" &
-				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Frame).GetMethod(\"set_Item\"));" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(TaskMaster).GetMethod(\"OrdinalName\", new System.Type[] { typeof(long) }));" &
+				"\(sum_indent)\t\(generator).LoadReboxed(\(Id)_result, typeof(object));" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Frame).GetMethod(\"set_Item\", new System.Type[] { typeof(string), typeof(object) }));" &
 				"\(sum_indent)\t\(Id)_block(\(fold_name));" &
 				"\(sum_indent)}"
 		}
@@ -1508,16 +1503,7 @@ codegen : compiler_lib.codegen_tmpl {
 
 		gen_gen +: {
 			value :
-				"\(indent)\(field).Generate(\(argument_list)(\(storage_name)) => {\(code)\(indent)});"
-		}
-	}
-	parameter +: {
-		extra_indent : ""
-		storage_name : name
-		gen_gen +: {
-			value :
-				"\(indent)if (\(name) == null) throw new System.InvalidOperationException(\"\(error_message)\");" &
-				code
+				"\(indent)\(field).Generate(\(argument_list)(\(storage_name)) => {\(indent)\t\(generator).DebugPosition(this);\(code)\(indent)});"
 		}
 	}
 	prepare_lookup_cache +: {
@@ -1534,6 +1520,7 @@ codegen : compiler_lib.codegen_tmpl {
 					indent : indent,
 					code :
 						"\(sum_indent)\(name ?? "Environment").GenerateLookupCache(\(generator), \(specials.initial_cache), \(parameters.source_reference.storage_name), \(specials.context.storage_name), (\(lookup_cache)) => {" &
+						"\(sum_indent)\(generator).DebugPosition(this);" &
 						in.gen_gen(indent : sum_indent & "\t", code : code) &
 						"\(sum_indent)});"
 					)
@@ -1580,20 +1567,22 @@ codegen : compiler_lib.codegen_tmpl {
 					"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(Id)_frame.Field);" &
 					"\(indent)\(generator).Fold(\(parent_lookup_cache), \(field), (\(Id)_index, \(Id)_item, \(Id)_cache, \(Id)_block) =>" &
 					"\(indent)\t\(Id)_item.Generate(\(argument_list)(\(Id)_result) => {" &
+					"\(indent)\t\t\(generator).DebugPosition(this);" &
 					"\(indent)\t\tvar \(Id)_new_cached = new LookupCache(\(Id)_cache);" &
 					"\(indent)bool \(Id)_junk = true;" &
 					"\(indent)\t\t\(Id)_new_cached[\(name ?? "Environment").Lookup(null, System.Linq.Enumerable.Repeat(\(Id)_item.name.ToString(), 1), ref \(Id)_junk)] = \(Id)_result;" &
 					"\(indent)\t\t\(Id)_frame.Load(\(generator));" &
 					"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(Id)_item.name.ToString());" &
 					"\(indent)\t\t\(Id)_result.Load(\(generator));" &
-					"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Frame).GetMethod(\"set_Item\"));" &
+					"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Frame).GetMethod(\"set_Item\", new System.Type[] { typeof(string), typeof(object) }));" &
 					"\(indent)\t\t\(Id)_block(\(Id)_new_cached);" &
 					"\(indent)}), (\(initial_cache)) => {" &
+					"\(indent)\t\(generator).DebugPosition(this);" &
 					"\(indent)\tvar \(context.storage_name) = \(generator).MakeField(\"subcontext\", typeof(Context));" &
 					"\(indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
 					"\(indent)\t\(Id)_frame.Load(\(generator));" &
 					"\(indent)\t\(parent_context.storage_name).Load(\(generator));" &
-					"\(indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Context).GetMethod(\"Prepend\"));" &
+					"\(indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Context).GetMethod(\"Prepend\", new System.Type[] { typeof(Frame), typeof(Context) }));" &
 					"\(indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(context.storage_name).Field);" &
 					code &
 					"\(indent)});"
@@ -1618,6 +1607,16 @@ codegen : compiler_lib.codegen_tmpl {
 			value :
 				"\(indent)var \(new_source_reference) = \(generator).PushSourceReference(this, \(parent_source_reference));" &
 				in.gen_gen(indent : indent, code : code)
+		}
+	}
+	return_intrinsic_dispatch +: {
+		extra_indent : of.extra_indent & "\t"
+		gen_gen +: {
+		value : of.gen_gen(
+			indent : indent,
+			code :
+				"\(indent)\(of.extra_indent)Environment.IntrinsicDispatch(\(generator), this, \(of.storage_name), (\(storage_name)) => {\(code)\(indent)\(of.extra_indent)});"
+			)
 		}
 	}
 	type_dispatch_tmpl +: {
@@ -1811,6 +1810,7 @@ compiler : compiler_lib.language_tmpl {
 				("\tpublic override void Generate(" &
 					generation_flavour.parameter_str &
 					"Generator.ParameterisedBlock<LoadableValue> _final_block) {" &
+					"\t\t\(generator).DebugPosition(this);" &
 					code_value.gen_gen(indent : default_indent, code : "\(indent)\(code_value.extra_indent)_final_block(\(code_value.storage_name));") &
 					"\n\t}\n")
 
@@ -2043,6 +2043,7 @@ compiler : compiler_lib.language_tmpl {
 						gen_gen +: {
 							value :
 								"\(indent)\(generator).Fold((RevCons<LoadableValue>) null, arguments, (\(Id)_index, \(Id)_item, \(Id)_tail, \(Id)_block) => \(Id)_item.Generate(\(argument_list)(\(Id)_result) => \(Id)_block(new RevCons<LoadableValue>(\(Id)_result, \(Id)_tail))), (\(Id)_args) => {" &
+								"\(indent)\t\(generator).DebugPosition(this);" &
 								"\(indent)\tvar \(storage_name) = \(generator).InvokeNative(\(parameters.source_reference.storage_name), Methods, \(Id)_args.ToArray()); " &
 								code &
 								"\(indent)});"

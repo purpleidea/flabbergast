@@ -17,7 +17,7 @@ public class ConsoleCollector : ErrorCollector {
 		Console.WriteLine("{0}:{1}:{2}-{3}:{4}: Lookup for “{5}” is forbidden.", environment.FileName, environment.StartRow, environment.StartColumn, environment.EndRow, environment.EndColumn, name);
 	}
 	public void ReportParseError(string filename, int index, int row, int column, string message) {
-		Console.WriteLine("{0}:{1}:{2}: Lookup for “{3}” is forbidden.", filename, row, column, message);
+		Console.WriteLine("{0}:{1}:{2}: {3}", filename, row, column, message);
 	}
 	public void ReportRawError(CodeRegion where, string message) {
 		Console.WriteLine("{0}:{1}:{2}-{3}:{4}: {5}", where.FileName, where.StartRow, where.StartColumn, where.EndRow, where.EndColumn, message);
@@ -59,11 +59,12 @@ public class Compiler {
 			var parser = Parser.Open(filename);
 			parser.Trace = trace;
 
-			var dll_name = Path.ChangeExtension(filename, ".dll");
+			var dll_name = Path.ChangeExtension(Path.GetFileNameWithoutExtension(filename), ".dll");
 			var type_name = "Flabbergast.Library." + Path.GetDirectoryName(filename).Replace(Path.DirectorySeparatorChar, '.') + Path.GetFileNameWithoutExtension(filename);
-			var assembly_builder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName(type_name), AssemblyBuilderAccess.Save);
+			var assembly_builder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName(type_name), AssemblyBuilderAccess.RunAndSave);
 			var module_builder = assembly_builder.DefineDynamicModule(type_name, dll_name);
-			var type = parser.ParseFile(collector, module_builder, type_name, true);
+			var unit = new CompilationUnit(filename, module_builder, true);
+			var type = parser.ParseFile(collector, unit, type_name);
 			if (type != null) {
 				assembly_builder.Save(dll_name);
 			}
