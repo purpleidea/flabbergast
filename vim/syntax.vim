@@ -39,10 +39,12 @@ syn keyword flabbergastFrom From
 syn keyword flabbergastFricassee By Each For Name Order Ordinal Reduce Reverse Select With
 syn keyword flabbergastConditional If Then Else
 syn keyword flabbergastKeyword As Container Error Finite GenerateId Id In Is Length Let Lookup Template This Through To Where
-syn match flabbergastOperators '\(<=\?\|<\=>\|>=\?\|==\|||\|-\|!\|!=\|/\|\*\|&\|&&\|%\|+\)' display
+syn match flabbergastOperators '\(<=\=\|<=>\|>=\=\|==\|||\|-\|!=\=\|/\|\*\|&\|&&\|%\|+\|??\)' display
 syn keyword flabbergastTodo contained containedin=flabbergastComment TODO FIXME XXX
 syn keyword flabbergastType Bool Float Frame Int Str
 syn match flabbergastImplDefined "\<X[a-zA-Z0-9]*\>" display
+syn match flabbergastConstant "\<\d\+[kMG]i\=\>" display
+syn match flabbergastConstant "\<\(\d\+[dhms]\)\+\>" display
 
 hi def link flabbergastAttribute	Statement
 hi def link flabbergastBadKeyword	Error
