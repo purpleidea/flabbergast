@@ -163,10 +163,6 @@ public class Generator {
 	 */
 	private int result_consumer = 0;
 	/**
-	 * A counter for producing unique block entry names.
-	 */
-	private int block_entry = 0;
-	/**
 	 * The branch point, at the end of the function, that does dispatch from the
 	 * state field to the correct branch.
 	 *
@@ -175,11 +171,6 @@ public class Generator {
 	 * address, then branches based on the dispatch.
 	 */
 	private Label switch_label;
-
-	/**
-	 * Any blocks that need to have code generated once the contiguous code block has finished.
-	 */
-	private Dictionary<Label, Block> pending_generators = new Dictionary<Label, Block>();
 
 	internal Generator(CompilationUnit owner, TypeBuilder type_builder, bool has_original) {
 		Owner = owner;
@@ -309,33 +300,6 @@ public class Generator {
 		Builder.Emit(OpCodes.Stfld, target);
 	}
 	/**
-	 * Create a new state and fill it with the provided code. In the calling
-	 * code, provide a delegate capable of directly entering the specified block.
-	 */
-	public void CreateBlockEntry<T>(Block block_generator) {
-		var state = DefineState();
-		var method = TypeBuilder.DefineMethod("BlockEntry" + block_entry++, MethodAttributes.Public, typeof(bool), new System.Type[0]);
-		var block_builder = method.GetILGenerator();
-		SetState(state, block_builder);
-		block_builder.Emit(OpCodes.Call, typeof(Computation).GetMethod("Run"));
-		block_builder.Emit(OpCodes.Ret);
-		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(OpCodes.Ldftn, method);
-		Builder.Emit(OpCodes.Newobj, typeof(T).GetConstructors()[0]);
-
-		pending_generators[entry_points[state]] = block_generator;
-	}
-	/**
-	 * Create a block and add the resulting entry to a MergeIterator with the
-	 * provided attribute name.
-	 */
-	public void CreateIteratorBlock(FieldValue iterator_instance, string name, Block block_generator) {
-		iterator_instance.Load(Builder);
-		Builder.Emit(OpCodes.Ldstr, name);
-		CreateBlockEntry<MergeIterator.KeyDispatch>(block_generator);
-		Builder.Emit(OpCodes.Callvirt, typeof(MergeIterator).GetMethod("AddDispatcher"));
-	}
-	/**
 	 * Insert debugging information based on an AST node.
 	 */
 	public void DebugPosition(AstNode node) {
@@ -410,19 +374,6 @@ public class Generator {
 			expand(it, list[it], curr_result, (next_result) => FoldHelper(list, expand, result, next_result, it + 1));
 		} else {
 			result(curr_result);
-		}
-	}
-	/**
-	 * Generate code for any pending blocks.
-	 */
-	public void FlushBlocks() {
-		while (pending_generators.Count > 0) {
-			var todo = pending_generators;
-			pending_generators = new Dictionary<Label, Block>();
-			foreach(var entry in todo) {
-				Builder.MarkLabel(entry.Key);
-				entry.Value();
-			}
 		}
 	}
 	/**
@@ -567,19 +518,6 @@ public class Generator {
 		}
 		Builder.Emit(OpCodes.Stfld, result.Field);
 		return result;
-	}
-	/**
-	 * Load the key and ordinal from an iterator instance and place them in the appropriate fields.
-	 */
-	public void LoadIteratorData(LoadableValue iterator, FieldValue key, FieldValue ordinal) {
-		Builder.Emit(OpCodes.Ldarg_0);
-		iterator.Load(Builder);
-		Builder.Emit(OpCodes.Callvirt, typeof(MergeIterator).GetMethod("get_Current"));
-		Builder.Emit(OpCodes.Stfld, key.Field);
-		Builder.Emit(OpCodes.Ldarg_0);
-		iterator.Load(Builder);
-		Builder.Emit(OpCodes.Callvirt, typeof(MergeIterator).GetMethod("get_Position"));
-		Builder.Emit(OpCodes.Stfld, ordinal.Field);
 	}
 	/**
 	 * Load the task master in the `Run` function.
@@ -880,6 +818,23 @@ public class DelegateValue : LoadableValue {
 		generator.Emit(OpCodes.Ldnull);
 		generator.Emit(OpCodes.Ldftn, method);
 		generator.Emit(OpCodes.Newobj, backing_type.GetConstructors()[0]);
+	}
+}
+public class MethodValue : LoadableValue {
+	private LoadableValue instance;
+	private MethodInfo method;
+	public MethodValue(LoadableValue instance, MethodInfo method) {
+		this.method = method;
+		this.instance = instance;
+	}
+	public override System.Type BackingType { get { return method.ReturnType; } }
+	public override void Load(ILGenerator generator) {
+		if (instance == null) {
+			generator.Emit(OpCodes.Ldnull);
+		} else {
+			instance.Load(generator);
+		}
+		generator.Emit(OpCodes.Call, method);
 	}
 }
 internal class RevCons<T> {

@@ -7,17 +7,12 @@ namespace Flabbergast {
 /**
  * Iterate over the keys of several of frames and templates.
  */
-public abstract class MergeIterator : Computation {
-	/**
-	 * A delegate to be invoked upon access of a particular key.
-	 */
-	public delegate bool KeyDispatch();
-
+public abstract class MergeIterator {
 	/**
 	 * The current attribute name.
 	 */
 	public string Current {
-		get { return enumerator.Current; }
+		get { return enumerator.Current.Key; }
 	}
 	/**
 	 * The current attribute ordinal, 1-based per the language spec.
@@ -27,10 +22,12 @@ public abstract class MergeIterator : Computation {
 		private set;
 	}
 
-	private SortedDictionary<string, KeyDispatch> dispatchers = new SortedDictionary<string, KeyDispatch>();
-	private IEnumerator<string> enumerator = null;
+	private SortedDictionary<string, int> dispatchers = new SortedDictionary<string, int>();
+	private int exit_dispatcher;
+	private IEnumerator<KeyValuePair<string, int>> enumerator = null;
 
-	public MergeIterator(IAttributeNames[] inputs, KeyDispatch default_dispatcher) {
+	public MergeIterator(IAttributeNames[] inputs, int default_dispatcher, int exit_dispatcher) {
+		this.exit_dispatcher = exit_dispatcher;
 		foreach (var input in inputs) {
 			foreach (var key in input.GetAttributeNames()) {
 				dispatchers[key] = default_dispatcher;
@@ -42,25 +39,23 @@ public abstract class MergeIterator : Computation {
 	/**
 	 * Add dispatcher for a particular key name.
 	 *
-	 * When the key is encoutered, this dispatcher will be invoked, instead of
+	 * When the key is encoutered, this dispatcher will be returned, instead of
 	 * the default dispatcher in the constructor. Added dispatchers are always
 	 * invoked, even if they do not occur in the input key space.
 	 */
-	public void AddDispatcher(string name, KeyDispatch dispatcher) {
+	public void AddDispatcher(string name, int dispatcher) {
 		dispatchers[name] = dispatcher;
 	}
 
-	protected override bool Run() {
+	public int Next() {
 		if (enumerator == null) {
-			enumerator = dispatchers.Keys.GetEnumerator();
+			enumerator = dispatchers.GetEnumerator();
 		}
 		while (enumerator.MoveNext()) {
 			Position++;
-			if (!dispatchers[enumerator.Current]()) {
-				return false;
-			}
+			return enumerator.Current.Value;
 		}
-		return true;
+		return exit_dispatcher;
 	}
 }
 }
