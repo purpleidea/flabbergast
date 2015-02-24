@@ -32,4 +32,11 @@ public class ConsoleCollector : ErrorCollector {
 		Console.WriteLine("{0}:{1}:{2}-{3}:{4}: {5}", where.FileName, where.StartRow, where.StartColumn, where.EndRow, where.EndColumn, message);
 	}
 }
+
+public class ConsoleTaskMaster : TaskMaster {
+	public override void ReportOtherError(SourceReference reference, string message) {
+		Console.WriteLine(message);
+		reference.Write(Console.Out, 0, "  ");
+	}
+}
 }

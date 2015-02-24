@@ -43,13 +43,6 @@ public class PrintResult : Computation {
 	}
 }
 
-public class ConsoleTaskMaster : TaskMaster {
-	public override void ReportOtherError(SourceReference reference, string message) {
-		Console.WriteLine(message);
-		reference.Write(Console.Out, 0, "\t");
-	}
-}
-
 public class Printer {
 	public static int Main(string[] args) {
 		bool trace = false;
