@@ -730,6 +730,7 @@ internal class Generator {
 			if (result.BackingType == typeof(object)) {
 				result.Load(Builder);
 				Builder.Emit(OpCodes.Isinst, typeof(Frame));
+				Builder.Emit(OpCodes.Brfalse, end);
 				result.Load(Builder);
 				Builder.Emit(OpCodes.Castclass, typeof(Frame));
 			} else {
