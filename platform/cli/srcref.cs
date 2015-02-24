@@ -39,7 +39,7 @@ public class SourceReference {
 	protected void WriteMessage(TextWriter writer, int indentation, string prefix) {
 		writer.Write(prefix);
 		for (var it = 0; it < indentation; it++)
-			writer.Write('\t');
+			writer.Write("  ");
 		writer.Write(FileName);
 		writer.Write(": ");
 		writer.Write(StartLine);
@@ -66,23 +66,19 @@ public class JunctionReference : SourceReference {
 	 * The stack trace of the non-local component. (i.e., the ancestor's stack trace).
 	 */
 	public SourceReference Junction { get; private set; }
-	/**
-	 * A description of how the junction was created (e.g., “instantiated from”).
-	 */
-	public string JunctionType { get; private set; }
-	public JunctionReference(string message, string filename, int start_line, int start_column, int end_line, int end_column, SourceReference caller, SourceReference junction, string junction_type) : base(message, filename, start_line, start_column, end_line, end_column, caller) {
+	public JunctionReference(string message, string filename, int start_line, int start_column, int end_line, int end_column, SourceReference caller, SourceReference junction) : base(message, filename, start_line, start_column, end_line, end_column, caller) {
 		Junction = junction;
-		JunctionType = junction_type;
 	}
 	public override void Write(TextWriter writer, int indentation, string prefix) {
 		WriteMessage(writer, indentation, prefix);
 		writer.Write(prefix);
 		for (var it = 0; it < indentation; it++)
-			writer.Write('\t');
-		writer.Write("\t");
-		writer.Write(JunctionType);
-		writer.Write(":\n");
+			writer.Write("  ");
+		writer.WriteLine("↳");
 		Junction.Write(writer, indentation + 1, prefix);
+		for (var it = 0; it < indentation; it++)
+			writer.Write("  ");
+		writer.WriteLine("↓");
 		if (Caller != null)
 			Caller.Write(writer, indentation, prefix);
 	}

@@ -311,18 +311,21 @@ internal class Generator {
 	 * Create a new source reference based on an existing one, updated to reflect
 	 * entry into a new AST node.
 	 */
-	public FieldValue AmendSourceReference(AstNode node, string message, LoadableValue source_reference) {
-		var field = MakeField("source_reference", typeof(SourceReference));
-		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(OpCodes.Ldstr, message);
-		Builder.Emit(OpCodes.Ldc_I4, node.StartRow);
-		Builder.Emit(OpCodes.Ldc_I4, node.StartColumn);
-		Builder.Emit(OpCodes.Ldc_I4, node.EndRow);
-		Builder.Emit(OpCodes.Ldc_I4, node.EndColumn);
-		source_reference.Load(Builder);
-		Builder.Emit(OpCodes.Newobj, typeof(SourceReference).GetConstructors()[0]);
-		Builder.Emit(OpCodes.Stfld, field.Field);
-		return field;
+	public void AmendSourceReference(AstNode node, string message, LoadableValue source_reference, LoadableValue source_template) {
+		if (source_template == null) {
+			source_reference.Load(Builder);
+		} else {
+			Builder.Emit(OpCodes.Ldstr, message + ":");
+			Builder.Emit(OpCodes.Ldstr, node.FileName);
+			Builder.Emit(OpCodes.Ldc_I4, node.StartRow);
+			Builder.Emit(OpCodes.Ldc_I4, node.StartColumn);
+			Builder.Emit(OpCodes.Ldc_I4, node.EndRow);
+			Builder.Emit(OpCodes.Ldc_I4, node.EndColumn);
+			source_reference.Load(Builder);
+			source_template.Load(Builder);
+			Builder.Emit(OpCodes.Call, typeof(Template).GetMethod("get_SourceReference"));
+			Builder.Emit(OpCodes.Newobj, typeof(JunctionReference).GetConstructors()[0]);
+		}
 	}
 	/**
 	 * Clips the range of the Int32 on the stack to -1, 0, or 1.

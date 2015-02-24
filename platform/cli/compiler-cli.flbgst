@@ -828,7 +828,7 @@ kws : compiler_lib.kws_tmpl {
 			extra_load +original: original &
 				"\(sum_indent)\(generator).LoadTaskMaster();" &
 				"\(sum_indent)\(generator).GenerateNextId();" &
-				"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));"
+				"\(sum_indent)\(generator).AmendSourceReference(this, \"instatiated from\", \(parameters.source_reference.storage_name), \(If source Is Null Then "null" Else source.storage_name));"
 		}
 	}
 	frame_new_through +: {
@@ -1060,25 +1060,10 @@ kws : compiler_lib.kws_tmpl {
 						code : inner_code
 					)
 				)
-			load_source_reference :
-				If source Is Null
-					Then "\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));"
-					Else
-						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \"template ammendment\");" &
-						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, FileName);" &
-						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, StartRow);" &
-						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, StartColumn);" &
-						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, EndRow);" &
-						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, EndColumn);" &
-						"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));" &
-						"\(sum_indent)\(source.storage_name).Load(\(generator));" &
-						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Template).GetMethod(\"get_SourceReference\"));" &
-						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \"inherits from\");" &
-						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(JunctionReference).GetConstructors()[0]);"
 			inner_code :
 				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"new_template\", typeof(Template));" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
-				load_source_reference &
+				"\(sum_indent)\(generator).AmendSourceReference(this, \"amend template\", \(parameters.source_reference.storage_name), \(If source Is Null Then "null" Else source.storage_name));" &
 				"\(sum_indent)\(context.storage_name).Load(\(generator));" &
 				"\(sum_indent)\(container.storage_name).Load(\(generator));" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(Template).GetConstructors()[0]);" &

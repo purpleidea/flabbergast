@@ -513,6 +513,7 @@ kws_tmpl : Template {
 	frame_new : Template base_tmpl {
 		container ?:
 		context ?:
+		source : Null
 		arguments : [
 			{ value : context  type : known_vm_types.list },
 			{ value : container  type : known_types.frame }
@@ -1495,6 +1496,7 @@ language_tmpl : Template {
 					type : known_types.template
 					action : kws.iterator {
 						initial : new_item {
+							source : converted_result
 							context : kws.list_append {
 								head : parameters.context
 								tail : kws.tmpl_context { source : converted_result }
@@ -1605,12 +1607,14 @@ language_tmpl : Template {
 						returns : into
 						into : parameters.target
 						with : kws.create_function {
-							returns : codegen.prepare_lookup_cache {
+							returns : codegen.push_source_reference {
 								in : codegen.prepare_lookup_cache {
-									in : codegen.other_code { field : $expression }
-									name : $inner_environment
+									in : codegen.prepare_lookup_cache {
+										in : codegen.other_code { field : $expression }
+										name : $inner_environment
+									}
+									name : Null
 								}
-								name : Null
 							}
 						}
 					}
@@ -3126,9 +3130,7 @@ language_tmpl : Template {
 					}
 					type_demand_all : { overrides : known_types }
 					code_value : perform_overrides {
-						new_item : Template kws.tmpl_new {
-							source : converted_result
-						}
+						new_item : kws.tmpl_new
 						source_template : codegen.other_code { field : $source }
 					}
 				}
