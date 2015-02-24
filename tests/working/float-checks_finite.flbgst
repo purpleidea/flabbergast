@@ -1,0 +1,1 @@
+value : 3 Is Finite && 3.0 Is Finite && !(Infinity Is Finite)

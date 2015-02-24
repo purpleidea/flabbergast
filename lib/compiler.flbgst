@@ -1516,7 +1516,7 @@ language_tmpl : Template {
 						default_case : kws.set_frame_or_tmpl {
 							name : current_name
 							returns : into
-							into : converted_result
+							into : current_accumulator
 							with : kws.tmpl_get {
 								name : current_name
 								source : converted_result
@@ -2829,7 +2829,7 @@ language_tmpl : Template {
 								type : known_types.unit
 								action : kws.numeric_constant {
 									type : known_types.bool
-									number : min
+									number : max
 								}
 							}
 						]

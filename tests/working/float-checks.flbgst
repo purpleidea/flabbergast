@@ -1,2 +1,0 @@
-nan : 1.0 / 0.0
-value : !(3 Is NaN) && !(3.0 Is NaN) && 3 Is Finite && 3.0 Is Finite && nan Is NaN && !(nan Is Finite) && !(Infinity Is Finite)

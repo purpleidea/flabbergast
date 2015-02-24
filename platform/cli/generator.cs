@@ -190,11 +190,13 @@ internal class Generator {
 	internal Generator(CompilationUnit owner, TypeBuilder type_builder) {
 		Owner = owner;
 		TypeBuilder = type_builder;
-		state_field = TypeBuilder.DefineField("state", typeof(long), FieldAttributes.Private);
+		state_field = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
 		interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
 		task_master = TypeBuilder.DefineField("task_master", typeof(TaskMaster), FieldAttributes.Private);
 		var ctor = type_builder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new System.Type[] { typeof(TaskMaster) });
 		var ctor_builder = ctor.GetILGenerator();
+		ctor_builder.Emit(OpCodes.Ldarg_0);
+		ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
 		ctor_builder.Emit(OpCodes.Ldarg_0);
 		ctor_builder.Emit(OpCodes.Ldarg_1);
 		ctor_builder.Emit(OpCodes.Stfld, task_master);
@@ -202,7 +204,7 @@ internal class Generator {
 		ctor_builder.Emit(OpCodes.Ldc_I4_0);
 		ctor_builder.Emit(OpCodes.Stfld, state_field);
 		ctor_builder.Emit(OpCodes.Ret);
-		Builder = type_builder.DefineMethod("Run", MethodAttributes.Public | MethodAttributes.Virtual, typeof(bool), new System.Type[0]).GetILGenerator();
+		Builder = type_builder.DefineMethod("Run", MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig, typeof(bool), new System.Type[0]).GetILGenerator();
 		switch_label = Builder.DefineLabel();
 		var start_label = Builder.DefineLabel();
 		entry_points.Add(start_label);
@@ -213,7 +215,7 @@ internal class Generator {
 		Owner = owner;
 		TypeBuilder = type_builder;
 		// Create fields for all information provided by the caller.
-		state_field = TypeBuilder.DefineField("state", typeof(long), FieldAttributes.Private);
+		state_field = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
 		interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
 		task_master = TypeBuilder.DefineField("task_master", typeof(TaskMaster), FieldAttributes.Private);
 		InitialSourceReference = new FieldValue(TypeBuilder.DefineField("source_reference", typeof(SourceReference), FieldAttributes.Private));
@@ -227,6 +229,8 @@ internal class Generator {
 		// caller and stores it in appropriate fields.
 		var ctor = type_builder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, construct_params);
 		var ctor_builder = ctor.GetILGenerator();
+		ctor_builder.Emit(OpCodes.Ldarg_0);
+		ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
 		for(var it = 0; it < initial_information.Length; it++) {
 			ctor_builder.Emit(OpCodes.Ldarg_0);
 			ctor_builder.Emit(OpCodes.Ldarg, it + 1);
@@ -248,7 +252,7 @@ internal class Generator {
 			init_params = construct_params;
 		}
 		// Create a static method that wraps the constructor. This is needed to create a delegate.
-		Initialiser = type_builder.DefineMethod("Init", MethodAttributes.Public | MethodAttributes.Static, typeof(Computation), init_params);
+		Initialiser = type_builder.DefineMethod("Init", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, typeof(Computation), init_params);
 		var init_builder = Initialiser.GetILGenerator();
 		if (has_original) {
 			// If the thing we are overriding is null, create an error and give up.
@@ -258,8 +262,8 @@ internal class Generator {
 			init_builder.Emit(OpCodes.Ldarg_0);
 			init_builder.Emit(OpCodes.Ldarg_1);
 			init_builder.Emit(OpCodes.Ldstr, "Cannot perform override. No value in source tuple to override!");
-			init_builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
-			init_builder.Emit(OpCodes.Ldc_I4_0);
+			init_builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
+			init_builder.Emit(OpCodes.Ldnull);
 			init_builder.Emit(OpCodes.Ret);
 			init_builder.MarkLabel(has_instance);
 		}
@@ -272,7 +276,7 @@ internal class Generator {
 		FieldInfo original_computation = null;
 		if (has_original) {
 			InitialOriginal = new FieldValue(TypeBuilder.DefineField("original", typeof(object), FieldAttributes.Private));
-			original_computation = TypeBuilder.DefineField("original", typeof(object), FieldAttributes.Private);
+			original_computation = TypeBuilder.DefineField("original_computation", typeof(Computation), FieldAttributes.Private);
 			init_builder.Emit(OpCodes.Dup);
 			init_builder.Emit(OpCodes.Ldarg, initial_information.Length);
 			init_builder.Emit(OpCodes.Stfld, original_computation);
@@ -281,7 +285,7 @@ internal class Generator {
 		init_builder.Emit(OpCodes.Ret);
 
 		// Create a run method with an initial state.
-		Builder = type_builder.DefineMethod("Run", MethodAttributes.Public | MethodAttributes.Virtual, typeof(bool), new System.Type[0]).GetILGenerator();
+		Builder = type_builder.DefineMethod("Run", MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig, typeof(bool), new System.Type[0]).GetILGenerator();
 		switch_label = Builder.DefineLabel();
 		var start_label = Builder.DefineLabel();
 		entry_points.Add(start_label);
@@ -295,7 +299,7 @@ internal class Generator {
 			Builder.Emit(OpCodes.Ldfld, original_computation);
 			Builder.Emit(OpCodes.Dup);
 			GenerateConsumeResult(InitialOriginal);
-			Builder.Emit(OpCodes.Call, typeof(Computation).GetMethod("Notify", new System.Type[] { typeof(ConsumeResult) }));
+			Builder.Emit(OpCodes.Callvirt, typeof(Computation).GetMethod("Notify", new System.Type[] { typeof(ConsumeResult) }));
 			Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new System.Type[] { typeof(Computation) }));
 			Builder.Emit(OpCodes.Ldc_I4_0);
 			Builder.Emit(OpCodes.Ret);
@@ -340,16 +344,27 @@ internal class Generator {
 				EmitTypeError(source_reference, "Cannot compare value of type {0} and type {1}.", left, right);
 				return null;
 			}
-		} else {
-			Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+		}
+		Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
+		if (left.BackingType == typeof(bool)) {
 			left.Load(Builder);
+			right.Load(Builder);
+			Builder.Emit(OpCodes.Sub);
+		} else {
+			left.Load(Builder);
+			if (IsNumeric(left.BackingType)) {
+				var local = Builder.DeclareLocal(left.BackingType);
+				Builder.Emit(OpCodes.Stloc, local);
+				Builder.Emit(OpCodes.Ldloca, local);
+			}
 			right.Load(Builder);
 			Builder.Emit(System.Reflection.Emit.OpCodes.Call, left.BackingType.GetMethod("CompareTo", new System.Type[] { left.BackingType }));
 			Clamp();
-			var result = MakeField("compare", typeof(long));
-			Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, result.Field);
-			return result;
 		}
+		Builder.Emit(OpCodes.Conv_I8);
+		var result = MakeField("compare", typeof(long));
+		Builder.Emit(OpCodes.Stfld, result.Field);
+		return result;
 	}
 	/**
 	 * Copies the contents of one field to another, boxing or unboxing based on
@@ -372,11 +387,10 @@ internal class Generator {
 			Builder.MarkSequencePoint(Owner.SymbolDocument, node.StartRow, node.StartColumn, node.EndRow, node.EndColumn);
 		}
 	}
-	public void DecrementInterlock(ILGenerator builder, Label skip) {
+	public void DecrementInterlock(ILGenerator builder) {
 		builder.Emit(OpCodes.Ldarg_0);
 		builder.Emit(OpCodes.Ldflda, interlock_field);
 		builder.Emit(OpCodes.Call, typeof(System.Threading.Interlocked).GetMethod("Decrement", new System.Type[] { typeof(int).MakeByRefType() }));
-		builder.Emit(OpCodes.Brtrue, skip);
 	}
 	/**
 	 * Generate a runtime dispatch that checks each of the provided types.
@@ -415,8 +429,13 @@ internal class Generator {
 		source_reference.Load(Builder);
 		Builder.Emit(OpCodes.Ldstr, message);
 		foreach (var item in data) {
-			item.Load(Builder);
-			Builder.Emit(OpCodes.Call, typeof(object).GetMethod("GetType"));
+			if (item.BackingType == typeof(object)) {
+				item.Load(Builder);
+				Builder.Emit(OpCodes.Call, typeof(object).GetMethod("GetType"));
+			} else {
+				Builder.Emit(OpCodes.Ldtoken, item.BackingType);
+				Builder.Emit(OpCodes.Call, typeof(System.Type).GetMethod("GetTypeFromHandle", new System.Type[] { typeof(RuntimeTypeHandle) }));
+			}
 		}
 		var signature = new System.Type[data.Length + 1];
 		signature[0] = typeof(string);
@@ -424,7 +443,7 @@ internal class Generator {
 			signature[it + 1] =  typeof(object);
 		}
 		Builder.Emit(OpCodes.Call, typeof(String).GetMethod("Format", signature));
-		Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
+		Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
 		Builder.Emit(OpCodes.Ldc_I4_0);
 		Builder.Emit(OpCodes.Ret);
 	}
@@ -448,20 +467,21 @@ internal class Generator {
 	public void GenerateConsumeResult(FieldValue result_target, bool interlocked = false) {
 		var method = TypeBuilder.DefineMethod("ConsumeResult" + result_consumer++, MethodAttributes.Public, typeof(void), new System.Type[] { typeof(object) });
 		var consume_builder = method.GetILGenerator();
-		if (result_target != null) {
-			consume_builder.Emit(OpCodes.Ldarg_0);
-			consume_builder.Emit(OpCodes.Ldarg_1);
-			consume_builder.Emit(OpCodes.Stfld, result_target.Field);
-		}
-		LoadTaskMaster(consume_builder);
+
+		consume_builder.Emit(OpCodes.Ldarg_0);
+		consume_builder.Emit(OpCodes.Ldarg_1);
+		consume_builder.Emit(OpCodes.Stfld, result_target.Field);
 		var return_label = consume_builder.DefineLabel();
 		if (interlocked) {
-			DecrementInterlock(consume_builder, return_label);
+			DecrementInterlock(consume_builder);
+			consume_builder.Emit(OpCodes.Brtrue, return_label);
 		}
+		LoadTaskMaster(consume_builder);
 		consume_builder.Emit(OpCodes.Ldarg_0);
 		consume_builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new System.Type[] { typeof(Computation) }));
 		consume_builder.MarkLabel(return_label);
 		consume_builder.Emit(OpCodes.Ret);
+
 		Builder.Emit(OpCodes.Ldarg_0);
 		Builder.Emit(OpCodes.Ldftn, method);
 		Builder.Emit(OpCodes.Newobj, typeof(ConsumeResult).GetConstructors()[0]);
@@ -531,7 +551,7 @@ internal class Generator {
 			LoadTaskMaster();
 			source_reference.Load(Builder);
 			Builder.Emit(OpCodes.Ldstr, String.Format("Cannot find overloaded matching method for {0}.{1}({3}).", methods[0].Name, methods[0].ReflectedType.Name, String.Join(",", arguments.Select(a => a.BackingType.Name)))); 
-			Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
+			Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
 			Builder.Emit(OpCodes.Ldc_I4_0);
 			Builder.Emit(OpCodes.Ret);
 			return null;
@@ -560,7 +580,7 @@ internal class Generator {
 				} else if (method_arguments[it] == typeof(float)) {
 					Builder.Emit(OpCodes.Conv_R4);
 				} else if (method_arguments[it] == typeof(string)) {
-					Builder.Emit(OpCodes.Call, typeof(Stringish).GetMethod("ToString"));
+					Builder.Emit(OpCodes.Callvirt, typeof(Stringish).GetMethod("ToString"));
 				} else {
 					throw new InvalidOperationException(String.Format("No conversation from {0} to {1} while invoking {2}.{3}.", arguments[it].BackingType.Name, method_arguments[it].Name, best_method.ReflectedType.Name, best_method.Name));
 				}
@@ -651,7 +671,7 @@ internal class Generator {
 		LoadTaskMaster();
 		source_reference.Load(this);
 		GenerateConsumeResult(library_field);
-		Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("GetExternal", new System.Type[] { typeof (SourceReference), typeof(string), typeof(ConsumeResult) }));
+		Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("GetExternal", new System.Type[] { typeof (SourceReference), typeof(string), typeof(ConsumeResult) }));
 		Builder.Emit(OpCodes.Ldc_I4_0);
 		Builder.Emit(OpCodes.Ret);
 		MarkState(state);
@@ -692,7 +712,8 @@ internal class Generator {
 	public void StopInterlock() {
 		var state = DefineState();
 		SetState(state);
-		DecrementInterlock(Builder, entry_points[state]);
+		DecrementInterlock(Builder);
+		Builder.Emit(OpCodes.Brfalse, entry_points[state]);
 		Builder.Emit(OpCodes.Ldc_I4_0);
 		Builder.Emit(OpCodes.Ret);
 		MarkState(state);
@@ -711,64 +732,53 @@ internal class Generator {
 			} else {
 				result.Load(Builder);
 			}
-			LoadTaskMaster();
-			Builder.Emit(OpCodes.Call, typeof(Frame).GetMethod("Slot", new System.Type[] { typeof(TaskMaster) }));
+			Builder.Emit(OpCodes.Call, typeof(Frame).GetMethod("Slot"));
 			Builder.MarkLabel(end);
 		}
 		CopyField(result, typeof(Computation).GetField("result", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
 		Builder.Emit(OpCodes.Ldc_I4_1);
 		Builder.Emit(System.Reflection.Emit.OpCodes.Ret);
 	}
-	private void ToStringishHelper<T>(bool boxed, LoadableValue source) {
+	private void ToStringishHelperNumeric<T>(LoadableValue source) {
 		source.Load(Builder);
-		if (boxed) {
-			Builder.Emit(OpCodes.Unbox_Any, typeof(T));
-		}
-		Builder.Emit(OpCodes.Call, typeof(T).GetMethod("ToString", new System.Type[] { typeof(T) }));
+		var local = Builder.DeclareLocal(typeof(T));
+		Builder.Emit(OpCodes.Stloc, local);
+		Builder.Emit(OpCodes.Ldloca, local);
+		Builder.Emit(OpCodes.Call, typeof(T).GetMethod("ToString", new System.Type[] {}));
+		Builder.Emit(OpCodes.Newobj, typeof(SimpleStringish).GetConstructors()[0]);
 	}
-	private void ToStringishHelperBool(bool boxed, LoadableValue source) {
-		Builder.Emit(OpCodes.Ldsfld, typeof(Stringish).GetField("BOOLEANS"));
-		source.Load(Builder);
-		if (boxed) {
-			Builder.Emit(OpCodes.Unbox_Any, typeof(bool));
-		}
-		Builder.Emit(OpCodes.Ldelem, typeof(Stringish));
-	}
-	private void ToStringishHelperStringish(bool boxed, LoadableValue source) {
-		source.Load(Builder);
-		if (boxed) {
-			Builder.Emit(OpCodes.Unbox_Any, typeof(Stringish));
+	private void ToStringishHelper(LoadableValue source) {
+		if (source.BackingType == typeof(bool)) {
+			Builder.Emit(OpCodes.Ldsfld, typeof(Stringish).GetField("BOOLEANS"));
+			source.Load(Builder);
+			Builder.Emit(OpCodes.Ldelem, typeof(Stringish));
+		} else if (source.BackingType == typeof(long)) {
+			ToStringishHelperNumeric<long>(source);
+		} else if (source.BackingType == typeof(double)) {
+			ToStringishHelperNumeric<double>(source);
+		} else if (source.BackingType == typeof(Stringish)) {
+			source.Load(Builder);
+		} else {
+			throw new InvalidOperationException(String.Format("Cannot convert {0} to stringish.", source.BackingType));
 		}
 	}
 	public void ToStringish(LoadableValue source, LoadableValue source_reference) {
-		var boxed = source.BackingType == typeof(object);
-		var converters = new Dictionary<System.Type, Action>() {
-			{ typeof(double), () => ToStringishHelper<double>(boxed, source) },
-			{ typeof(long), () => ToStringishHelper<long>(boxed, source) },
-			{ typeof(bool), () => ToStringishHelperBool(boxed, source) },
-			{ typeof(Stringish), () => ToStringishHelperStringish(boxed, source) }
-		};
-		if (boxed) {
+		if (source.BackingType == typeof(object)) {
 			var end = Builder.DefineLabel();
-			var labels = new Dictionary<System.Type, Label>();
-			foreach (var type in converters.Keys) {
-				var label = Builder.DefineLabel();
-				labels[type] = label;
+			foreach (var type in new System.Type[] { typeof(long), typeof(double), typeof(bool), typeof(Stringish) }) {
+				var next = Builder.DefineLabel();
 				source.Load(Builder);
 				Builder.Emit(OpCodes.Isinst, type);
-				Builder.Emit(OpCodes.Brtrue, label);
+				Builder.Emit(OpCodes.Brfalse, next);
+				ToStringishHelper(new AutoUnboxValue(source, type));
+				Builder.Emit(OpCodes.Br, end);
+				Builder.MarkLabel(next);
 			}
 
 			EmitTypeError(source_reference, "Cannot convert type {0} to string.", source);
-
-			foreach (var entry in converters) {
-				Builder.MarkLabel(labels[entry.Key]);
-				entry.Value();
-				Builder.Emit(OpCodes.Br, end);
-			}
 			Builder.MarkLabel(end);
 		} else {
-			converters[source.BackingType]();
+			ToStringishHelper(source);
 		}
 	}
 }
@@ -915,7 +925,7 @@ internal class MethodValue : LoadableValue {
 		} else {
 			instance.Load(generator);
 		}
-		generator.Emit(OpCodes.Call, method);
+		generator.Emit(method.IsVirtual ? OpCodes.Callvirt : OpCodes.Call, method);
 	}
 }
 internal class UpgradeValue : LoadableValue {

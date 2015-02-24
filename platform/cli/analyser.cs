@@ -167,7 +167,7 @@ internal abstract class NameInfo {
 		while (names.MoveNext()) {
 			info.EnsureType(collector, Type.Frame, ref success);
 			if (!info.Children.ContainsKey(names.Current)) {
-				info.CreateChild(collector, names.Current, this.Name, ref success);
+				info.CreateChild(collector, names.Current, info.Name, ref success);
 			}
 			info = info.Children[names.Current];
 		}
@@ -214,7 +214,6 @@ internal class OpenNameInfo : NameInfo {
 		generator.LoadTaskMaster();
 		generator.Builder.Emit(OpCodes.Dup);
 		source_reference.Load(generator);
-		context.Load(generator);
 		var name_parts = Name.Split('.');
 		generator.Builder.Emit(OpCodes.Ldc_I4, name_parts.Length);
 		generator.Builder.Emit(OpCodes.Newarr, typeof(string));
@@ -224,6 +223,7 @@ internal class OpenNameInfo : NameInfo {
 			generator.Builder.Emit(OpCodes.Ldstr, name_parts[it]);
 			generator.Builder.Emit(OpCodes.Stelem, typeof(string));
 		}
+		context.Load(generator);
 		generator.Builder.Emit(OpCodes.Newobj, typeof(Lookup).GetConstructors()[0]);
 		generator.Builder.Emit(OpCodes.Dup);
 		generator.GenerateConsumeResult(lookup_result, true);
@@ -386,8 +386,10 @@ internal class Environment : CodeRegion {
 			}
 		}
 		if (narrow_error != null) {
+			generator.LoadTaskMaster();
+			source_reference.Load(generator);
 			generator.Builder.Emit(OpCodes.Ldstr, narrow_error);
-			generator.Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
+			generator.Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
 			generator.Builder.Emit(OpCodes.Ldc_I4_0);
 			generator.Builder.Emit(OpCodes.Ret);
 			return;
@@ -410,7 +412,7 @@ internal class Environment : CodeRegion {
 			lookup_result.Value.Load(generator);
 			generator.Builder.Emit(OpCodes.Isinst, lookup_result.Types[0]);
 			generator.Builder.Emit(OpCodes.Brtrue, label);
-			generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", lookup_result.Value, lookup_result.NameInfo.Name, "{0}"), lookup_result.Value);
+			generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", lookup_result.Value.BackingType, lookup_result.NameInfo.Name, "{0}"), lookup_result.Value);
 			generator.Builder.MarkLabel(label);
 		}
 		GenerateLookupPermutation(generator, base_lookup_cache, 0, lookup_results.Where(x => !x.SinglyTyped).ToArray(), source_reference, block);

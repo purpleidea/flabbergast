@@ -27,26 +27,24 @@ public abstract class Computation {
 	 */
 	private ConsumeResult consumer = null;
 	/**
-	 * True until the computation has been fully completed.
-	 */
-	private bool must_run = true;
-	/**
 	 * The return value of the computation.
 	 *
 	 * This should be assigned by the subclass.
 	 */
 	protected object result = null;
 
+	public Computation() {
+	}
+
 	/**
 	 * Called by the TaskMaster to start or continue computation.
 	 */
 	internal void Compute() {
-		if (must_run || Run()) {
-			must_run = false;
+		if (result == null && Run()) {
 			if (consumer != null) {
 				consumer(result);
-				consumer = null;
 			}
+			consumer = null;
 		}
 	}
 
@@ -55,7 +53,7 @@ public abstract class Computation {
 	 * the callback is immediately invoked.
 	 */
 	public void Notify(ConsumeResult new_consumer) {
-		if (must_run) {
+		if (result == null) {
 			if (consumer == null) {
 				consumer = new_consumer;
 			} else {
@@ -88,30 +86,35 @@ public abstract class TaskMaster {
 
 	private long next_id = 0;
 
+	private static readonly char[] symbols = CreateOrdinalSymbols();
+
+	private static char[] CreateOrdinalSymbols() {
+		var array = new char[62];
+		for(var it = 0; it < 10; it++) {
+			array[it] = (char)('0' + it);
+		}
+		for(var it = 0; it < 26; it++) {
+			array[it + 10] = (char)('A' + it);
+			array[it + 36] = (char)('a' + it);
+		}
+		return array;
+	}
 	public static Stringish OrdinalName(long id) {
 		return new SimpleStringish(OrdinalNameStr(id));
 	}
 	public static string OrdinalNameStr(long id) {
-		var len = (sizeof (long) * 8 * Math.Log (2) / Math.Log (62)) + 1;
-		var id_str = new System.Text.StringBuilder();
+		var id_str = new char[(int)(sizeof(long) * 8 * Math.Log (2) / Math.Log (symbols.Length)) + 1];
 		if (id < 0) {
-			id_str.Append('e');
+			id_str[0] = 'e';
 			id = long.MaxValue + id;
 		} else {
-			id_str.Append('f');
+			id_str[0] = 'f';
 		}
-		for (var it = len; it > 0; it--) {
-			var digit = (char) (id % 62);
-			id = id / 62;
-			if (digit < 10) {
-				id_str.Append('0' + digit);
-			} else if (digit < 36) {
-				id_str.Append('A' + (digit - 10));
-			} else {
-				id_str.Append('a' + (digit - 36));
-			}
+		for (var it = id_str.Length - 1; it > 0; it--) {
+			id_str[it] = symbols[id % symbols.Length];
+			id = id / symbols.Length;
 		}
-		return id_str.ToString();
+		return new string(id_str);
 	}
 
 	public TaskMaster() {}
@@ -141,7 +144,8 @@ public abstract class TaskMaster {
 	 */
 	public void Run() {
 		while(computations.Count > 0) {
-			computations.Dequeue().Compute();
+			var task = computations.Dequeue();
+			task.Compute();
 		}
 	}
 
@@ -197,20 +201,16 @@ public class Lookup : Computation {
 	 */
 	private int name = 0;
 	/**
-	 * This will be true when a value has been supplied by the callback to GetOrSubscribe.
+	 * This is the result supplied by the callback to GetOrSubscribe.
 	 */
-	private bool got_value = false;
-	/**
-	 * This will be true when GetOrSubscribe did a subscribe and we were invoked later.
-	 */
-	private bool delayed = false;
+	private Frame.AttemptResult state = Frame.AttemptResult.RETURNED;
 
 	public Lookup(TaskMaster master, SourceReference source_ref, string[] names, Context context) {
 		this.master = master;
 		this.SourceReference = source_ref;
 		this.names = names;
 		/* Create  grid where the first entry is the frame under consideration. */
-		var values = new object[context.Length, names.Length + 1];
+		values = new object[context.Length, names.Length + 1];
 		context.Fill((index, frame) => values[index, 0] = frame);
 	}
 	/**
@@ -218,41 +218,39 @@ public class Lookup : Computation {
 	 *
 	 * If that was not immediately, then delayed will be true, so we slot outselves for further evaluation.
 	 */
-	private void ConsumeResult(object result) {
-		values[frame, name++] = result;
-		got_value = true;
-		if (delayed) {
+	private void ConsumeResult(object return_value) {
+		values[frame, ++name] = return_value;
+		if (state == Frame.AttemptResult.PENDING) {
 			master.Slot(this);
 		}
 	}
 	protected override bool Run() {
-		while (frame < values.GetLength(0)) {
-			while (name < values.GetLength(1)) {
-				// If we have reached the end of a list of names for the current frame, then we have an answer!
-				if (name == values.GetLength(1) - 1) {
-					result = values[frame, name];
-					return true;
-				}
+		while (frame < values.GetLength(0) && name < values.GetLength(1)) {
+			// If we have reached the end of a list of names for the current frame, then we have an answer!
+			if (name == values.GetLength(1) - 1) {
 
-				// If this is not a frame, but there are still more names, then this is an error.
-				if (!(values[frame, name] is Frame)) {
-					master.ReportLookupError(this);
-				}
+				result = values[frame, name];
+				return true;
+			}
 
-				got_value = false;
-				delayed = false;
-				// Otherwise, try to get the current value for the current name
-				if (!((Frame)values[frame, name]).GetOrSubscribe(names[name], ConsumeResult)) {
-					// The value isn't yet computed. Signal our callback that we want to be slotted.
-					delayed = true;
+			// If this is not a frame, but there are still more names, then this is an error.
+			if (!(values[frame, name] is Frame)) {
+				master.ReportLookupError(this);
+				return false;
+			}
+
+			// Otherwise, try to get the current value for the current name
+			state = (values[frame, name] as Frame).GetOrSubscribe(names[name], ConsumeResult);
+			switch (state) {
+				case Frame.AttemptResult.PENDING:
 					return false;
-				}
-				// If we got nothing, then it doesn't exist in the current frame. Try the next.
-				if (!got_value) {
-					name = 0;
-					frame++;
-					break;
-				}
+				case Frame.AttemptResult.MISSING:
+				name = 0;
+				frame++;
+				break;
+				case Frame.AttemptResult.RETURNED:
+				// The callback will increment name
+				break;
 			}
 		}
 		// The name is undefined.

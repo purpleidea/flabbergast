@@ -1,1 +1,1 @@
-x : { y : Container }
+value : ({ y : Container }).y Is Frame

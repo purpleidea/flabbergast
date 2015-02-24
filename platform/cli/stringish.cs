@@ -9,19 +9,21 @@ public abstract class Stringish : IComparable<Stringish> {
 	public abstract void Write(TextWriter writer);
 	public int CompareTo(Stringish other) {
 		var this_stream = this.Stream();
-		var other_stream = this.Stream();
-		if (!this_stream.MoveNext()) {
-			return other_stream.MoveNext() ? -1 : 0;
-		}
-		if (!other_stream.MoveNext()) {
-			return 1;
-		}
+		var other_stream = other.Stream();
 		var this_offset = 0;
 		var other_offset = 0;
 		var result = 0;
+		var first = true;
 		while (result == 0) {
-			if (UpdateIterator(this_stream, ref this_offset)) break;
-			if (UpdateIterator(other_stream, ref other_offset)) break;
+			var this_empty = UpdateIterator(this_stream, ref this_offset, first);
+			var other_empty = UpdateIterator(other_stream, ref other_offset, first);
+			first = false;
+			if (this_empty) {
+				return other_empty ? 0 : -1;
+			}
+			if (other_empty) {
+				return 1;
+			}
 			var length = Math.Min(this_stream.Current.Length - this_offset, other_stream.Current.Length - other_offset);
 			result = String.Compare(this_stream.Current, this_offset, other_stream.Current, other_offset, length, StringComparison.CurrentCulture);
 			this_offset += length;
@@ -29,11 +31,12 @@ public abstract class Stringish : IComparable<Stringish> {
 		}
 		return result;
 	}
-	private bool UpdateIterator(IEnumerator<string> enumerator, ref int offset) {
-		while (enumerator.Current.Length <= offset) {
-			if (!enumerator.MoveNext()) return true;
-			offset = 0;
+	private bool UpdateIterator(IEnumerator<string> enumerator, ref int offset, bool first) {
+		if (!first && offset < enumerator.Current.Length) {
+			return false;
 		}
+		if (!enumerator.MoveNext()) return true;
+		offset = 0;
 		return false;
 	}
 	public abstract IEnumerator<string> Stream();

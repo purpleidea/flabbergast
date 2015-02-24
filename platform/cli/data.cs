@@ -150,7 +150,7 @@ public class Template : IAttributeNames {
 			if (value == null) {
 				return;
 			}
-			if(attributes.ContainsKey(name)) {
+			if (attributes.ContainsKey(name)) {
 				throw new InvalidOperationException("Redefinition of attribute " + name + ".");
 			}
 			attributes[name] = value;
@@ -168,6 +168,11 @@ public class Template : IAttributeNames {
  * A Frame in the Flabbergast language.
  */
 public class Frame : DynamicObject, IAttributeNames {
+	public enum AttemptResult {
+		RETURNED,
+		PENDING,
+		MISSING
+	}
 	/**
 	 * The lookup context when this frame was created and any of its ancestors.
 	 */
@@ -199,9 +204,10 @@ public class Frame : DynamicObject, IAttributeNames {
 	private IDictionary<string, Computation> pending = new SortedDictionary<string, Computation>();
 	private List<Computation> unslotted = new List<Computation>();
 	private IDictionary<string, Object> attributes = new SortedDictionary<string, Object>();
+	private TaskMaster task_master;
 
-	public static Frame Through(long id, SourceReference source_ref, long start, long end, Context context, Frame container) {
-		var result = new Frame(id, source_ref, context, container);
+	public static Frame Through(TaskMaster task_master, long id, SourceReference source_ref, long start, long end, Context context, Frame container) {
+		var result = new Frame(task_master, id, source_ref, context, container);
 		if (end > start)
 			return result;
 		for (long it = 0; it <= (end - start); it++) {
@@ -210,7 +216,8 @@ public class Frame : DynamicObject, IAttributeNames {
 		return result;
 	}
 
-	public Frame(long id, SourceReference source_ref, Context context, Frame container) {
+	public Frame(TaskMaster task_master, long id, SourceReference source_ref, Context context, Frame container) {
+		this.task_master = task_master;
 		this.SourceReference = source_ref;
 		this.Context = Context.Prepend(this, context);
 		this.Container = container;
@@ -232,8 +239,8 @@ public class Frame : DynamicObject, IAttributeNames {
 			if (pending.ContainsKey(name) || attributes.ContainsKey(name)) {
 				throw new InvalidOperationException("Redefinition of attribute " + name + ".");
 			}
-			if (value is Computation) {
-				var computation = (Computation)value;
+			if (value is ComputeValue) {
+				var computation = (value as ComputeValue)(task_master, SourceReference, Context, this, Container);
 				pending[name] = computation;
 				/*
 				 * When this computation has completed, replace its value in the frame.
@@ -278,16 +285,20 @@ public class Frame : DynamicObject, IAttributeNames {
 	 * Access a value if available, or be notified upon completion.
 	 * Returns: true if the value was available, false if the caller should wait to be reinvoked.
 	 */
-	internal bool GetOrSubscribe(string name, ConsumeResult consumer) {
+	internal AttemptResult GetOrSubscribe(string name, ConsumeResult consumer) {
+		// If this frame is being looked at, then all its pending attributes should
+		// be slotted.
+		Slot();
+
 		if (pending.ContainsKey(name)) {
 			pending[name].Notify(consumer);
-			return false;
+			return AttemptResult.PENDING;
 		}
 		if (attributes.ContainsKey(name)) {
 			consumer(attributes[name]);
-			return true;
+			return AttemptResult.RETURNED;
 		}
-		return true;
+		return AttemptResult.MISSING;
 	}
 
 	/**
@@ -307,10 +318,11 @@ public class Frame : DynamicObject, IAttributeNames {
 	 * those computations. Only when a frame is “returned” can the computations
 	 * be started. This should be called before returning to trigger computation.
 	 */
-	public void Slot(TaskMaster master) {
+	public void Slot() {
 		foreach(var computation in unslotted) {
-			master.Slot(computation);
+			task_master.Slot(computation);
 		}
+		unslotted.Clear();
 	}
 
 	public override bool TryGetIndex(GetIndexBinder binder, Object[] indexes, out Object result) {

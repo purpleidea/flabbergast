@@ -7,7 +7,7 @@ namespace Flabbergast {
 /**
  * Iterate over the keys of several of frames and templates.
  */
-public abstract class MergeIterator {
+public class MergeIterator {
 	/**
 	 * The current attribute name.
 	 */
@@ -54,7 +54,7 @@ public abstract class MergeIterator {
 		if (enumerator == null) {
 			enumerator = dispatchers.GetEnumerator();
 		}
-		while (enumerator.MoveNext()) {
+		if (enumerator.MoveNext()) {
 			Position++;
 			return enumerator.Current.Value;
 		}

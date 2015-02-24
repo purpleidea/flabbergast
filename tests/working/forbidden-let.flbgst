@@ -1,1 +1,1 @@
-x : Let x : True In x
+value : Let value : True In value

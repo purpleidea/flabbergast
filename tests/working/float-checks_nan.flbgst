@@ -1,0 +1,1 @@
+value : !(3 Is NaN) && !(3.0 Is NaN) && NaN Is NaN && (Infinity * 0) Is NaN

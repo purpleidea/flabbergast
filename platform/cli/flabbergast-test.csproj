@@ -42,5 +42,9 @@
 			<Project>{349DC095-A2A2-4245-862A-9C348D994656}</Project>
 			<Name>flabbergast-compilerservices</Name>
 		</ProjectReference>
+		<ProjectReference Include="flabbergast-runtime.csproj">
+			<Project>{B54764C8-8812-4DC0-BB5D-88890F1DB5BC}</Project>
+			<Name>flabbergast-runtime</Name>
+		</ProjectReference>
 	</ItemGroup>
 </Project>
