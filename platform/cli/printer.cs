@@ -66,7 +66,7 @@ public class Printer {
 
 		if (show_help) {
 			Console.WriteLine("Usage: " + System.AppDomain.CurrentDomain.FriendlyName + " input.flbgst");
-			Console.WriteLine("Compile a Flabbergast file to native CLR.");
+			Console.WriteLine("Run a Flabbergast file and display the “value” attribute.");
 			Console.WriteLine();
 			Console.WriteLine("Options:");
 			options.WriteOptionDescriptions (Console.Out);
