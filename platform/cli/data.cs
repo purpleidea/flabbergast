@@ -233,7 +233,7 @@ public class Frame : DynamicObject, IAttributeNames {
 	 */
 	public object this[string name] {
 		get {
-			return attributes[name];
+			return attributes.ContainsKey(name) ? attributes[name] : null;
 		}
 		set {
 			if (value == null) {
