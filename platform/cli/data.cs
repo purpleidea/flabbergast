@@ -91,6 +91,9 @@ internal class ForkedContext : Context {
 public class Unit {
 		public static readonly Unit NULL = new Unit();
 		private Unit() {}
+		public override string ToString() {
+			return "Null";
+		}
 }
 
 /**
