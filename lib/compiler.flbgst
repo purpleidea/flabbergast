@@ -156,24 +156,26 @@ parser_tmpl : Template {
 environment_tmpl : Template {
 	# A template for all the actions (i.e., things which can be done with an
 	# environment).
-	application_action : Template {
-		# The flavour for which this action should be applied. If the flavour is
-		# not matched, this action is ignored.
-		flavour : flavour_simple
-	}
+	application_action : Template { }
+	# Collect the current environment and provide it to any containing
+	# `other_with_result` rules.
+	collect : Template application_action {}
 	# Apply environment to other syntax elements that support environments.
 	other_elements : Template application_action {
 		# A list of fields to absorb the current environment
 		fields ?:
-		# The flavour that should be applied. Normally the current flavour.
-		target_flavour : flavour
+	}
+	# Apply environment to other syntax elements and collect the environment and
+	# apply to to others.
+	other_with_result : Template application_action {
+		# The field containing the target environment to be collected.
+		field ?:
+		apply_to ?:
 	}
 	# Apply environment to all the other syntax elements in a list.
 	list_of : Template application_action {
 		# The field containing the list.
 		field ?:
-		# The flavour that should be applied. Normally the current flavour.
-		target_flavour : flavour
 	}
 	# Apply an *independent* environment for each of the other syntax elements in
 	# a list.
@@ -184,8 +186,6 @@ environment_tmpl : Template {
 		inherit : False
 		# Whether the environment is file-level scope.
 		top_level : False
-		# The flavour that should be applied. Normally the current flavour.
-		target_flavour : flavour
 	}
 	# Create an empty environment that does not inherit from the current environment.
 	blank_environment : Template application_action {
@@ -245,20 +245,6 @@ environment_tmpl : Template {
 		# What value is required in the top-levelness of the environment.
 		desired ?:
 	}
-	# Template for the “flavours” of environment.
-	flavour_tmpl : Template {
-		# Whether this flavour needs to propagate environments.
-		enabled ?:
-	}
-	# An environment flavour that does nothing. It has no environment and does
-	# not propagate them.
-	flavour_none ?:
-	# An environment flavour that causes syntax groups to have an environment and
-	# participate in environment propagation and type checking.
-	flavour_simple ?:
-	# An environment flavour that extends `flavour_simple`, but propagates a
-	# second type of environment.
-	flavour_double ?:
 }
 # The definitions for all the types in the Flabbergast language.
 known_types_tmpl : Template {
@@ -903,7 +889,7 @@ language_tmpl : Template {
 		# If the syntax group has environment propagation support, this element
 		# contains a list of actions to perform, using templates from the
 		# `environment` frame, when the environment is being configured.
-		apply_environment_to : environment_flavour.enabled &&
+		apply_environment_to : environment_enabled &&
 			Error "apply_environment_to attribute must be overridden in \(rule_name)."
 		ensure_type_is : is_typeable &&
 			Error "ensure_type_is attribute must be overridden in \(rule_name)."
@@ -948,7 +934,7 @@ language_tmpl : Template {
 		include_base_parser : True
 		# The type of syntax checking and name resolution environment associated
 		# with this group.
-		environment_flavour : environment.flavour_none
+		environment_enabled : False
 		# If true, this syntax group has a type and can be the target of type
 		# assurances.
 		is_typeable : False
@@ -1020,12 +1006,23 @@ language_tmpl : Template {
 		For rule_group_tmpl : rule_groups {}, group_name : Name
 		Select group_name : rule_group_tmpl {}
 
-	# Syntax element for expressions
-	expression_tmpl : Template syntax_element {
+	nested_syntax_group : Template syntax_group {
+		max_level ?:
+		static_rules : For level : 0 Through (max_level - 1)
+			Select "zzzz_up_\(level)" : meandering_element {
+				alternate_name : group_name & level + 1
+				alternatives : For x : [level] Select group_name & x : Null
+			}
+	}
+	nested_syntax_element : Template syntax_element {
 		# The depth/precedence in the expression nesting system, as inferred from
 		# the specification.
 		level ?:
-		alternatives : For x : [ level ] Select "expression\(x)" : Null
+		alternatives : For x : [ level ] Select group_name & x : Null
+	}
+	# Syntax element for expressions
+	expression_tmpl : Template nested_syntax_element {
+		# The depth/precedence in the expression nesting system, as inferred from
 		# A parser for a top-level expression
 		top_expression : Template parser.other {
 			accumulate : True
@@ -1152,7 +1149,7 @@ language_tmpl : Template {
 		]
 		ensure_type_is : ensure_type.number {
 			ensure_type_of : ensure_type.multiple {
-				actions: [
+				actions : [
 					ensure_type.propagate {
 						fields : [ $start_expr ]
 						extra_types : [ known_types.int ]
@@ -1312,34 +1309,6 @@ language_tmpl : Template {
 			parser.exact { word : symbol }
 		]
 	}
-	# The general syntax for fricassée expressions (excluding the selector).
-	for_pattern : Template parser.sequence {
-		selector ?:
-		of : [
-			parser.exact { word : "For" },
-			space { mandatory : True },
-			selector { },
-			parser.optional {
-				of : parser.sequence {
-					of : [
-						space { mandatory : True },
-						parser.exact { word : "Where" },
-						space { mandatory : True },
-						parser.other {
-							type : $expression
-							alternate : $expression0
-							field : $where_expr
-						}
-					]
-				}
-			},
-			space { mandatory : True },
-			parser.other {
-				field : $result_builder
-				type : $fricassee_result
-			}
-		]
-	}
 	# The general pattern for normal attribute definitions
 	attribute_pattern : Template parser.sequence {
 		value_pattern : Template parser.other {
@@ -1485,7 +1454,14 @@ language_tmpl : Template {
 			}
 		}
 	}
-
+	selector_tmpl : Template nested_syntax_element {
+		# A parser for a selector one level more nested.
+		child_selector : Template parser.other {
+			accumulate : True
+			alternate : group_name & (level + 1)
+			type : group_name
+		}
+	}
 	perform_overrides : Template codegen.push_source_reference {
 		source_template ?:
 		new_item ?:
@@ -1533,7 +1509,7 @@ language_tmpl : Template {
 	# All the groups in the language. For details, see the specification.
 	rule_groups : Template {
 		file : Template syntax_group {
-			environment_flavour : environment.flavour_simple
+			environment_enabled : True
 			generation_flavour : codegen.flavour_empty
 			rules +: {
 				file : Template syntax_element {
@@ -1581,7 +1557,7 @@ language_tmpl : Template {
 
 		attribute : Template syntax_group {
 			include_base_parser : False
-			environment_flavour : environment.flavour_simple
+			environment_enabled : True
 			generation_flavour : codegen.flavour_attribute
 			is_typeable : True
 			common +: {
@@ -1795,7 +1771,7 @@ language_tmpl : Template {
 			}
 		}
 		named_definition : Template syntax_group {
-			environment_flavour : environment.flavour_simple
+			environment_enabled : True
 			generation_flavour : codegen.flavour_aware
 			is_typeable : True
 			common +: {
@@ -1812,8 +1788,145 @@ language_tmpl : Template {
 				}
 			}
 		}
+
+		selector : Template nested_syntax_group {
+			max_level : 2
+			environment_enabled : True
+			common +: {
+				comment : common_fields.str
+			}
+			rules +: {
+				order_by : Template selector_tmpl {
+					level : 0
+					pretty_name : "fricassée Order By clause"
+					pattern : parser.sequence {
+						of : [
+							child_selector { field : $selector },
+							parser.exact { word : "Order" },
+							space { mandatory : True },
+							parser.exact { word : "By" },
+							space { mandatory : True },
+							parser.other {
+								type: $expression
+								alternate: $expression0
+								field : $expression
+							},
+							space { preferred : True }
+						]
+					}
+					apply_environment_to : [
+						environment.other_with_result {
+							field : $selector
+							apply_to : [
+								environment.other_elements { fields : [ $expression ] },
+								environment.collect { }
+							]
+						}
+					]
+					type_demand : { expression : [ known_types.int, known_types.float, known_types.str ] }
+				}
+				reverse : Template selector_tmpl {
+					level : 0
+					pretty_name : "fricassée Reverse clause"
+					pattern : parser.sequence {
+						of : [
+							child_selector { field : $selector },
+							parser.exact { word : "Reverse" },
+							space { mandatory : True }
+						]
+					}
+					apply_environment_to : [
+						environment.other_with_result {
+							field : $selector
+							apply_to : [
+								environment.collect { }
+							]
+						}
+					]
+				}
+
+				where : Template selector_tmpl {
+					level : 1
+					pretty_name : "fricassée Where clause"
+					pattern : parser.sequence {
+						of : [
+							child_selector { field : $selector },
+							parser.exact { word : "Where" },
+							space { mandatory : True },
+							parser.other {
+								type: $expression
+								alternate: $expression0
+								field : $expression
+							},
+							space { preferred : True }
+						]
+					}
+					apply_environment_to : [
+						environment.other_with_result {
+							field : $selector
+							apply_to : [
+								environment.other_elements { fields : [ $expression ] },
+								environment.collect { }
+							]
+						}
+					]
+					type_demand : { expression : [ known_types.bool ] }
+				}
+
+				each : Template selector_tmpl {
+					level : max_level
+					pretty_name : "fricassée Each input"
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "Each" },
+							space { preferred : True },
+							parser.other { type: $expression  alternate : $expression0 field : $each_expr },
+							space { preferred : True }
+						]
+					}
+					apply_environment_to : [
+						environment.other_elements { fields : [ $each_expr ] },
+						environment.blank_environment {
+							name : $blank
+							apply_to : [ environment.collect { } ]
+						}
+					]
+					type_demand : {
+						each_expr : [ known_types.frame ]
+					}
+				}
+				merge : Template selector_tmpl {
+					level : max_level
+					pretty_name : "fricassée merge input"
+					pattern : parser.sequence {
+						of : [
+							parser.accumulate_list {
+								field : $inputs
+								type : $fricassee_merge_input
+								in : parser.many_word {
+									of : parser.other {
+										type : $fricassee_merge_input
+										field : Null
+									}
+									separator_word : ","
+								}
+							},
+							space { mandatory : True }
+						]
+					}
+					apply_environment_to : [
+						environment.list_of { field : $inputs },
+						environment.modified_environment {
+							name : $merge_environment
+							special_names : [ masks_from_definitions { field : $inputs } ]
+							apply_to : [ environment.collect { } ]
+						}
+					]
+				}
+			}
+		}
 		fricassee_merge_input : Template syntax_group {
-			environment_flavour : environment.flavour_simple
+			environment_enabled : True
 			is_typeable : True
 			common +: {
 				comment : common_fields.str
@@ -1849,138 +1962,6 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
 					# TODO
 					code_value : codegen.not_implemented {}
-				}
-			}
-		}
-
-		fricassee_ordering : Template syntax_group {
-			environment_flavour : environment.flavour_simple
-			common +: {
-				comment : common_fields.str
-			}
-			rules +: {
-				order_by : Template syntax_element {
-					pretty_name : "fricassée Order By clause"
-					pattern : parser.sequence {
-						of : [
-							parser.exact { word : "Order" },
-							space { mandatory : True },
-							parser.exact { word : "By" },
-							space { mandatory : True },
-							parser.other {
-								type: $expression
-								alternate: $expression0
-								field : $expression
-							},
-							space { mandatory : True }
-						]
-					}
-					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
-					type_demand : { expression : [ known_types.int, known_types.float, known_types.str ] }
-				}
-				reverse : Template syntax_element {
-					pretty_name : "fricassée Reverse clause"
-					pattern : parser.sequence {
-						of : [ parser.exact { word : "Reverse" }, space { mandatory : True } ]
-					}
-					apply_environment_to : []
-				}
-			}
-		}
-
-		fricassee_result : Template syntax_group {
-			environment_flavour : environment.flavour_double
-			is_typeable : True
-			common +: {
-				comment : common_fields.str
-			}
-			rules +: {
-				reduce : Template syntax_element {
-					pretty_name : "fricassée Reduce result"
-					pattern : parser.sequence {
-						of : [
-							parser.accumulate_list {
-								type : $fricassee_ordering
-								field : $orderings
-								in : parser.many {
-									of : parser.other { type: $fricassee_ordering  field : Null }
-								}
-							},
-							parser.exact { word : "Reduce" },
-							space { mandatory : True },
-							parser.other { type: $expression  alternate : $expression0  field : $reduce_expr },
-							space { mandatory : True },
-							parser.exact { word : "With" },
-							space { mandatory : True },
-							valid_identifier { field : $initial_name },
-							space { preferred : True },
-							parser.exact { word : ":" },
-							space { preferred : True },
-							parser.other { type: $expression  alternate : $expression2  field : $initial_expr }
-						]
-					}
-					apply_environment_to : [
-						environment.other_elements {
-							fields : [ $initial_expr ]
-							flavour : environment.flavour_double
-							target_flavour : environment.flavour_simple
-						},
-						environment.modified_environment {
-							special_names : [ mask_from_fields { name_field : $initial_name  expr_field : $initial_expr } ]
-							apply_to : [
-								environment.list_of { field : $orderings },
-								environment.other_elements { fields : [ $reduce_expr ] }
-							]
-							name : $inner_environment
-						}
-					]
-					ensure_type_is : ensure_type.propagate { fields : [ $reduce_expr, $initial_expr ] }
-				}
-				anonymous_select : Template syntax_element {
-					pretty_name : "fricassée Select result"
-					pattern : parser.sequence {
-						of : [
-							parser.accumulate_list {
-								type : $fricassee_ordering
-								field : $orderings
-								in : parser.many {
-									of : parser.other { type: $fricassee_ordering  field : Null }
-								}
-							},
-							parser.exact { word : "Select" },
-							space { preferred : True },
-							parser.other { type: $expression  alternate : $expression2 field : $expression },
-							space { },
-							parser.except { char : ":" }
-						]
-					}
-					apply_environment_to : [
-							environment.list_of { field : $orderings },
-							environment.other_elements { fields : [ $expression ] }
-						]
-					ensure_type_is : ensure_type.frame { }
-				}
-				named_select : Template syntax_element {
-					pretty_name : "fricassée Select with attribute names"
-					pattern : parser.sequence {
-						of : [
-							parser.exact { word : "Select" },
-							space { mandatory : True },
-							parser.other { type: $expression  alternate : $expression0 field : $name_expr },
-							space { preferred : True },
-							parser.exact { word : ":" },
-							space { preferred : True },
-							parser.other { type: $expression  alternate : $expression2 field : $value_expr }
-						]
-					}
-					apply_environment_to : [
-						environment.other_elements { fields : [ $name_expr, $value_expr ] }
-					]
-					ensure_type_is : ensure_type.frame { }
-					type_demand : {
-						name_expr : [ known_types.int, known_types.str ]
-						value_expr : known_types
-					}
 				}
 			}
 		}
@@ -2066,7 +2047,7 @@ language_tmpl : Template {
 		}
 
 		string_piece : Template syntax_group {
-			environment_flavour : environment.flavour_simple
+			environment_enabled : True
 			generation_flavour : codegen.flavour_aware_accumulate
 			common +: {
 				comment : common_fields.str
@@ -2186,7 +2167,7 @@ language_tmpl : Template {
 
 		arithmetic_disjunction_term : Template syntax_group {
 			level : 8
-			environment_flavour : environment.flavour_simple
+			environment_enabled : True
 			is_typeable : True
 			generation_flavour : codegen.flavour_aware_accumulate
 			common +: {
@@ -2210,7 +2191,7 @@ language_tmpl : Template {
 
 		arithmetic_conjunction_term : Template syntax_group {
 			level : 9
-			environment_flavour : environment.flavour_simple
+			environment_enabled : True
 			is_typeable : True
 			generation_flavour : codegen.flavour_aware_accumulate
 			common +: {
@@ -2238,10 +2219,10 @@ language_tmpl : Template {
 			}
 		}
 
-		expression : Template syntax_group {
+		expression : Template nested_syntax_group {
 			include_base_parser : False
 			is_typeable : True
-			environment_flavour : environment.flavour_simple
+			environment_enabled : True
 
 			generation_flavour : codegen.flavour_aware
 
@@ -2249,11 +2230,6 @@ language_tmpl : Template {
 				comment : common_fields.str
 			}
 			max_level : 19
-			static_rules : For level : 0 Through (max_level - 1)
-				Select "zzzz_up_\(level)" : meandering_element {
-					alternate_name : "expression\(level + 1)"
-					alternatives : For x : [level] Select "expression\(x)" : Null
-				}
 			rules +: {
 				let : Template expression_tmpl {
 					pretty_name : "name binding"
@@ -2296,78 +2272,109 @@ language_tmpl : Template {
 					}
 				}
 
-
-				for_each : Template expression_tmpl {
-					pretty_name : "fricassée expression"
+				for_select_anonymous : Template expression_tmpl {
+					pretty_name : "fricassée Select"
 					level : 1
-					pattern : for_pattern {
-						selector : Template parser.sequence {
-							of : [
-								parser.exact { word : "Each" },
-								space { preferred : True },
-								parser.other { type: $expression  alternate : $expression0 field : $each_expr }
-							]
-						}
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "For" },
+							parser.other { type: $selector  field : $selector },
+							parser.exact { word : "Select" },
+							space { preferred : True },
+							parser.other { type: $expression  alternate : $expression2  field : $expression },
+							space { },
+							parser.except { char : ":" }
+						]
 					}
 					apply_environment_to : [
-						environment.other_elements { fields : [ $each_expr ] },
-						environment.other_elements { fields : [ $result_builder ]  target_flavour : environment.flavour_double },
-						environment.blank_environment {
+						environment.other_with_result {
+							field : $selector
 							apply_to : [
-								environment.other_elements { fields : [ $where_expr ] },
-								environment.modified_environment {
-									apply_to : [ environment.other_elements { fields : [ $result_builder ] } ]
-									name : $result_environment
-								}
+								environment.other_elements { fields : [ $expression ] }
 							]
-							name : $where_environment
 						}
 					]
-					ensure_type_is : ensure_type.propagate { fields : [ $result_builder ] }
-					type_demand : {
-						where_expr : [ known_types.bool ]
-						each_expr : [ known_types.frame ]
-					}
-					# TODO: code_value
-					code_value : codegen.not_implemented {}
+					ensure_type_is : ensure_type.frame { }
+					code_value : codegen.not_implemented { }
+					# TODO
 				}
-				for_merge : Template expression_tmpl {
-					pretty_name : "fricasée merge expression"
+				for_select_named : Template expression_tmpl {
+					pretty_name : "fricassée Select with attribute names"
 					level : 1
-					pattern : for_pattern {
-						selector : Template parser.accumulate_list {
-							field : $inputs
-							type : $fricassee_merge_input
-							in : parser.many_word {
-								of : parser.other {
-									type : $fricassee_merge_input
-									field : Null
-								}
-								separator_word : ","
-							}
-						}
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "For" },
+							parser.other { type: $selector  alternate : $selector1  field : $selector },
+							parser.exact { word : "Select" },
+							space { preferred : True },
+							parser.other { type: $expression  alternate : $expression0 field : $name_expr },
+							space { preferred : True },
+							parser.exact { word : ":" },
+							space { preferred : True },
+							parser.other { type: $expression  alternate : $expression2 field : $value_expr }
+						]
 					}
 					apply_environment_to : [
-						environment.list_of { field : $inputs },
-						environment.other_elements { fields : [ $result_builder ]  target_flavour : environment.flavour_double },
-						environment.modified_environment {
+						environment.other_with_result {
+							field : $selector
 							apply_to : [
-								environment.other_elements { fields : [ $where_expr ] },
-								environment.modified_environment {
-									apply_to : [ environment.other_elements { fields : [ $result_builder ] } ]
-									name : $result_environment
-								}
+								environment.other_elements { fields : [ $name_expr, $value_expr ] }
 							]
-							special_names : [ masks_from_definitions { field : $inputs } ]
-							name : $where_environment
 						}
 					]
-					ensure_type_is : ensure_type.propagate { fields : [ $result_builder ] }
+					ensure_type_is : ensure_type.frame { }
 					type_demand : {
-						where_expr : [ known_types.bool ]
+						name_expr : [ known_types.int, known_types.str ]
+						value_expr : known_types
 					}
-					# TODO: code_value
-					code_value : codegen.not_implemented {}
+					code_value : codegen.not_implemented { }
+					# TODO
+				}
+				for_reduce : Template expression_tmpl {
+					pretty_name : "fricassée Reduce"
+					level : 1
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "For" },
+							parser.other { type: $selector  alternate : $selector1  field : $selector },
+							parser.exact { word : "Reduce" },
+							space { mandatory : True },
+							parser.other { type: $expression  alternate : $expression0  field : $reduce_expr },
+							space { mandatory : True },
+							parser.exact { word : "With" },
+							space { mandatory : True },
+							valid_identifier { field : $initial_name },
+							space { preferred : True },
+							parser.exact { word : ":" },
+							space { preferred : True },
+							parser.other { type: $expression  alternate : $expression2  field : $initial_expr }
+						]
+					}
+					apply_environment_to : [
+						environment.other_elements {
+							fields : [ $initial_expr ]
+						},
+						environment.other_with_result {
+							field : $selector
+							apply_to : [
+								environment.modified_environment {
+									name : $initial_env
+									special_names : [ mask_from_fields { name_field : $initial_name  expr_field : $initial_expr } ]
+									apply_to : [
+										environment.other_elements { fields : [ $reduce_expr ] }
+									]
+								}
+							]
+						}
+					]
+					ensure_type_is : ensure_type.multiple {
+						actions : [
+							ensure_type.propagate { fields : [ $reduce_expr, $initial_expr ] },
+							ensure_type.intrinsic {}
+						]
+					}
+					code_value : codegen.not_implemented { }
+					# TODO
 				}
 
 				if : Template expression_tmpl {

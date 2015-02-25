@@ -469,41 +469,71 @@ static_copy_instance : For field : [ "StartRow", "EndRow", "StartColumn", "EndCo
 # Definitions for environment-handling code. Most of the environment code is
 # defined in the `Environment` and `NameInfo` classes.
 environment : compiler_lib.environment_tmpl {
+	collect +: {
+		class_gen : ""
+		value : "\t\t_return = \(current_environment);\n"
+	}
 	other_elements +: {
 		class_gen : ""
 		value : For field : fields
-			Reduce acc & "\t\tif (\(field) != null) { \(field).Propagate\(target_flavour.name)Environment(_collector, _queue, \(current_environment), ref _success); }\n"
+			Reduce acc & "\t\tif (\(field) != null) { \(field).PropagateEnvironment(_collector, _queue, \(current_environment), ref _success); }\n"
 			With acc : ""
+	}
+	other_with_result +: {
+		current_environment : Id
+		class_gen :
+			For application : apply_to
+				Where !(application Is Null)
+				Reduce acc & application.class_gen
+				With acc : ""
+		value :
+			"\t\tif (_return != null) throw new System.InvalidOperationException(\"Refusing to overwrite return value.\");\n" &
+			"\t\tif (\(field) == null) throw new System.InvalidOperationException(\"Field \(field) in \(rule_name) is empty.\");\n" &
+			"\t\tvar \(current_environment) = \(field).PropagateEnvironment(_collector, _queue, \(Lookup current_environment In Container), ref _success);\n" &
+			"\t\tif (\(current_environment) == null) throw new System.InvalidOperationException(\"Field \(field) in \(rule_name) did not collect and environment.\");\n" &
+			(For application : apply_to
+				Where !(application Is Null)
+				Reduce acc & application.value
+				With acc : "")
+
 	}
 	list_of +: {
 		class_gen : ""
-		value : "\t\tif (\(field) != null) { foreach (var \(Id) in \(field)) \(Id).Propagate\(target_flavour.name)Environment(_collector, _queue, \(current_environment), ref _success); }\n"
+		value : "\t\tif (\(field) != null) { foreach (var \(Id) in \(field)) \(Id).PropagateEnvironment(_collector, _queue, \(current_environment), ref _success); }\n"
 	}
 	list_independent +: {
 		class_gen : ""
-		value : "\t\tif (\(field) != null) { foreach (var \(Id) in \(field)) \(Id).Propagate\(target_flavour.name)Environment(_collector, _queue, new Environment(\(Id).FileName, \(Id).StartRow, \(Id).StartColumn, \(Id).EndRow, \(Id).EndColumn, \(If inherit Then current_environment Else "null"), false, \(If top_level Then "true" Else "false")), ref _success); }\n"
+		value : "\t\tif (\(field) != null) { foreach (var \(Id) in \(field)) \(Id).PropagateEnvironment(_collector, _queue, new Environment(\(Id).FileName, \(Id).StartRow, \(Id).StartColumn, \(Id).EndRow, \(Id).EndColumn, \(If inherit Then current_environment Else "null"), false, \(If top_level Then "true" Else "false")), ref _success); }\n"
 	}
 	blank_environment +: {
 		current_environment : name
 		class_gen :
 			For application : apply_to
+				Where !(application Is Null)
 				Reduce acc & application.class_gen
 				With acc : "\tEnvironment \(name);\n"
 
 		value :
-			"\t\t\(name) = new Environment(FileName, StartRow, StartColumn, EndRow, EndColumn, null, false);" &
-			(For application : apply_to Reduce acc & application.value With acc : "")
+			"\t\t\(name) = new Environment(FileName, StartRow, StartColumn, EndRow, EndColumn, null, false);\n" &
+			(For application : apply_to
+				Where !(application Is Null)
+				Reduce acc & application.value
+				With acc : "")
 	}
 	modified_environment +: {
 		current_environment : name
 		class_gen :
 			For application : apply_to
+				Where !(application Is Null)
 				Reduce acc & application.class_gen
 				With acc : "\tEnvironment \(name);\n"
 		value :
 			"\t\t\(name) = new Environment(FileName, StartRow, StartColumn, EndRow, EndColumn, \(Lookup current_environment In Container), \(If force_back Then "true" Else "false"));\n" &
 			(For special_name : special_names Reduce acc & special_name.value With acc : "") &
-			(For application : apply_to Reduce acc & application.value With acc : "")
+			(For application : apply_to
+				Where !(application Is Null)
+				Reduce acc & application.value
+				With acc : "")
 
 		masks_from_definitions +: {
 			value : "\t\tif (\(field) != null) foreach (var \(Id) in \(field)) {\n" &
@@ -523,55 +553,6 @@ environment : compiler_lib.environment_tmpl {
 	top_level +: {
 		class_gen : ""
 		value : "\t\tif (\(current_environment).TopLevel != \(If desired Then "true" Else "false")) { _success = false; _collector.ReportRawError(this, \"At file-level scope, \(pretty_name) is now allowed.\"); }"
-	}
-	complex_flavour_tmpl : Template flavour_tmpl {
-		enabled : True
-		known_flavours ?:
-		method_gen : Template {
-			value : propagate_code & class_gen
-
-			class_gen :
-				For application : apply_environment_to
-					Where !(application Is Null)
-					Reduce acc & application.class_gen
-					With acc : ""
-
-			propagate_code :
-				For current_flavour : known_flavours
-				Reduce
-					method_acc &
-					"\tinternal override void Propagate\(current_flavour.name)Environment(ErrorCollector _collector, System.Collections.Generic.List<AstTypeableNode> _queue, Environment _environment, ref bool _success) {\n" &
-					"\t\t\(current_flavour.target_field) = _environment;\n" &
-					(If current_flavour.queued Then "\t\t_queue.Add(this);\n" Else "") &
-					(For application : apply_environment_to
-						Where !(application Is Null) && application.flavour.id == current_flavour.id
-						Reduce acc & application.value
-						With acc : "")
-					& "\t}\n"
-				With method_acc : ""
-		}
-	}
-	flavour_none : flavour_tmpl {
-		id : Null
-		enabled : False
-		class_name : "AstNode"
-		method_gen : Template { value : "" }
-	}
-	flavour_simple : complex_flavour_tmpl {
-		id : 0
-		class_name : "AstTypeableNode"
-		name : ""
-		queued : True
-		target_field : "Environment"
-		known_flavours : [ This ]
-	}
-	flavour_double : complex_flavour_tmpl {
-		class_name : "AstTypeableSpecialNode"
-		id : 1
-		name : "Special"
-		queued : False
-		target_field : "SpecialEnvironment"
-		known_flavours : [ flavour_simple, This ]
 	}
 }
 # The correspondence between Flabbergast types in the compiler and their
@@ -1771,13 +1752,30 @@ compiler : compiler_lib.language_tmpl {
 			pattern.parser_gen & "\n\t}\n"
 
 		current_environment : "_environment"
-		environment_methods : environment_flavour.method_gen {}
+		environment_method :
+			If environment_enabled
+				Then
+					"\tinternal override Environment PropagateEnvironment(ErrorCollector _collector, System.Collections.Generic.List<AstTypeableNode> _queue, Environment _environment, ref bool _success) {\n" &
+					"\t\tEnvironment = _environment;\n" &
+					"\t\tEnvironment _return = null;\n" &
+					(If is_typeable Then "\t\t_queue.Add(this);\n" Else "") &
+					(For application : apply_environment_to
+						Where !(application Is Null)
+						Reduce acc & application.value
+						With acc : "")
+					& "\t\treturn _return;\n"
+					& "\t}\n" &
+					(For application : apply_environment_to
+						Where !(application Is Null)
+						Reduce acc & application.class_gen
+						With acc : "")
+				Else ""
 
 		current_type : "_type"
 		type_assurance : If is_typeable
 			Then "\tpublic override void EnsureType(ErrorCollector _collector, Type _type, ref bool _success) {\(ensure_type_is.value)\n\t}\n"
 			Else ""
-		type_demands : If environment_flavour.enabled
+		type_demands : If environment_enabled
 			Then "\tinternal override void MakeTypeDemands(ErrorCollector _collector, ref bool _success) {\n" &
 				(For field : Name, types : type_demand
 					Reduce "\(ensure_acc)\t\tif (\(field) != null) \(field).EnsureType(_collector, " &
@@ -1812,7 +1810,7 @@ compiler : compiler_lib.language_tmpl {
 			"internal class \(class_name) : \(group_name) {\n" &
 			"\tpublic override string PrettyName { get { return \"\(pretty_name)\"; } }\n" &
 			pattern.class_gen &
-			environment_methods.value &
+			environment_method &
 			type_assurance &
 			type_demands &
 			code_gen &
@@ -1901,7 +1899,7 @@ compiler : compiler_lib.language_tmpl {
 		value : For rule : expanded_rules
 			Where rule.is_real_element
 			Reduce acc & rule.class_gen
-			With acc : "internal abstract class \(group_name) : \(environment_flavour.class_name)\(If is_typeable Then ", ITypeableElement" Else "") {\n" &
+			With acc : "internal abstract class \(group_name) : \(If environment_enabled Then "AstTypeableNode" Else "AstNode")\(If is_typeable Then ", ITypeableElement" Else "") {\n" &
 				(If is_typeable Then "\tpublic abstract void EnsureType(ErrorCollector _collector, Type _type, ref bool _success);\n" Else "") &
 				common_field_class_gen &
 				super_class_extra &

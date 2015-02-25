@@ -17,7 +17,7 @@ public enum Type {
 internal abstract class AstTypeableNode : AstNode {
 	protected Environment Environment;
 	internal virtual int EnvironmentPriority { get { return Environment.Priority; } }
-	internal abstract void PropagateEnvironment(ErrorCollector collector, List<AstTypeableNode> queue, Environment environment, ref bool success);
+	internal abstract Environment PropagateEnvironment(ErrorCollector collector, List<AstTypeableNode> queue, Environment environment, ref bool success);
 	internal abstract void MakeTypeDemands(ErrorCollector collector, ref bool _success);
 	public bool Analyse(ErrorCollector collector) {
 		var environment = new Environment (FileName, StartRow, StartColumn, EndRow, EndColumn, null, false);
@@ -128,17 +128,6 @@ internal abstract class AstTypeableNode : AstNode {
 }
 internal interface ITypeableElement {
 	void EnsureType(ErrorCollector collector, Type type, ref bool success);
-}
-internal abstract class AstTypeableSpecialNode : AstTypeableNode {
-	protected Environment SpecialEnvironment;
-	internal override int EnvironmentPriority {
-		get {
-			var ep = Environment == null ? 0 : Environment.Priority;
-			var esp = SpecialEnvironment == null ? 0 : SpecialEnvironment.Priority;
-			return Math.Max(ep, esp);
-		}
-	}
-	internal abstract void PropagateSpecialEnvironment(ErrorCollector collector, List<AstTypeableNode> queue, Environment special_environment, ref bool success);
 }
 internal class EnvironmentPrioritySorter : IComparer<AstTypeableNode> {
 	public int Compare(AstTypeableNode x, AstTypeableNode y) {
