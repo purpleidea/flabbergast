@@ -170,6 +170,8 @@ environment_tmpl : Template {
 	other_with_result : Template application_action {
 		# The field containing the target environment to be collected.
 		field ?:
+		# The name of this environment for later retrieval.
+		name ?:
 		apply_to ?:
 	}
 	# Apply environment to all the other syntax elements in a list.
@@ -560,6 +562,9 @@ kws_tmpl : Template {
 	lookup_field : Template lookup_tmpl {
 		field ?:
 	}
+	lookup_dynamic : Template lookup_tmpl {
+		name ?:
+	}
 	apply_override : Template base_tmpl {
 		override ?:
 		original ?:
@@ -683,12 +688,17 @@ kws_tmpl : Template {
 	# Perform dynamic dispatch of a value. This is slightly different from the VM
 	# specification; it must be combined with `codegen.type_dispatch` for the
 	# full effect.
-	dynamic_type_dispatch : Template codegen.gen_tmpl {
+	dynamic_type_dispatch_tmpl : Template codegen.gen_tmpl {
 		# The code generator which produces an unknown type.
 		of ?:
+	}
+	dynamic_type_dispatch : Template dynamic_type_dispatch_tmpl {
 		# The list of types which this value may take. If the object has a
 		# different type, a run-time error is produced.
 		allow_types ?:
+	}
+	dynamic_type_dispatch_from_intrinsic : Template dynamic_type_dispatch_tmpl {
+		environment : Null
 	}
 	# Create a tuple merge loop using the provided values as inputs.
 	iterator : Template codegen.gen_tmpl {
@@ -704,6 +714,9 @@ kws_tmpl : Template {
 		# A list of the special cases of the iterator. The special cases will
 		# always be invoked, even if they are not present in the input.
 		cases ?:
+		# The type of the accumulator. If null, the type of the initial value is
+		# used.
+		accumulator_type : Null
 
 		# The current attribute name of the iterator. This may only be used in
 		# `default_case` and `cases`.
@@ -750,6 +763,14 @@ kws_tmpl : Template {
 codegen_tmpl : Template {
 	# Base template for all code generation templates and KWS VM templates.
 	gen_tmpl : Template {}
+	# Compute values and make them available in the `parameter` space.
+	bind : Template gen_tmpl {
+		# A frame of names to bind and the values to which they should be bound.
+		define ?:
+		# This is a template to be used for the return. It must be a template for
+		# rebinding to work correctly.
+		in ?:
+	}
 	# Create a null parameter.
 	empty_parameter : Template gen_tmpl {
 		in ?:
@@ -802,6 +823,10 @@ codegen_tmpl : Template {
 		specials_from_definitions : Template lookup_special_tmpl {
 			field ?:
 			target_flavour : generation_flavour
+		}
+		special_from_expression : Template lookup_special_tmpl {
+			field ?:
+			is ?:
 		}
 		no_specials : Template lookup_special_tmpl {}
 	}
@@ -1792,6 +1817,7 @@ language_tmpl : Template {
 		selector : Template nested_syntax_group {
 			max_level : 2
 			environment_enabled : True
+			generation_flavour : codegen.flavour_aware
 			common +: {
 				comment : common_fields.str
 			}
@@ -1817,6 +1843,7 @@ language_tmpl : Template {
 					apply_environment_to : [
 						environment.other_with_result {
 							field : $selector
+							name : $select_env
 							apply_to : [
 								environment.other_elements { fields : [ $expression ] },
 								environment.collect { }
@@ -1824,6 +1851,8 @@ language_tmpl : Template {
 						}
 					]
 					type_demand : { expression : [ known_types.int, known_types.float, known_types.str ] }
+					#TODO
+					code_value : codegen.not_implemented {}
 				}
 				reverse : Template selector_tmpl {
 					level : 0
@@ -1838,11 +1867,14 @@ language_tmpl : Template {
 					apply_environment_to : [
 						environment.other_with_result {
 							field : $selector
+							name : $select_env
 							apply_to : [
 								environment.collect { }
 							]
 						}
 					]
+					#TODO
+					code_value : codegen.not_implemented {}
 				}
 
 				where : Template selector_tmpl {
@@ -1864,6 +1896,7 @@ language_tmpl : Template {
 					apply_environment_to : [
 						environment.other_with_result {
 							field : $selector
+							name : $select_env
 							apply_to : [
 								environment.other_elements { fields : [ $expression ] },
 								environment.collect { }
@@ -1871,6 +1904,8 @@ language_tmpl : Template {
 						}
 					]
 					type_demand : { expression : [ known_types.bool ] }
+					#TODO
+					code_value : codegen.not_implemented {}
 				}
 
 				each : Template selector_tmpl {
@@ -1894,6 +1929,7 @@ language_tmpl : Template {
 					type_demand : {
 						each_expr : [ known_types.frame ]
 					}
+					code_value : codegen.other_code { field : $each_expr }
 				}
 				merge : Template selector_tmpl {
 					level : max_level
@@ -1922,6 +1958,8 @@ language_tmpl : Template {
 							apply_to : [ environment.collect { } ]
 						}
 					]
+					# TODO
+					code_value : codegen.not_implemented {}
 				}
 			}
 		}
@@ -2289,14 +2327,62 @@ language_tmpl : Template {
 					apply_environment_to : [
 						environment.other_with_result {
 							field : $selector
+							name : $expression_environment
 							apply_to : [
 								environment.other_elements { fields : [ $expression ] }
 							]
 						}
 					]
 					ensure_type_is : ensure_type.frame { }
-					code_value : codegen.not_implemented { }
-					# TODO
+					code_value : codegen.bind {
+						define : {
+							result_frame : kws.frame_new {
+								container : parameters.self_frame
+								context : parameters.context
+							}
+						}
+						in : Template kws.iterator {
+							inputs : [ codegen.other_code { field : $selector } ]
+							cases : []
+							initial : kws.numeric_constant {
+								type : known_types.int
+								number : 0
+							}
+
+							default_case : kws.set_frame_or_tmpl {
+								returns : name.source
+
+								name : kws.string_ordinal {
+									source : kws.int_add {
+										left : current_accumulator
+										right : kws.numeric_constant {
+											type : known_types.int
+											number : 1
+										}
+									}
+								}
+								into : parameters.result_frame
+								with : codegen.bind {
+									define : {
+										context : kws.list_prepend {
+											frame : kws.dynamic_type_dispatch {
+												allow_types : [ known_types.frame ]
+												of : kws.lookup_dynamic {
+													name : current_name
+													source : parameters.result_frame
+												}
+											}
+											tail : parameters.context
+										}
+									}
+									in : Template codegen.prepare_lookup_cache {
+										name : $expression_environment
+										in : codegen.other_code { field : $expression }
+									}
+								}
+							}
+						}
+					}
 				}
 				for_select_named : Template expression_tmpl {
 					pretty_name : "fricassée Select with attribute names"
@@ -2317,6 +2403,7 @@ language_tmpl : Template {
 					apply_environment_to : [
 						environment.other_with_result {
 							field : $selector
+							name : $select_env
 							apply_to : [
 								environment.other_elements { fields : [ $name_expr, $value_expr ] }
 							]
@@ -2356,9 +2443,10 @@ language_tmpl : Template {
 						},
 						environment.other_with_result {
 							field : $selector
+							name : $select_env
 							apply_to : [
 								environment.modified_environment {
-									name : $initial_env
+									name : $reduce_env
 									special_names : [ mask_from_fields { name_field : $initial_name  expr_field : $initial_expr } ]
 									apply_to : [
 										environment.other_elements { fields : [ $reduce_expr ] }
@@ -2373,8 +2461,49 @@ language_tmpl : Template {
 							ensure_type.intrinsic {}
 						]
 					}
-					code_value : codegen.not_implemented { }
-					# TODO
+					code_value : kws.dynamic_type_dispatch_from_intrinsic {
+						environment : $reduce_env
+						of : codegen.bind {
+							define : {
+								result_frame : kws.frame_new {
+									container : parameters.self_frame
+									context : parameters.context
+								}
+							}
+							in : Template kws.iterator {
+								accumulator : known_vm_types.any
+								inputs : [ codegen.other_code { field : $selector } ]
+								cases : []
+								initial : codegen.other_code { field : $initial_expr }
+
+								default_case : codegen.bind {
+									define : {
+										context : kws.list_prepend {
+											frame : kws.dynamic_type_dispatch {
+												allow_types : [ known_types.frame ]
+												of : kws.lookup_dynamic {
+													name : current_name
+													source : parameters.result_frame
+												}
+											}
+											tail : parameters.context
+										}
+									}
+									in : Template codegen.prepare_lookup_cache {
+										name : $select_env
+										in : codegen.prepare_lookup_cache {
+											name : $reduce_env
+											specials : special_from_expression {
+												field : $initial_expr
+												is : current_accumulator
+											}
+											in : codegen.other_code { field : $reduce_expr }
+										}
+									}
+								}
+							}
+						}
+					}
 				}
 
 				if : Template expression_tmpl {

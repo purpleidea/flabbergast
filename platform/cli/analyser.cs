@@ -168,8 +168,8 @@ internal abstract class NameInfo {
 	public abstract void EnsureType(ErrorCollector collector, Type type, ref bool success);
 	public abstract void CreateChild(ErrorCollector collector, string name, string root, ref bool success);
 	public virtual LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
-	return null;
-}
+		return null;
+	}
 	public virtual string CheckValidNarrowing(LookupCache next, LookupCache current) {
 		return null;
 	}
@@ -474,6 +474,9 @@ internal class Environment : CodeRegion {
 		} else {
 			IntrinsicTypes[node] = type;
 		}
+	}
+	internal System.Type[] GetIntrinsicRealTypes(AstNode node) {
+		return AstTypeableNode.ClrTypeFromType(IntrinsicTypes[node]);
 	}
 	internal void IntrinsicDispatch(Generator generator, AstNode node, LoadableValue original, Generator.ParameterisedBlock<LoadableValue> block) {
 		foreach (var type in AstTypeableNode.ClrTypeFromType(IntrinsicTypes[node])) {
