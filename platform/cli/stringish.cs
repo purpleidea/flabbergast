@@ -32,11 +32,12 @@ public abstract class Stringish : IComparable<Stringish> {
 		return result;
 	}
 	private bool UpdateIterator(IEnumerator<string> enumerator, ref int offset, bool first) {
-		if (!first && offset < enumerator.Current.Length) {
-			return false;
+		// This is in a loop to consume any empty strings at the end of input.
+		while (first || offset >= enumerator.Current.Length) {
+			if (!enumerator.MoveNext()) return true;
+			offset = 0;
+			first = false;
 		}
-		if (!enumerator.MoveNext()) return true;
-		offset = 0;
 		return false;
 	}
 	public abstract IEnumerator<string> Stream();
