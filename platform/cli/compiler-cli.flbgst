@@ -1550,7 +1550,7 @@ codegen : compiler_lib.codegen_tmpl {
 					indent : indent,
 					code :
 						"\(sum_indent)\(name ?? "Environment").GenerateLookupCache(\(generator), \(specials.initial_cache), \(parameters.source_reference.storage_name), \(specials.context.storage_name), (\(lookup_cache)) => {" &
-						"\(sum_indent)\(generator).DebugPosition(this);" &
+						"\(sum_indent)\t\(generator).DebugPosition(this);" &
 						in.gen_gen(indent : sum_indent & "\t", code : code) &
 						"\(sum_indent)});"
 					)
@@ -1851,7 +1851,7 @@ compiler : compiler_lib.language_tmpl {
 					"\tinternal override Environment PropagateEnvironment(ErrorCollector _collector, System.Collections.Generic.List<AstTypeableNode> _queue, Environment _environment, ref bool _success) {\n" &
 					"\t\tEnvironment = _environment;\n" &
 					"\t\tEnvironment _return = null;\n" &
-					(If is_typeable Then "\t\t_queue.Add(this);\n" Else "") &
+					(If environment_enabled Then "\t\t_queue.Add(this);\n" Else "") &
 					(For application : apply_environment_to
 						Where !(application Is Null)
 						Reduce acc & application.value
