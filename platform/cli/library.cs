@@ -17,26 +17,26 @@ public interface ErrorCollector {
 }
 public class ConsoleCollector : ErrorCollector {
 	public void ReportExpressionTypeError(CodeRegion where, Type new_type, Type existing_type) {
-		Console.WriteLine("{0}:{1}:{2}-{3}:{4}: Expression has conflicting types: {5} versus {6}.", where.FileName, where.StartRow, where.StartColumn, where.EndRow, where.EndColumn, new_type, existing_type);
+		Console.Error.WriteLine("{0}:{1}:{2}-{3}:{4}: Expression has conflicting types: {5} versus {6}.", where.FileName, where.StartRow, where.StartColumn, where.EndRow, where.EndColumn, new_type, existing_type);
 	}
 	public void ReportLookupTypeError(CodeRegion environment, string name, Type new_type, Type existing_type) {
-		Console.WriteLine("{0}:{1}:{2}-{3}:{4}: Lookup for “{5}” has conflicting types: {6} versus {7}.", environment.FileName, environment.StartRow, environment.StartColumn, environment.EndRow, environment.EndColumn, name, new_type, existing_type);
+		Console.Error.WriteLine("{0}:{1}:{2}-{3}:{4}: Lookup for “{5}” has conflicting types: {6} versus {7}.", environment.FileName, environment.StartRow, environment.StartColumn, environment.EndRow, environment.EndColumn, name, new_type, existing_type);
 	}
 	public void ReportForbiddenNameAccess(CodeRegion environment, string name) {
-		Console.WriteLine("{0}:{1}:{2}-{3}:{4}: Lookup for “{5}” is forbidden.", environment.FileName, environment.StartRow, environment.StartColumn, environment.EndRow, environment.EndColumn, name);
+		Console.Error.WriteLine("{0}:{1}:{2}-{3}:{4}: Lookup for “{5}” is forbidden.", environment.FileName, environment.StartRow, environment.StartColumn, environment.EndRow, environment.EndColumn, name);
 	}
 	public void ReportParseError(string filename, int index, int row, int column, string message) {
-		Console.WriteLine("{0}:{1}:{2}: {3}", filename, row, column, message);
+		Console.Error.WriteLine("{0}:{1}:{2}: {3}", filename, row, column, message);
 	}
 	public void ReportRawError(CodeRegion where, string message) {
-		Console.WriteLine("{0}:{1}:{2}-{3}:{4}: {5}", where.FileName, where.StartRow, where.StartColumn, where.EndRow, where.EndColumn, message);
+		Console.Error.WriteLine("{0}:{1}:{2}-{3}:{4}: {5}", where.FileName, where.StartRow, where.StartColumn, where.EndRow, where.EndColumn, message);
 	}
 }
 
 public class ConsoleTaskMaster : TaskMaster {
 	public override void ReportOtherError(SourceReference reference, string message) {
-		Console.WriteLine(message);
-		reference.Write(Console.Out, 0, "  ");
+		Console.Error.WriteLine(message);
+		reference.Write(Console.Error, 0, "  ");
 	}
 }
 }
