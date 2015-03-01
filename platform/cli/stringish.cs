@@ -5,7 +5,7 @@ using System.IO;
 namespace Flabbergast {
 public abstract class Stringish : IComparable<Stringish> {
 	public static Stringish[] BOOLEANS = new Stringish[] { new SimpleStringish("False"), new SimpleStringish("True") };
-	public abstract int Length { get; }
+	public abstract long Length { get; }
 	public abstract void Write(TextWriter writer);
 	public int CompareTo(Stringish other) {
 		var this_stream = this.Stream();
@@ -50,7 +50,7 @@ public abstract class Stringish : IComparable<Stringish> {
 
 public class SimpleStringish : Stringish {
 	private string str;
-	public override int Length { get { return str.Length; } }
+	public override long Length { get { return str.Length; } }
 	public SimpleStringish(string str) {
 		this.str = str;
 	}
@@ -65,8 +65,8 @@ public class SimpleStringish : Stringish {
 public class ConcatStringish : Stringish {
 	private Stringish head;
 	private Stringish tail;
-	private int chars;
-	public override int Length { get { return chars; } }
+	private long chars;
+	public override long Length { get { return chars; } }
 	public ConcatStringish(Stringish head, Stringish tail) {
 		this.head = head;
 		this.tail = tail;
