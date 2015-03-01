@@ -26,8 +26,16 @@ The self-hosting compiler is rather strange, as it is not really self-hosting. T
 
 Each platform also contains an implementation of the runtime library and non-portable pieces of each library.
 
+## Patches
+Patches are welcome and patches are preferred to whining. For details, see [Conduct unbecoming of a hacker](http://sealedabstract.com/rants/conduct-unbecoming-of-a-hacker/). In general, the rules are as follows:
+
+- It is very important that the language stays in a small sandbox. Free roaming of the host system or the Internet is not permitted.
+- Changes to the compiler or runtime that are invisible to user are welcome. Bonus points if you apply an improvement to multiple platforms.
+- Changes to the libraries are welcome with two conditions: names are `lower_snake_case` and if the interface of a platform-dependent library is changed, the other implementations get updated, even if they are stubs that throw “not implemented” errors.
+- Every change to the language itself is a tattoo. We must be conservative and sure that we aren't getting a face tattoo we will regret later. Expect slow and cautious. Many things deserve to be put in the `X` experimental keyword name space until a community process gives feedback.
+
 ## Miscellaneous
-The Flabbergast langauge would not be possible without the help of [Kyle](https://github.com/edarc) and Jonathan.
+The Flabbergast language would not be possible without the help of [Kyle](https://github.com/edarc) and Jonathan.
 
 The logo is the worst symbolic representation of contextual lookup, previously called inside-out lookup.
 
