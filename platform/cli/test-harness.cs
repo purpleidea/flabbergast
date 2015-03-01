@@ -103,29 +103,39 @@ public class TestHarness {
 		}
 		var task_master = new TestTaskMaster();
 		foreach (var file in GetFiles(root, "errors")) {
-			var collector = new DirtyCollector();
-			var parser = Parser.Open(file);
- 			var test_type = parser.ParseFile(collector, unit, "Test" + id++);
-			var success = collector.AnalyseDirty;
-			if (!success && test_type != null) {
-				var tester = new CheckResult(task_master, test_type);
-				task_master.Slot(tester);
-				task_master.Run();
-				success = !tester.Success;
+			bool success;
+			try {
+				var collector = new DirtyCollector();
+				var parser = Parser.Open(file);
+				var test_type = parser.ParseFile(collector, unit, "Test" + id++);
+				success = collector.AnalyseDirty;
+				if (!success && test_type != null) {
+					var tester = new CheckResult(task_master, test_type);
+					task_master.Slot(tester);
+					task_master.Run();
+					success = !tester.Success;
+				}
+			} catch (Exception) {
+				success = false;
 			}
 			System.Console.WriteLine("{0} {1} {2} {3}", success ? "----" : "FAIL", "E", type, Path.GetFileNameWithoutExtension(file));
 			all_succeeded &= success;
 		}
 		foreach (var file in GetFiles(root, "working")) {
-			var collector = new DirtyCollector();
-			var parser = Parser.Open(file);
- 			var test_type = parser.ParseFile(collector, unit, "Test" + id++);
-			var success = !collector.AnalyseDirty && !collector.ParseDirty;
-			if (success && test_type != null) {
-				var tester = new CheckResult(task_master, test_type);
-				task_master.Slot(tester);
-				task_master.Run();
-				success = tester.Success;
+			bool success;
+			try {
+				var collector = new DirtyCollector();
+				var parser = Parser.Open(file);
+				var test_type = parser.ParseFile(collector, unit, "Test" + id++);
+				success = !collector.AnalyseDirty && !collector.ParseDirty;
+				if (success && test_type != null) {
+					var tester = new CheckResult(task_master, test_type);
+					task_master.Slot(tester);
+					task_master.Run();
+					success = tester.Success;
+				}
+			} catch (Exception) {
+				success = false;
 			}
 			System.Console.WriteLine("{0} {1} {2} {3}", success ? "----" : "FAIL", "W", type, Path.GetFileNameWithoutExtension(file));
 			all_succeeded &= success;
