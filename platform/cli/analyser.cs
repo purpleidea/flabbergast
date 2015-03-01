@@ -242,12 +242,15 @@ internal class JunkInfo : NameInfo {
 internal class BoundNameInfo : NameInfo {
 	private Environment Environment;
 	ITypeableElement Target;
+	public Type RestrictedType { get; private set; }
 	public BoundNameInfo(Environment environment, string name, ITypeableElement target) {
+		RestrictedType = AnyType;
 		Environment = environment;
 		Name = name;
 		Target = target;
 	}
 	public override void EnsureType(ErrorCollector collector, Type type, ref bool success) {
+		RestrictedType &= type;
 		Target.EnsureType(collector, type, ref success);
 	}
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
@@ -307,6 +310,8 @@ internal class LoadableCache {
 	public NameInfo NameInfo { get; private set; }
 	public bool SinglyTyped { get { return Types.Length == 1; } }
 	public System.Type[] Types { get; private set; }
+	public LoadableCache(LoadableValue loadable_value, BoundNameInfo name_info) : this(loadable_value, name_info.RestrictedType, name_info) {
+	}
 	public LoadableCache(LoadableValue loadable_value, Type type, NameInfo name_info) {
 		Value = loadable_value;
 		PossibleTypes = type;
@@ -343,11 +348,13 @@ internal class Environment : CodeRegion {
 		this.top_level = top_level;
 	}
 
-	internal NameInfo AddMask(string name, ITypeableElement expression) {
+	internal BoundNameInfo AddMask(string name, ITypeableElement expression) {
 		if (Children.ContainsKey(name)) {
 			throw new InvalidOperationException("The name " + name + " already exists in the environment.");
 		}
-		return Children[name] = new BoundNameInfo(this, name, expression);
+		var nameinfo = new BoundNameInfo(this, name, expression);
+		Children[name] = nameinfo;
+		return nameinfo;
 	}
 	public NameInfo AddOverrideName(string name) {
 		return Children[name] = new OverrideNameInfo(this, name);
@@ -355,8 +362,33 @@ internal class Environment : CodeRegion {
 	internal void AddForbiddenName(string name) {
 		Children[name] = null;
 	}
-	internal void GenerateLookupCache(Generator generator, LookupCache current, LoadableValue source_reference, LoadableValue context, Generator.ParameterisedBlock<LookupCache> block) {
+	public delegate void Block(LoadableValue context, LookupCache cache);
+	internal void GenerateLookupCache(Generator generator, RevCons<Tuple<string, LoadableCache>> specials, LookupCache current, LoadableValue source_reference, LoadableValue context, LoadableValue self_frame, Block block) {
 		generator.DebugPosition(this);
+		var lookup_results = new List<LoadableCache>();
+		if (specials != null) {
+			var child_context = generator.MakeField("anon_frame", typeof(Context));
+			generator.Builder.Emit(OpCodes.Ldarg_0);
+			generator.LoadTaskMaster();
+			generator.GenerateNextId();
+			source_reference.Load(generator);
+			context.Load(generator);
+			self_frame.Load(generator);
+			generator.Builder.Emit(OpCodes.Newobj, typeof(Frame).GetConstructors()[0]);
+			foreach (var entry in specials.ToArray()) {
+				generator.Builder.Emit(OpCodes.Dup);
+				generator.Builder.Emit(OpCodes.Ldstr, entry.Item1);
+				generator.LoadReboxed(entry.Item2.Value, typeof(object));
+				generator.Builder.Emit(OpCodes.Call, typeof(Frame).GetMethod("set_Item", new System.Type[] { typeof(string), typeof(object) }));
+				lookup_results.Add(entry.Item2);
+			}
+			context.Load(generator);
+			generator.Builder.Emit(OpCodes.Call, typeof(Context).GetMethod("Prepend", new System.Type[] { typeof(Frame), typeof(Context) }));
+			generator.Builder.Emit(OpCodes.Stfld, child_context.Field);
+			// Promote the context with the specials to proper status
+			context = child_context;
+		}
+
 		var base_lookup_cache = new LookupCache(current);
 		var all_children = new List<NameInfo>();
 		string narrow_error = null;
@@ -387,11 +419,12 @@ internal class Environment : CodeRegion {
 		foreach (var info in all_children) {
 			load_count += info.NeedsLoad() ? 1 : 0;
 		}
-		var lookup_results = new List<LoadableCache>();
 		if (load_count > 0) {
 			generator.StartInterlock(load_count);
 			foreach (var info in all_children) {
-				lookup_results.Add(info.Load(generator, source_reference, context));
+				if (info.NeedsLoad()) {
+					lookup_results.Add(info.Load(generator, source_reference, context));
+				}
 			}
 			generator.StopInterlock();
 		}
@@ -404,11 +437,11 @@ internal class Environment : CodeRegion {
 			generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", lookup_result.Value.BackingType, lookup_result.NameInfo.Name, "{0}"), lookup_result.Value);
 			generator.Builder.MarkLabel(label);
 		}
-		GenerateLookupPermutation(generator, base_lookup_cache, 0, lookup_results.Where(x => !x.SinglyTyped).ToArray(), source_reference, block);
+		GenerateLookupPermutation(generator, context, base_lookup_cache, 0, lookup_results.Where(x => !x.SinglyTyped).ToArray(), source_reference, block);
 	}
-	private void GenerateLookupPermutation(Generator generator, LookupCache cache, int index, LoadableCache[] values, LoadableValue source_reference, Generator.ParameterisedBlock<LookupCache> block) {
+	private void GenerateLookupPermutation(Generator generator, LoadableValue context, LookupCache cache, int index, LoadableCache[] values, LoadableValue source_reference, Block block) {
 		if (index >= values.Length) {
-			block(cache);
+			block(context, cache);
 			generator.DebugPosition(this);
 			return;
 		}
@@ -424,7 +457,7 @@ internal class Environment : CodeRegion {
 			generator.Builder.MarkLabel(labels[it]);
 			var sub_cache = new LookupCache(cache);
 			sub_cache[values[index].NameInfo] = new AutoUnboxValue(values[index].Value, values[index].Types[it]);
-			GenerateLookupPermutation(generator, sub_cache, index + 1, values, source_reference, block);
+			GenerateLookupPermutation(generator, context, sub_cache, index + 1, values, source_reference, block);
 		}
 	}
 	public NameInfo Lookup(ErrorCollector collector, IEnumerable<string> names, ref bool success) {
@@ -476,7 +509,12 @@ internal class Environment : CodeRegion {
 		}
 	}
 	internal System.Type[] GetIntrinsicRealTypes(AstNode node) {
-		return AstTypeableNode.ClrTypeFromType(IntrinsicTypes[node]);
+		if (IntrinsicTypes.ContainsKey(node)) {
+			return AstTypeableNode.ClrTypeFromType(IntrinsicTypes[node]);
+		} else if (Parent != null) {
+			return Parent.GetIntrinsicRealTypes(node);
+		}
+		throw new InvalidOperationException("There is no intrinsic type for the node requested. This a compiler bug.");
 	}
 	internal void IntrinsicDispatch(Generator generator, AstNode node, LoadableValue original, Generator.ParameterisedBlock<LoadableValue> block) {
 		foreach (var type in AstTypeableNode.ClrTypeFromType(IntrinsicTypes[node])) {

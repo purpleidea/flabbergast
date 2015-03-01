@@ -480,7 +480,7 @@ environment : compiler_lib.environment_tmpl {
 			With acc : ""
 	}
 	other_with_result +: {
-		current_environment : name ?? Id
+		current_environment : name
 		class_gen :
 			For application : apply_to
 				Where !(application Is Null)
@@ -492,7 +492,7 @@ environment : compiler_lib.environment_tmpl {
 		value :
 			"\t\tif (_return != null) throw new System.InvalidOperationException(\"Refusing to overwrite return value.\");\n" &
 			"\t\tif (\(field) == null) throw new System.InvalidOperationException(\"Field \(field) in \(rule_name) is empty.\");\n" &
-			"\t\tvar \(current_environment) = \(field).PropagateEnvironment(_collector, _queue, \(Lookup current_environment In Container), ref _success);\n" &
+			"\t\t\(current_environment) = \(field).PropagateEnvironment(_collector, _queue, \(Lookup current_environment In Container), ref _success);\n" &
 			"\t\tif (\(current_environment) == null) throw new System.InvalidOperationException(\"Field \(field) in \(rule_name) did not collect and environment.\");\n" &
 			(For application : apply_to
 				Where !(application Is Null)
@@ -526,10 +526,13 @@ environment : compiler_lib.environment_tmpl {
 	modified_environment +: {
 		current_environment : name
 		class_gen :
-			For application : apply_to
+			(For application : apply_to
 				Where !(application Is Null)
 				Reduce acc & application.class_gen
-				With acc : "\tEnvironment \(name);\n"
+				With acc : "\tEnvironment \(name);\n") &
+			(For special_name : special_names
+				Reduce acc & special_name.class_gen
+				With acc : "")
 		value :
 			"\t\t\(name) = new Environment(FileName, StartRow, StartColumn, EndRow, EndColumn, \(Lookup current_environment In Container), \(If force_back Then "true" Else "false"));\n" &
 			(For special_name : special_names Reduce acc & special_name.value With acc : "") &
@@ -542,15 +545,19 @@ environment : compiler_lib.environment_tmpl {
 			value : "\t\tif (\(field) != null) foreach (var \(Id) in \(field)) {\n" &
 				"\t\t\t\(Id).AddMask(_collector, \(current_environment));\n" &
 				"\t\t}\n"
+			class_gen : ""
 		}
 		mask_from_fields +: {
-			value : "\t\t\(current_environment).AddMask(\(name_field).ToString(), \(expr_field));\n"
+			value : "\t\t\(type_storage) = \(current_environment).AddMask(\(name_field).ToString(), \(expr_field));\n"
+			class_gen : "\tBoundNameInfo \(type_storage);\n"
 		}
 		override_name_from_field +: {
 			value : "\t\t\(current_environment).AddOverrideName(\(field).ToString());\n"
+			class_gen : ""
 		}
 		forbidden_name_from_field +: {
 			value : "\t\t\(current_environment).AddForbiddenName(\(field).ToString());\n"
+			class_gen : ""
 		}
 	}
 	top_level +: {
@@ -1541,15 +1548,21 @@ codegen : compiler_lib.codegen_tmpl {
 		storage_name : in.storage_name
 		parent_context : Lookup parameters.context In Container
 		parent_lookup_cache : Lookup lookup_cache In Container
-		parameters : { context : specials.context }
-		lookup_cache : Id
+		parameters : {
+			context : codegen.gen_tmpl {
+				extra_indent : ""
+				storage_name : new_context
+			}
+		}
+		lookup_cache : Id & "_cache"
+		new_context : Id & "_context"
 		gen_gen +: {
 			sum_indent : indent & specials.extra_indent
 			value :
 				specials.gen_gen(
 					indent : indent,
 					code :
-						"\(sum_indent)\(name ?? "Environment").GenerateLookupCache(\(generator), \(specials.initial_cache), \(parameters.source_reference.storage_name), \(specials.context.storage_name), (\(lookup_cache)) => {" &
+						"\(sum_indent)\(name ?? "Environment").GenerateLookupCache(\(generator), \(specials.raw_material), \(parent_lookup_cache), \(parameters.source_reference.storage_name), \(parent_context.storage_name), \(parameters.self_frame.storage_name), (\(new_context), \(lookup_cache)) => {" &
 						"\(sum_indent)\t\(generator).DebugPosition(this);" &
 						in.gen_gen(indent : sum_indent & "\t", code : code) &
 						"\(sum_indent)});"
@@ -1557,103 +1570,48 @@ codegen : compiler_lib.codegen_tmpl {
 		}
 		lookup_special_tmpl +: {
 			extra_indent : ""
-			initial_cache ?:
-			context ?:
+			raw_material ?:
 			gen_gen : Template {
 				code ?:
 				indent ?:
 			}
+
+			# This is here so that our call to the generate of the named elements
+			# uses the original lookup context.
+			parameters : { context : parent_context }
+			# Restore the lookup cache for the child definitions
+			lookup_cache : parent_lookup_cache
 		}
 		no_specials +: {
-			initial_cache : parent_lookup_cache
-			context : parent_context
+			raw_material : "null"
 			gen_gen +: {
 				value : code
 			}
 		}
 		specials_from_definitions +: {
 			extra_indent : "\t"
-			initial_cache : Id
-			context : codegen.gen_tmpl {
-				extra_indent : ""
-			}
-			# This is here so that our call to the generate of the named elements
-			# uses the original lookup context.
-			parameters : { context : parent_context }
-			# Restore the lookup cache for the child definitions
-			lookup_cache : parent_lookup_cache
-			argument_list :"\(generator), " &
+			raw_material : Id
+			argument_list : "\(generator), " &
 				(If target_flavour.non_accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
 				(target_flavour.non_accumulate_flavour.call_site {}).value
 
 			gen_gen +: {
 				value :
-					"\(indent)var \(Id)_frame = \(generator).MakeField(\"anon_frame\", typeof(Frame));" &
-					"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
-					"\(indent)\(generator).LoadTaskMaster();" &
-					"\(indent)\(generator).GenerateNextId();" &
-					"\(indent)\(parameters.source_reference.storage_name).Load(\(generator));" &
-					"\(indent)\(parameters.context.storage_name).Load(\(generator));" &
-					"\(indent)\(parameters.self_frame.storage_name).Load(\(generator));" &
-					"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(Frame).GetConstructors()[0]);" &
-					"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(Id)_frame.Field);" &
-					"\(indent)\(generator).Fold(\(parent_lookup_cache), \(field), (\(Id)_index, \(Id)_item, \(Id)_cache, \(Id)_block) =>" &
+					"\(indent)\(generator).Fold((RevCons<System.Tuple<string, LoadableCache>>) null, \(field), (\(Id)_index, \(Id)_item, \(Id)_revcons, \(Id)_block) =>" &
 					"\(indent)\t\(Id)_item.Generate(\(argument_list)(\(Id)_result) => {" &
 					"\(indent)\t\t\(generator).DebugPosition(this);" &
-					"\(indent)\t\tvar \(Id)_new_cached = new LookupCache(\(Id)_cache);" &
-					"\(indent)bool \(Id)_junk = true;" &
-					"\(indent)\t\t\(Id)_new_cached[\(name ?? "Environment").Lookup(null, System.Linq.Enumerable.Repeat(\(Id)_item.name.ToString(), 1), ref \(Id)_junk)] = \(Id)_result;" &
-					"\(indent)\t\t\(Id)_frame.Load(\(generator));" &
-					"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(Id)_item.name.ToString());" &
-					"\(indent)\t\t\(generator).LoadReboxed(\(Id)_result, typeof(object));" &
-					"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Frame).GetMethod(\"set_Item\", new System.Type[] { typeof(string), typeof(object) }));" &
-					"\(indent)\t\t\(Id)_block(\(Id)_new_cached);" &
-					"\(indent)}), (\(initial_cache)) => {" &
-					"\(indent)\t\(generator).DebugPosition(this);" &
-					"\(indent)\tvar \(context.storage_name) = \(generator).MakeField(\"subcontext\", typeof(Context));" &
-					"\(indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
-					"\(indent)\t\(Id)_frame.Load(\(generator));" &
-					"\(indent)\t\(parent_context.storage_name).Load(\(generator));" &
-					"\(indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Context).GetMethod(\"Prepend\", new System.Type[] { typeof(Frame), typeof(Context) }));" &
-					"\(indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(context.storage_name).Field);" &
+					"\(indent)\t\t\(Id)_block(new RevCons<System.Tuple<string, LoadableCache>>(new System.Tuple<string, LoadableCache>(\(Id)_item.name.ToString(), new LoadableCache(\(Id)_result, \(Id)_item.BoundInfo)), null));" &
+					"\(indent)}), (\(raw_material)) => {" &
 					code &
 					"\(indent)});"
 			}
 		}
 		special_from_expression +: {
 			extra_indent : is.extra_indent
-			initial_cache : Id
-			context : codegen.gen_tmpl {
-				extra_indent : ""
-			}
-			# This is here so that our call to the generate of the named elements
-			# uses the original lookup context.
-			parameters : { context : parent_context }
-			# Restore the lookup cache for the child definitions
-			lookup_cache : parent_lookup_cache
+			raw_material : "new RevCons<System.Tuple<string, LoadableCache>>(new System.Tuple<string, LoadableCache>(\(field).ToString(), new LoadableCache(\(is.storage_name), \(type_storage))), null)"
 			gen_gen +: {
 				sum_indent : indent & is.extra_indent
-				base_code :
-					"\(sum_indent)\tvar \(context.storage_name) = \(generator).MakeField(\"subcontext\", typeof(Context));" &
-					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
-					"\(sum_indent)\(generator).LoadTaskMaster();" &
-					"\(sum_indent)\(generator).GenerateNextId();" &
-					"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));" &
-					"\(sum_indent)\(parameters.context.storage_name).Load(\(generator));" &
-					"\(sum_indent)\(parameters.self_frame.storage_name).Load(\(generator));" &
-					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(Frame).GetConstructors()[0]);" &
-					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
-					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(field).ToString());" &
-					"\(sum_indent)\t\t\(generator).LoadReboxed(\(is.storage_name), typeof(object));" &
-					"\(sum_indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Frame).GetMethod(\"set_Item\", new System.Type[] { typeof(string), typeof(object) }));" &
-					"\(sum_indent)\t\(parent_context.storage_name).Load(\(generator));" &
-					"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Context).GetMethod(\"Prepend\", new System.Type[] { typeof(Frame), typeof(Context) }));" &
-					"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(context.storage_name).Field);" &
-					"\(sum_indent)var \(initial_cache) = new LookupCache(\(parent_lookup_cache));" &
-					"\(sum_indent)bool \(Id)_junk = true;" &
-					"\(sum_indent)\(initial_cache)[\(name ?? "Environment").Lookup(null, System.Linq.Enumerable.Repeat(\(field).ToString(), 1), ref \(Id)_junk)] = \(is.storage_name);" &
-					code
-				value : is.gen_gen(indent : indent, code : base_code)
+				value : is.gen_gen(indent : indent, code : code)
 			}
 		}
 	}
@@ -2043,7 +2001,7 @@ compiler : compiler_lib.language_tmpl {
 			super_class_extra : "\tinternal void AddMask(ErrorCollector collector, Environment environment) { environment.AddMask(name.ToString(), this); }\n"
 		}
 		named_definition +: {
-			super_class_extra : "\tinternal void AddMask(ErrorCollector collector, Environment environment) { environment.AddMask(name.ToString(), this); }\n"
+			super_class_extra : "\tinternal void AddMask(ErrorCollector collector, Environment environment) { BoundInfo = environment.AddMask(name.ToString(), this); }\n\tinternal BoundNameInfo BoundInfo;\n"
 		}
 		identifier +: {
 			rules +: {

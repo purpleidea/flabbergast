@@ -228,6 +228,8 @@ environment_tmpl : Template {
 			name_field ?:
 			# The field containing the expression to mask.
 			expr_field ?:
+			# Stores the type occurring at the bottleneck.
+			type_storage ?:
 		}
 		# Create a name backed by an override definition.
 		override_name_from_field : Template {
@@ -825,6 +827,7 @@ codegen_tmpl : Template {
 			target_flavour : generation_flavour
 		}
 		special_from_expression : Template lookup_special_tmpl {
+			type_storage ?:
 			field ?:
 			is ?:
 		}
@@ -1655,13 +1658,29 @@ language_tmpl : Template {
 						into : parameters.target
 						with : kws.apply_override {
 							override : kws.create_override_function {
-								returns : codegen.push_source_reference {
-									in : codegen.prepare_lookup_cache {
-										in : codegen.prepare_lookup_cache {
-											in : codegen.other_code { field : $expression }
-											name : $inner_environment
+								returns : codegen.bind {
+									define : {
+										context : kws.list_prepend {
+											frame : kws.set_frame_or_tmpl_from_field {
+												name_field : $temporary_name
+												returns : into
+												into : kws.frame_new {
+													container : parameters.self_frame
+													context : parameters.context
+												}
+												with : parameters.original_value
+											}
+											tail : parameters.context
 										}
-										name : Null
+									}
+									in : Template codegen.push_source_reference {
+										in : codegen.prepare_lookup_cache {
+											in : codegen.prepare_lookup_cache {
+												in : codegen.other_code { field : $expression }
+												name : $inner_environment
+											}
+											name : Null
+										}
 									}
 								}
 							}
@@ -2447,7 +2466,11 @@ language_tmpl : Template {
 							apply_to : [
 								environment.modified_environment {
 									name : $reduce_env
-									special_names : [ mask_from_fields { name_field : $initial_name  expr_field : $initial_expr } ]
+									special_names : [ mask_from_fields {
+										name_field : $initial_name
+										expr_field : $initial_expr
+										type_storage : $bottleneck_type
+									} ]
 									apply_to : [
 										environment.other_elements { fields : [ $reduce_expr ] }
 									]
