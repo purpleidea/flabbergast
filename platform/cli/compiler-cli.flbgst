@@ -1216,6 +1216,9 @@ kws : compiler_lib.kws_tmpl {
 	dynamic_type_dispatch_from_intrinsic +: {
 		type_list : "\(environment ?? "Environment").GetIntrinsicRealTypes(this)"
 	}
+	dynamic_type_dispatch_from_stored_mask +: {
+		type_list : "AstTypeableNode.ClrTypeFromType(\(type_storage).RestrictedType)"
+	}
 	iterator +: {
 		extra_indent : For input : inputs Reduce input.extra_indent & acc With acc : initial.extra_indent
 		input_indents : For input_name : Name, input : inputs, input_pos : Ordinal

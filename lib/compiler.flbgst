@@ -702,6 +702,9 @@ kws_tmpl : Template {
 	dynamic_type_dispatch_from_intrinsic : Template dynamic_type_dispatch_tmpl {
 		environment : Null
 	}
+	dynamic_type_dispatch_from_stored_mask : Template dynamic_type_dispatch_tmpl {
+		type_storage ?:
+	}
 	# Create a tuple merge loop using the provided values as inputs.
 	iterator : Template codegen.gen_tmpl {
 		# The code generation to produce frames and templates over which to be
