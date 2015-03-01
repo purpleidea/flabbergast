@@ -50,7 +50,6 @@ public class ConsoleTaskMaster : TaskMaster {
 		Console.Error.WriteLine("|");
 		var known_frames = new Dictionary<Frame, string>();
 		var frame_list = new List<Frame>();
-		var frame_id = 1;
 		var null_text = "| ".PadRight(col_width + 2, ' ');
 		for(var frame_it = 0; frame_it < lookup.FrameCount; frame_it++) {
 			for(var name_it = 0; name_it < lookup.NameCount; name_it++) {
@@ -60,8 +59,8 @@ public class ConsoleTaskMaster : TaskMaster {
 					continue;
 				}
 				if (!known_frames.ContainsKey(frame)) {
-					known_frames[frame] = (frame_id++).ToString().PadRight(col_width, ' ');
 					frame_list.Add(frame);
+					known_frames[frame] = frame_list.Count.ToString().PadRight(col_width, ' ');
 				}
 				Console.Error.Write("| {0}", known_frames[frame]);
 			}
