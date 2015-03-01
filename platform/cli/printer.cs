@@ -39,6 +39,8 @@ public class PrintResult : Computation {
 			} else {
 				System.IO.File.WriteAllText(output_filename, result.ToString(), System.Text.Encoding.UTF8);
 			}
+		} else {
+			Console.Error.WriteLine("Cowardly refusing to print result of type {0}.", result.GetType());
 		}
 	}
 }
