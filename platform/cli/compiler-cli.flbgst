@@ -1652,7 +1652,7 @@ codegen : compiler_lib.codegen_tmpl {
 		}
 		gen_gen +: {
 			value :
-				"\(indent)var \(new_source_reference) = \(generator).PushSourceReference(this, \(parent_source_reference));" &
+				"\(indent)var \(new_source_reference) = \(generator).PushSourceReference(\(syntax ?? "this"), \(parent_source_reference));" &
 				in.gen_gen(indent : indent, code : code)
 		}
 	}

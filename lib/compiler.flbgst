@@ -853,6 +853,7 @@ codegen_tmpl : Template {
 	push_source_reference : Template gen_tmpl {
 		in ?:
 		inherit : True
+		syntax : Null
 	}
 	# Return all possible future types given the limits that were discovered
 	# during analysis.
