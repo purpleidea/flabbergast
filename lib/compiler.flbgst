@@ -783,6 +783,9 @@ codegen_tmpl : Template {
 		# rebinding to work correctly.
 		in ?:
 	}
+	# Causes the program to stop running.
+	die : Template gen_tmpl {
+	}
 	# Create a null parameter.
 	empty_parameter : Template gen_tmpl {
 		in ?:
