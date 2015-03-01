@@ -968,7 +968,7 @@ kws : compiler_lib.kws_tmpl {
 
 			value :
 				"\(indent)var \(storage_name) = new DelegateValue(\(parent_generator).Owner.\(method)(this, \"\(Id)\", (\(generator)\(argument_list)) => {"	&
-				"\(indent)\t\t\(generator).DebugPosition(this);" &
+				"\(indent)\t\(generator).DebugPosition(this);" &
 				returns.gen_gen(indent : indent & "\t", code : return_code) &
 				"\(indent)}), typeof(\(delegate_type)));" &
 				code
