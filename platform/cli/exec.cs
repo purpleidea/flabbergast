@@ -152,8 +152,12 @@ public abstract class TaskMaster {
 	/**
 	 * Report an error during lookup.
 	 */
-	public virtual void ReportLookupError(Lookup lookup) {
-		ReportOtherError(lookup.SourceReference, String.Format("Undefined name “{0}”.", lookup.Name));
+	public virtual void ReportLookupError(Lookup lookup, System.Type fail_type) {
+		if (fail_type == null) {
+			ReportOtherError(lookup.SourceReference, String.Format("Undefined name “{0}”. Lookup was as follows:", lookup.Name));
+		} else {
+			ReportOtherError(lookup.SourceReference, String.Format("Non-frame type {1} while resolving name “{0}”. Lookup was as follows:", lookup.Name, fail_type));
+		}
 	}
 
 	/**
@@ -241,7 +245,7 @@ public class Lookup : Computation {
 
 			// If this is not a frame, but there are still more names, then this is an error.
 			if (!(values[frame, name] is Frame)) {
-				master.ReportLookupError(this);
+				master.ReportLookupError(this, values[frame, name].GetType());
 				return false;
 			}
 
@@ -260,7 +264,7 @@ public class Lookup : Computation {
 			}
 		}
 		// The name is undefined.
-		master.ReportLookupError(this);
+		master.ReportLookupError(this, null);
 		return false;
 	}
 }

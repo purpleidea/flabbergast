@@ -34,8 +34,12 @@ public class ConsoleCollector : ErrorCollector {
 }
 
 public class ConsoleTaskMaster : TaskMaster {
-	public override void ReportLookupError(Lookup lookup) {
-		Console.Error.WriteLine("Undefined name “{0}”. Lookup was as follows:", lookup.Name);
+	public override void ReportLookupError(Lookup lookup, System.Type fail_type) {
+		if (fail_type == null) {
+			Console.Error.WriteLine("Undefined name “{0}”. Lookup was as follows:", lookup.Name);
+		} else {
+			Console.Error.WriteLine("Non-frame type {1} while resolving name “{0}”. Lookup was as follows:", lookup.Name, fail_type);
+		}
 		var col_width = Math.Max((int)Math.Log(lookup.FrameCount, 10) + 1, 3);
 		for(var name_it = 0; name_it < lookup.NameCount; name_it++) {
 			col_width = Math.Max(col_width, lookup.GetName(name_it).Length);
@@ -47,7 +51,7 @@ public class ConsoleTaskMaster : TaskMaster {
 		var known_frames = new Dictionary<Frame, string>();
 		var frame_list = new List<Frame>();
 		var frame_id = 1;
-		var null_text = "| ".PadRight(col_width, ' ');
+		var null_text = "| ".PadRight(col_width + 2, ' ');
 		for(var frame_it = 0; frame_it < lookup.FrameCount; frame_it++) {
 			for(var name_it = 0; name_it < lookup.NameCount; name_it++) {
 				var frame = lookup[name_it, frame_it];
