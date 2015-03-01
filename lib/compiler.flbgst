@@ -1210,7 +1210,12 @@ language_tmpl : Template {
 		# The KWS VM operation to perform when the operands are floating point numbers.
 		float_operation ?:
 		apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
-		ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
+		ensure_type_is : ensure_type.number {
+			ensure_type_of : propagate {
+				fields : [ $expression ]
+				extra_types : [ known_types.int ]
+			}
+		}
 		pattern : parser.sequence {
 			of : [
 				space { preferred : True },
