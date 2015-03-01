@@ -221,10 +221,27 @@ internal class OpenNameInfo : NameInfo {
 		return new LoadableCache(lookup_result, RealType, this);
 	}
 }
-internal class OverrideNameInfo : OpenNameInfo {
-	public OverrideNameInfo(Environment environment, string name) : base(environment, name) {}
-	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
-		return new LoadableCache(generator.InitialOriginal, RealType, this);
+internal class OverrideNameInfo : RestrictableType {
+	private Environment Environment;
+	protected Type RealType = AnyType;
+	public override Type RestrictedType { get { return RealType; } }
+	public OverrideNameInfo(Environment environment, string name) {
+		Environment = environment;
+		Name = name;
+	}
+	public override void EnsureType(ErrorCollector collector, Type type, ref bool success) {
+		if ((RealType & type) == 0) {
+			success = false;
+			collector.ReportLookupTypeError(Environment, Name, RealType, type);
+		} else {
+			RealType &= type;
+		}
+	}
+	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
+		Children[name] = new OpenNameInfo(Environment, root + "." + name);
+	}
+	public override bool NeedsLoad() {
+		return false;
 	}
 }
 internal class JunkInfo : NameInfo {
@@ -239,18 +256,18 @@ internal class JunkInfo : NameInfo {
 		throw new InvalidOperationException("Attempted to load invalid name.");
 }
 }
-internal class BoundNameInfo : NameInfo {
+internal class BoundNameInfo : RestrictableType {
 	private Environment Environment;
 	ITypeableElement Target;
-	public Type RestrictedType { get; private set; }
+	public override Type RestrictedType { get { return restricted_type; } }
+	private Type restricted_type = AnyType;
 	public BoundNameInfo(Environment environment, string name, ITypeableElement target) {
-		RestrictedType = AnyType;
 		Environment = environment;
 		Name = name;
 		Target = target;
 	}
 	public override void EnsureType(ErrorCollector collector, Type type, ref bool success) {
-		RestrictedType &= type;
+		restricted_type &= type;
 		Target.EnsureType(collector, type, ref success);
 	}
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
@@ -304,13 +321,16 @@ internal class CopyFromParentInfo : NameInfo {
 		}
 	}
 }
+internal abstract class RestrictableType : NameInfo {
+	public abstract Type RestrictedType { get; }
+}
 internal class LoadableCache {
 	public LoadableValue Value { get; private set; }
 	public Type PossibleTypes { get; private set; }
 	public NameInfo NameInfo { get; private set; }
 	public bool SinglyTyped { get { return Types.Length == 1; } }
 	public System.Type[] Types { get; private set; }
-	public LoadableCache(LoadableValue loadable_value, BoundNameInfo name_info) : this(loadable_value, name_info.RestrictedType, name_info) {
+	public LoadableCache(LoadableValue loadable_value, RestrictableType name_info) : this(loadable_value, name_info.RestrictedType, name_info) {
 	}
 	public LoadableCache(LoadableValue loadable_value, Type type, NameInfo name_info) {
 		Value = loadable_value;
@@ -356,8 +376,10 @@ internal class Environment : CodeRegion {
 		Children[name] = nameinfo;
 		return nameinfo;
 	}
-	public NameInfo AddOverrideName(string name) {
-		return Children[name] = new OverrideNameInfo(this, name);
+	public RestrictableType AddOverrideName(string name) {
+		var info = new OverrideNameInfo(this, name);
+		Children[name] = info;
+		return info;
 	}
 	internal void AddForbiddenName(string name) {
 		Children[name] = null;

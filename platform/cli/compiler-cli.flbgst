@@ -549,11 +549,11 @@ environment : compiler_lib.environment_tmpl {
 		}
 		mask_from_fields +: {
 			value : "\t\t\(type_storage) = \(current_environment).AddMask(\(name_field).ToString(), \(expr_field));\n"
-			class_gen : "\tBoundNameInfo \(type_storage);\n"
+			class_gen : "\tRestrictableType \(type_storage);\n"
 		}
 		override_name_from_field +: {
-			value : "\t\t\(current_environment).AddOverrideName(\(field).ToString());\n"
-			class_gen : ""
+			value : "\t\t\(type_storage) = \(current_environment).AddOverrideName(\(field).ToString());\n"
+			class_gen : "\tRestrictableType \(type_storage);\n"
 		}
 		forbidden_name_from_field +: {
 			value : "\t\t\(current_environment).AddForbiddenName(\(field).ToString());\n"
@@ -2005,7 +2005,7 @@ compiler : compiler_lib.language_tmpl {
 			super_class_extra : "\tinternal void AddMask(ErrorCollector collector, Environment environment) { environment.AddMask(name.ToString(), this); }\n"
 		}
 		named_definition +: {
-			super_class_extra : "\tinternal void AddMask(ErrorCollector collector, Environment environment) { BoundInfo = environment.AddMask(name.ToString(), this); }\n\tinternal BoundNameInfo BoundInfo;\n"
+			super_class_extra : "\tinternal void AddMask(ErrorCollector collector, Environment environment) { BoundInfo = environment.AddMask(name.ToString(), this); }\n\tinternal RestrictableType BoundInfo;\n"
 		}
 		identifier +: {
 			rules +: {

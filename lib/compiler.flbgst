@@ -235,6 +235,8 @@ environment_tmpl : Template {
 		override_name_from_field : Template {
 			# The field containing the name.
 			field ?:
+			# Stores the type occurring at the bottleneck.
+			type_storage ?:
 		}
 		# Create a name from a field where the name must not be used in the new
 		# environment. These are used mostly to detect potential circular
@@ -1648,42 +1650,35 @@ language_tmpl : Template {
 					apply_environment_to : [ environment.modified_environment {
 						apply_to : [ environment.other_elements { fields : [ $expression ] } ]
 						special_names : [
-							override_name_from_field { field : $temporary_name },
+							override_name_from_field {
+								field : $temporary_name
+								type_storage : $override_bottleneck
+							},
 							forbidden_name_from_field { field : $name }
 						]
-						force_back : True
 						name : $inner_environment
 					} ]
-					ensure_type_is : ensure_type.stop {}
+					type_demand : {
+						expression : known_types
+					}
 					code_value : kws.set_frame_or_tmpl_from_field {
 						name_field : $name
 						returns : into
 						into : parameters.target
 						with : kws.apply_override {
 							override : kws.create_override_function {
-								returns : codegen.bind {
-									define : {
-										context : kws.list_prepend {
-											frame : kws.set_frame_or_tmpl_from_field {
-												name_field : $temporary_name
-												returns : into
-												into : kws.frame_new {
-													container : parameters.self_frame
-													context : parameters.context
-												}
-												with : parameters.original_value
-											}
-											tail : parameters.context
-										}
-									}
-									in : Template codegen.push_source_reference {
+								returns : codegen.push_source_reference {
+									in : codegen.prepare_lookup_cache {
 										in : codegen.prepare_lookup_cache {
-											in : codegen.prepare_lookup_cache {
-												in : codegen.other_code { field : $expression }
-												name : $inner_environment
+											specials : special_from_expression {
+												field : $temporary_name
+												is : parameters.original_value
+												type_storage : $override_bottleneck
 											}
-											name : Null
+											in : codegen.other_code { field : $expression }
+											name : $inner_environment
 										}
+										name : Null
 									}
 								}
 							}
