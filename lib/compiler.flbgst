@@ -2393,7 +2393,10 @@ language_tmpl : Template {
 												allow_types : [ known_types.frame ]
 												of : kws.lookup_dynamic {
 													name : current_name
-													source : parameters.result_frame
+													source : kws.list_prepend {
+														frame : parameters.result_frame
+														tail : kws.list_null {}
+													}
 												}
 											}
 											tail : parameters.context
@@ -2489,18 +2492,19 @@ language_tmpl : Template {
 							ensure_type.intrinsic {}
 						]
 					}
-					code_value : kws.dynamic_type_dispatch_from_intrinsic {
-						environment : $reduce_env
+					code_value : kws.dynamic_type_dispatch_from_stored_mask {
+						type_storage : $bottleneck_type
 						of : codegen.bind {
 							define : {
 								result_frame : kws.frame_new {
 									container : parameters.self_frame
 									context : parameters.context
 								}
+								input_frame : codegen.other_code { field : $selector }
 							}
 							in : Template kws.iterator {
-								accumulator : known_vm_types.any
-								inputs : [ codegen.other_code { field : $selector } ]
+								accumulator_type : known_vm_types.any
+								inputs : [ parameters.input_frame ]
 								cases : []
 								initial : codegen.other_code { field : $initial_expr }
 
@@ -2511,7 +2515,10 @@ language_tmpl : Template {
 												allow_types : [ known_types.frame ]
 												of : kws.lookup_dynamic {
 													name : current_name
-													source : parameters.result_frame
+													source : kws.list_prepend {
+														frame : parameters.input_frame
+														tail : kws.list_null {}
+													}
 												}
 											}
 											tail : parameters.context
@@ -2522,7 +2529,8 @@ language_tmpl : Template {
 										in : codegen.prepare_lookup_cache {
 											name : $reduce_env
 											specials : special_from_expression {
-												field : $initial_expr
+												type_storage : $bottleneck_type
+												field : $initial_name
 												is : current_accumulator
 											}
 											in : codegen.other_code { field : $reduce_expr }
