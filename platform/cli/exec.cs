@@ -103,7 +103,7 @@ public abstract class TaskMaster {
 		return new SimpleStringish(OrdinalNameStr(id));
 	}
 	public static string OrdinalNameStr(long id) {
-		var id_str = new char[(int)(sizeof(long) * 8 * Math.Log (2) / Math.Log (symbols.Length)) + 1];
+		var id_str = new char[(int)(sizeof(long) * 8 * Math.Log(2, symbols.Length)) + 1];
 		if (id < 0) {
 			id_str[0] = 'e';
 			id = long.MaxValue + id;
@@ -213,6 +213,12 @@ public class Lookup : Computation {
 		values = new object[context.Length, names.Length + 1];
 		context.Fill((index, frame) => values[index, 0] = frame);
 	}
+
+	public int NameCount { get { return names.Length; } }
+	public int FrameCount { get { return values.GetLength(0); } }
+	public string GetName(int index) { return names[index]; }
+	public Frame this[int name, int frame] { get { return values[frame, name] as Frame; } }
+
 	/**
 	 * This is the callback used by GetOrSubscribe. It will be called when a value is available.
 	 *
