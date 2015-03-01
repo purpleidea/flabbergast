@@ -1196,11 +1196,11 @@ kws : compiler_lib.kws_tmpl {
 		type_list ?:
 
 		gen_gen +: {
-			sum_indent : indent & extra_indent
+			sum_indent : indent & of.extra_indent
 			value :
 				of.gen_gen(indent : indent, code :
 					"\(sum_indent)\(generator).DynamicTypeDispatch(\(of.storage_name), \(parameters.source_reference.storage_name), \(type_list), (\(storage_name)) => {" &
-					"\(sum_indent)\(generator).DebugPosition(this);" &
+					"\(sum_indent)\t\(generator).DebugPosition(this);" &
 					code &
 					"\(sum_indent)});")
 		}
@@ -1484,8 +1484,8 @@ codegen : compiler_lib.codegen_tmpl {
 				"(\(Id)_result) => {" &
 				"\(sum_indent)\t\(generator).DebugPosition(this);" &
 				"\(sum_indent)\t\(fold_name).Load(\(generator));" &
-				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I8, \(Id)_index);" &
-				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(TaskMaster).GetMethod(\"OrdinalName\", new System.Type[] { typeof(long) }));" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I8, (long) \(Id)_index);" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(TaskMaster).GetMethod(\"OrdinalNameStr\", new System.Type[] { typeof(long) }));" &
 				"\(sum_indent)\t\(generator).LoadReboxed(\(Id)_result, typeof(object));" &
 				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Frame).GetMethod(\"set_Item\", new System.Type[] { typeof(string), typeof(object) }));" &
 				"\(sum_indent)\t\(Id)_block(\(fold_name));" &
