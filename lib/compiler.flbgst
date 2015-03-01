@@ -1932,6 +1932,7 @@ language_tmpl : Template {
 					pretty_name : "fricassée Each input"
 					pattern : parser.sequence {
 						of : [
+							space { mandatory : True },
 							parser.exact { word : "Each" },
 							space { preferred : True },
 							parser.other { type: $expression  alternate : $expression0 field : $each_expr },
@@ -1955,6 +1956,7 @@ language_tmpl : Template {
 					pretty_name : "fricassée merge input"
 					pattern : parser.sequence {
 						of : [
+							space { mandatory : True },
 							parser.accumulate_list {
 								field : $inputs
 								type : $fricassee_merge_input
@@ -2442,7 +2444,7 @@ language_tmpl : Template {
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "For" },
-							parser.other { type: $selector  alternate : $selector1  field : $selector },
+							parser.other { type: $selector  alternate : $selector0  field : $selector },
 							parser.exact { word : "Reduce" },
 							space { mandatory : True },
 							parser.other { type: $expression  alternate : $expression0  field : $reduce_expr },
