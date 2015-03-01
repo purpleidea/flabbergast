@@ -502,6 +502,11 @@ kws_tmpl : Template {
 		arguments : [ { value : source  type : known_types.int } ]
 		return_type : known_types.str
 	}
+	verify_symbol : Template base_tmpl {
+		source ?:
+		arguments : [ { value : source  type : known_types.str } ]
+		return_type : known_types.bool
+	}
 	frame_new : Template base_tmpl {
 		container ?:
 		context ?:

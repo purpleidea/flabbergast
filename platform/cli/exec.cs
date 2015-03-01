@@ -171,6 +171,41 @@ public abstract class TaskMaster {
 	public void Slot(Computation computation) {
 		computations.Enqueue(computation);
 	}
+
+	public bool VerifySymbol(SourceReference source_reference, Stringish strish) {
+		var str = strish.ToString();
+		if (str.Length < 1) {
+			ReportOtherError(source_reference, "An attribute name cannot be empty.");
+			return false;
+		}
+		switch (Char.GetUnicodeCategory(str[0])) {
+			case System.Globalization.UnicodeCategory.LowercaseLetter:
+			case System.Globalization.UnicodeCategory.OtherLetter:
+			break;
+			default:
+				ReportOtherError(source_reference, String.Format("The name “{0}” is unbecoming of an attribute; it cannot start with “{1}”.", str, str[0]));
+				return false;
+		}
+		for(var it = 1; it < str.Length; it++) {
+			if (str[it] == '_') {
+				continue;
+			}
+			switch (Char.GetUnicodeCategory(str[it])) {
+				case System.Globalization.UnicodeCategory.DecimalDigitNumber:
+				case System.Globalization.UnicodeCategory.LetterNumber:
+				case System.Globalization.UnicodeCategory.LowercaseLetter:
+				case System.Globalization.UnicodeCategory.OtherLetter:
+				case System.Globalization.UnicodeCategory.OtherNumber:
+				case System.Globalization.UnicodeCategory.TitlecaseLetter:
+				case System.Globalization.UnicodeCategory.UppercaseLetter:
+				continue;
+				default:
+					ReportOtherError(source_reference, String.Format("The name “{0}” is unbecoming of an attribute; it cannot contain “{1}”.", str, str[it]));
+					return false;
+			}
+		}
+		return true;
+	}
 }
 
 /**

@@ -812,6 +812,15 @@ kws : compiler_lib.kws_tmpl {
 			extra_emit : ", typeof(TaskMaster).GetMethod(\"OrdinalName\", new System.Type[] { typeof(long) })"
 		}
 	}
+	verify_symbol +: {
+		opcode : "Call"
+		gen_gen +: {
+			extra_load +original: original &
+				"\(sum_indent)\(generator).LoadTaskMaster();" &
+				"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));"
+			extra_emit : ", typeof(TaskMaster).GetMethod(\"VerifySymbol\", new System.Type[] { typeof(Stringish) })"
+		}
+	}
 	frame_new +: {
 		opcode : "Newobj"
 		gen_gen +: {
