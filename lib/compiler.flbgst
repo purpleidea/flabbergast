@@ -1552,6 +1552,44 @@ language_tmpl : Template {
 			]
 		}
 	}
+	fricassee_iterator : Template codegen.bind {
+		accumulator_type : Null
+		start ?:
+		step ?:
+
+		define : {
+			input_frame : codegen.other_code { field : $selector }
+		}
+		in : Template kws.iterator {
+			accumulator_type -:
+			inputs : [ parameters.input_frame ]
+			cases : []
+			initial : start {}
+
+			default_case : codegen.bind {
+				define : {
+					context : kws.list_prepend {
+						frame : kws.dynamic_type_dispatch {
+							allow_types : [ known_types.frame ]
+							of : kws.lookup_dynamic {
+								name : current_name
+								source : kws.list_prepend {
+									frame : parameters.input_frame
+									tail : kws.list_null {}
+								}
+							}
+						}
+						tail : parameters.context
+					}
+				}
+				in : Template codegen.prepare_lookup_cache {
+					name : $select_env
+					in : step {}
+				}
+			}
+		}
+	}
+
 
 	# All the groups in the language. For details, see the specification.
 	rule_groups : Template {
@@ -2499,49 +2537,17 @@ language_tmpl : Template {
 					}
 					code_value : kws.dynamic_type_dispatch_from_stored_mask {
 						type_storage : $bottleneck_type
-						of : codegen.bind {
-							define : {
-								result_frame : kws.frame_new {
-									container : parameters.self_frame
-									context : parameters.context
+						of : fricassee_iterator {
+							accumulator_type : known_vm_types.any
+							start : Template codegen.other_code { field : $initial_expr }
+							step : Template codegen.prepare_lookup_cache {
+								name : $reduce_env
+								specials : special_from_expression {
+									type_storage : $bottleneck_type
+									field : $initial_name
+									is : current_accumulator
 								}
-								input_frame : codegen.other_code { field : $selector }
-							}
-							in : Template kws.iterator {
-								accumulator_type : known_vm_types.any
-								inputs : [ parameters.input_frame ]
-								cases : []
-								initial : codegen.other_code { field : $initial_expr }
-
-								default_case : codegen.bind {
-									define : {
-										context : kws.list_prepend {
-											frame : kws.dynamic_type_dispatch {
-												allow_types : [ known_types.frame ]
-												of : kws.lookup_dynamic {
-													name : current_name
-													source : kws.list_prepend {
-														frame : parameters.input_frame
-														tail : kws.list_null {}
-													}
-												}
-											}
-											tail : parameters.context
-										}
-									}
-									in : Template codegen.prepare_lookup_cache {
-										name : $select_env
-										in : codegen.prepare_lookup_cache {
-											name : $reduce_env
-											specials : special_from_expression {
-												type_storage : $bottleneck_type
-												field : $initial_name
-												is : current_accumulator
-											}
-											in : codegen.other_code { field : $reduce_expr }
-										}
-									}
-								}
+								in : codegen.other_code { field : $reduce_expr }
 							}
 						}
 					}
