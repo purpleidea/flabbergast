@@ -1574,7 +1574,6 @@ language_tmpl : Template {
 						field : $attributes
 						top_level : True
 					} ]
-					type_demand_all : { attributes : known_types }
 					code_value : codegen.push_source_reference {
 						inherit : False
 						in : codegen.empty_parameter {
@@ -1597,7 +1596,6 @@ language_tmpl : Template {
 			include_base_parser : False
 			environment_enabled : True
 			generation_flavour : codegen.flavour_attribute
-			is_typeable : True
 			common +: {
 				comment : common_fields.str
 				name : common_fields.str
@@ -1615,7 +1613,9 @@ language_tmpl : Template {
 							name : $inner_environment
 						}
 					]
-					ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
+					type_demand : {
+						expression : known_types
+					}
 					code_value : kws.set_frame_or_tmpl_from_field {
 						name_field : $name
 						returns : into
@@ -1723,7 +1723,6 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.list_independent { field : $overrides } ]
-					ensure_type_is : ensure_type.filter { types : [ known_types.template ] }
 					code_value : kws.set_frame_or_tmpl_from_field {
 						name_field : $name
 						returns : into
@@ -1757,7 +1756,6 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ ]
-					ensure_type_is : ensure_type.stop {}
 					code_value : kws.set_frame_or_tmpl_from_field {
 						name_field : $name
 						returns : into
@@ -1789,7 +1787,6 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ ]
-					ensure_type_is : ensure_type.stop {}
 					code_value : kws.set_frame_or_tmpl_from_field {
 						name_field : $name
 						returns : into
@@ -1812,7 +1809,6 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ ]
-					ensure_type_is : ensure_type.stop {}
 					code_value : parameters.target
 				}
 			}
@@ -3104,7 +3100,6 @@ language_tmpl : Template {
 					]
 					ensure_type_is : ensure_type.frame {}
 					type_demand : { source : [ known_types.template ] }
-					type_demand_all : { overrides : known_types }
 					code_value : perform_overrides {
 						new_item : Template kws.frame_new {
 							container : parameters.self_frame
@@ -3173,7 +3168,6 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.list_independent { field : $attributes } ]
 					ensure_type_is : ensure_type.frame {}
-					type_demand_all : { attributes : known_types }
 					code_value : codegen.push_source_reference {
 						in : codegen.empty_parameter {
 							parameters : { source_template : emptiness }
@@ -3256,7 +3250,6 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.list_independent { field : $attributes } ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.template ] }
-					type_demand_all : { attributes : known_types }
 					code_value : codegen.empty_parameter {
 						parameters : { source_template : emptiness }
 						in : codegen.fold_others {
@@ -3302,7 +3295,6 @@ language_tmpl : Template {
 						types : [ known_types.template ]
 						ensure_type_of : propagate { fields : [ $source ] }
 					}
-					type_demand_all : { overrides : known_types }
 					code_value : perform_overrides {
 						new_item : kws.tmpl_new
 						source_template : codegen.other_code { field : $source }
