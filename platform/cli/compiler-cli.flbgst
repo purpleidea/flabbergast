@@ -1415,30 +1415,31 @@ codegen : compiler_lib.codegen_tmpl {
 		}
 	}
 	bind +: {
-		storage_name : exp_in.storage_name
+		storage_name : jail.exp_in.storage_name
 
-		extra_indent : For def : define Reduce def.extra_indent & acc With acc : exp_in.extra_indent
+		extra_indent : total_def_indent & jail.exp_in.extra_indent
+		total_def_indent : For def : define Reduce def.extra_indent & acc With acc : ""
 		def_indents : For def_name : Name, def : define, def_pos : Ordinal
 			Select def_name :
 				(For prev_def : define, prev_def_pos : Ordinal
 				Where prev_def_pos < def_pos
 				Reduce acc & prev_def.extra_indent
 				With acc : "")
-		exp_in :
-			Let
-				parameters : For def_name : Name, def : define
-					Select def_name : codegen.gen_tmpl {
-						extra_indent : ""
-						storage_name : def.storage_name
-					}
-			In in {}
+		jail : {
+			exp_in : in {}
+			parameters : For def_name : Name, def : define
+				Select def_name : codegen.gen_tmpl {
+					extra_indent : ""
+					storage_name : def.storage_name
+				}
+		}
 
 		gen_gen +: {
 			value :
 				For def : define, def_indent : def_indents
 					Reverse
 					Reduce def.gen_gen(code : acc, indent : indent & def_indent)
-					With acc : exp_in.gen_gen(indent : indent & extra_indent, code : code)
+					With acc : jail.exp_in.gen_gen(indent : indent & total_def_indent, code : code)
 		}
 	}
 	empty_parameter +: {
