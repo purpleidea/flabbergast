@@ -3163,14 +3163,16 @@ language_tmpl : Template {
 					apply_environment_to : [ environment.list_independent { field : $attributes } ]
 					ensure_type_is : ensure_type.frame {}
 					type_demand_all : { attributes : known_types }
-					code_value : codegen.empty_parameter {
-						parameters : { source_template : emptiness }
-						in : codegen.fold_others {
-							target_flavour : codegen.flavour_attribute_accumulate
-							field : $attributes
-							initial : kws.frame_new {
-								container : parameters.self_frame
-								context : parameters.context
+					code_value : codegen.push_source_reference {
+						in : codegen.empty_parameter {
+							parameters : { source_template : emptiness }
+							in : codegen.fold_others {
+								target_flavour : codegen.flavour_attribute_accumulate
+								field : $attributes
+								initial : kws.frame_new {
+									container : parameters.self_frame
+									context : parameters.context
+								}
 							}
 						}
 					}
@@ -3456,8 +3458,10 @@ language_tmpl : Template {
 					apply_environment_to : [ environment.list_of { field : $items } ]
 					ensure_type_is : ensure_type.frame { }
 					type_demand_all : { items : known_types }
-					code_value : codegen.fold_into_frame {
-						field : $items
+					code_value : codegen.push_source_reference {
+						in : codegen.fold_into_frame {
+							field : $items
+						}
 					}
 				}
 
