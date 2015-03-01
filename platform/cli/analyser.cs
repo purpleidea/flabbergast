@@ -450,7 +450,10 @@ internal class Environment : CodeRegion {
 			}
 			generator.StopInterlock();
 		}
-		foreach (var lookup_result in lookup_results.Where(x => x.SinglyTyped)) {
+		foreach (var lookup_result in lookup_results.Where(x => x.Value.BackingType != typeof(object))) {
+			base_lookup_cache[lookup_result.NameInfo] = lookup_result.Value;
+		}
+		foreach (var lookup_result in lookup_results.Where(x => x.SinglyTyped && x.Value.BackingType == typeof(object))) {
 			base_lookup_cache[lookup_result.NameInfo] = new AutoUnboxValue(lookup_result.Value, lookup_result.Types[0]);
 			var label = generator.Builder.DefineLabel();
 			lookup_result.Value.Load(generator);
@@ -459,7 +462,7 @@ internal class Environment : CodeRegion {
 			generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", lookup_result.Value.BackingType, lookup_result.NameInfo.Name, "{0}"), lookup_result.Value);
 			generator.Builder.MarkLabel(label);
 		}
-		GenerateLookupPermutation(generator, context, base_lookup_cache, 0, lookup_results.Where(x => !x.SinglyTyped).ToArray(), source_reference, block);
+		GenerateLookupPermutation(generator, context, base_lookup_cache, 0, lookup_results.Where(x => !x.SinglyTyped && x.Value.BackingType == typeof(object)).ToArray(), source_reference, block);
 	}
 	private void GenerateLookupPermutation(Generator generator, LoadableValue context, LookupCache cache, int index, LoadableCache[] values, LoadableValue source_reference, Block block) {
 		if (index >= values.Length) {
