@@ -399,6 +399,19 @@ internal class Generator {
 	 * Generate a runtime dispatch that checks each of the provided types.
 	 */
 	public void DynamicTypeDispatch(LoadableValue original, LoadableValue source_reference, System.Type[] types, ParameterisedBlock<LoadableValue> block) {
+		if (original.BackingType != typeof(object)) {
+			foreach (var type in types) {
+				if (original.BackingType == type) {
+					block(original);
+					return;
+				}
+			}
+			LoadTaskMaster();
+			source_reference.Load(Builder);
+			Builder.Emit(OpCodes.Ldstr, String.Format("Unexpected type {0} instead of {1}.", original.BackingType, string.Join(", ", (object[]) types)));
+			Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
+			return;
+		}
 		var labels = new Label[types.Length];
 		for(var it = 0; it < types.Length; it++) {
 			labels[it] = Builder.DefineLabel();
