@@ -1954,8 +1954,22 @@ language_tmpl : Template {
 							]
 						}
 					]
-					#TODO
-					code_value : codegen.not_implemented {}
+					code_value : fricassee_iterator {
+						start : Template kws.frame_new {
+							container : parameters.self_frame
+							context : parameters.context
+						}
+						step : Template kws.set_frame_or_tmpl {
+							returns : into
+							name : kws.string_ordinal {
+								source : kws.int_negate {
+									source : current_ordinal
+								}
+							}
+							into : current_accumulator
+							with : parameters.current_itr_frame
+						}
+					}
 				}
 
 				where : Template selector_tmpl {

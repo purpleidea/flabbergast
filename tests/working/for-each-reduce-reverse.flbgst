@@ -1,0 +1,1 @@
+value : (For Each [ { b : 3 }, { b : 2 } ] Reverse Reduce a * b + b With a : 1) == 15
