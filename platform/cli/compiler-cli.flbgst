@@ -857,6 +857,12 @@ kws : compiler_lib.kws_tmpl {
 			extra_emit : ", typeof(Frame).GetMethod(\"get_Context\")"
 		}
 	}
+	frame_has +: {
+		opcode : "Call"
+		gen_gen +: {
+			extra_emit : ", typeof(Frame).GetMethod(\"Has\", new System.Type[] { typeof(Stringish) })"
+		}
+	}
 	list_null +: {
 		extra_indent : ""
 		storage_name : "LoadableValue.NULL_LIST"

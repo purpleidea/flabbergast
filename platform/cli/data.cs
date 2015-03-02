@@ -311,6 +311,10 @@ public class Frame : DynamicObject, IAttributeNames {
 		is_pending = pending.ContainsKey(name);
 		return is_pending || attributes.ContainsKey(name);
 	}
+	public bool Has(Stringish name) {
+		bool junk;
+		return Has(name.ToString(), out junk);
+	}
 
 	/**
 	 * Trigger any unfinished computations contained in this frame to be executed.
