@@ -173,7 +173,7 @@ internal abstract class NameInfo {
 	public virtual string CheckValidNarrowing(LookupCache next, LookupCache current) {
 		return null;
 	}
-	public virtual bool NeedsLoad() {
+	public virtual bool NeedsLoad(LookupCache current) {
 		return false;
 	}
 }
@@ -195,7 +195,7 @@ internal class OpenNameInfo : NameInfo {
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
 	}
-	public override bool NeedsLoad() {
+	public override bool NeedsLoad(LookupCache current) {
 		return true;
 	}
 	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
@@ -240,9 +240,6 @@ internal class OverrideNameInfo : RestrictableType {
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
 	}
-	public override bool NeedsLoad() {
-		return false;
-	}
 }
 internal class JunkInfo : NameInfo {
 	public JunkInfo() {
@@ -254,7 +251,7 @@ internal class JunkInfo : NameInfo {
 	}
 	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
 		throw new InvalidOperationException("Attempted to load invalid name.");
-}
+	}
 }
 internal class BoundNameInfo : RestrictableType {
 	private Environment Environment;
@@ -310,15 +307,26 @@ internal class CopyFromParentInfo : NameInfo {
 	public override bool HasName(string name) {
 		return base.HasName(name) || Source.HasName(name);
 	}
+	public override bool NeedsLoad(LookupCache current) {
+		return !current.Has(Source);
+	}
 	public override string CheckValidNarrowing(LookupCache next, LookupCache current) {
-		var parent_value = current[Source];
-		var union_type = AstTypeableNode.TypeFromClrType(parent_value.BackingType);
-		if ((union_type & Mask) == 0) {
-			return String.Format("Value for “{0}” must be to {1}, but it is {2}.", Name, Mask, union_type);
+		if (current.Has(Source)) {
+			var parent_value = current[Source];
+			var union_type = AstTypeableNode.TypeFromClrType(parent_value.BackingType);
+			if ((union_type & Mask) == 0) {
+				return String.Format("Value for “{0}” must be to {1}, but it is {2}.", Name, Mask, union_type);
+			} else {
+				next[this] = parent_value;
+				return null;
+			}
 		} else {
-			next[this] = parent_value;
 			return null;
 		}
+	}
+	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
+		var source_cache = Source.Load(generator, source_reference, context);
+		return new LoadableCache(source_cache.Value, source_cache.PossibleTypes & Mask, this);
 	}
 }
 internal abstract class RestrictableType : NameInfo {
@@ -439,12 +447,12 @@ internal class Environment : CodeRegion {
 		}
 		var load_count = 0;
 		foreach (var info in all_children) {
-			load_count += info.NeedsLoad() ? 1 : 0;
+			load_count += info.NeedsLoad(current) ? 1 : 0;
 		}
 		if (load_count > 0) {
 			generator.StartInterlock(load_count);
 			foreach (var info in all_children) {
-				if (info.NeedsLoad()) {
+				if (info.NeedsLoad(current)) {
 					lookup_results.Add(info.Load(generator, source_reference, context));
 				}
 			}

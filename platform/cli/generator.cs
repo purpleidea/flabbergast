@@ -819,6 +819,12 @@ internal class LookupCache {
 		}
 		set { defined_values[name_info] = value; }
 	}
+	public bool Has(NameInfo name_info) {
+		if (defined_values.ContainsKey(name_info)) {
+			return true;
+		}
+		return parent == null ? false : parent.Has(name_info);
+	}
 }
 internal abstract class LoadableValue {
 	public static LoadableValue NULL_LIST = new NullValue(typeof(Context));
