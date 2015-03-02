@@ -1579,23 +1579,28 @@ language_tmpl : Template {
 
 			default_case : codegen.bind {
 				define : {
-					context : kws.list_prepend {
-						frame : kws.dynamic_type_dispatch {
-							allow_types : [ known_types.frame ]
-							of : kws.lookup_dynamic {
-								name : current_name
-								source : kws.list_prepend {
-									frame : parameters.input_frame
-									tail : kws.list_null {}
-								}
-							}
+					current_itr_frame : kws.lookup_dynamic {
+						name : current_name
+						source : kws.list_prepend {
+							frame : parameters.input_frame
+							tail : kws.list_null {}
 						}
-						tail : parameters.context
 					}
 				}
-				in : Template codegen.prepare_lookup_cache {
-					name : $select_env
-					in : step {}
+				in : Template codegen.bind {
+					define : {
+						context : kws.list_prepend {
+							frame : kws.dynamic_type_dispatch {
+								allow_types : [ known_types.frame ]
+								of : parameters.current_itr_frame
+							}
+							tail : parameters.context
+						}
+					}
+					in : Template codegen.prepare_lookup_cache {
+						name : $select_env
+						in : step {}
+					}
 				}
 			}
 		}
