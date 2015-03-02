@@ -1994,13 +1994,30 @@ language_tmpl : Template {
 							name : $select_env
 							apply_to : [
 								environment.other_elements { fields : [ $expression ] },
-								environment.collect { }
+								environment.modified_environment {
+									name : $target_env
+									apply_to : [ environment.collect { } ]
+								}
 							]
 						}
 					]
 					type_demand : { expression : [ known_types.bool ] }
-					#TODO
-					code_value : codegen.not_implemented {}
+					code_value : fricassee_iterator {
+						start : Template kws.frame_new {
+							container : parameters.self_frame
+							context : parameters.context
+						}
+						step : Template kws.conditional {
+							condition : codegen.other_code { field : $expression }
+							false_action : current_accumulator
+							true_action : kws.set_frame_or_tmpl {
+								returns : into
+								name : current_name
+								into : current_accumulator
+								with : parameters.current_itr_frame
+							}
+						}
+					}
 				}
 
 				each : Template selector_tmpl {
