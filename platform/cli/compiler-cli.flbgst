@@ -1424,7 +1424,7 @@ codegen : compiler_lib.codegen_tmpl {
 		}
 	}
 	bind +: {
-		storage_name : jail.exp_in.storage_name
+		storage_name : (returns ?? jail.exp_in).storage_name
 
 		extra_indent : total_def_indent & jail.exp_in.extra_indent
 		total_def_indent : For def : define Reduce def.extra_indent & acc With acc : ""

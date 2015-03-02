@@ -782,6 +782,8 @@ codegen_tmpl : Template {
 		# This is a template to be used for the return. It must be a template for
 		# rebinding to work correctly.
 		in ?:
+		# Return the result of `in`. Feel free to set to a `define` entry.
+		returns : Null
 	}
 	# Causes the program to stop running.
 	die : Template gen_tmpl {
@@ -2394,29 +2396,30 @@ language_tmpl : Template {
 					apply_environment_to : [
 						environment.other_with_result {
 							field : $selector
-							name : $expression_environment
+							name : $select_env
 							apply_to : [
 								environment.other_elements { fields : [ $expression ] }
 							]
 						}
 					]
 					ensure_type_is : ensure_type.frame { }
+					type_demand : {
+						expression : known_types
+					}
 					code_value : codegen.bind {
+						returns : define.result_frame
 						define : {
 							result_frame : kws.frame_new {
 								container : parameters.self_frame
 								context : parameters.context
 							}
 						}
-						in : Template kws.iterator {
-							inputs : [ codegen.other_code { field : $selector } ]
-							cases : []
-							initial : kws.numeric_constant {
+						in : Template fricassee_iterator {
+							start : Template kws.numeric_constant {
 								type : known_types.int
 								number : 0
 							}
-
-							default_case : kws.set_frame_or_tmpl {
+							step : Template kws.set_frame_or_tmpl {
 								returns : name.source
 
 								name : kws.string_ordinal {
@@ -2429,26 +2432,9 @@ language_tmpl : Template {
 									}
 								}
 								into : parameters.result_frame
-								with : codegen.bind {
-									define : {
-										context : kws.list_prepend {
-											frame : kws.dynamic_type_dispatch {
-												allow_types : [ known_types.frame ]
-												of : kws.lookup_dynamic {
-													name : current_name
-													source : kws.list_prepend {
-														frame : parameters.result_frame
-														tail : kws.list_null {}
-													}
-												}
-											}
-											tail : parameters.context
-										}
-									}
-									in : Template codegen.prepare_lookup_cache {
-										name : $expression_environment
-										in : codegen.other_code { field : $expression }
-									}
+								with : codegen.push_source_reference {
+									syntax : $expression
+									in : codegen.other_code { field : $expression }
 								}
 							}
 						}
@@ -2484,8 +2470,45 @@ language_tmpl : Template {
 						name_expr : [ known_types.int, known_types.str ]
 						value_expr : known_types
 					}
-					code_value : codegen.not_implemented { }
-					# TODO
+					code_value : fricassee_iterator {
+						start : Template kws.frame_new {
+							container : parameters.self_frame
+							context : parameters.context
+						}
+						step : Template kws.set_frame_or_tmpl {
+							returns : into
+
+							name : codegen.type_dispatch {
+								of : codegen.push_source_reference {
+									syntax : $name_expr
+									in : codegen.other_code { field : $name_expr }
+								}
+								choices : [
+									choice_tmpl {
+										type : known_types.int
+										action : kws.string_ordinal {
+											source : converted_result
+										}
+									},
+									choice_tmpl {
+										type : known_types.str
+										action : kws.conditional {
+											condition : kws.verify_symbol {
+												source : converted_result
+											}
+											true_action : converted_result
+											false_action : codegen.die { }
+										}
+									}
+								]
+							}
+							into : current_accumulator
+							with : codegen.push_source_reference {
+								syntax : $value_expr
+								in : codegen.other_code { field : $value_expr }
+							}
+						}
+					}
 				}
 				for_reduce : Template expression_tmpl {
 					pretty_name : "fricassée Reduce"
