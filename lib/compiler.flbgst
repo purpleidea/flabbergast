@@ -2420,36 +2420,21 @@ language_tmpl : Template {
 					type_demand : {
 						expression : known_types
 					}
-					code_value : codegen.bind {
-						returns : define.result_frame
-						define : {
-							result_frame : kws.frame_new {
-								container : parameters.self_frame
-								context : parameters.context
-							}
+					code_value : fricassee_iterator {
+						start : Template kws.frame_new {
+							container : parameters.self_frame
+							context : parameters.context
 						}
-						in : Template fricassee_iterator {
-							start : Template kws.numeric_constant {
-								type : known_types.int
-								number : 0
-							}
-							step : Template kws.set_frame_or_tmpl {
-								returns : name.source
+						step : Template kws.set_frame_or_tmpl {
+							returns : into
 
-								name : kws.string_ordinal {
-									source : kws.int_add {
-										left : current_accumulator
-										right : kws.numeric_constant {
-											type : known_types.int
-											number : 1
-										}
-									}
-								}
-								into : parameters.result_frame
-								with : codegen.push_source_reference {
-									syntax : $expression
-									in : codegen.other_code { field : $expression }
-								}
+							name : kws.string_ordinal {
+								source : current_ordinal
+							}
+							into : current_accumulator
+							with : codegen.push_source_reference {
+								syntax : $expression
+								in : codegen.other_code { field : $expression }
 							}
 						}
 					}
