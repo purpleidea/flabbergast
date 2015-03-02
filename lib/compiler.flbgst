@@ -2477,29 +2477,46 @@ language_tmpl : Template {
 						step : Template kws.set_frame_or_tmpl {
 							returns : into
 
-							name : codegen.type_dispatch {
-								of : codegen.push_source_reference {
-									syntax : $name_expr
-									in : codegen.other_code { field : $name_expr }
-								}
-								choices : [
-									choice_tmpl {
-										type : known_types.int
-										action : kws.string_ordinal {
-											source : converted_result
+							name : codegen.bind {
+								define : {
+									attr_name : codegen.type_dispatch {
+										of : codegen.push_source_reference {
+											syntax : $name_expr
+											in : codegen.other_code { field : $name_expr }
 										}
-									},
-									choice_tmpl {
-										type : known_types.str
-										action : kws.conditional {
-											condition : kws.verify_symbol {
-												source : converted_result
+										choices : [
+											choice_tmpl {
+												type : known_types.int
+												action : kws.string_ordinal {
+													source : converted_result
+												}
+											},
+											choice_tmpl {
+												type : known_types.str
+												action : kws.conditional {
+													condition : kws.verify_symbol {
+														source : converted_result
+													}
+													true_action : converted_result
+													false_action : codegen.die { }
+												}
 											}
-											true_action : converted_result
-											false_action : codegen.die { }
+										]
+									}
+								}
+								in : Template kws.conditional {
+									condition : kws.frame_has {
+										source : current_accumulator
+										name : parameters.attr_name
+									}
+									false_action : parameters.attr_name
+									true_action : kws.error {
+										message : kws.string_concatenate {
+											first : kws.string_constant { str : "Duplicate attribute name: " }
+											second : parameters.attr_name
 										}
 									}
-								]
+								}
 							}
 							into : current_accumulator
 							with : codegen.push_source_reference {
