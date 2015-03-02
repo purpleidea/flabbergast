@@ -661,10 +661,7 @@ internal class Generator {
 	public void MarkState(int id) {
 		Builder.MarkLabel(entry_points[id]);
 	}
-	public LoadableValue PushSourceReference(AstNode node, LoadableValue original_reference) {
-		var reference = MakeField("source_reference", typeof(SourceReference));
-		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(OpCodes.Ldstr, node.PrettyName);
+	private void PushSourceReferenceHelper(AstNode node, LoadableValue original_reference) {
 		Builder.Emit(OpCodes.Ldstr, node.FileName);
 		Builder.Emit(OpCodes.Ldc_I4, node.StartRow);
 		Builder.Emit(OpCodes.Ldc_I4, node.StartColumn);
@@ -676,6 +673,29 @@ internal class Generator {
 			original_reference.Load(this);
 		}
 		Builder.Emit(OpCodes.Newobj, typeof(SourceReference).GetConstructors()[0]);
+	}
+	public LoadableValue PushSourceReference(AstNode node, LoadableValue original_reference) {
+		var reference = MakeField("source_reference", typeof(SourceReference));
+		Builder.Emit(OpCodes.Ldarg_0);
+		Builder.Emit(OpCodes.Ldstr, node.PrettyName);
+		PushSourceReferenceHelper(node, original_reference);
+		Builder.Emit(OpCodes.Stfld, reference.Field);
+		return reference;
+	}
+	public LoadableValue PushIteratorSourceReference(AstNode node, LoadableValue iterator, LoadableValue original_reference) {
+		var reference = MakeField("source_reference", typeof(SourceReference));
+		Builder.Emit(OpCodes.Ldarg_0);
+		Builder.Emit(OpCodes.Ldstr, "fricassée iteration {0}: {1}");
+		iterator.Load(Builder);
+		Builder.Emit(OpCodes.Call, typeof(MergeIterator).GetMethod("get_Position"));
+		var local = Builder.DeclareLocal(typeof(long));
+		Builder.Emit(OpCodes.Stloc, local);
+		Builder.Emit(OpCodes.Ldloca, local);
+		Builder.Emit(OpCodes.Call, typeof(long).GetMethod("ToString", new System.Type[] { }));
+		iterator.Load(Builder);
+		Builder.Emit(OpCodes.Call, typeof(MergeIterator).GetMethod("get_Current"));
+		Builder.Emit(OpCodes.Call, typeof(String).GetMethod("Format", new System.Type[] { typeof(string), typeof(object), typeof(object) }));
+		PushSourceReferenceHelper(node, original_reference);
 		Builder.Emit(OpCodes.Stfld, reference.Field);
 		return reference;
 	}

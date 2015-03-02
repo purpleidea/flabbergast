@@ -738,6 +738,8 @@ kws_tmpl : Template {
 		# The type of the accumulator. If null, the type of the initial value is
 		# used.
 		accumulator_type : Null
+		# Modify the current source reference to include the current iteration item.
+		modify_source_reference : False
 
 		# The current attribute name of the iterator. This may only be used in
 		# `default_case` and `cases`.
@@ -1573,6 +1575,7 @@ language_tmpl : Template {
 		}
 		in : Template kws.iterator {
 			accumulator_type -:
+			modify_source_reference : True
 			inputs : [ parameters.input_frame ]
 			cases : []
 			initial : start {}

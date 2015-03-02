@@ -1244,6 +1244,14 @@ kws : compiler_lib.kws_tmpl {
 				With acc : "")
 		num_inputs : For input : inputs Reduce len + 1 With len : 0
 
+		parent_source_reference : Lookup parameters.source_reference In Container
+		parameters : {
+			source_reference :
+				If modify_source_reference
+					Then codegen.gen_tmpl { extra_indent : "" }
+					Else parent_source_reference
+		}
+
 		iterator_instance : Id & "_iterator"
 		iterator_next : Id & "_next"
 		iterator_dispatchers : Id & "_dispatchers"
@@ -1261,12 +1269,16 @@ kws : compiler_lib.kws_tmpl {
 			# This is the simplest part of the hideously complex: it expands all the
 			# `gen_gen` templates of the input, then calls the behemoth in
 			# `base_code`.
-			value : initial.gen_gen(
-				indent : indent,
-				code :
-					For input : inputs, input_indent : input_indents
-					Reduce input.gen_gen(code : acc, indent : indent & input_indent)
-					With acc : base_code)
+			value :
+				(If modify_source_reference
+					Then "\(indent)LoadableValue \(parameters.source_reference.storage_name) = \(parent_source_reference.storage_name);"
+					Else "") &
+				initial.gen_gen(
+					indent : indent,
+					code :
+						For input : inputs, input_indent : input_indents
+						Reduce input.gen_gen(code : acc, indent : indent & input_indent)
+						With acc : base_code)
 
 			base_code :
 				# Create new fields for all the bits of stuff we need.
@@ -1295,6 +1307,9 @@ kws : compiler_lib.kws_tmpl {
 				"\(sum_indent)\(generator).Builder.MarkLabel(\(iterator_next));" &
 				"\(sum_indent)\(iterator_instance).Load(\(generator));" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(MergeIterator).GetMethod(\"Next\"));" &
+				(If modify_source_reference
+					Then "\(sum_indent)\(parameters.source_reference.storage_name) = \(generator).PushIteratorSourceReference(this, \(iterator_instance), \(parent_source_reference.storage_name));"
+					Else "") &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Switch, \(iterator_dispatchers));" &
 				"\(sum_indent)\(generator).Builder.ThrowException(typeof(System.ArgumentOutOfRangeException));" &
 				# Create a block for the default dispatcher and put a delegate on the stack.
