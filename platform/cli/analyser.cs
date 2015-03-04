@@ -167,14 +167,34 @@ internal abstract class NameInfo {
 	}
 	public abstract void EnsureType(ErrorCollector collector, Type type, ref bool success);
 	public abstract void CreateChild(ErrorCollector collector, string name, string root, ref bool success);
-	public virtual LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
-		return null;
-	}
+	public abstract LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context);
 	public virtual string CheckValidNarrowing(LookupCache next, LookupCache current) {
 		return null;
 	}
 	public virtual bool NeedsLoad(LookupCache current) {
 		return false;
+	}
+	protected LoadableValue GenerateLookupField(Generator generator, LoadableValue source_reference, LoadableValue context) {
+		var lookup_result = generator.MakeField("lookup", typeof(object));
+		generator.LoadTaskMaster();
+		generator.Builder.Emit(OpCodes.Dup);
+		source_reference.Load(generator);
+		var name_parts = Name.Split('.');
+		generator.Builder.Emit(OpCodes.Ldc_I4, name_parts.Length);
+		generator.Builder.Emit(OpCodes.Newarr, typeof(string));
+		for (var it = 0; it < name_parts.Length; it++) {
+			generator.Builder.Emit(OpCodes.Dup);
+			generator.Builder.Emit(OpCodes.Ldc_I4, it);
+			generator.Builder.Emit(OpCodes.Ldstr, name_parts[it]);
+			generator.Builder.Emit(OpCodes.Stelem, typeof(string));
+		}
+		context.Load(generator);
+		generator.Builder.Emit(OpCodes.Newobj, typeof(Lookup).GetConstructors()[0]);
+		generator.Builder.Emit(OpCodes.Dup);
+		generator.GenerateConsumeResult(lookup_result, true);
+		generator.Builder.Emit(OpCodes.Call, typeof(Lookup).GetMethod("Notify", new System.Type[] { typeof(ConsumeResult) }));
+		generator.Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new System.Type[] { typeof(Computation) }));
+		return lookup_result;
 	}
 }
 internal class OpenNameInfo : NameInfo {
@@ -199,26 +219,7 @@ internal class OpenNameInfo : NameInfo {
 		return true;
 	}
 	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
-		var lookup_result = generator.MakeField("lookup", typeof(object));
-		generator.LoadTaskMaster();
-		generator.Builder.Emit(OpCodes.Dup);
-		source_reference.Load(generator);
-		var name_parts = Name.Split('.');
-		generator.Builder.Emit(OpCodes.Ldc_I4, name_parts.Length);
-		generator.Builder.Emit(OpCodes.Newarr, typeof(string));
-		for (var it = 0; it < name_parts.Length; it++) {
-			generator.Builder.Emit(OpCodes.Dup);
-			generator.Builder.Emit(OpCodes.Ldc_I4, it);
-			generator.Builder.Emit(OpCodes.Ldstr, name_parts[it]);
-			generator.Builder.Emit(OpCodes.Stelem, typeof(string));
-		}
-		context.Load(generator);
-		generator.Builder.Emit(OpCodes.Newobj, typeof(Lookup).GetConstructors()[0]);
-		generator.Builder.Emit(OpCodes.Dup);
-		generator.GenerateConsumeResult(lookup_result, true);
-		generator.Builder.Emit(OpCodes.Call, typeof(Lookup).GetMethod("Notify", new System.Type[] { typeof(ConsumeResult) }));
-		generator.Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new System.Type[] { typeof(Computation) }));
-		return new LoadableCache(lookup_result, RealType, this);
+		return new LoadableCache(GenerateLookupField(generator, source_reference, context), RealType, this);
 	}
 }
 internal class OverrideNameInfo : RestrictableType {
@@ -239,6 +240,9 @@ internal class OverrideNameInfo : RestrictableType {
 	}
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
+	}
+	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
+		return new LoadableCache(generator.InitialOriginal, RealType, this);
 	}
 }
 internal class JunkInfo : NameInfo {
@@ -269,6 +273,9 @@ internal class BoundNameInfo : RestrictableType {
 	}
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
+	}
+	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
+		return new LoadableCache(GenerateLookupField(generator, source_reference, context), RestrictedType, this);
 	}
 }
 internal class CopyFromParentInfo : NameInfo {
