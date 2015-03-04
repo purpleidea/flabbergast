@@ -211,7 +211,7 @@ public class Frame : DynamicObject, IAttributeNames {
 
 	public static Frame Through(TaskMaster task_master, long id, SourceReference source_ref, long start, long end, Context context, Frame container) {
 		var result = new Frame(task_master, id, source_ref, context, container);
-		if (end > start)
+		if (end < start)
 			return result;
 		for (long it = 0; it <= (end - start); it++) {
 			result[TaskMaster.OrdinalNameStr(it)] = start + it;
