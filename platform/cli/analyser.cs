@@ -271,6 +271,9 @@ internal class BoundNameInfo : RestrictableType {
 		restricted_type &= type;
 		Target.EnsureType(collector, type, ref success);
 	}
+	public override bool NeedsLoad(LookupCache current) {
+		return !current.Has(this);
+	}
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
 	}
