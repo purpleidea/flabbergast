@@ -2154,7 +2154,7 @@ language_tmpl : Template {
 						value_pattern : Template parser.exact { word : "Name" }
 					}
 					apply_environment_to : [ ]
-					ensure_type_is : ensure_type.frame { types : [ known_types.str ] }
+					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
 					code_value : codegen.not_implemented {}
 					prepare_value : kws.set_frame_or_tmpl {
 						name : kws.string_constant_from_field { field : $name }
