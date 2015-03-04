@@ -725,8 +725,7 @@ kws_tmpl : Template {
 	iterator : Template codegen.gen_tmpl {
 		# The code generation to produce frames and templates over which to be
 		# iterated.
-		# TODO: This must be refactored to handle inputs from fields.
-		inputs ?:
+		input ?:
 		# The initial value for the accumulator of the iterator.
 		initial ?:
 		# The code to be invoked when the iterator has a value not covered in
@@ -749,6 +748,15 @@ kws_tmpl : Template {
 		current_ordinal ?:
 		# The current accumulated value in the iterator.
 		current_accumulator ?:
+
+		# The base template for input. Not to be used directly.
+		input_tmpl : Template {}
+		input_list : Template input_tmpl {
+			items ?:
+		}
+		input_merge : Template input_tmpl {
+			field ?:
+		}
 
 		# The base template for a “special case”. Not to be used directly.
 		base_case_tmpl : Template {
@@ -1461,7 +1469,9 @@ language_tmpl : Template {
 							choice_tmpl {
 								type : known_types.template
 								action : kws.iterator {
-									inputs : [ converted_result ]
+									input : input_list {
+										items : [ converted_result ]
+									}
 									initial : codegen.push_source_reference {
 										in : kws.frame_new {
 											container : kws.tmpl_container { source : converted_result }
@@ -1538,7 +1548,9 @@ language_tmpl : Template {
 								tail : kws.tmpl_context { source : converted_result }
 							}
 						}
-						inputs : [ converted_result ]
+						input : input_list {
+							items : [ converted_result ]
+						}
 						cases : [ list_case {
 							field : $overrides
 							name_field : $name
@@ -1576,7 +1588,9 @@ language_tmpl : Template {
 		in : Template kws.iterator {
 			accumulator_type -:
 			modify_source_reference : True
-			inputs : [ parameters.input_frame ]
+			input : input_list {
+				items : [ parameters.input_frame ]
+			}
 			cases : []
 			initial : start {}
 
@@ -2057,6 +2071,7 @@ language_tmpl : Template {
 								field : $inputs
 								type : $fricassee_merge_input
 								in : parser.many_word {
+									nonempty : True
 									of : parser.other {
 										type : $fricassee_merge_input
 										field : Null
@@ -2075,8 +2090,19 @@ language_tmpl : Template {
 							apply_to : [ environment.collect { } ]
 						}
 					]
-					# TODO
-					code_value : codegen.not_implemented {}
+					code_value : kws.iterator {
+						input : input_merge { field : $inputs }
+						cases : []
+						initial : kws.frame_new {
+							container : parameters.self_frame
+							context : parameters.context
+						}
+						default_case : kws.set_frame_or_tmpl {
+							name : current_name
+							into : current_accumulator
+							with : input.make_merge_frame
+						}
+					}
 				}
 			}
 		}
@@ -2088,35 +2114,67 @@ language_tmpl : Template {
 				name : common_fields.str
 			}
 			generation_flavour : codegen.flavour_aware
+			merge_input_tmpl : Template syntax_element {
+				prepare_value ?:
+				needs_generation : False
+			}
+			# The implementation must provide ways to access the special preparation values.
+			prepare_operations ?:
 			rules +: {
-				expr_input : Template syntax_element {
-					pretty_name : "fricassée input"
+				expr_input : Template merge_input_tmpl {
+					pretty_name : "fricassée frame input"
+					needs_generation : True
 					pattern : attribute_pattern { }
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.intrinsic { }
 					type_demand : { expression : [ known_types.frame ] }
-					# TODO
-					code_value : codegen.not_implemented {}
+					code_value : codegen.other_code { field : $expression }
+					prepare_value : kws.set_frame_or_tmpl {
+						name : kws.string_constant_from_field { field : $name }
+						into : prepare_operations.target_frame
+						with : kws.conditional {
+							condition : kws.frame_has {
+								name : prepare_operations.name
+								source : prepare_operations.matched_frame
+							}
+							true_action : kws.lookup_dynamic {
+								name : prepare_operations.name
+								source : kws.list_prepend {
+									frame : prepare_operations.matched_frame
+									tail : kws.list_null {}
+								}
+							}
+							false_action : kws.null_constant {}
+						}
+					}
 				}
-				name_input : Template syntax_element {
+				name_input : Template merge_input_tmpl {
 					pretty_name : "fricassée Name input"
 					pattern : attribute_pattern {
 						value_pattern : Template parser.exact { word : "Name" }
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.frame { types : [ known_types.str ] }
-					# TODO
 					code_value : codegen.not_implemented {}
+					prepare_value : kws.set_frame_or_tmpl {
+						name : kws.string_constant_from_field { field : $name }
+						into : prepare_operations.target_frame
+						with : prepare_operations.name
+					}
 				}
-				ordinal_input : Template syntax_element {
+				ordinal_input : Template merge_input_tmpl {
 					pretty_name : "fricassée Ordinal input"
 					pattern : attribute_pattern {
 						value_pattern : Template parser.exact { word : "Ordinal" }
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
-					# TODO
 					code_value : codegen.not_implemented {}
+					prepare_value : kws.set_frame_or_tmpl {
+						name : kws.string_constant_from_field { field : $name }
+						into : prepare_operations.target_frame
+						with : prepare_operations.ordinal
+					}
 				}
 			}
 		}
