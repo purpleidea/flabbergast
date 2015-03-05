@@ -804,6 +804,17 @@ codegen_tmpl : Template {
 		# Return the result of `in`. Feel free to set to a `define` entry.
 		returns : Null
 	}
+	collapse_others : Template gen_tmpl {
+		# The field containing the list.
+		field ?:
+		type ?:
+		# The code generator containing the initial value to put in the fold.
+		initial ?:
+
+		# The flavour for accumulation. This should be the accumulating version of
+		# the current flavour by default.
+		target_flavour : generation_flavour
+	}
 	# Causes the program to stop running.
 	die : Template gen_tmpl {
 	}
@@ -1658,7 +1669,8 @@ language_tmpl : Template {
 						inherit : False
 						in : codegen.empty_parameter {
 							parameters : { source_template : emptiness }
-							in : codegen.fold_others {
+							in : codegen.collapse_others {
+								type : known_types.frame
 								target_flavour : codegen.flavour_attribute_accumulate
 								field : $attributes
 								initial : kws.frame_new {
@@ -3321,7 +3333,8 @@ language_tmpl : Template {
 					code_value : codegen.push_source_reference {
 						in : codegen.empty_parameter {
 							parameters : { source_template : emptiness }
-							in : codegen.fold_others {
+							in : codegen.collapse_others {
+								type : known_types.frame
 								target_flavour : codegen.flavour_attribute_accumulate
 								field : $attributes
 								initial : kws.frame_new {
@@ -3402,7 +3415,8 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.filter { types : [ known_types.template ] }
 					code_value : codegen.empty_parameter {
 						parameters : { source_template : emptiness }
-						in : codegen.fold_others {
+						in : codegen.collapse_others {
+							type : known_types.template
 							target_flavour : codegen.flavour_attribute_accumulate
 							field : $attributes
 							initial : kws.tmpl_new {
@@ -3856,7 +3870,8 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.list_of { field : $parts } ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
-					code_value : codegen.fold_others {
+					code_value : codegen.collapse_others {
+						type : known_types.str
 						field : $parts
 						initial : kws.string_constant { str : "" }
 					}

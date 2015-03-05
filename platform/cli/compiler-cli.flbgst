@@ -1551,6 +1551,43 @@ codegen : compiler_lib.codegen_tmpl {
 					With acc : jail.exp_in.gen_gen(indent : indent & total_def_indent, code : code)
 		}
 	}
+	collapse_others +: {
+		extra_indent : ""
+		call_arguments : target_flavour.accumulate_flavour.call_site {}
+		argument_list : "\(generator), " &
+			(If target_flavour.accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
+			call_arguments.value
+
+		gen_gen +: {
+			sum_indent : indent & initial.extra_indent
+			expand : "\(Id)_block"
+			value :
+				"\(indent)var \(storage_name) = \(generator).MakeField(\"collapse_result\", typeof(\(type.real_type)));" &
+				"\(indent)var \(Id)_label = \(generator).Builder.DefineLabel();" &
+				initial.gen_gen(
+					indent : indent,
+					code :
+						"\(indent)\(initial.extra_indent)\(generator).CopyField(\(initial.storage_name), \(storage_name));" &
+						"\(indent)\(initial.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, \(Id)_label);"
+					) &
+				"\(indent)foreach (var \(Id)_item in \(field)) {" &
+				"\(indent)\t\(generator).Builder.MarkLabel(\(Id)_label);" &
+				"\(indent)\t\(Id)_label = \(generator).Builder.DefineLabel();" &
+				"\(indent)\t\(Id)_item.Generate(\(argument_list)(\(Id)_result) => {" &
+				"\(indent)\t\t\(generator).CopyField(\(Id)_result, \(storage_name));" &
+				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, \(Id)_label);" &
+				"\(indent)\t});" &
+				"\(indent)}" &
+				"\(indent)\(generator).Builder.MarkLabel(\(Id)_label);" &
+				code
+		}
+		parameters : {
+			accumulator : codegen.gen_tmpl {
+				extra_indent : ""
+				storage_name : Lookup storage_name In Container
+			}
+		}
+	}
 	die +: {
 		extra_indent : ""
 		gen_gen +: {
