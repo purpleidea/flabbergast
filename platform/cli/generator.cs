@@ -51,13 +51,13 @@ public class CompilationUnit {
 	/**
 	 * Create a new function, and use the provided block to fill it with code.
 	 */
-	internal MethodInfo CreateFunction(AstNode instance, string syntax_id, FunctionBlock block) {
+	internal MethodInfo CreateFunction(AstNode instance, string syntax_id, FunctionBlock block, Dictionary<string, bool> owner_externals) {
 		bool used;
 		var name = String.Concat("Function", id_gen.GetId(instance, out used), syntax_id);
 		if (functions.ContainsKey(name)) {
 			return functions[name];
 		}
-		var generator = CreateFunctionGenerator(name, false);
+		var generator = CreateFunctionGenerator(name, false, owner_externals);
 		block(generator, generator.InitialContainerFrame, generator.InitialContext, generator.InitialSelfFrame, generator.InitialSourceReference);
 		generator.GenerateSwitchBlock();
 		functions[name] = generator.Initialiser;
@@ -68,13 +68,13 @@ public class CompilationUnit {
 	/**
 	 * Create a new override function, and use the provided block to fill it with code.
 	 */
-	internal MethodInfo CreateFunctionOverride(AstNode instance, string syntax_id, FunctionOverrideBlock block) {
+	internal MethodInfo CreateFunctionOverride(AstNode instance, string syntax_id, FunctionOverrideBlock block, Dictionary<string, bool> owner_externals) {
 		bool used;
 		var name = String.Concat("Override", id_gen.GetId(instance, out used), syntax_id);
 		if (functions.ContainsKey(name)) {
 			return functions[name];
 		}
-		 var generator = CreateFunctionGenerator(name, true);
+		 var generator = CreateFunctionGenerator(name, true, owner_externals);
 		block(generator, generator.InitialContainerFrame, generator.InitialContext, generator.InitialOriginal, generator.InitialSelfFrame, generator.InitialSourceReference);
 		generator.GenerateSwitchBlock();
 		functions[name] = generator.Initialiser;
@@ -83,17 +83,16 @@ public class CompilationUnit {
 		return generator.Initialiser;
 	}
 
-	private Generator CreateFunctionGenerator(string name, bool has_original) {
+	private Generator CreateFunctionGenerator(string name, bool has_original, Dictionary<string, bool> owner_externals) {
 		var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.NotPublic | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
-		return new Generator(this, type_builder, has_original);
+		return new Generator(this, type_builder, has_original, owner_externals);
 	}
 
 	internal System.Type CreateRootGenerator(string name, Generator.Block block) {
 		var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
 		var generator = new Generator(this, type_builder);
 		block(generator);
-		generator.GenerateSwitchBlock();
-		//TODO proactively load externals
+		generator.GenerateSwitchBlock(true);
 		return type_builder.CreateType();
 	}
 }
@@ -182,6 +181,11 @@ internal class Generator {
 	 * address, then branches based on the dispatch.
 	 */
 	private Label switch_label;
+	/**
+	 * The collection of external URIs needed by this computation and where they are stored.
+	 */
+	private Dictionary<string, FieldValue> externals = new Dictionary<string, FieldValue>();
+	private Dictionary<string, bool> owner_externals;
 
 	public static bool IsNumeric(System.Type type) {
 		return type == typeof(double) || type == typeof(long);
@@ -190,6 +194,7 @@ internal class Generator {
 	internal Generator(CompilationUnit owner, TypeBuilder type_builder) {
 		Owner = owner;
 		TypeBuilder = type_builder;
+		owner_externals = new Dictionary<string, bool>();
 		state_field = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
 		interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
 		task_master = TypeBuilder.DefineField("task_master", typeof(TaskMaster), FieldAttributes.Private);
@@ -206,14 +211,17 @@ internal class Generator {
 		ctor_builder.Emit(OpCodes.Ret);
 		Builder = type_builder.DefineMethod("Run", MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig, typeof(bool), new System.Type[0]).GetILGenerator();
 		switch_label = Builder.DefineLabel();
-		var start_label = Builder.DefineLabel();
-		entry_points.Add(start_label);
+		// Label for load externals
+		entry_points.Add(Builder.DefineLabel());
+		// Label for main body
+		entry_points.Add(Builder.DefineLabel());
 		Builder.Emit(OpCodes.Br, switch_label);
-		Builder.MarkLabel(start_label);
+		MarkState(1);
 	}
-	internal Generator(CompilationUnit owner, TypeBuilder type_builder, bool has_original) {
+	internal Generator(CompilationUnit owner, TypeBuilder type_builder, bool has_original, Dictionary<string, bool> owner_externals) {
 		Owner = owner;
 		TypeBuilder = type_builder;
+		this.owner_externals = owner_externals;
 		// Create fields for all information provided by the caller.
 		state_field = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
 		interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
@@ -287,10 +295,12 @@ internal class Generator {
 		// Create a run method with an initial state.
 		Builder = type_builder.DefineMethod("Run", MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig, typeof(bool), new System.Type[0]).GetILGenerator();
 		switch_label = Builder.DefineLabel();
-		var start_label = Builder.DefineLabel();
-		entry_points.Add(start_label);
+		// Label for load externals
+		entry_points.Add(Builder.DefineLabel());
+		// Label for main body
+		entry_points.Add(Builder.DefineLabel());
 		Builder.Emit(OpCodes.Br, switch_label);
-		Builder.MarkLabel(start_label);
+		MarkState(1);
 		if (has_original) {
 			var state = DefineState();
 			SetState(state);
@@ -381,7 +391,12 @@ internal class Generator {
 		LoadReboxed(source, target.FieldType);
 		Builder.Emit(OpCodes.Stfld, target);
 	}
-
+	internal MethodInfo CreateFunctionOverride(AstNode instance, string syntax_id, CompilationUnit.FunctionOverrideBlock block) {
+		return Owner.CreateFunctionOverride(instance, syntax_id, block, owner_externals);
+	}
+	internal MethodInfo CreateFunction(AstNode instance, string syntax_id, CompilationUnit.FunctionBlock block) {
+		return Owner.CreateFunction(instance, syntax_id, block, owner_externals);
+	}
 	/**
 	 * Insert debugging information based on an AST node.
 	 */
@@ -509,9 +524,32 @@ internal class Generator {
 
 	/**
 	 * Finish this function by creating the state dispatch instruction using a
-	 * switch (computed goto).
+	 * switch (computed goto). Also generate the block that loads all the
+	 * external values.
 	 */
-	internal void GenerateSwitchBlock() {
+	internal void GenerateSwitchBlock(bool load_owner_externals = false) {
+		MarkState(0);
+		// If this is a top level function, load all the external values for our children.
+		if (load_owner_externals) {
+			foreach(var uri in owner_externals.Keys) {
+				if (!externals.ContainsKey(uri)) {
+					externals[uri] = MakeField(uri, typeof(object));
+				}
+			}
+		}
+		if (externals.Count > 0) {
+			StartInterlock(externals.Count);
+			foreach (var entry in externals) {
+				LoadTaskMaster();
+				Builder.Emit(OpCodes.Ldstr, entry.Key);
+				GenerateConsumeResult(entry.Value, true);
+				Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("GetExternal", new System.Type[] { typeof(string), typeof(ConsumeResult) }));
+			}
+			StopInterlock(1);
+		} else {
+			Builder.Emit(OpCodes.Br, entry_points[1]);
+		}
+
 		Builder.MarkLabel(switch_label);
 		Builder.Emit(OpCodes.Ldarg_0);
 		Builder.Emit(OpCodes.Ldfld, state_field);
@@ -699,19 +737,13 @@ internal class Generator {
 		Builder.Emit(OpCodes.Stfld, reference.Field);
 		return reference;
 	}
-	public LoadableValue ResolveUri(string uri, LoadableValue source_reference) {
-		Owner.externals[uri] = true;
-		var state = DefineState();
-		var library_field = MakeField(uri, typeof(object));
-		SetState(state);
-		LoadTaskMaster();
-		source_reference.Load(this);
-		GenerateConsumeResult(library_field);
-		Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("GetExternal", new System.Type[] { typeof (SourceReference), typeof(string), typeof(ConsumeResult) }));
-		Builder.Emit(OpCodes.Ldc_I4_0);
-		Builder.Emit(OpCodes.Ret);
-		MarkState(state);
-		return library_field;
+	public LoadableValue ResolveUri(string uri) {
+		owner_externals[uri] = true;
+		if (!externals.ContainsKey(uri)) {
+			var library_field = MakeField(uri, typeof(object));
+			externals[uri] = library_field;
+		}
+		return externals[uri];
 	}
 	/**
 	 * Change the state that will be entered upon re-entry.
@@ -747,12 +779,15 @@ internal class Generator {
 	}
 	public void StopInterlock() {
 		var state = DefineState();
+		StopInterlock(state);
+		MarkState(state);
+	}
+	public void StopInterlock(int state) {
 		SetState(state);
 		DecrementInterlock(Builder);
 		Builder.Emit(OpCodes.Brfalse, entry_points[state]);
 		Builder.Emit(OpCodes.Ldc_I4_0);
 		Builder.Emit(OpCodes.Ret);
-		MarkState(state);
 	}
 	/**
 	 * Generate a successful return.

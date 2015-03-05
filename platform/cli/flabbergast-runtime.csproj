@@ -35,6 +35,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="data.cs"/>
+		<Compile Include="dlopen.cs"/>
 		<Compile Include="exec.cs"/>
 		<Compile Include="iterator.cs"/>
 		<Compile Include="srcref.cs"/>

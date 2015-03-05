@@ -73,6 +73,9 @@ public class ConsoleTaskMaster : TaskMaster {
 		Console.Error.WriteLine("Lookup happened here:");
 		lookup.SourceReference.Write(Console.Error, 0, "  ");
 	}
+	public override void ReportExternalError(string uri) {
+		Console.Error.WriteLine("The URI “{0}” could not be resolved.", uri);
+	}
 	public override void ReportOtherError(SourceReference reference, string message) {
 		Console.Error.WriteLine(message);
 		reference.Write(Console.Error, 0, "  ");

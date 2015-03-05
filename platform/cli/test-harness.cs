@@ -61,6 +61,8 @@ public class CheckResult : Computation {
 public class TestTaskMaster : TaskMaster {
 	public override void ReportOtherError(SourceReference reference, string message) {
 	}
+	public override void ReportExternalError(string uri) {
+	}
 }
 
 public class TestHarness {

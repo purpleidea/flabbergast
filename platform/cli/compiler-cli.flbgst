@@ -982,7 +982,7 @@ kws : compiler_lib.kws_tmpl {
 				"\(return_indent)\(generator).Return(\(returns.storage_name));"
 
 			value :
-				"\(indent)var \(storage_name) = new DelegateValue(\(parent_generator).Owner.\(method)(this, \"\(Id)\", (\(generator)\(argument_list)) => {"	&
+				"\(indent)var \(storage_name) = new DelegateValue(\(parent_generator).\(method)(this, \"\(Id)\", (\(generator)\(argument_list)) => {"	&
 				"\(indent)\t\(generator).DebugPosition(this);" &
 				returns.gen_gen(indent : indent & "\t", code : return_code) &
 				"\(indent)}), typeof(\(delegate_type)));" &
@@ -1158,7 +1158,7 @@ kws : compiler_lib.kws_tmpl {
 		uri_str ?:
 		extra_indent : ""
 		gen_gen +: {
-				value : "\(indent)var \(storage_name) = \(generator).ResolveUri(\(uri_str), \(parameters.source_reference.storage_name));" & code
+				value : "\(indent)var \(storage_name) = \(generator).ResolveUri(\(uri_str));" & code
 		}
 	}
 	external_literal +: {
@@ -2260,3 +2260,4 @@ compiler : compiler_lib.language_tmpl {
 	}
 	value : "using System.Linq;\nnamespace Flabbergast {\n" & (For group : expanded_groups Reduce acc & group.value With acc : "") & "}"
 }
+value : compiler.value

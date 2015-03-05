@@ -73,7 +73,8 @@ public abstract class Computation {
 }
 
 public interface UriHandler {
-	bool ResolveUri(SourceReference reference, string uri, ConsumeResult consume_result);
+	string UriName { get; }
+	System.Type ResolveUri(string uri, out bool stop);
 }
 
 /**
@@ -82,7 +83,7 @@ public interface UriHandler {
 public abstract class TaskMaster {
 	private Queue<Computation> computations = new Queue<Computation>();
 	private List<UriHandler> handlers = new List<UriHandler>();
-	private Dictionary<string, object> external_cache = new Dictionary<string, object>();
+	private Dictionary<string, Computation> external_cache = new Dictionary<string, Computation>();
 
 	private long next_id = 0;
 
@@ -123,16 +124,42 @@ public abstract class TaskMaster {
 		handlers.Add(handler);
 	}
 
-	public virtual void GetExternal(SourceReference reference, string uri, ConsumeResult target) {
+	public virtual void GetExternal(string uri, ConsumeResult target) {
 		if (external_cache.ContainsKey(uri)) {
-			target(external_cache[uri]);
+			external_cache[uri].Notify(target);
 		}
-		foreach (var handler in handlers) {
-			if (handler.ResolveUri(reference, uri, (result) => { external_cache[uri] = result; target(result); })) {
-				return;
+		if (uri.StartsWith("lib:")) {
+			if (uri.Length < 5) {
+					ReportExternalError(uri);
+					return;
+			}
+			for(var it = 5; it < uri.Length; it++) {
+				if (uri[it] != '/' && !char.IsLetterOrDigit(uri[it])) {
+					ReportExternalError(uri);
+					return;
+				}
 			}
 		}
-		ReportOtherError(reference, String.Format("The URI “{0}” could not be resolved.", uri));
+
+		foreach (var handler in handlers) {
+			bool stop;
+			var t = handler.ResolveUri(uri, out stop);
+			if (stop) {
+				ReportExternalError(uri);
+				return;
+			}
+			if (t == null) {
+				continue;
+			}
+			if (!typeof(Computation).IsAssignableFrom(t)) {
+				throw new InvalidCastException(String.Format("Class {0} for URI {1} from {2} is not a computation.", t, uri, handler.UriName));
+			}
+			var computation = (Computation) Activator.CreateInstance(t, this);
+			external_cache[uri] = computation;
+			computation.Notify(target);
+			return;
+		}
+		ReportExternalError(uri);
 	}
 
 	public long NextId() {
@@ -148,6 +175,8 @@ public abstract class TaskMaster {
 			task.Compute();
 		}
 	}
+
+	public abstract void ReportExternalError(string uri);
 
 	/**
 	 * Report an error during lookup.

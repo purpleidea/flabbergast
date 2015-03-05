@@ -84,6 +84,8 @@ public class Printer {
 		var module_builder = assembly_builder.DefineDynamicModule("PrintModule");
 		var unit = new CompilationUnit("<input>", module_builder, false);
 		var task_master = new ConsoleTaskMaster();
+		task_master.AddUriHandler(BuiltInLibraries.INSTANCE);
+		task_master.AddUriHandler(new LoadPrecompiledLibraries());
 		var collector = new ConsoleCollector();
 		var parser = Parser.Open(files[0]);
 		parser.Trace = trace;
