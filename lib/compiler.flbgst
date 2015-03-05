@@ -1857,7 +1857,7 @@ language_tmpl : Template {
 				}
 				informative_attribute : Template syntax_element {
 					pretty_name : "informative attribute"
-					alternatives : { new_tmpl_attributes : Null  extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
+					alternatives : { extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
 					pattern : parser.sequence {
 						of : [
 							space { preferred : True },
@@ -1876,6 +1876,10 @@ language_tmpl : Template {
 							source : parameters.source_template
 						}
 					}
+				}
+				informative_attribute_new : Template (rules {}).informative_attribute {
+					alternatives : { new_tmpl_attributes : Null }
+					code_value : parameters.target
 				}
 				remove_attribute : Template syntax_element {
 					pretty_name : "removal attribute"
