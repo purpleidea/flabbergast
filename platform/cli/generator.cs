@@ -187,6 +187,7 @@ internal class Generator {
 	private Dictionary<string, FieldValue> externals = new Dictionary<string, FieldValue>();
 	private Dictionary<string, bool> owner_externals;
 
+	private Dictionary<System.Type, LocalBuilder> locals = new Dictionary<System.Type, LocalBuilder>();
 	public static bool IsNumeric(System.Type type) {
 		return type == typeof(double) || type == typeof(long);
 	}
@@ -217,6 +218,7 @@ internal class Generator {
 		entry_points.Add(Builder.DefineLabel());
 		Builder.Emit(OpCodes.Br, switch_label);
 		MarkState(1);
+		DeclareLocals();
 	}
 	internal Generator(CompilationUnit owner, TypeBuilder type_builder, bool has_original, Dictionary<string, bool> owner_externals) {
 		Owner = owner;
@@ -315,6 +317,7 @@ internal class Generator {
 			Builder.Emit(OpCodes.Ret);
 			MarkState(state);
 		}
+		DeclareLocals();
 	}
 
 	/**
@@ -403,6 +406,11 @@ internal class Generator {
 	public void DebugPosition(CodeRegion node) {
 		if (Owner.SymbolDocument != null) {
 			Builder.MarkSequencePoint(Owner.SymbolDocument, node.StartRow, node.StartColumn, node.EndRow, node.EndColumn);
+		}
+	}
+	private void DeclareLocals() {
+		foreach (var type in new System.Type[] { typeof(bool), typeof(long), typeof(double) }) {
+			locals[type] = Builder.DeclareLocal(type);
 		}
 	}
 	public void DecrementInterlock(ILGenerator builder) {
@@ -726,7 +734,7 @@ internal class Generator {
 		Builder.Emit(OpCodes.Ldstr, "fricassée iteration {0}: {1}");
 		iterator.Load(Builder);
 		Builder.Emit(OpCodes.Call, typeof(MergeIterator).GetMethod("get_Position"));
-		var local = Builder.DeclareLocal(typeof(long));
+		var local = locals[typeof(long)];
 		Builder.Emit(OpCodes.Stloc, local);
 		Builder.Emit(OpCodes.Ldloca, local);
 		Builder.Emit(OpCodes.Call, typeof(long).GetMethod("ToString", new System.Type[] { }));
@@ -813,7 +821,7 @@ internal class Generator {
 	}
 	private void ToStringishHelperNumeric<T>(LoadableValue source) {
 		source.Load(Builder);
-		var local = Builder.DeclareLocal(typeof(T));
+		var local = locals[typeof(T)];
 		Builder.Emit(OpCodes.Stloc, local);
 		Builder.Emit(OpCodes.Ldloca, local);
 		Builder.Emit(OpCodes.Call, typeof(T).GetMethod("ToString", new System.Type[] {}));
