@@ -508,6 +508,14 @@ is rewritten as:
 
 In this example, `c` would be circular evaluation when using normal evaluation semantics, but because the evaluation of the parameters happens in the containing context, this is fine.
 
+### Data Reshaping
+
+It's useful to remember how all the pieces of structured data manipulation in the language work. The following diagram shows the different formats of data and the syntax that navigates between them.
+
+![](https://rawgithub.com/apmasell/flabbergast/master/inheritance.svg)
+
+Templates can be made from scratch or from existing templates. Frames can be made from scratch, by instantiating templates, or the fricassée `Select` operations. Scalar values can be distilled from frames using the fricassée `Reduce` operation. Obviously, scalar values can be manipulated a number of ways not shown in the diagram.
+
 ### Miscellaneous
 
 The `Let` expression allows binding a value to a new name. For example, `Let a : 3 In a * a`. This is a convenient way to eliminate common subexpressions. Be advised that the normal short-circuiting rules do not apply: all the values in the expression must be evaluated first. Multiple attributes can be bound at once (_e.g._, `Let a : 3, b : 4 In a * a + b * b`).
@@ -542,6 +550,7 @@ Most languages, particularly object-oriented languages, have a lot of plumbing: 
 Although Flabbergast has the `?:` attribute definition, it should almost never be used. This is one of the most frequent mistakes of novice programmers. If there's a value needed, just use it; there's no need force the consumer of a template to fill in the blank. The real use case is for things that must be provided and unique. For instance, the name of an SMB share is probably best defined with `?:`, but the list of users that can access the share should certainly not use `?:`. It's okay that a user who instantiates a share template without providing a users list somewhere will cause a lookup error: failure to provide an appropriately name value is a failure to consume that API correctly and, indeed, this was noted by an error being produced. There's no need to make this some how “more” explicit. The `%:` attribute definition provides an advisory version of `?:` that indicates that a value should be supplied, but does not stipulate that it needs to be included directly.
 
 The most important feature of Flabbergast is overriding. When starting out with Java or C#, understanding how to divide things up into objects is the hard part. When starting out with ML or Haskell, understanding how to make things stateless is the hard part. When starting out with Flabbergast, understanding  how to make things easy to override is the hard part.
+
 
 ### Interfaces
 In object-oriented languages, there is typically some convention surround how to tell if an object is consumable in a particular situation. Statically-typed object-oriented languages typically have “interfaces”, in the Java or C# sense. These are functions of the type system: since each expression needs a type and multiple inheritance is not permitted, an interface provides a type that any object can fulfill outside of the inheritance hierarchy. Dynamically-typed object-oriented languages, particularly Python, JavaScript, and Ruby, eschew this and proudly extol the benefits of “duck” typing: that is, simply call a method and expect it to work.
