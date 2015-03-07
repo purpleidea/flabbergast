@@ -642,12 +642,16 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 	# Pass this type to a child node.
 	propagate +: {
 		allowed_type_bits : For t : extra_types Reduce acc & " | " & t.union_type With acc : current_type
-		value : For field : fields Reduce acc & "\(indent)if (\(field) != null) \(field).EnsureType(_collector, \(allowed_type_bits), ref _success);" With acc : ""
+		value :
+			For field : fields
+				Where !(field Is Null)
+				Reduce acc & "\(indent)if (\(field) != null) \(field).EnsureType(_collector, \(allowed_type_bits), ref _success, \(If needs_unbox Then "true" Else "_needs_unbox"));"
+				With acc : ""
 	}
 	# Pass this type to all child nodes in a list.
 	propagate_all +: {
 		allowed_type_bits : For t : extra_types Reduce acc & " | " & t.union_type With acc : current_type
-		value : "\(indent)if (\(field) != null) foreach (var \(Id) in \(field)) \(Id).EnsureType(_collector, \(allowed_type_bits), ref _success);"
+		value : "\(indent)if (\(field) != null) foreach (var \(Id) in \(field)) \(Id).EnsureType(_collector, \(allowed_type_bits), ref _success, \(If needs_unbox Then "true" Else "_needs_unbox"));"
 	}
 	# This works similarly to filter, but takes the type from a syntax node
 	# rather than a literal in the compiler.
@@ -667,9 +671,12 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 			ensure_type_of.value &
 			"\(parent_indent)}"
 	}
+	special +: {
+		value : "\(indent)\(type_storage).EnsureType(_collector, \(current_type), ref _success,  \(If needs_unbox Then "true" Else "_needs_unbox"));"
+	}
 	# Stores the type information in the environment by lookup name.
 	stored +: {
-		value : "\(indent)Environment.Lookup(_collector, \(field).Select((s) => s.ToString()), ref _success).EnsureType(_collector, \(current_type), ref _success);"
+		value : "\(indent)Environment.Lookup(_collector, \(field).Select((s) => s.ToString()), ref _success).EnsureType(_collector, \(current_type), ref _success, _needs_unbox);"
 	}
 	# Stores the type information in the environment by syntax node.
 	intrinsic +: {
@@ -677,7 +684,11 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 	}
 	stop +: { value : "" }
 	multiple +: {
-		value : For action : actions Reduce acc & action.value With acc : ""
+		value :
+			For action : actions
+				Where !(action Is Null)
+				Reduce acc & action.value
+				With acc : ""
 	}
 }
 default_indent : "\n\t\t"
@@ -1098,10 +1109,7 @@ kws : compiler_lib.kws_tmpl {
 			value : source.gen_gen(
 				indent : indent,
 				code :
-					"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"str\", typeof(Stringish));" &
-					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
-					"\(sum_indent)\(generator).ToStringish(\(source.storage_name), \(parameters.source_reference.storage_name));" &
-					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);" &
+					"\(sum_indent)var \(storage_name) = \(generator).ToStringish(\(source.storage_name), \(parameters.source_reference.storage_name));" &
 					code
 				)
 		}
@@ -1982,23 +1990,16 @@ compiler : compiler_lib.language_tmpl {
 
 		current_type : "_type"
 		type_assurance : If is_typeable
-			Then "\tpublic override void EnsureType(ErrorCollector _collector, Type _type, ref bool _success) {\(ensure_type_is.value)\n\t}\n"
+			Then "\tpublic override void EnsureType(ErrorCollector _collector, Type _type, ref bool _success, bool _needs_unbox) {\(ensure_type_is.value)\n\t}\n"
 			Else ""
 		type_demands : If environment_enabled
 			Then "\tinternal override void MakeTypeDemands(ErrorCollector _collector, ref bool _success) {\n" &
-				(For field : Name, types : type_demand
-					Reduce "\(ensure_acc)\t\tif (\(field) != null) \(field).EnsureType(_collector, " &
-						(For t : types Reduce acc & " | " & t.union_type With acc : "0") &
-						", ref _success);\n"
-					With ensure_acc : "") &
-				(For field : Name, types : type_demand_all
-					Where !(types Is Null)
-					Reduce
-						"\(ensure_acc)\t\tif (\(field) != null) foreach (var _item in \(field)) _item.EnsureType(_collector, " &
-						(For t : types Reduce acc & " | " & t.union_type With acc : "0") &
-						", ref _success);\n"
-					With ensure_acc : "") &
-				"\t}\n"
+				"\t\t#pragma warning disable 219\n" &
+				"\t\tvar _type = NameInfo.AnyType;\n" &
+				"\t\tvar _needs_unbox = false;\n" &
+				"\t\t#pragma warning restore 219\n" &
+				type_demand.value &
+				"\n\t}\n"
 			Else ""
 
 		generator : "_generator"
@@ -2109,7 +2110,7 @@ compiler : compiler_lib.language_tmpl {
 			Where rule.is_real_element
 			Reduce acc & rule.class_gen
 			With acc : "internal abstract class \(group_name) : \(If environment_enabled Then "AstTypeableNode" Else "AstNode")\(If is_typeable Then ", ITypeableElement" Else "") {\n" &
-				(If is_typeable Then "\tpublic abstract void EnsureType(ErrorCollector _collector, Type _type, ref bool _success);\n" Else "") &
+				(If is_typeable Then "\tpublic abstract void EnsureType(ErrorCollector _collector, Type _type, ref bool _success, bool needs_unbox);\n" Else "") &
 				common_field_class_gen &
 				super_class_extra &
 				parse_base &

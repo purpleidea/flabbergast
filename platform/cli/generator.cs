@@ -151,6 +151,10 @@ internal class Generator {
 	 */
 	public FieldValue InitialOriginal { get; private set; }
 	/**
+	 * The current number of environment-induced bifurcation points;
+	 */
+	public int Paths { get; set; }
+	/**
 	 * The field containing the current state for this function to continue upon
 	 * re-entry.
 	 */
@@ -195,6 +199,7 @@ internal class Generator {
 	internal Generator(CompilationUnit owner, TypeBuilder type_builder) {
 		Owner = owner;
 		TypeBuilder = type_builder;
+		Paths = 1;
 		owner_externals = new Dictionary<string, bool>();
 		state_field = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
 		interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
@@ -223,6 +228,7 @@ internal class Generator {
 	internal Generator(CompilationUnit owner, TypeBuilder type_builder, bool has_original, Dictionary<string, bool> owner_externals) {
 		Owner = owner;
 		TypeBuilder = type_builder;
+		Paths = 1;
 		this.owner_externals = owner_externals;
 		// Create fields for all information provided by the caller.
 		state_field = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
@@ -471,8 +477,9 @@ internal class Generator {
 			if (item.BackingType == typeof(object)) {
 				item.Load(Builder);
 				Builder.Emit(OpCodes.Call, typeof(object).GetMethod("GetType"));
+				Builder.Emit(OpCodes.Call, typeof(Stringish).GetMethod("HideImplementation", new System.Type[] { typeof(System.Type) }));
 			} else {
-				Builder.Emit(OpCodes.Ldtoken, item.BackingType);
+				Builder.Emit(OpCodes.Ldtoken, Stringish.HideImplementation(item.BackingType));
 				Builder.Emit(OpCodes.Call, typeof(System.Type).GetMethod("GetTypeFromHandle", new System.Type[] { typeof(RuntimeTypeHandle) }));
 			}
 		}
@@ -842,7 +849,9 @@ internal class Generator {
 			throw new InvalidOperationException(String.Format("Cannot convert {0} to stringish.", source.BackingType));
 		}
 	}
-	public void ToStringish(LoadableValue source, LoadableValue source_reference) {
+	public LoadableValue ToStringish(LoadableValue source, LoadableValue source_reference) {
+		var field = MakeField("str", typeof(Stringish));
+		Builder.Emit(OpCodes.Ldarg_0);
 		if (source.BackingType == typeof(object)) {
 			var end = Builder.DefineLabel();
 			foreach (var type in new System.Type[] { typeof(long), typeof(double), typeof(bool), typeof(Stringish) }) {
@@ -855,11 +864,14 @@ internal class Generator {
 				Builder.MarkLabel(next);
 			}
 
+			Builder.Emit(OpCodes.Pop);
 			EmitTypeError(source_reference, "Cannot convert type {0} to string.", source);
 			Builder.MarkLabel(end);
 		} else {
 			ToStringishHelper(source);
 		}
+		Builder.Emit(OpCodes.Stfld, field.Field);
+		return field;
 	}
 }
 internal class LookupCache {

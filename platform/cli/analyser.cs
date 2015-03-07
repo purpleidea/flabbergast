@@ -89,7 +89,7 @@ internal abstract class AstTypeableNode : AstNode {
 				var param_type = method.IsStatic ? method.GetParameters()[it].ParameterType : (it == 0 ? method.ReflectedType : method.GetParameters()[it - 1].ParameterType);
 					candidate_parameter_type |= TypeFromClrType(param_type);
 			}
-			arguments[it].EnsureType(collector, candidate_parameter_type, ref success);
+			arguments[it].EnsureType(collector, candidate_parameter_type, ref success, true);
 		}
 	}
 	public static Type TypeFromClrType(System.Type clr_type) {
@@ -105,6 +105,8 @@ internal abstract class AstTypeableNode : AstNode {
 			return Type.Frame;
 		} else if (clr_type == typeof(Template)) {
 			return Type.Template;
+		} else if (clr_type == typeof(Object)) {
+			return NameInfo.AnyType;
 		} else {
 			return 0;
 		}
@@ -127,7 +129,7 @@ internal abstract class AstTypeableNode : AstNode {
 	}
 }
 internal interface ITypeableElement {
-	void EnsureType(ErrorCollector collector, Type type, ref bool success);
+	void EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox);
 }
 internal class EnvironmentPrioritySorter : IComparer<AstTypeableNode> {
 	public int Compare(AstTypeableNode x, AstTypeableNode y) {
@@ -145,7 +147,7 @@ internal abstract class NameInfo {
 		}
 	}
 	internal NameInfo Lookup(ErrorCollector collector, string name, ref bool success) {
-		EnsureType(collector, Type.Frame, ref success);
+		EnsureType(collector, Type.Frame, ref success, false);
 		if (!Children.ContainsKey(name)) {
 			CreateChild(collector, name, Name, ref success);
 		}
@@ -154,7 +156,7 @@ internal abstract class NameInfo {
 	internal NameInfo Lookup(ErrorCollector collector, IEnumerator<string> names, ref bool success) {
 		var info = this;
 		while (names.MoveNext()) {
-			info.EnsureType(collector, Type.Frame, ref success);
+			info.EnsureType(collector, Type.Frame, ref success, false);
 			if (!info.Children.ContainsKey(names.Current)) {
 				info.CreateChild(collector, names.Current, info.Name, ref success);
 			}
@@ -165,7 +167,7 @@ internal abstract class NameInfo {
 	public virtual bool HasName(string name) {
 		return Children.ContainsKey(name);
 	}
-	public abstract void EnsureType(ErrorCollector collector, Type type, ref bool success);
+	public abstract void EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox);
 	public abstract void CreateChild(ErrorCollector collector, string name, string root, ref bool success);
 	public abstract LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context);
 	public virtual string CheckValidNarrowing(LookupCache next, LookupCache current) {
@@ -200,11 +202,13 @@ internal abstract class NameInfo {
 internal class OpenNameInfo : NameInfo {
 	private Environment Environment;
 	protected Type RealType = AnyType;
+	private bool must_unbox = false;
 	public OpenNameInfo(Environment environment, string name) {
 		Environment = environment;
 		Name = name;
 	}
-	public override void EnsureType(ErrorCollector collector, Type type, ref bool success) {
+	public override void EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
+		this.must_unbox |= must_unbox;
 		if ((RealType & type) == 0) {
 			success = false;
 			collector.ReportLookupTypeError(Environment, Name, RealType, type);
@@ -219,18 +223,21 @@ internal class OpenNameInfo : NameInfo {
 		return true;
 	}
 	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
-		return new LoadableCache(GenerateLookupField(generator, source_reference, context), RealType, this);
+		return new LoadableCache(GenerateLookupField(generator, source_reference, context), RealType, this, must_unbox);
 	}
 }
 internal class OverrideNameInfo : RestrictableType {
 	private Environment Environment;
 	protected Type RealType = AnyType;
+	private bool must_unbox = false;
 	public override Type RestrictedType { get { return RealType; } }
+	public override bool MustUnbox { get { return must_unbox; } }
 	public OverrideNameInfo(Environment environment, string name) {
 		Environment = environment;
 		Name = name;
 	}
-	public override void EnsureType(ErrorCollector collector, Type type, ref bool success) {
+	public override void EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
+		this.must_unbox |= must_unbox;
 		if ((RealType & type) == 0) {
 			success = false;
 			collector.ReportLookupTypeError(Environment, Name, RealType, type);
@@ -242,13 +249,13 @@ internal class OverrideNameInfo : RestrictableType {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
 	}
 	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
-		return new LoadableCache(generator.InitialOriginal, RealType, this);
+		return new LoadableCache(generator.InitialOriginal, RealType, this, must_unbox);
 	}
 }
 internal class JunkInfo : NameInfo {
 	public JunkInfo() {
 	}
-	public override void EnsureType(ErrorCollector collector, Type type, ref bool success) {
+	public override void EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
 	}
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		Children[name] = new JunkInfo();
@@ -260,16 +267,19 @@ internal class JunkInfo : NameInfo {
 internal class BoundNameInfo : RestrictableType {
 	private Environment Environment;
 	ITypeableElement Target;
+	private bool must_unbox = false;
 	public override Type RestrictedType { get { return restricted_type; } }
+	public override bool MustUnbox { get { return must_unbox; } }
 	private Type restricted_type = AnyType;
 	public BoundNameInfo(Environment environment, string name, ITypeableElement target) {
 		Environment = environment;
 		Name = name;
 		Target = target;
 	}
-	public override void EnsureType(ErrorCollector collector, Type type, ref bool success) {
+	public override void EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
+		this.must_unbox |= must_unbox;
 		restricted_type &= type;
-		Target.EnsureType(collector, type, ref success);
+		Target.EnsureType(collector, type, ref success, must_unbox);
 	}
 	public override bool NeedsLoad(LookupCache current) {
 		return !current.Has(this);
@@ -278,13 +288,14 @@ internal class BoundNameInfo : RestrictableType {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
 	}
 	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
-		return new LoadableCache(GenerateLookupField(generator, source_reference, context), RestrictedType, this);
+		return new LoadableCache(GenerateLookupField(generator, source_reference, context), RestrictedType, this, must_unbox);
 	}
 }
 internal class CopyFromParentInfo : NameInfo {
 	Environment Environment;
 	NameInfo Source;
 	Type Mask = AnyType;
+	private bool must_unbox = false;
 	bool ForceBack;
 
 	public CopyFromParentInfo(Environment environment, string name, NameInfo source, bool force_back) {
@@ -293,9 +304,10 @@ internal class CopyFromParentInfo : NameInfo {
 		Source = source;
 		ForceBack = force_back;
 	}
-	public override void EnsureType(ErrorCollector collector, Type type, ref bool success) {
+	public override void EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
+		this.must_unbox |= must_unbox;
 		if (ForceBack) {
-			Source.EnsureType(collector, type, ref success);
+			Source.EnsureType(collector, type, ref success, must_unbox);
 		} else {
 			if ((Mask & type) == 0) {
 				success = false;
@@ -318,7 +330,7 @@ internal class CopyFromParentInfo : NameInfo {
 		return base.HasName(name) || Source.HasName(name);
 	}
 	public override bool NeedsLoad(LookupCache current) {
-		return !current.Has(Source);
+		return !current.Has(Source) || must_unbox && current[Source].BackingType == typeof(object);
 	}
 	public override string CheckValidNarrowing(LookupCache next, LookupCache current) {
 		if (current.Has(Source)) {
@@ -336,11 +348,12 @@ internal class CopyFromParentInfo : NameInfo {
 	}
 	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
 		var source_cache = Source.Load(generator, source_reference, context);
-		return new LoadableCache(source_cache.Value, source_cache.PossibleTypes & Mask, this);
+		return new LoadableCache(source_cache.Value, source_cache.PossibleTypes & Mask, this, must_unbox);
 	}
 }
 internal abstract class RestrictableType : NameInfo {
 	public abstract Type RestrictedType { get; }
+	public abstract bool MustUnbox { get; }
 }
 internal class LoadableCache {
 	public LoadableValue Value { get; private set; }
@@ -348,13 +361,18 @@ internal class LoadableCache {
 	public NameInfo NameInfo { get; private set; }
 	public bool SinglyTyped { get { return Types.Length == 1; } }
 	public System.Type[] Types { get; private set; }
-	public LoadableCache(LoadableValue loadable_value, RestrictableType name_info) : this(loadable_value, name_info.RestrictedType, name_info) {
+	public bool NeedsUnbox { get; private set; }
+	public bool DirectCopy { get {
+		return Value.BackingType != typeof(object) || !NeedsUnbox;
+	} }
+	public LoadableCache(LoadableValue loadable_value, RestrictableType name_info) : this(loadable_value, name_info.RestrictedType, name_info, name_info.MustUnbox) {
 	}
-	public LoadableCache(LoadableValue loadable_value, Type type, NameInfo name_info) {
+	public LoadableCache(LoadableValue loadable_value, Type type, NameInfo name_info, bool must_unbox) {
 		Value = loadable_value;
 		PossibleTypes = type;
 		NameInfo = name_info;
 		Types = AstTypeableNode.ClrTypeFromType(type);
+		NeedsUnbox = must_unbox;
 	}
 }
 internal class Environment : CodeRegion {
@@ -370,6 +388,7 @@ internal class Environment : CodeRegion {
 	public bool TopLevel { get { return Parent == null ? top_level : Parent.TopLevel; } }
 	bool top_level;
 	bool ForceBack;
+	bool combinatorial_explosion;
 
 	public Environment(string filename, int start_row, int start_column, int end_row, int end_column, Environment parent = null, bool force_back = false, bool top_level = false) {
 		if (force_back && parent == null) {
@@ -441,7 +460,7 @@ internal class Environment : CodeRegion {
 		foreach (var info in all_children) {
 			var current_narrow_error = info.CheckValidNarrowing(base_lookup_cache, current);
 			if (narrow_error != null && current_narrow_error != null) {
-				narrow_error = narrow_error + current_narrow_error;
+				narrow_error = String.Format("{0}\n{1}", narrow_error, current_narrow_error);
 			} else {
 				narrow_error = narrow_error ?? current_narrow_error;
 			}
@@ -468,19 +487,27 @@ internal class Environment : CodeRegion {
 			}
 			generator.StopInterlock();
 		}
-		foreach (var lookup_result in lookup_results.Where(x => x.Value.BackingType != typeof(object))) {
+		foreach (var lookup_result in lookup_results.Where(x => x.DirectCopy)) {
 			base_lookup_cache[lookup_result.NameInfo] = lookup_result.Value;
 		}
-		foreach (var lookup_result in lookup_results.Where(x => x.SinglyTyped && x.Value.BackingType == typeof(object))) {
+		foreach (var lookup_result in lookup_results.Where(x => x.SinglyTyped && !x.DirectCopy)) {
 			base_lookup_cache[lookup_result.NameInfo] = new AutoUnboxValue(lookup_result.Value, lookup_result.Types[0]);
 			var label = generator.Builder.DefineLabel();
 			lookup_result.Value.Load(generator);
 			generator.Builder.Emit(OpCodes.Isinst, lookup_result.Types[0]);
 			generator.Builder.Emit(OpCodes.Brtrue, label);
-			generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", lookup_result.Value.BackingType, lookup_result.NameInfo.Name, "{0}"), lookup_result.Value);
+			generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", lookup_result.Types[0], lookup_result.NameInfo.Name, "{0}"), lookup_result.Value);
 			generator.Builder.MarkLabel(label);
 		}
-		GenerateLookupPermutation(generator, context, base_lookup_cache, 0, lookup_results.Where(x => !x.SinglyTyped && x.Value.BackingType == typeof(object)).ToArray(), source_reference, block);
+		var permutable_caches = lookup_results.Where(x => !x.SinglyTyped && !x.DirectCopy).ToArray();
+		var old_paths = generator.Paths;
+		generator.Paths = permutable_caches.Aggregate(old_paths, (acc, c) => acc * c.Types.Length);
+		if (generator.Paths > 200 && !combinatorial_explosion) {
+			Console.Error.WriteLine("{0}:{1}-{2}:{3}: There are {4} type-derived flows in the generated code. This will be slow to compile.", StartRow, StartColumn, EndRow, EndColumn, generator.Paths);
+			combinatorial_explosion = true;
+		}
+		GenerateLookupPermutation(generator, context, base_lookup_cache, 0, permutable_caches, source_reference, block);
+		generator.Paths = old_paths;
 	}
 	private void GenerateLookupPermutation(Generator generator, LoadableValue context, LookupCache cache, int index, LoadableCache[] values, LoadableValue source_reference, Block block) {
 		if (index >= values.Length) {

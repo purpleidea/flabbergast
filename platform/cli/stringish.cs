@@ -5,6 +5,9 @@ using System.IO;
 namespace Flabbergast {
 public abstract class Stringish : IComparable<Stringish> {
 	public static Stringish[] BOOLEANS = new Stringish[] { new SimpleStringish("False"), new SimpleStringish("True") };
+	public static System.Type HideImplementation(System.Type t) {
+		return typeof(Stringish).IsAssignableFrom(t) ? typeof(Stringish) : t;
+	}
 	public abstract long Length { get; }
 	public abstract void Write(TextWriter writer);
 	public int CompareTo(Stringish other) {

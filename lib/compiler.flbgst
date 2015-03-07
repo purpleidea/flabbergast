@@ -283,6 +283,8 @@ ensure_type_tmpl : Template {
 	number : Template filter {
 		types : [ known_types.float, known_types.int ]
 	}
+	# If true, the value must be unboxed. Otherwise, it will be passed boxed to the generating code.
+	needs_unbox : True
 	# Check that the return type is one of the supplied types.
 	filter : Template {
 		# The set of types to restrict the return type. If the return type is not
@@ -317,6 +319,10 @@ ensure_type_tmpl : Template {
 		propagate_castable : False
 		# The action to perform with the restricted type.
 		ensure_type_of : stop {}
+	}
+	# Apply to a stored type
+	special : Template {
+		type_storage ?:
 	}
 	# Store the type in a type variable.
 	stored : Template {
@@ -968,12 +974,9 @@ language_tmpl : Template {
 		ensure_type_is : is_typeable &&
 			Error "ensure_type_is attribute must be overridden in \(rule_name)."
 		# Some syntax elements have parsed other syntax elements which must have
-		# specific types. This is a tuple where the names are the names of the
-		# other syntax elements and the values are a list of types.
-		type_demand : {}
-		# This is similar to `type_demand` where the names identify lists of syntax
-		# elements rather than single elements.
-		type_demand_all : {}
+		# specific types. This lists ensure type rules to apply to other syntax
+		# elements.
+		type_demand : ensure_type.stop {}
 
 		# The code generation value to be returned from this syntax element. It has
 		# access to the parameters defined by its group.
@@ -1136,9 +1139,9 @@ language_tmpl : Template {
 	# A binary operator that compare results
 	compare_operator : Template binary_operator {
 		ensure_type_is : ensure_type.filter { types : [ known_types.bool ] }
-		type_demand : {
-			left : [ known_types.bool, known_types.float, known_types.int, known_types.str  ]
-			right : left
+		type_demand : ensure_type.filter {
+			types : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
+			ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
 		}
 		code_value : kws.int_to_bool {
 			number -:
@@ -1464,10 +1467,19 @@ language_tmpl : Template {
 			If has_named_args Then environment.list_of { field : $named_args } Else Null
 		]
 		ensure_type_is : ensure_type.intrinsic { }
-		type_demand : { func_expr : [ known_types.template ] }
-		type_demand_all : {
-			anon_args : If has_anon_args Then known_types Else Null
-			named_args : If has_named_args Then known_types Else Null
+		type_demand : ensure_type.multiple {
+			actions : [
+				ensure_type.filter {
+					types : [ known_types.template ]
+					ensure_type_of : ensure_type.propagate { fields : [ $func_expr ] }
+				},
+				If has_anon_args
+					Then ensure_type.propagate_all { needs_unbox : False  field : $anon_args }
+					Else ensure_type.stop {},
+				If has_named_args
+					Then ensure_type.propagate_all { needs_unbox : False  field : $named_args }
+					Else ensure_type.stop {}
+			]
 		}
 		code_value : codegen.return_intrinsic_dispatch {
 			of : kws.lookup_literal {
@@ -1705,8 +1717,9 @@ language_tmpl : Template {
 							name : $inner_environment
 						}
 					]
-					type_demand : {
-						expression : known_types
+					type_demand : ensure_type.propagate {
+						fields : [ $expression ]
+						needs_unbox : False
 					}
 					code_value : kws.set_frame_or_tmpl_from_field {
 						name_field : $name
@@ -1755,8 +1768,9 @@ language_tmpl : Template {
 						]
 						name : $inner_environment
 					} ]
-					type_demand : {
-						expression : known_types
+					type_demand : ensure_type.propagate {
+						fields : [ $expression ]
+						needs_unbox : False
 					}
 					code_value : kws.set_frame_or_tmpl_from_field {
 						name_field : $name
@@ -1964,7 +1978,10 @@ language_tmpl : Template {
 							]
 						}
 					]
-					type_demand : { expression : [ known_types.int, known_types.float, known_types.str ] }
+					type_demand : ensure_type.filter {
+						types : [ known_types.int, known_types.float, known_types.str ]
+						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
+					}
 					#TODO
 					code_value : codegen.not_implemented {}
 				}
@@ -2034,7 +2051,9 @@ language_tmpl : Template {
 							]
 						}
 					]
-					type_demand : { expression : [ known_types.bool ] }
+					type_demand : ensure_type.bool {
+						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
+					}
 					code_value : fricassee_iterator {
 						start : Template kws.frame_new {
 							container : parameters.self_frame
@@ -2072,8 +2091,8 @@ language_tmpl : Template {
 							apply_to : [ environment.collect { } ]
 						}
 					]
-					type_demand : {
-						each_expr : [ known_types.frame ]
+					type_demand : ensure_type.frame {
+						ensure_type_of : ensure_type.propagate { fields : [ $each_expr ] }
 					}
 					code_value : codegen.other_code { field : $each_expr }
 				}
@@ -2143,7 +2162,9 @@ language_tmpl : Template {
 					pattern : attribute_pattern { }
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.intrinsic { }
-					type_demand : { expression : [ known_types.frame ] }
+					type_demand : ensure_type.frame {
+						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
+					}
 					code_value : codegen.other_code { field : $expression }
 					prepare_value : kws.set_frame_or_tmpl {
 						name : kws.string_constant_from_field { field : $name }
@@ -2366,7 +2387,11 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
-					type_demand : { expression : [ known_types.bool, known_types.float, known_types.int, known_types.str ] }
+					type_demand : ensure_type.filter {
+						needs_unbox : False
+						types : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
+						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
+					}
 					code_value : kws.string_concatenate {
 						first : parameters.accumulator
 						second : kws.cast_to_string {
@@ -2493,9 +2518,11 @@ language_tmpl : Template {
 						}
 					]
 					ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
-					type_demand_all : { definitions : known_types }
+					type_demand : ensure_type.propagate_all {
+						field : $definitions
+					}
 					code_value : codegen.prepare_lookup_cache {
-						in : codegen.other_code { field  : $expression }
+						in : codegen.other_code { field : $expression }
 						name : $inner_environment
 						specials : specials_from_definitions { field : $definitions }
 					}
@@ -2525,8 +2552,9 @@ language_tmpl : Template {
 						}
 					]
 					ensure_type_is : ensure_type.frame { }
-					type_demand : {
-						expression : known_types
+					type_demand : ensure_type.propagate {
+						fields : [ $expression ]
+						needs_unbox : False
 					}
 					code_value : fricassee_iterator {
 						start : Template kws.frame_new {
@@ -2573,9 +2601,19 @@ language_tmpl : Template {
 						}
 					]
 					ensure_type_is : ensure_type.frame { }
-					type_demand : {
-						name_expr : [ known_types.int, known_types.str ]
-						value_expr : known_types
+					type_demand : ensure_type.multiple {
+						actions : [
+							ensure_type.filter {
+								types : [ known_types.int, known_types.str ]
+								ensure_type_of : ensure_type.propagate {
+									fields : [ $name_expr ]
+								}
+							},
+							ensure_type.propagate {
+								fields : [ $value_expr ]
+								needs_unbox : False
+							}
+						]
 					}
 					code_value : fricassee_iterator {
 						start : Template kws.frame_new {
@@ -2679,7 +2717,9 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.multiple {
 						actions : [
 							ensure_type.propagate { fields : [ $reduce_expr, $initial_expr ] },
-							ensure_type.intrinsic {}
+							ensure_type.special {
+								type_storage : $bottleneck_type
+							}
 						]
 					}
 					code_value : kws.dynamic_type_dispatch_from_stored_mask {
@@ -2729,8 +2769,13 @@ language_tmpl : Template {
 							name : $else_environment
 						}
 					]
-					ensure_type_is : ensure_type.propagate { fields : [ $then_expr, $else_expr ] }
-					type_demand : { cond_expr : [ known_types.bool ] }
+					ensure_type_is : ensure_type.propagate {
+						needs_unbox : False
+						fields : [ $then_expr, $else_expr ]
+					}
+					type_demand : ensure_type.bool {
+						ensure_type_of : ensure_type.propagate { fields : [ $cond_expr ] }
+					}
 					code_value : kws.conditional {
 						condition : codegen.other_code { field : $cond_expr }
 						true_action : codegen.prepare_lookup_cache {
@@ -2750,9 +2795,10 @@ language_tmpl : Template {
 					operator : "&"
 					right_operand : Template sibling_expression {}
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
-					type_demand : {
-						left : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
-						right : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
+					type_demand : ensure_type.filter {
+						types : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
+						needs_unbox : False
+						ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
 					}
 					code_value : kws.string_concatenate {
 						first : kws.cast_to_string {
@@ -2777,9 +2823,8 @@ language_tmpl : Template {
 						}
 					]
 					ensure_type_is : ensure_type.bool {}
-					type_demand : {
-						left : [ known_types.bool ]
-						right : [ known_types.bool ]
+					type_demand : ensure_type.bool {
+						ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
 					}
 					code_value : kws.conditional {
 						condition : codegen.other_code { field : $left }
@@ -2807,9 +2852,8 @@ language_tmpl : Template {
 						}
 					]
 					ensure_type_is : ensure_type.bool {}
-					type_demand : {
-						left : [ known_types.bool ]
-						right : [ known_types.bool ]
+					type_demand : ensure_type.bool {
+						ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
 					}
 					code_value : kws.conditional {
 						condition : codegen.other_code { field : $left }
@@ -2871,9 +2915,9 @@ language_tmpl : Template {
 					pretty_name : "comparison"
 					level : 7
 					operator : "<=>"
-					type_demand : {
-						left : [ known_types.bool, known_types.float, known_types.int, known_types.str  ]
-						right : left
+					type_demand : ensure_type.filter {
+						types : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
+						ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
 					}
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
 					code_value : kws.compare {
@@ -2899,9 +2943,9 @@ language_tmpl : Template {
 					level : 10
 					operator : "Through"
 					ensure_type_is : ensure_type.frame { }
-					type_demand : {
-						left : [ known_types.int ]
-						right : [ known_types.int ]
+					type_demand : ensure_type.filter {
+						types : [ known_types.int ]
+						ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
 					}
 					code_value : codegen.push_source_reference {
 						in : kws.frame_new_through {
@@ -3075,7 +3119,9 @@ language_tmpl : Template {
 					level : 11
 					operator : "Is"
 					ensure_type_is : ensure_type.bool {}
-					type_demand : { left : known_types }
+					type_demand : ensure_type.propagate {
+						fields : [ $left ]
+					}
 					code_value : codegen.type_dispatch_parsed {
 						field : $right
 						choices : For t : known_types
@@ -3099,7 +3145,9 @@ language_tmpl : Template {
 					level : 11
 					suffix : "Finite"
 					ensure_type_is : ensure_type.bool {}
-					type_demand : { left : [ known_types.float, known_types.int ] }
+					type_demand : ensure_type.number {
+						ensure_type_of : ensure_type.propagate { fields : [ $left ] }
+					}
 					code_value : codegen.type_dispatch {
 						of : codegen.other_code { field : $left }
 						left_result : converted_result
@@ -3125,7 +3173,9 @@ language_tmpl : Template {
 					level : 11
 					suffix : "NaN"
 					ensure_type_is : ensure_type.bool {}
-					type_demand : { left : [ known_types.float, known_types.int ] }
+					type_demand : ensure_type.number {
+						ensure_type_of : ensure_type.propagate { fields : [ $left ] }
+					}
 					code_value : codegen.type_dispatch {
 						of : codegen.other_code { field : $left }
 						left_result : converted_result
@@ -3151,7 +3201,9 @@ language_tmpl : Template {
 					level : 11
 					suffix : "Null"
 					ensure_type_is : ensure_type.bool {}
-					type_demand : { left : known_types }
+					type_demand : ensure_type.propagate {
+						fields : [ $left ]
+					}
 					code_value : codegen.type_dispatch {
 						of : codegen.other_code { field : $left }
 						default_action : kws.numeric_constant {
@@ -3175,7 +3227,11 @@ language_tmpl : Template {
 					level : 12
 					operator : "Error"
 					ensure_type_is : ensure_type.stop {}
-					type_demand : { expr : [ known_types.bool, known_types.float, known_types.int, known_types.str ] }
+					type_demand : ensure_type.filter {
+						types : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
+						needs_unbox : False
+						ensure_type_of : ensure_type.propagate { fields : [ $expr ] }
+					}
 					code_value : kws.error {
 						message : kws.cast_to_string {
 							source : codegen.other_code { field : $expr }
@@ -3187,7 +3243,11 @@ language_tmpl : Template {
 					level : 12
 					operator : "Length"
 					ensure_type_is : ensure_type.stop {}
-					type_demand : { expr : [ known_types.bool, known_types.float, known_types.int, known_types.str ] }
+					type_demand : ensure_type.filter {
+						types : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
+						needs_unbox : False
+						ensure_type_of : ensure_type.propagate { fields : [ $expr ] }
+					}
 					code_value : kws.string_length {
 						source : kws.cast_to_string {
 							source : codegen.other_code { field : $expr }
@@ -3221,7 +3281,9 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.intrinsic {}
-					type_demand : { expression : [ known_types.frame ] }
+					type_demand : ensure_type.frame {
+						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
+					}
 					code_value : codegen.return_intrinsic_dispatch {
 						of : kws.lookup_field {
 							field : $names
@@ -3261,7 +3323,10 @@ language_tmpl : Template {
 						environment.list_independent { field : $overrides }
 					]
 					ensure_type_is : ensure_type.frame {}
-					type_demand : { source : [ known_types.template ] }
+					type_demand : ensure_type.filter {
+						types : [ known_types.template ]
+						ensure_type_of : ensure_type.propagate { fields : [ $source ] }
+					}
 					code_value : perform_overrides {
 						new_item : Template kws.frame_new {
 							container : parameters.self_frame
@@ -3382,7 +3447,9 @@ language_tmpl : Template {
 					level : 16
 					operator : "GenerateId"
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
-					type_demand : { expr : [ known_types.frame ] }
+					type_demand : ensure_type.frame {
+						ensure_type_of : ensure_type.propagate { fields : [ $expr ] }
+					}
 					code_value : kws.frame_id {
 						source : codegen.other_code { field : $expr }
 					}
@@ -3570,7 +3637,9 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expr ] } ]
 					ensure_type_is : ensure_type.intrinsic {}
-					type_demand : { expr : [ known_types.frame ] }
+					type_demand : ensure_type.frame {
+						ensure_type_of : ensure_type.propagate { fields : [ $expr ] }
+					}
 					code_value : codegen.return_intrinsic_dispatch {
 						of : kws.lookup_field {
 							field : $names
@@ -3595,7 +3664,10 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
-					ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
+					ensure_type_is : ensure_type.propagate {
+						needs_unbox : False
+						fields : [ $expression ]
+					}
 					code_value : codegen.other_code { field : $expression }
 				}
 				literal_list : Template expression_tmpl {
@@ -3624,7 +3696,10 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.list_of { field : $items } ]
 					ensure_type_is : ensure_type.frame { }
-					type_demand_all : { items : known_types }
+					type_demand : ensure_type.propagate_all {
+						field : $items
+						needs_unbox : False
+					}
 					code_value : codegen.push_source_reference {
 						in : codegen.fold_into_frame {
 							field : $items
