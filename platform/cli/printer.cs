@@ -29,6 +29,8 @@ public class PrintResult : Computation {
 			var lookup = new Lookup(task_master, null, new string[] { "value" }, (result as Frame).Context);
 			lookup.Notify(HandleFinalResult);
 			task_master.Slot(lookup);
+		} else {
+			Console.Error.WriteLine("File did not contain a frame. That should be impossible.");
 		}
 	}
 	private void HandleFinalResult(object result) {
