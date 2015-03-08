@@ -105,7 +105,9 @@ internal abstract class AstTypeableNode : AstNode {
 			return Type.Frame;
 		} else if (clr_type == typeof(Template)) {
 			return Type.Template;
-		} else if (clr_type == typeof(Object)) {
+		} else if (clr_type == typeof(Unit)) {
+			return Type.Unit;
+		} else if (clr_type == typeof(object)) {
 			return NameInfo.AnyType;
 		} else {
 			return 0;
