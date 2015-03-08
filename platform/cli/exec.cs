@@ -43,8 +43,8 @@ public abstract class Computation {
 		if (result == null && Run()) {
 			if (consumer != null) {
 				consumer(result);
+				consumer = null;
 			}
-			consumer = null;
 		}
 	}
 
@@ -127,6 +127,7 @@ public abstract class TaskMaster {
 	public virtual void GetExternal(string uri, ConsumeResult target) {
 		if (external_cache.ContainsKey(uri)) {
 			external_cache[uri].Notify(target);
+			return;
 		}
 		if (uri.StartsWith("lib:")) {
 			if (uri.Length < 5) {
@@ -157,6 +158,7 @@ public abstract class TaskMaster {
 			var computation = (Computation) Activator.CreateInstance(t, this);
 			external_cache[uri] = computation;
 			computation.Notify(target);
+			Slot(computation);
 			return;
 		}
 		ReportExternalError(uri);
