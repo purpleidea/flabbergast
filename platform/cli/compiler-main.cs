@@ -45,7 +45,9 @@ public class Compiler {
 
 			var dll_name = Path.ChangeExtension(Path.GetFileNameWithoutExtension(filename), ".dll");
 			var type_name = "Flabbergast.Library." + Path.GetDirectoryName(filename).Replace(Path.DirectorySeparatorChar, '.') + Path.GetFileNameWithoutExtension(filename);
-			var assembly_builder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName(type_name), AssemblyBuilderAccess.RunAndSave);
+			var assembly_name = new AssemblyName(type_name);
+			assembly_name.CodeBase = "file://" + Path.GetDirectoryName(filename);
+			var assembly_builder = AppDomain.CurrentDomain.DefineDynamicAssembly(assembly_name, AssemblyBuilderAccess.RunAndSave);
 			var module_builder = assembly_builder.DefineDynamicModule(type_name, dll_name);
 			var unit = new CompilationUnit(filename, module_builder, true);
 			var type = parser.ParseFile(collector, unit, type_name);
