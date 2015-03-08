@@ -381,7 +381,7 @@ internal class Generator {
 		} else {
 			left.Load(Builder);
 			if (IsNumeric(left.BackingType)) {
-				var local = Builder.DeclareLocal(left.BackingType);
+				var local = locals[left.BackingType];
 				Builder.Emit(OpCodes.Stloc, local);
 				Builder.Emit(OpCodes.Ldloca, local);
 			}
