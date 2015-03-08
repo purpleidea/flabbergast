@@ -503,7 +503,7 @@ internal class Environment : CodeRegion {
 		var old_paths = generator.Paths;
 		generator.Paths = permutable_caches.Aggregate(old_paths, (acc, c) => acc * c.Types.Length);
 		if (generator.Paths > 200 && !combinatorial_explosion) {
-			Console.Error.WriteLine("{0}:{1}-{2}:{3}: There are {4} type-derived flows in the generated code. This will be slow to compile.", StartRow, StartColumn, EndRow, EndColumn, generator.Paths);
+			Console.Error.WriteLine("{0}:{1}:{2}-{3}:{4}: There are {5} type-derived flows in the generated code. This will be slow to compile.", FileName, StartRow, StartColumn, EndRow, EndColumn, generator.Paths);
 			combinatorial_explosion = true;
 		}
 		GenerateLookupPermutation(generator, context, base_lookup_cache, 0, permutable_caches, source_reference, block);
