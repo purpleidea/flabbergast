@@ -21,7 +21,7 @@ namespace Flabbergast {
 			var base_name = uri.Substring(4);
 			var type_name = "Flabbergast.Library." + base_name.Replace('/', '.');
 			foreach (var path in paths) {
-				var src_file = Path.Combine(path, base_name, ".flbgst");
+				var src_file = Path.Combine(path, base_name + ".flbgst");
 				if (!File.Exists(src_file)) {
 					continue;
 				}
