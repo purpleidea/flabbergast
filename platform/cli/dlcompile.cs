@@ -9,6 +9,8 @@ namespace Flabbergast {
 		public override string UriName { get { return "dynamically compiled libraries"; } }
 		private CompilationUnit unit;
 		private ErrorCollector collector;
+		private Dictionary<string, System.Type> cache = new Dictionary<string, System.Type>();
+
 		public DynamicallyCompiledLibraries(ErrorCollector collector) {
 			this.collector = collector;
 			var name = "DynamicallyCompiledLibraries" + GetHashCode();
@@ -17,6 +19,10 @@ namespace Flabbergast {
 			unit = new CompilationUnit("<dynamic>", module_builder, false);
 		}
 		public override System.Type ResolveUri(string uri, out bool stop) {
+			if (cache.ContainsKey(uri)) {
+				stop = cache[uri] == null;
+				return cache[uri];
+			}
 			stop = false;
 			var base_name = uri.Substring(4);
 			var type_name = "Flabbergast.Library." + base_name.Replace('/', '.');
@@ -28,6 +34,7 @@ namespace Flabbergast {
 				var parser = Parser.Open(src_file);
  				var type = parser.ParseFile(collector, unit, type_name);
 				stop = type == null;
+				cache[uri] = type;
 				return type;
 			}
 			return null;
