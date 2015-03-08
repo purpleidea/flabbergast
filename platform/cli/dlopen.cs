@@ -26,8 +26,8 @@ namespace Flabbergast {
 					paths.Add(Path.GetFullPath(path));
 				}
 			}
-			var uri = new Uri(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase);
-			var directory = Path.GetDirectoryName(uri.LocalPath);
+			var full_path = System.Reflection.Assembly.GetAssembly(typeof(Frame)).Location;
+			var directory = Path.GetDirectoryName(full_path);
 			paths.Add(Path.Combine(directory, "..", "lib", "flabbergast"));
 			if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX) {
 				paths.Add("/usr/lib/flabbergast");
