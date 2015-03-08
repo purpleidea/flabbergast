@@ -522,7 +522,7 @@ internal class Environment : CodeRegion {
 			generator.Builder.Emit(OpCodes.Isinst, values[index].Types[it]);
 			generator.Builder.Emit(OpCodes.Brtrue, labels[it]);
 		}
-		generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", values[index].Value, values[index].NameInfo.Name, "{0}"), values[index].Value);
+		generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", String.Join(" or ", (object[]) values[index].Types), values[index].NameInfo.Name, "{0}"), values[index].Value);
 		for (var it = 0; it < labels.Length; it++) {
 			generator.Builder.MarkLabel(labels[it]);
 			var sub_cache = new LookupCache(cache);
