@@ -51,13 +51,13 @@ public class CompilationUnit {
 	/**
 	 * Create a new function, and use the provided block to fill it with code.
 	 */
-	internal MethodInfo CreateFunction(AstNode instance, string syntax_id, FunctionBlock block, Dictionary<string, bool> owner_externals) {
+	internal MethodInfo CreateFunction(AstNode instance, string syntax_id, FunctionBlock block, string root_prefix, Dictionary<string, bool> owner_externals) {
 		bool used;
-		var name = String.Concat("Function", id_gen.GetId(instance, out used), syntax_id);
+		var name = String.Concat(root_prefix, "Function", id_gen.GetId(instance, out used), syntax_id);
 		if (functions.ContainsKey(name)) {
 			return functions[name];
 		}
-		var generator = CreateFunctionGenerator(name, false, owner_externals);
+		var generator = CreateFunctionGenerator(name, false, root_prefix, owner_externals);
 		block(generator, generator.InitialContainerFrame, generator.InitialContext, generator.InitialSelfFrame, generator.InitialSourceReference);
 		generator.GenerateSwitchBlock();
 		functions[name] = generator.Initialiser;
@@ -68,13 +68,13 @@ public class CompilationUnit {
 	/**
 	 * Create a new override function, and use the provided block to fill it with code.
 	 */
-	internal MethodInfo CreateFunctionOverride(AstNode instance, string syntax_id, FunctionOverrideBlock block, Dictionary<string, bool> owner_externals) {
+	internal MethodInfo CreateFunctionOverride(AstNode instance, string syntax_id, FunctionOverrideBlock block, string root_prefix, Dictionary<string, bool> owner_externals) {
 		bool used;
-		var name = String.Concat("Override", id_gen.GetId(instance, out used), syntax_id);
+		var name = String.Concat(root_prefix, "Override", id_gen.GetId(instance, out used), syntax_id);
 		if (functions.ContainsKey(name)) {
 			return functions[name];
 		}
-		 var generator = CreateFunctionGenerator(name, true, owner_externals);
+		 var generator = CreateFunctionGenerator(name, true, root_prefix, owner_externals);
 		block(generator, generator.InitialContainerFrame, generator.InitialContext, generator.InitialOriginal, generator.InitialSelfFrame, generator.InitialSourceReference);
 		generator.GenerateSwitchBlock();
 		functions[name] = generator.Initialiser;
@@ -83,14 +83,14 @@ public class CompilationUnit {
 		return generator.Initialiser;
 	}
 
-	private Generator CreateFunctionGenerator(string name, bool has_original, Dictionary<string, bool> owner_externals) {
+	private Generator CreateFunctionGenerator(string name, bool has_original, string root_prefix, Dictionary<string, bool> owner_externals) {
 		var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.NotPublic | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
-		return new Generator(this, type_builder, has_original, owner_externals);
+		return new Generator(this, type_builder, has_original, root_prefix, owner_externals);
 	}
 
 	internal System.Type CreateRootGenerator(string name, Generator.Block block) {
 		var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
-		var generator = new Generator(this, type_builder);
+		var generator = new Generator(this, type_builder, name);
 		block(generator);
 		generator.GenerateSwitchBlock(true);
 		return type_builder.CreateType();
@@ -190,16 +190,21 @@ internal class Generator {
 	 */
 	private Dictionary<string, FieldValue> externals = new Dictionary<string, FieldValue>();
 	private Dictionary<string, bool> owner_externals;
+	/**
+	 * The namespace in which all the child types will live.
+	 */
+	private string root_prefix;
 
 	private Dictionary<System.Type, LocalBuilder> locals = new Dictionary<System.Type, LocalBuilder>();
 	public static bool IsNumeric(System.Type type) {
 		return type == typeof(double) || type == typeof(long);
 	}
 
-	internal Generator(CompilationUnit owner, TypeBuilder type_builder) {
+	internal Generator(CompilationUnit owner, TypeBuilder type_builder, string root_prefix) {
 		Owner = owner;
 		TypeBuilder = type_builder;
 		Paths = 1;
+		this.root_prefix = root_prefix + "__" ;
 		owner_externals = new Dictionary<string, bool>();
 		state_field = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
 		interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
@@ -225,11 +230,12 @@ internal class Generator {
 		MarkState(1);
 		DeclareLocals();
 	}
-	internal Generator(CompilationUnit owner, TypeBuilder type_builder, bool has_original, Dictionary<string, bool> owner_externals) {
+	internal Generator(CompilationUnit owner, TypeBuilder type_builder, bool has_original, string root_prefix, Dictionary<string, bool> owner_externals) {
 		Owner = owner;
 		TypeBuilder = type_builder;
 		Paths = 1;
 		this.owner_externals = owner_externals;
+		this.root_prefix = root_prefix;
 		// Create fields for all information provided by the caller.
 		state_field = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
 		interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
@@ -401,10 +407,10 @@ internal class Generator {
 		Builder.Emit(OpCodes.Stfld, target);
 	}
 	internal MethodInfo CreateFunctionOverride(AstNode instance, string syntax_id, CompilationUnit.FunctionOverrideBlock block) {
-		return Owner.CreateFunctionOverride(instance, syntax_id, block, owner_externals);
+		return Owner.CreateFunctionOverride(instance, syntax_id, block, root_prefix, owner_externals);
 	}
 	internal MethodInfo CreateFunction(AstNode instance, string syntax_id, CompilationUnit.FunctionBlock block) {
-		return Owner.CreateFunction(instance, syntax_id, block, owner_externals);
+		return Owner.CreateFunction(instance, syntax_id, block, root_prefix, owner_externals);
 	}
 	/**
 	 * Insert debugging information based on an AST node.
