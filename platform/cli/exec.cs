@@ -80,7 +80,7 @@ public interface UriHandler {
 /**
  * Scheduler for computations.
  */
-public abstract class TaskMaster {
+public abstract class TaskMaster : IEnumerable<Computation> {
 	private Queue<Computation> computations = new Queue<Computation>();
 	private List<UriHandler> handlers = new List<UriHandler>();
 	private Dictionary<string, Computation> external_cache = new Dictionary<string, Computation>();
@@ -88,6 +88,11 @@ public abstract class TaskMaster {
 	private long next_id = 0;
 
 	private static readonly char[] symbols = CreateOrdinalSymbols();
+
+	/**
+	 * These are computations that have not completed.
+	 */
+	private Dictionary<Computation, bool> inflight = new Dictionary<Computation, bool>();
 
 	private static char[] CreateOrdinalSymbols() {
 		var array = new char[62];
@@ -122,6 +127,14 @@ public abstract class TaskMaster {
 
 	public void AddUriHandler(UriHandler handler) {
 		handlers.Add(handler);
+	}
+
+	public IEnumerator<Computation> GetEnumerator() {
+		return inflight.Keys.GetEnumerator();
+	}
+
+	System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
+		return this.GetEnumerator();
 	}
 
 	public virtual void GetExternal(string uri, ConsumeResult target) {
@@ -200,6 +213,9 @@ public abstract class TaskMaster {
 	 * Add a computation to be executed.
 	 */
 	public void Slot(Computation computation) {
+		if (!inflight.ContainsKey(computation)) {
+			computation.Notify((x) => inflight.Remove(computation));
+		}
 		computations.Enqueue(computation);
 	}
 
