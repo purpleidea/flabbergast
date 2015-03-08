@@ -2074,6 +2074,18 @@ compiler : compiler_lib.language_tmpl {
 			"\t\treturn false;\n\t}\n"
 			Else ""
 
+		parse_rule_initiator :
+			For rule_name : Name, rule : expanded_rules
+				Select rule_name :
+					"\t\tslave_position = position.Clone();\n" &
+					"\t\tif (ParseRule_" &
+					(If rule.is_real_element Then rule_name Else rule.alternate_name) &
+					"(ref slave_position, out result)) {\n" &
+					"\t\t\tposition = slave_position;\n" &
+					"\t\t\tposition.TraceExit(\"\(group_name):\(alternate_name)\", true);\n" &
+					"\t\t\tposition.Cache<\(group_name)>(\"\(group_name).\(alternate_name)\", start_index, result);\n" &
+					"\t\t\treturn true;\n\t\t}\n"
+
 		parse_alternates : For alternate_rules : alternatives, alternate_name : Name
 			Reduce
 				outer_acc &
@@ -2083,17 +2095,9 @@ compiler : compiler_lib.language_tmpl {
 				"\t\tParserPosition slave_position;\n" &
 				"\t\tvar start_index = position.Index;\n" &
 				"\t\tposition.Update(\"\(alternate_name)\", \"\(group_name)\");\n" &
-				(For rule_name : Name, rule : expanded_rules
+				(For rule_name : Name, initiator : parse_rule_initiator, rule : expanded_rules
 					Where (For rule_alts : rule.alternatives, rule_alt_name : Name Where rule_alt_name == alternate_name Reduce True With junk_acc : False)
-					Reduce acc &
-						"\t\tslave_position = position.Clone();\n" &
-						"\t\tif (ParseRule_" &
-						(If rule.is_real_element Then rule_name Else rule.alternate_name) &
-						"(ref slave_position, out result)) {\n" &
-						"\t\t\tposition = slave_position;\n" &
-						"\t\t\tposition.TraceExit(\"\(group_name):\(alternate_name)\", true);\n" &
-						"\t\t\tposition.Cache<\(group_name)>(\"\(group_name).\(alternate_name)\", start_index, result);\n" &
-						"\t\t\treturn true;\n\t\t}\n"
+					Reduce acc & initiator
 					With acc : "") &
 				"\t\tresult = null;\n" &
 				"\t\tposition.TraceExit(\"\(group_name):\(alternate_name)\", false);\n" &
