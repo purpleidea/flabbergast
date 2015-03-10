@@ -31,9 +31,9 @@ public class REPL {
 	private static void HandleResult(object result) {
 		var seen = new Dictionary<Frame, int>();
 		var counter = 1;
-		Print(result, 0, seen, ref counter);
+		Print(result, "", seen, ref counter);
 	}
-	private static void Print(object result, int indentation, Dictionary<Frame, int> seen, ref int counter) {
+	private static void Print(object result, string prefix, Dictionary<Frame, int> seen, ref int counter) {
 		if (result == null) {
 			Console.WriteLine("∅");
 		} else if (result is Frame) {
@@ -45,15 +45,10 @@ public class REPL {
 				Console.WriteLine(counter);
 				seen[f] = counter++;
 				foreach (var name in f.GetAttributeNames()) {
-					for (var it = 0; it <= indentation; it++) {
-						Console.Write("\t");
-					}
-					Console.Write("{0} : ", name);
-					Print(f[name], indentation + 1, seen, ref counter);
+					Console.Write("{0}{1} : ", prefix, name);
+					Print(f[name], prefix + "  ", seen, ref counter);
 				}
-				for (var it = 0; it < indentation; it++) {
-					Console.Write("\t");
-				}
+				Console.Write(prefix);
 				Console.WriteLine("}");
 			}
 		} else if (result is bool) {
@@ -66,7 +61,7 @@ public class REPL {
 				Console.Write(name);
 			}
 			Console.WriteLine();
-			t.SourceReference.Write(Console.Out, indentation + 1, "");
+			t.SourceReference.Write(Console.Out, prefix);
 		} else {
 			Console.WriteLine(result);
 		}

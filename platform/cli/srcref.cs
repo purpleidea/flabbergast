@@ -31,15 +31,14 @@ public class SourceReference {
 	/**
 	 * Write the current stack trace.
 	 */
-	public virtual void Write(TextWriter writer, int indentation, string prefix) {
-		WriteMessage(writer, indentation, prefix);
-		if (Caller != null)
-			Caller.Write(writer, indentation, prefix);
-	}
-	protected void WriteMessage(TextWriter writer, int indentation, string prefix) {
+	public virtual void Write(TextWriter writer, string prefix) {
 		writer.Write(prefix);
-		for (var it = 0; it < indentation; it++)
-			writer.Write("  ");
+		writer.Write(Caller == null ? "└ " : "├ ");
+		WriteMessage(writer);
+		if (Caller != null)
+			Caller.Write(writer, prefix);
+	}
+	protected void WriteMessage(TextWriter writer) {
 		writer.Write(FileName);
 		writer.Write(": ");
 		writer.Write(StartLine);
@@ -69,18 +68,14 @@ public class JunctionReference : SourceReference {
 	public JunctionReference(string message, string filename, int start_line, int start_column, int end_line, int end_column, SourceReference caller, SourceReference junction) : base(message, filename, start_line, start_column, end_line, end_column, caller) {
 		Junction = junction;
 	}
-	public override void Write(TextWriter writer, int indentation, string prefix) {
-		WriteMessage(writer, indentation, prefix);
+	public override void Write(TextWriter writer, string prefix) {
 		writer.Write(prefix);
-		for (var it = 0; it < indentation; it++)
-			writer.Write("  ");
-		writer.WriteLine("↳");
-		Junction.Write(writer, indentation + 1, prefix);
-		for (var it = 0; it < indentation; it++)
-			writer.Write("  ");
-		writer.WriteLine("↓");
+		writer.Write(Caller == null ? "└─┬ " : "├─┬ ");
+		WriteMessage(writer);
+
+		Junction.Write(writer, prefix + (Caller == null ? "  " : "│ "));
 		if (Caller != null)
-			Caller.Write(writer, indentation, prefix);
+			Caller.Write(writer, prefix);
 	}
 }
 }

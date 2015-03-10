@@ -68,17 +68,17 @@ public class ConsoleTaskMaster : TaskMaster {
 		}
 		for (var it = 0; it < frame_list.Count; it++) {
 			Console.Error.WriteLine("Frame {0} defined:", it + 1);
-			frame_list[it].SourceReference.Write(Console.Error, 0, "  ");
+			frame_list[it].SourceReference.Write(Console.Error, "  ");
 		}
 		Console.Error.WriteLine("Lookup happened here:");
-		lookup.SourceReference.Write(Console.Error, 0, "  ");
+		lookup.SourceReference.Write(Console.Error, "  ");
 	}
 	public override void ReportExternalError(string uri) {
 		Console.Error.WriteLine("The URI “{0}” could not be resolved.", uri);
 	}
 	public override void ReportOtherError(SourceReference reference, string message) {
 		Console.Error.WriteLine(message);
-		reference.Write(Console.Error, 0, "  ");
+		reference.Write(Console.Error, "  ");
 	}
 }
 }
