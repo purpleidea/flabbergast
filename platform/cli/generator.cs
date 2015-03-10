@@ -195,6 +195,11 @@ internal class Generator {
 	 */
 	private string root_prefix;
 
+	/**
+	 * The number of fields holding temporary variables that cross sleep boundaries.
+	 */
+	private int num_fields = 0;
+
 	private Dictionary<System.Type, LocalBuilder> locals = new Dictionary<System.Type, LocalBuilder>();
 	public static bool IsNumeric(System.Type type) {
 		return type == typeof(double) || type == typeof(long);
@@ -712,6 +717,11 @@ internal class Generator {
 	 * Create an anonymous field with the specified type.
 	 */
 	public FieldValue MakeField(string name, System.Type type) {
+		/* There is a limit to a shorts worth a fields. Our limit is lower since
+		 * there are fields used by the base class and the state machine. */
+		if (++num_fields > 64000) {
+			throw new InvalidOperationException("Exceeded the maximum number of fields set by the CLI.");
+		}
 		return new FieldValue(TypeBuilder.DefineField(name, type, FieldAttributes.PrivateScope));
 	}
 	/**
