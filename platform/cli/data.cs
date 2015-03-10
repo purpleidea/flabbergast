@@ -19,6 +19,9 @@ public abstract class Context {
 		protected set;
 	}
 	public static Context Prepend(Frame head, Context tail) {
+		if (head == null) {
+			throw new InvalidOperationException("Cannot prepend a null frame to a context.");
+		}
 		return new LinkedContext(head, tail);
 	}
 	/**
@@ -26,6 +29,9 @@ public abstract class Context {
 	 * all the frames in the original context.
 	 */
 	public static Context Append(Context original, Context new_tail) {
+		if (original == null) {
+			throw new InvalidOperationException("Cannot append to null context.");
+		}
 		if (new_tail == null) {
 			return original;
 		}
