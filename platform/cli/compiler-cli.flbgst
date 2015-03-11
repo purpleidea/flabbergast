@@ -1292,9 +1292,6 @@ kws : compiler_lib.kws_tmpl {
 		gen_gen +: {
 			sum_indent : indent & extra_indent
 
-			# This is the simplest part of the hideously complex: it expands all the
-			# `gen_gen` templates of the input, then calls the behemoth in
-			# `base_code`.
 			value :
 				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_accumulator\", typeof(\(accumulator_type.real_type)));" &
 				"\(sum_indent)var \(iterator_start_block) = \(generator).Builder.DefineLabel();" &
@@ -1336,7 +1333,7 @@ kws : compiler_lib.kws_tmpl {
 					Else "") &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Switch, \(iterator_dispatchers));" &
 				"\(sum_indent)\(generator).Builder.ThrowException(typeof(System.ArgumentOutOfRangeException));" &
-				# Create a block for the default dispatcher and put a delegate on the stack.
+				# Create a block for the default dispatcher.
 				"\(sum_indent)\(generator).Builder.MarkLabel(\(iterator_dispatchers)[1]);" &
 				dispatch_code &
 				case_dispatchers &
