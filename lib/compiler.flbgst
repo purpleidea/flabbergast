@@ -358,10 +358,8 @@ kws_tmpl : Template {
 		arguments : [ { value : source  type : known_types.bool } ]
 		return_type : known_types.bool
 	}
-	error : Template base_tmpl {
+	error : Template codegen.gen_tmpl {
 		message ?:
-		arguments : [{ value : message  type : known_types.str }]
-		return_type : Null
 	}
 	int_add : Template base_tmpl {
 		left ?:
@@ -575,10 +573,8 @@ kws_tmpl : Template {
 		]
 		return_type : known_vm_types.list
 	}
-	lookup_tmpl : Template base_tmpl {
+	lookup_tmpl : Template codegen.gen_tmpl {
 		source ?:
-		arguments : [ { value : source  type : known_vm_types.list } ]
-		return_type : known_vm_types.any
 	}
 	lookup_literal : Template lookup_tmpl {
 		name ?:
@@ -740,9 +736,8 @@ kws_tmpl : Template {
 		# A list of the special cases of the iterator. The special cases will
 		# always be invoked, even if they are not present in the input.
 		cases ?:
-		# The type of the accumulator. If null, the type of the initial value is
-		# used.
-		accumulator_type : Null
+		# The type of the accumulator.
+		accumulator_type ?:
 		# Modify the current source reference to include the current iteration item.
 		modify_source_reference : False
 
@@ -1492,6 +1487,7 @@ language_tmpl : Template {
 							choice_tmpl {
 								type : known_types.template
 								action : kws.iterator {
+									accumulator_type : known_types.frame
 									input : input_list {
 										items : [ converted_result ]
 									}
@@ -1556,6 +1552,7 @@ language_tmpl : Template {
 		}
 	}
 	perform_overrides : Template codegen.push_source_reference {
+		accumulator_type ?:
 		source_template ?:
 		new_item ?:
 		in : codegen.type_dispatch {
@@ -1564,6 +1561,7 @@ language_tmpl : Template {
 				choice_tmpl {
 					type : known_types.template
 					action : kws.iterator {
+						accumulator_type -:
 						initial : new_item {
 							source : converted_result
 							context : kws.list_append {
@@ -1601,7 +1599,7 @@ language_tmpl : Template {
 		}
 	}
 	fricassee_iterator : Template codegen.bind {
-		accumulator_type : Null
+		accumulator_type : known_types.frame
 		start ?:
 		step ?:
 
@@ -1836,6 +1834,7 @@ language_tmpl : Template {
 						with : kws.apply_override {
 							override : kws.create_override_function {
 								returns : perform_overrides {
+									accumulator_type : known_types.template
 									new_item : kws.tmpl_new
 									source_template : kws.dynamic_type_dispatch {
 										allow_types : [ known_types.template ]
@@ -2126,6 +2125,7 @@ language_tmpl : Template {
 						}
 					]
 					code_value : kws.iterator {
+						accumulator_type : known_types.frame
 						input : input_merge { field : $inputs }
 						cases : []
 						initial : kws.frame_new {
@@ -3328,6 +3328,7 @@ language_tmpl : Template {
 						ensure_type_of : ensure_type.propagate { fields : [ $source ] }
 					}
 					code_value : perform_overrides {
+						accumulator_type : known_types.frame
 						new_item : Template kws.frame_new {
 							container : parameters.self_frame
 						}
@@ -3527,6 +3528,7 @@ language_tmpl : Template {
 						ensure_type_of : propagate { fields : [ $source ] }
 					}
 					code_value : perform_overrides {
+						accumulator_type : known_types.template
 						new_item : kws.tmpl_new
 						source_template : codegen.other_code { field : $source }
 					}
