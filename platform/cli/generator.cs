@@ -1081,6 +1081,19 @@ internal class NumericStringish : LoadableValue {
 		generator.Emit(OpCodes.Newobj, typeof(SimpleStringish).GetConstructors()[0]);
 	}
 }
+internal class TypeCheckValue : LoadableValue {
+	System.Type type;
+	LoadableValue instance;
+	public TypeCheckValue(System.Type type, LoadableValue instance) {
+		this.type = type;
+		this.instance = instance;
+	}
+	public override System.Type BackingType { get { return typeof(bool); } }
+	public override void Load(ILGenerator generator) {
+		instance.Load(generator);
+		generator.Emit(OpCodes.Isinst, type);
+	}
+}
 internal class GeneratedValue : LoadableValue {
 	public delegate void GenerationBlock(ILGenerator g);
 	System.Type type;

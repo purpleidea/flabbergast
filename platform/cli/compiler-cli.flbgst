@@ -611,7 +611,7 @@ known_types : compiler_lib.known_types_tmpl {
 # These are types known by the KWS VM that are not found in the Flabbergast
 # language. Therefore, they have a `real_type`, but not a `union_type`.
 known_vm_types : compiler_lib.known_vm_types_tmpl {
-	any : { real_type : "object" }
+	any : { real_type : "object"  union_type : "Flabbergast.NameInfo.AnyType" }
 	list : { real_type : "Flabbergast.Context" }
 	function : { real_type : "Flabbergast.ComputeValue" }
 	override_function : { real_type : "Flabbergast.ComputeOverride" }
@@ -1251,6 +1251,24 @@ kws : compiler_lib.kws_tmpl {
 	}
 	dynamic_type_dispatch_from_stored_mask +: {
 		type_list : "AstTypeableNode.ClrTypeFromType(\(type_storage).RestrictedType)"
+	}
+	dynamic_type_check_tmpl +: {
+		reference_type ?:
+		extra_indent : source.extra_indent
+		gen_gen +: {
+			value : source.gen_gen(
+				indent : indent,
+				code :
+					"\(indent)\(source.extra_indent)var \(storage_name) = new TypeCheckValue(\(reference_type), \(source.storage_name));" &
+					code
+				)
+		}
+	}
+	dynamic_type_check +: {
+		reference_type : "typeof(\(type.real_type))"
+	}
+	dynamic_type_check_parsed +: {
+		reference_type : "\(field).TypeId"
 	}
 	iterator +: {
 		extra_indent : input.extra_indent

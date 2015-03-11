@@ -723,6 +723,15 @@ kws_tmpl : Template {
 	dynamic_type_dispatch_from_stored_mask : Template dynamic_type_dispatch_tmpl {
 		type_storage ?:
 	}
+	dynamic_type_check_tmpl : Template codegen.gen_tmpl {
+		source ?:
+	}
+	dynamic_type_check : Template dynamic_type_check_tmpl {
+		type ?:
+	}
+	dynamic_type_check_parsed : Template dynamic_type_check_tmpl {
+		field ?:
+	}
 	# Create a tuple merge loop using the provided values as inputs.
 	iterator : Template codegen.gen_tmpl {
 		# The code generation to produce frames and templates over which to be
@@ -3120,24 +3129,34 @@ language_tmpl : Template {
 					operator : "Is"
 					ensure_type_is : ensure_type.bool {}
 					type_demand : ensure_type.propagate {
+						needs_unbox : False
 						fields : [ $left ]
 					}
 					code_value : codegen.type_dispatch_parsed {
 						field : $right
-						choices : For t : known_types
-							Select choice_tmpl {
-								type : t
-								action : codegen.type_dispatch {
-									of : codegen.other_code { field : $left }
-									default_action : kws.numeric_constant { type : known_types.bool  number : min }
-									choices : [
-										choice_tmpl {
-											type : t
-											action : kws.numeric_constant { type : known_types.bool  number : max }
-										}
-									]
+
+						choices :
+							For t : known_types
+								Select choice_tmpl {
+									type : t
+									action : codegen.type_dispatch {
+										of : codegen.other_code { field : $left }
+										default_action : kws.numeric_constant { type : known_types.bool  number : min }
+										choices : [
+											choice_tmpl {
+												type : t
+												action : kws.numeric_constant { type : known_types.bool  number : max }
+											},
+											choice_tmpl {
+												type : known_vm_types.any
+												action : kws.dynamic_type_check {
+													type : t
+													source : converted_result
+												}
+											}
+										]
+									}
 								}
-							}
 					}
 				}
 				is_finite : Template is_suffix_operator {
