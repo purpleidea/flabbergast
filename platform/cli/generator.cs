@@ -59,7 +59,7 @@ public class CompilationUnit {
 		}
 		var generator = CreateFunctionGenerator(name, false, root_prefix, owner_externals);
 		block(generator, generator.InitialContainerFrame, generator.InitialContext, generator.InitialSelfFrame, generator.InitialSourceReference);
-		generator.GenerateSwitchBlock();
+		generator.GenerateSwitchBlock(instance);
 		functions[name] = generator.Initialiser;
 		generator.TypeBuilder.CreateType();
 
@@ -76,7 +76,7 @@ public class CompilationUnit {
 		}
 		 var generator = CreateFunctionGenerator(name, true, root_prefix, owner_externals);
 		block(generator, generator.InitialContainerFrame, generator.InitialContext, generator.InitialOriginal, generator.InitialSelfFrame, generator.InitialSourceReference);
-		generator.GenerateSwitchBlock();
+		generator.GenerateSwitchBlock(instance);
 		functions[name] = generator.Initialiser;
 		generator.TypeBuilder.CreateType();
 
@@ -88,11 +88,11 @@ public class CompilationUnit {
 		return new Generator(this, type_builder, has_original, root_prefix, owner_externals);
 	}
 
-	internal System.Type CreateRootGenerator(string name, Generator.Block block) {
+	internal System.Type CreateRootGenerator(AstNode instance, string name, Generator.Block block) {
 		var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
 		var generator = new Generator(this, type_builder, name);
 		block(generator);
-		generator.GenerateSwitchBlock(true);
+		generator.GenerateSwitchBlock(instance, true);
 		return type_builder.CreateType();
 	}
 }
@@ -528,7 +528,7 @@ internal class Generator {
 	 * switch (computed goto). Also generate the block that loads all the
 	 * external values.
 	 */
-	internal void GenerateSwitchBlock(bool load_owner_externals = false) {
+	internal void GenerateSwitchBlock(AstNode instance, bool load_owner_externals = false) {
 		MarkState(0);
 		// If this is a top level function, load all the external values for our children.
 		if (load_owner_externals) {
@@ -557,7 +557,7 @@ internal class Generator {
 		Builder.Emit(OpCodes.Switch, entry_points.ToArray());
 		Builder.ThrowException(typeof(ArgumentOutOfRangeException));
 		if (Builder.ILOffset >= 20000) {
-			throw new ArgumentOutOfRangeException(String.Format("The method contains {0} bytes, which exceeds Mono's maximum limit.", Builder.ILOffset));
+			throw new ArgumentOutOfRangeException(String.Format("{1}:{2}:{3}-{4}:{5}: The method contains {0} bytes, which exceeds Mono's maximum limit.", Builder.ILOffset, instance.FileName, instance.StartRow, instance.StartColumn, instance.EndRow, instance.EndColumn));
 		}
 	}
 	private bool InvokeParameterPenalty(System.Type method, System.Type given, ref int penalty) {

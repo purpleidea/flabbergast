@@ -96,7 +96,7 @@ public class Parser {
 		var position = new ParserPosition(this, collector);
 		if (file.ParseRule_Base(ref position, out result) && position.Finished) {
 			if (result.Analyse(collector)) {
-				return unit.CreateRootGenerator(type_name, (generator) => result.Generate(generator, generator.Return));
+				return unit.CreateRootGenerator(result, type_name, (generator) => result.Generate(generator, generator.Return));
 			}
 		} else {
 			collector.ReportParseError(FileName, Index, Row, Column, Message);
