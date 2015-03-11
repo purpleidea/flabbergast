@@ -814,52 +814,36 @@ internal class Generator {
 		Builder.Emit(OpCodes.Ldc_I4_1);
 		Builder.Emit(System.Reflection.Emit.OpCodes.Ret);
 	}
-	private void ToStringishHelperNumeric<T>(LoadableValue source) {
-		source.Load(Builder);
-		var local = locals[typeof(T)];
-		Builder.Emit(OpCodes.Stloc, local);
-		Builder.Emit(OpCodes.Ldloca, local);
-		Builder.Emit(OpCodes.Call, typeof(T).GetMethod("ToString", new System.Type[] {}));
-		Builder.Emit(OpCodes.Newobj, typeof(SimpleStringish).GetConstructors()[0]);
-	}
-	private void ToStringishHelper(LoadableValue source) {
+	private LoadableValue ToStringishHelper(LoadableValue source) {
 		if (source.BackingType == typeof(bool)) {
-			Builder.Emit(OpCodes.Ldsfld, typeof(Stringish).GetField("BOOLEANS"));
-			source.Load(Builder);
-			Builder.Emit(OpCodes.Ldelem, typeof(Stringish));
-		} else if (source.BackingType == typeof(long)) {
-			ToStringishHelperNumeric<long>(source);
-		} else if (source.BackingType == typeof(double)) {
-			ToStringishHelperNumeric<double>(source);
+			return new BooleanStringish(source);
+		} else if (source.BackingType == typeof(long) || source.BackingType == typeof(double)) {
+			return new NumericStringish(locals, source);
 		} else if (source.BackingType == typeof(Stringish)) {
-			source.Load(Builder);
+			return source;
 		} else {
 			throw new InvalidOperationException(String.Format("Cannot convert {0} to stringish.", source.BackingType));
 		}
 	}
 	public LoadableValue ToStringish(LoadableValue source, LoadableValue source_reference) {
-		var field = MakeField("str", typeof(Stringish));
-		Builder.Emit(OpCodes.Ldarg_0);
 		if (source.BackingType == typeof(object)) {
+			var field = MakeField("str", typeof(Stringish));
 			var end = Builder.DefineLabel();
 			foreach (var type in new System.Type[] { typeof(long), typeof(double), typeof(bool), typeof(Stringish) }) {
 				var next = Builder.DefineLabel();
 				source.Load(Builder);
 				Builder.Emit(OpCodes.Isinst, type);
 				Builder.Emit(OpCodes.Brfalse, next);
-				ToStringishHelper(new AutoUnboxValue(source, type));
+				CopyField(ToStringishHelper(new AutoUnboxValue(source, type)), field);
 				Builder.Emit(OpCodes.Br, end);
 				Builder.MarkLabel(next);
 			}
-
-			Builder.Emit(OpCodes.Pop);
 			EmitTypeError(source_reference, "Cannot convert type {0} to string.", source);
 			Builder.MarkLabel(end);
+			return field;
 		} else {
-			ToStringishHelper(source);
+			return ToStringishHelper(source);
 		}
-		Builder.Emit(OpCodes.Stfld, field.Field);
-		return field;
 	}
 }
 internal class LookupCache {
@@ -1057,6 +1041,35 @@ internal class CompareValue : LoadableValue {
 			generator.Emit(OpCodes.Call, typeof(Math).GetMethod("Max", new System.Type[] { typeof(int), typeof(int) }));
 		}
 		generator.Emit(OpCodes.Conv_I8);
+	}
+}
+internal class BooleanStringish : LoadableValue {
+	private LoadableValue source;
+	public override System.Type BackingType { get { return typeof(Stringish); } }
+	public BooleanStringish(LoadableValue source) {
+		this.source = source;
+	}
+	public override void Load(ILGenerator generator) {
+		generator.Emit(OpCodes.Ldsfld, typeof(Stringish).GetField("BOOLEANS"));
+		source.Load(generator);
+		generator.Emit(OpCodes.Ldelem, typeof(Stringish));
+	}
+}
+internal class NumericStringish : LoadableValue {
+	private LoadableValue source;
+	private Dictionary<System.Type, LocalBuilder> locals;
+	public override System.Type BackingType { get { return typeof(Stringish); } }
+	public NumericStringish(Dictionary<System.Type, LocalBuilder> locals, LoadableValue source) {
+		this.locals = locals;
+		this.source = source;
+	}
+	public override void Load(ILGenerator generator) {
+		source.Load(generator);
+		var local = locals[source.BackingType];
+		generator.Emit(OpCodes.Stloc, local);
+		generator.Emit(OpCodes.Ldloca, local);
+		generator.Emit(OpCodes.Call, source.BackingType.GetMethod("ToString", new System.Type[] {}));
+		generator.Emit(OpCodes.Newobj, typeof(SimpleStringish).GetConstructors()[0]);
 	}
 }
 internal class GeneratedValue : LoadableValue {
