@@ -832,15 +832,12 @@ internal class Generator {
 		if (source.BackingType == typeof(object)) {
 			var field = MakeField("str", typeof(Stringish));
 			var end = Builder.DefineLabel();
-			foreach (var type in new System.Type[] { typeof(long), typeof(double), typeof(bool), typeof(Stringish) }) {
-				var next = Builder.DefineLabel();
-				source.Load(Builder);
-				Builder.Emit(OpCodes.Isinst, type);
-				Builder.Emit(OpCodes.Brfalse, next);
-				CopyField(ToStringishHelper(new AutoUnboxValue(source, type)), field);
-				Builder.Emit(OpCodes.Br, end);
-				Builder.MarkLabel(next);
-			}
+			Builder.Emit(OpCodes.Ldarg_0);
+			source.Load(Builder);
+			Builder.Emit(OpCodes.Call, typeof(Stringish).GetMethod("FromObject", new System.Type [] { typeof(object) }));
+			Builder.Emit(OpCodes.Stfld, field.Field);
+			field.Load(Builder);
+			Builder.Emit(OpCodes.Brtrue, end);
 			EmitTypeError(source_reference, "Cannot convert type {0} to string.", source);
 			Builder.MarkLabel(end);
 			return field;

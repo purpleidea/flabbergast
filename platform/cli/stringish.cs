@@ -5,6 +5,23 @@ using System.IO;
 namespace Flabbergast {
 public abstract class Stringish : IComparable<Stringish> {
 	public static Stringish[] BOOLEANS = new Stringish[] { new SimpleStringish("False"), new SimpleStringish("True") };
+	public static Stringish FromObject(object o) {
+		if (o == null)
+			return null;
+		if (typeof(Stringish).IsAssignableFrom(o.GetType())) {
+			return o as Stringish;
+		}
+		if (typeof(long).IsAssignableFrom(o.GetType())) {
+			return new SimpleStringish(((long) o).ToString());
+		}
+		if (typeof(double).IsAssignableFrom(o.GetType())) {
+			return new SimpleStringish(((double) o).ToString());
+		}
+		if (typeof(bool).IsAssignableFrom(o.GetType())) {
+			return BOOLEANS[((bool) o) ? 1 : 0];
+		}
+		return null;
+	}
 	public static System.Type HideImplementation(System.Type t) {
 		return typeof(Stringish).IsAssignableFrom(t) ? typeof(Stringish) : t;
 	}
