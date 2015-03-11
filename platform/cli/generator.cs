@@ -357,47 +357,19 @@ internal class Generator {
 			Builder.Emit(OpCodes.Newobj, typeof(JunctionReference).GetConstructors()[0]);
 		}
 	}
-	/**
-	 * Clips the range of the Int32 on the stack to -1, 0, or 1.
-	 */
-	public void Clamp() {
-		Builder.Emit(OpCodes.Ldc_I4_1);
-		Builder.Emit(OpCodes.Call, typeof(Math).GetMethod("Min", new System.Type[] { typeof(int), typeof(int) }));
-		Builder.Emit(OpCodes.Ldc_I4_M1);
-		Builder.Emit(OpCodes.Call, typeof(Math).GetMethod("Max", new System.Type[] { typeof(int), typeof(int) }));
-	}
 	public LoadableValue Compare(LoadableValue left, LoadableValue right, LoadableValue source_reference) {
 		if (left.BackingType == typeof(object) || right.BackingType == typeof(object)) {
 			throw new System.InvalidOperationException(System.String.Format("Can't compare values of type {0} and {1}.", left.BackingType, right.BackingType));
 		}
 		if (left.BackingType != right.BackingType) {
-			if (IsNumeric(left.BackingType) && IsNumeric(right.BackingType)) {
+			if (Generator.IsNumeric(left.BackingType) && Generator.IsNumeric(right.BackingType)) {
 				return Compare(new UpgradeValue(left), new UpgradeValue(right), source_reference);
 			} else {
 				EmitTypeError(source_reference, "Cannot compare value of type {0} and type {1}.", left, right);
 				return null;
 			}
 		}
-		Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);
-		if (left.BackingType == typeof(bool)) {
-			left.Load(Builder);
-			right.Load(Builder);
-			Builder.Emit(OpCodes.Sub);
-		} else {
-			left.Load(Builder);
-			if (IsNumeric(left.BackingType)) {
-				var local = locals[left.BackingType];
-				Builder.Emit(OpCodes.Stloc, local);
-				Builder.Emit(OpCodes.Ldloca, local);
-			}
-			right.Load(Builder);
-			Builder.Emit(System.Reflection.Emit.OpCodes.Call, left.BackingType.GetMethod("CompareTo", new System.Type[] { left.BackingType }));
-			Clamp();
-		}
-		Builder.Emit(OpCodes.Conv_I8);
-		var result = MakeField("compare", typeof(long));
-		Builder.Emit(OpCodes.Stfld, result.Field);
-		return result;
+		return new CompareValue(locals, left, right);
 	}
 	/**
 	 * Copies the contents of one field to another, boxing or unboxing based on
@@ -1053,6 +1025,51 @@ internal class UpgradeValue : LoadableValue {
 		if (original.BackingType == typeof(long)) {
 			generator.Emit(OpCodes.Conv_R8);
 		}
+	}
+}
+internal class CompareValue : LoadableValue {
+	private LoadableValue left;
+	private LoadableValue right;
+	private Dictionary<System.Type, LocalBuilder> locals;
+	public override System.Type BackingType { get { return typeof(long); } }
+	public CompareValue(Dictionary<System.Type, LocalBuilder> locals, LoadableValue left, LoadableValue right) {
+		this.locals = locals;
+		this.left = left;
+		this.right = right;
+	}
+	public override void Load(ILGenerator generator) {
+		if (left.BackingType == typeof(bool)) {
+			left.Load(generator);
+			right.Load(generator);
+			generator.Emit(OpCodes.Sub);
+		} else {
+			left.Load(generator);
+			if (Generator.IsNumeric(left.BackingType)) {
+				var local = locals[left.BackingType];
+				generator.Emit(OpCodes.Stloc, local);
+				generator.Emit(OpCodes.Ldloca, local);
+			}
+			right.Load(generator);
+			generator.Emit(OpCodes.Call, left.BackingType.GetMethod("CompareTo", new System.Type[] { left.BackingType }));
+			generator.Emit(OpCodes.Ldc_I4_1);
+			generator.Emit(OpCodes.Call, typeof(Math).GetMethod("Min", new System.Type[] { typeof(int), typeof(int) }));
+			generator.Emit(OpCodes.Ldc_I4_M1);
+			generator.Emit(OpCodes.Call, typeof(Math).GetMethod("Max", new System.Type[] { typeof(int), typeof(int) }));
+		}
+		generator.Emit(OpCodes.Conv_I8);
+	}
+}
+internal class GeneratedValue : LoadableValue {
+	public delegate void GenerationBlock(ILGenerator g);
+	System.Type type;
+	GenerationBlock block;
+	public GeneratedValue(System.Type type, GenerationBlock block) {
+		this.type = type;
+		this.block = block;
+	}
+	public override System.Type BackingType { get { return type; } }
+	public override void Load(ILGenerator generator) {
+		block(generator);
 	}
 }
 internal class RevCons<T> {
