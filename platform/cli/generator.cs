@@ -553,6 +553,9 @@ internal class Generator {
 		Builder.Emit(OpCodes.Ldfld, state_field);
 		Builder.Emit(OpCodes.Switch, entry_points.ToArray());
 		Builder.ThrowException(typeof(ArgumentOutOfRangeException));
+		if (Builder.ILOffset >= 20000) {
+			throw new ArgumentOutOfRangeException(String.Format("The method contains {0} bytes, which exceeds Mono's maximum limit.", Builder.ILOffset));
+		}
 	}
 	private bool InvokeParameterPenalty(System.Type method, System.Type given, ref int penalty) {
 		if (method == given) {
