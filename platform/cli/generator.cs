@@ -201,6 +201,9 @@ internal class Generator {
 	private int num_fields = 0;
 
 	private Dictionary<System.Type, LocalBuilder> locals = new Dictionary<System.Type, LocalBuilder>();
+
+	private Dictionary<LoadableValue, LoadableValue> string_conversion_cache = new Dictionary<LoadableValue, LoadableValue>();
+
 	public static bool IsNumeric(System.Type type) {
 		return type == typeof(double) || type == typeof(long);
 	}
@@ -829,6 +832,10 @@ internal class Generator {
 		}
 	}
 	public LoadableValue ToStringish(LoadableValue source, LoadableValue source_reference) {
+		if (string_conversion_cache.ContainsKey(source)) {
+			return string_conversion_cache[source];
+		}
+		LoadableValue result;
 		if (source.BackingType == typeof(object)) {
 			var field = MakeField("str", typeof(Stringish));
 			var end = Builder.DefineLabel();
@@ -840,10 +847,12 @@ internal class Generator {
 			Builder.Emit(OpCodes.Brtrue, end);
 			EmitTypeError(source_reference, "Cannot convert type {0} to string.", source);
 			Builder.MarkLabel(end);
-			return field;
+			result = field;
 		} else {
-			return ToStringishHelper(source);
+			result = ToStringishHelper(source);
 		}
+		string_conversion_cache[source] = result;
+		return result;
 	}
 }
 internal class LookupCache {
