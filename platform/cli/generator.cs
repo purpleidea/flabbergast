@@ -1129,7 +1129,9 @@ internal class TypeCheckValue : LoadableValue {
 	public override System.Type BackingType { get { return typeof(bool); } }
 	public override void Load(ILGenerator generator) {
 		instance.Load(generator);
+		generator.Emit(OpCodes.Dup);
 		generator.Emit(OpCodes.Isinst, type);
+		generator.Emit(OpCodes.Ceq);
 	}
 }
 internal class GeneratedValue : LoadableValue {
