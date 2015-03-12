@@ -1250,7 +1250,7 @@ kws : compiler_lib.kws_tmpl {
 		type_list : "\(environment ?? "Environment").GetIntrinsicRealTypes(this)"
 	}
 	dynamic_type_dispatch_from_stored_mask +: {
-		type_list : "AstTypeableNode.ClrTypeFromType(\(type_storage).RestrictedType)"
+		type_list : "\(type_storage).MustUnbox ? AstTypeableNode.ClrTypeFromType(\(type_storage).RestrictedType) : null"
 	}
 	dynamic_type_check_tmpl +: {
 		reference_type ?:

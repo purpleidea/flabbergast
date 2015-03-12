@@ -2724,6 +2724,7 @@ language_tmpl : Template {
 						}
 					]
 					ensure_type_is : ensure_type.multiple {
+						needs_unbox : False
 						actions : [
 							ensure_type.propagate { fields : [ $reduce_expr, $initial_expr ] },
 							ensure_type.special {

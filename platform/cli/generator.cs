@@ -414,6 +414,12 @@ internal class Generator {
 	 * Generate a runtime dispatch that checks each of the provided types.
 	 */
 	public void DynamicTypeDispatch(LoadableValue original, LoadableValue source_reference, System.Type[] types, ParameterisedBlock<LoadableValue> block) {
+		// In dynamic_type_dispatch_from_stored_mask, we might not
+		// have to unbox, in which case, don't.
+		if (types == null) {
+			block(original);
+			return;
+		}
 		if (original.BackingType != typeof(object)) {
 			foreach (var type in types) {
 				if (original.BackingType == type) {
