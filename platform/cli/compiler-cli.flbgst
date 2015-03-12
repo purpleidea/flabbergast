@@ -680,7 +680,7 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 	}
 	# Stores the type information in the environment by syntax node.
 	intrinsic +: {
-		value : "\(indent)Environment.EnsureIntrinsic(_collector, this, \(current_type), ref _success);"
+		value : "\(indent)Environment.EnsureIntrinsic(_collector, this, \(current_type), \(If needs_unbox Then "true" Else "_needs_unbox"), ref _success);"
 	}
 	stop +: { value : "" }
 	multiple +: {

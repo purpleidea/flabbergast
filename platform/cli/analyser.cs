@@ -380,7 +380,7 @@ internal class LoadableCache {
 internal class Environment : CodeRegion {
 	Environment Parent;
 	Dictionary<string, NameInfo> Children = new Dictionary<string, NameInfo>();
-	Dictionary<AstNode, Type> IntrinsicTypes = new Dictionary<AstNode, Type>();
+	Dictionary<AstNode, Tuple<Type, bool>> Intrinsics = new Dictionary<AstNode, Tuple<Type, bool>>();
 	public string FileName { get; private set; }
 	public int StartRow { get; private set; }
 	public int StartColumn { get; private set; }
@@ -566,30 +566,36 @@ internal class Environment : CodeRegion {
 		Children[name] = copy_info;
 		return copy_info;
 	}
-	internal void EnsureIntrinsic(ErrorCollector collector, AstNode node, Type type, ref bool success) {
-		if (IntrinsicTypes.ContainsKey(node)) {
-			var original_type = IntrinsicTypes[node];
+	internal void EnsureIntrinsic(ErrorCollector collector, AstNode node, Type type, bool must_unbox, ref bool success) {
+		if (Intrinsics.ContainsKey(node)) {
+			var intrinsic = Intrinsics[node];
+			var original_type = intrinsic.Item1;
 			var result = original_type & type;
 			if (result == 0) {
 				success = false;
 				collector.ReportExpressionTypeError(node, original_type, type);
 			} else {
-				IntrinsicTypes[node] = result;
+				Intrinsics[node] = new Tuple<Type, bool>(result, intrinsic.Item2 & must_unbox);
 			}
 		} else {
-			IntrinsicTypes[node] = type;
+			Intrinsics[node] = new Tuple<Type, bool>(type, must_unbox);
 		}
 	}
 	internal System.Type[] GetIntrinsicRealTypes(AstNode node) {
-		if (IntrinsicTypes.ContainsKey(node)) {
-			return AstTypeableNode.ClrTypeFromType(IntrinsicTypes[node]);
+		if (Intrinsics.ContainsKey(node)) {
+			return AstTypeableNode.ClrTypeFromType(Intrinsics[node].Item1);
 		} else if (Parent != null) {
 			return Parent.GetIntrinsicRealTypes(node);
 		}
 		throw new InvalidOperationException("There is no intrinsic type for the node requested. This a compiler bug.");
 	}
 	internal void IntrinsicDispatch(Generator generator, AstNode node, LoadableValue original, Generator.ParameterisedBlock<LoadableValue> block) {
-		foreach (var type in AstTypeableNode.ClrTypeFromType(IntrinsicTypes[node])) {
+		var intrinsic = Intrinsics[node];
+		if (!intrinsic.Item2) {
+			block(original);
+			return;
+		}
+		foreach (var type in AstTypeableNode.ClrTypeFromType(intrinsic.Item1)) {
 			var next_label = generator.Builder.DefineLabel();
 			original.Load(generator);
 			generator.Builder.Emit(OpCodes.Isinst, type);

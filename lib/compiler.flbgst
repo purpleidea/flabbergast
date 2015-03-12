@@ -1470,7 +1470,9 @@ language_tmpl : Template {
 			If has_anon_args Then environment.list_of { field : $anon_args } Else Null,
 			If has_named_args Then environment.list_of { field : $named_args } Else Null
 		]
-		ensure_type_is : ensure_type.intrinsic { }
+		ensure_type_is : ensure_type.intrinsic {
+			needs_unbox : False
+		}
 		type_demand : ensure_type.multiple {
 			actions : [
 				ensure_type.filter {
@@ -2170,7 +2172,7 @@ language_tmpl : Template {
 					needs_generation : True
 					pattern : attribute_pattern { }
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
-					ensure_type_is : ensure_type.intrinsic { }
+					ensure_type_is : ensure_type.intrinsic { needs_unbox : True }
 					type_demand : ensure_type.frame {
 						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
 					}
@@ -3300,7 +3302,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
-					ensure_type_is : ensure_type.intrinsic {}
+					ensure_type_is : ensure_type.intrinsic { needs_unbox : False }
 					type_demand : ensure_type.frame {
 						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
 					}
@@ -3658,7 +3660,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expr ] } ]
-					ensure_type_is : ensure_type.intrinsic {}
+					ensure_type_is : ensure_type.intrinsic { needs_unbox : False }
 					type_demand : ensure_type.frame {
 						ensure_type_of : ensure_type.propagate { fields : [ $expr ] }
 					}
