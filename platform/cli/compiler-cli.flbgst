@@ -1205,23 +1205,36 @@ kws : compiler_lib.kws_tmpl {
 		}
 	}
 	conditional +: {
-		extra_indent : condition.extra_indent & "\t"
+		extra_indent : "\t"
 		callback : Id & "_code"
 
 		gen_gen +: {
-			sum_indent : indent & condition.extra_indent
-			value : condition.gen_gen(
-				indent : indent,
-				code :
-					"\(sum_indent)Generator.ParameterisedBlock<LoadableValue> \(callback) = (\(storage_name)) => {\(code)\(sum_indent)};" &
-					"\(sum_indent)if (!typeof(bool).IsAssignableFrom(\(condition.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Use of non-Boolean type {0} in conditional.\", \(condition.storage_name).BackingType));" &
-					"\(sum_indent)\(condition.storage_name).Load(\(generator));" &
-					"\(sum_indent)var \(Id)_else = \(generator).Builder.DefineLabel(); " &
-					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Brfalse, \(Id)_else);" &
-					true_action.gen_gen(indent : sum_indent, code : "\(sum_indent)\(true_action.extra_indent)\(callback)(\(true_action.storage_name));") &
-					"\(sum_indent)\(generator).Builder.MarkLabel(\(Id)_else); " &
-					false_action.gen_gen(indent : sum_indent, code : "\(sum_indent)\(false_action.extra_indent)\(callback)(\(false_action.storage_name));")
-				)
+			value :
+				"\(indent)\(generator).ConditionalFlow(\(condition_lambda), \(true_lambda), \(false_lambda), (\(storage_name)) => {\(code)\(indent)});"
+
+			condition_lambda :
+				"(\(Id)_cond) => {" &
+				condition.gen_gen(
+					indent : indent & "\t",
+					code : "\(indent)\(condition.extra_indent)\(Id)_cond(\(condition.storage_name));"
+				) &
+				"\(indent)}"
+
+			true_lambda :
+				"(\(Id)_true) => {" &
+				true_action.gen_gen(
+					indent : indent & "\t",
+					code : "\(indent)\(true_action.extra_indent)\(Id)_true(\(true_action.storage_name));"
+				) &
+				"\(indent)}"
+
+			false_lambda :
+				"(\(Id)_false) => {" &
+				false_action.gen_gen(
+					indent : indent & "\t",
+					code : "\(indent)\(false_action.extra_indent)\(Id)_false(\(false_action.storage_name));"
+				) &
+				"\(indent)}"
 		}
 	}
 	dynamic_type_dispatch_tmpl +: {

@@ -374,6 +374,38 @@ internal class Generator {
 		}
 		return new CompareValue(locals, left, right);
 	}
+	public void ConditionalFlow(ParameterisedBlock<ParameterisedBlock<LoadableValue>> conditional_part, ParameterisedBlock<ParameterisedBlock<LoadableValue>> true_part, ParameterisedBlock<ParameterisedBlock<LoadableValue>> false_part, ParameterisedBlock<LoadableValue> result_block) {
+		var true_label = Builder.DefineLabel();
+		var else_label = Builder.DefineLabel();
+		conditional_part((condition) => {
+			if (!typeof(bool).IsAssignableFrom(condition.BackingType))
+				throw new System.InvalidOperationException(System.String.Format("Use of non-Boolean type {0} in conditional.", condition.BackingType));
+			condition.Load(this);
+			Builder.Emit(OpCodes.Brfalse, else_label);
+			Builder.Emit(OpCodes.Br, true_label);
+		});
+
+		var type_dispatch = new Dictionary<System.Type, Tuple<Label, FieldValue>>();
+		ParameterisedBlock<LoadableValue> end_handler = (result) => {
+			if (!type_dispatch.ContainsKey(result.BackingType)) {
+				type_dispatch[result.BackingType] = new Tuple<Label,FieldValue>(Builder.DefineLabel(), MakeField("if_result", result.BackingType));
+			}
+			Builder.Emit(OpCodes.Ldarg_0);
+			result.Load(this);
+			Builder.Emit(OpCodes.Stfld, type_dispatch[result.BackingType].Item2.Field);
+			Builder.Emit(OpCodes.Br, type_dispatch[result.BackingType].Item1);
+		};
+
+		Builder.MarkLabel(true_label);
+		true_part(end_handler);
+		Builder.MarkLabel(else_label);
+		false_part(end_handler);
+
+		foreach(var tuple in type_dispatch.Values) {
+			Builder.MarkLabel(tuple.Item1);
+			result_block(tuple.Item2);
+		}
+	}
 	/**
 	 * Copies the contents of one field to another, boxing or unboxing based on
 	 * the field types.
