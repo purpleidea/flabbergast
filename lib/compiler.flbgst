@@ -511,28 +511,17 @@ kws_tmpl : Template {
 		arguments : [ { value : source  type : known_types.str } ]
 		return_type : known_types.bool
 	}
-	frame_new : Template base_tmpl {
+	frame_new : Template codegen.gen_tmpl {
+		creation_method : "defined"
 		container ?:
 		context ?:
 		source : Null
-		arguments : [
-			{ value : context  type : known_vm_types.list },
-			{ value : container  type : known_types.frame }
-		]
-		return_type : known_types.frame
 	}
-	frame_new_through : Template base_tmpl {
+	frame_new_through : Template codegen.gen_tmpl {
 		container ?:
 		context ?:
 		start ?:
 		end ?:
-		arguments : [
-			{ value : start  type : known_types.int },
-			{ value : end  type : known_types.int },
-			{ value : context  type : known_vm_types.list },
-			{ value : container  type : known_types.frame }
-		]
-		return_type : known_types.frame
 	}
 	frame_null : Template codegen.gen_tmpl {}
 	frame_id : Template base_tmpl {
@@ -833,8 +822,12 @@ codegen_tmpl : Template {
 		in ?:
 		emptiness ?:
 	}
-	fold_into_frame : Template fold_others {
+	# Create a literal list.
+	mash_into_frame : Template gen_tmpl {
+		field ?:
+		target_flavour : generation_flavour
 		initial : kws.frame_new {
+			creation_method : "list defined"
 			container : parameters.self_frame
 			context : parameters.context
 		}
@@ -1504,6 +1497,7 @@ language_tmpl : Template {
 									}
 									initial : codegen.push_source_reference {
 										in : kws.frame_new {
+											creation_method : "function-like instantiation"
 											container : kws.tmpl_container { source : converted_result }
 											context : kws.tmpl_context { source : converted_result }
 										}
@@ -1516,7 +1510,7 @@ language_tmpl : Template {
 													name : current_name
 													returns : into
 													into : current_accumulator
-													with : codegen.fold_into_frame {
+													with : codegen.mash_into_frame {
 														field : $anon_args
 													}
 												}
@@ -1695,6 +1689,7 @@ language_tmpl : Template {
 								target_flavour : codegen.flavour_attribute_accumulate
 								field : $attributes
 								initial : kws.frame_new {
+									creation_method : "file-level definition"
 									container : kws.frame_null {}
 									context : kws.list_null {}
 								}
@@ -3725,7 +3720,7 @@ language_tmpl : Template {
 						needs_unbox : False
 					}
 					code_value : codegen.push_source_reference {
-						in : codegen.fold_into_frame {
+						in : codegen.mash_into_frame {
 							field : $items
 						}
 					}

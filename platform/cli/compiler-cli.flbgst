@@ -839,23 +839,53 @@ kws : compiler_lib.kws_tmpl {
 		}
 	}
 	frame_new +: {
-		opcode : "Newobj"
+		extra_indent : context.extra_indent & container.extra_indent
 		gen_gen +: {
-			extra_emit : ", typeof(Frame).GetConstructors()[0]"
-			extra_load :
+			sum_indent : indent & extra_indent
+			base_code :
+				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_new_frame\", typeof(Frame));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
 				"\(sum_indent)\(generator).LoadTaskMaster();" &
 				"\(sum_indent)\(generator).GenerateNextId();" &
-				"\(sum_indent)\(generator).AmendSourceReference(this, \"instatiated from\", \(parameters.source_reference.storage_name), \(If source Is Null Then "null" Else source.storage_name));"
+				"\(sum_indent)\(generator).AmendSourceReference(this, \"\(creation_method)\", \(parameters.source_reference.storage_name), \(If source Is Null Then "null" Else source.storage_name));" &
+				"\(sum_indent)\(context.storage_name).Load(\(generator));" &
+				"\(sum_indent)\(container.storage_name).Load(\(generator));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(Frame).GetConstructors()[0]);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);" &
+				code
+			value : context.gen_gen(indent : indent, code : container.gen_gen(indent : indent & context.extra_indent, code : base_code))
 		}
 	}
 	frame_new_through +: {
-		opcode : "Call"
+		extra_indent : container.extra_indent & context.extra_indent & start.extra_indent & end.extra_indent
 		gen_gen +: {
-			extra_load :
+			sum_indent : indent & extra_indent
+			base_code :
+				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_new_frame\", typeof(Frame));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
 				"\(sum_indent)\(generator).LoadTaskMaster();" &
 				"\(sum_indent)\(generator).GenerateNextId();" &
-				"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));"
-			extra_emit : ", typeof(Frame).GetMethod(\"Through\", new System.Type[] { typeof(TaskMaster), typeof(long), typeof(SourceReference), typeof(long), typeof(long), typeof(Context), typeof(Frame) })"
+				"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));" &
+				"\(sum_indent)\(start.storage_name).Load(\(generator));" &
+				"\(sum_indent)\(end.storage_name).Load(\(generator));" &
+				"\(sum_indent)\(context.storage_name).Load(\(generator));" &
+				"\(sum_indent)\(container.storage_name).Load(\(generator));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Frame).GetMethod(\"Through\", new System.Type[] { typeof(TaskMaster), typeof(long), typeof(SourceReference), typeof(long), typeof(long), typeof(Context), typeof(Frame) }));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);" &
+				code
+			value : container.gen_gen(
+				indent : indent,
+				code : context.gen_gen(
+					indent : indent & container.extra_indent,
+					code : start.gen_gen(
+						indent : indent & container.extra_indent & context.extra_indent,
+						code : end.gen_gen(
+							indent : indent & container.extra_indent & context.extra_indent & start.extra_indent,
+							code : base_code
+							)
+						)
+					)
+				)
 		}
 	}
 	frame_null +: {
@@ -1284,7 +1314,7 @@ kws : compiler_lib.kws_tmpl {
 		reference_type : "\(field).TypeId"
 	}
 	iterator +: {
-		extra_indent : input.extra_indent
+		extra_indent : ""
 
 		parent_source_reference : Lookup parameters.source_reference In Container
 		parameters : {
@@ -1304,9 +1334,20 @@ kws : compiler_lib.kws_tmpl {
 
 		gen_gen +: {
 			sum_indent : indent & extra_indent
-
 			value :
+				input.gen_gen(indent : indent) &
 				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_accumulator\", typeof(\(accumulator_type.real_type)));" &
+				create_initial &
+				create_iterator &
+				iterator_trampoline &
+				# Create a block for the default dispatcher.
+				"\(sum_indent)\(generator).Builder.MarkLabel(\(iterator_dispatchers)[1]);" &
+				dispatch_code &
+				case_dispatchers &
+				"\(sum_indent)\(generator).Builder.MarkLabel(\(iterator_dispatchers)[0]);" &
+				code
+
+			create_initial :
 				"\(sum_indent)var \(iterator_start_block) = \(generator).Builder.DefineLabel();" &
 				(If modify_source_reference
 					Then "\(indent)LoadableValue \(parameters.source_reference.storage_name) = \(parent_source_reference.storage_name);"
@@ -1317,17 +1358,15 @@ kws : compiler_lib.kws_tmpl {
 						"\(indent)\(initial.extra_indent)\(generator).CopyField(\(initial.storage_name), \(storage_name));" &
 						"\(indent)\(initial.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, \(iterator_start_block));"
 					) &
-				"\(sum_indent)\(generator).Builder.MarkLabel(\(iterator_start_block));" &
-				input.gen_gen(indent : indent & input.extra_indent, code : base_code)
-			base_code :
+				"\(sum_indent)\(generator).Builder.MarkLabel(\(iterator_start_block));"
+
+			create_iterator :
 				# Create new fields for all the bits of stuff we need.
 				"\(sum_indent)var \(iterator_instance) = \(generator).MakeField(\"\(rule_name)_iterator\", typeof(MergeIterator));" &
 				"\(sum_indent)#pragma warning disable 219" &
 				"\(sum_indent)var \(iterator_key) = new MethodValue(\(iterator_instance), typeof(MergeIterator).GetMethod(\"get_Currentish\"));" &
 				"\(sum_indent)var \(iterator_ordinal) = new MethodValue(\(iterator_instance), typeof(MergeIterator).GetMethod(\"get_Position\"));" &
 				"\(sum_indent)#pragma warning restore 219" &
-				"\(sum_indent)var \(iterator_dispatchers) = new System.Reflection.Emit.Label[ \(num_cases) ];" &
-				"\(sum_indent)for(var \(Id)_it = 0; \(Id)_it < \(iterator_dispatchers).Length; \(Id)_it++) { \(iterator_dispatchers)[\(Id)_it] = \(generator).Builder.DefineLabel(); }" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
 				"\(sum_indent)\(input.array).Load(\(generator));" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_1);" &
@@ -1335,7 +1374,9 @@ kws : compiler_lib.kws_tmpl {
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(MergeIterator).GetConstructors()[0]);" &
 				# Load all the special dispatchers.
 				add_cases &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(iterator_instance).Field);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(iterator_instance).Field);"
+
+			iterator_trampoline :
 				# Create a re-entry point for the end of input (i.e., the iterator returning).
 				"\(sum_indent)var \(iterator_next) = \(generator).Builder.DefineLabel();" &
 				"\(sum_indent)\(generator).Builder.MarkLabel(\(iterator_next));" &
@@ -1345,13 +1386,7 @@ kws : compiler_lib.kws_tmpl {
 					Then "\(sum_indent)\(parameters.source_reference.storage_name) = \(generator).PushIteratorSourceReference(this, \(iterator_instance), \(parent_source_reference.storage_name));"
 					Else "") &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Switch, \(iterator_dispatchers));" &
-				"\(sum_indent)\(generator).Builder.ThrowException(typeof(System.ArgumentOutOfRangeException));" &
-				# Create a block for the default dispatcher.
-				"\(sum_indent)\(generator).Builder.MarkLabel(\(iterator_dispatchers)[1]);" &
-				dispatch_code &
-				case_dispatchers &
-				"\(sum_indent)\(generator).Builder.MarkLabel(\(iterator_dispatchers)[0]);" &
-				code
+				"\(sum_indent)\(generator).Builder.ThrowException(typeof(System.ArgumentOutOfRangeException));"
 
 			dispatch_code : default_case.gen_gen(
 				indent : sum_indent,
@@ -1369,8 +1404,11 @@ kws : compiler_lib.kws_tmpl {
 			add_cases :
 				For case : cases
 					Where !(case Is Null)
-					Reduce acc & case.add(indent : sum_indent)
+					Reduce
+						acc & case.add(indent : sum_indent)
 					With acc :
+						"\(sum_indent)var \(iterator_dispatchers) = new System.Reflection.Emit.Label[ \(num_cases) ];" &
+						"\(sum_indent)for(var \(Id)_it = 0; \(Id)_it < \(iterator_dispatchers).Length; \(Id)_it++) { \(iterator_dispatchers)[\(Id)_it] = \(generator).Builder.DefineLabel(); }" &
 						"\(sum_indent)#pragma warning disable 219" &
 						"\(sum_indent)var \(position) = 2;" &
 						"\(sum_indent)#pragma warning restore 219"
@@ -1385,11 +1423,9 @@ kws : compiler_lib.kws_tmpl {
 		}
 
 		input_tmpl +: {
-			extra_indent ?:
 			array : Id
 			gen_gen : Template {
 				indent ?:
-				code ?:
 				value ?:
 
 				sum_indent : indent & extra_indent
@@ -1398,43 +1434,33 @@ kws : compiler_lib.kws_tmpl {
 					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
 					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(num_inputs));" &
 					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newarr, typeof(IAttributeNames));" &
-					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(array).Field);" &
-					load_inputs &
-					code
+					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(array).Field);"
 			}
 		}
 		input_list +: {
-			extra_indent :
-				For input : items Reduce input.extra_indent & acc With acc : ""
-
-			num_inputs : For input : items Reduce len + 1 With len : 0
-			input_indents : For input_name : Name, input : items, input_pos : Ordinal
-				Select input_name :
-					(For prev_input : items, prev_input_pos : Ordinal
-					Where prev_input_pos < input_pos
-					Reduce acc & input_arg.extra_indent
-					With acc : "")
+			num_inputs : For item : items Reduce len + 1 With len : 0
 
 			gen_gen +: {
 				value :
-					For input : items, input_indent : input_indents
-						Reduce input.gen_gen(code : acc, indent : indent & input_indent)
-						With acc : base_code
-				load_inputs :
-					(For input : items, index : Ordinal
-						Reduce acc &
-							"\(sum_indent)if (!typeof(IAttributeNames).IsAssignableFrom(\(input.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Use of non-collection {0} in iteration.\", \(input.storage_name).BackingType));" &
-							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
-							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(index - 1));" &
-							"\(sum_indent)\(input.storage_name).Load(\(generator));" &
-							"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem, typeof(IAttributeNames));"
-						With acc :
-							"\(sum_indent)\(array).Load(\(generator));") &
-					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Pop);"
+					For item : items, index : Ordinal
+						Reduce
+							acc &
+							"\(indent)\(Id)_next = \(generator).Builder.DefineLabel();" &
+							item.gen_gen(
+								indent : indent,
+								code :
+									"\(indent)\(item.extra_indent)\(array).Load(\(generator));" &
+									"\(indent)\(item.extra_indent)if (!typeof(IAttributeNames).IsAssignableFrom(\(item.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Use of non-collection {0} in iteration.\", \(item.storage_name).BackingType));" &
+									"\(indent)\(item.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(index - 1));" &
+									"\(indent)\(item.extra_indent)\(item.storage_name).Load(\(generator));" &
+									"\(indent)\(item.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem, typeof(IAttributeNames));" &
+									"\(indent)\(item.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, \(Id)_next);"
+								) &
+							"\(indent)\(generator).Builder.MarkLabel(\(Id)_next);"
+						With acc : base_code & "\(indent)System.Reflection.Emit.Label \(Id)_next;"
 			}
 		}
 		input_merge +: {
-			extra_indent : ""
 			matched_frames : Id & "_matched_frames"
 			call_arguments : codegen.flavour_aware.call_site {}
 			argument_list : "\(generator), " &
@@ -1455,32 +1481,31 @@ kws : compiler_lib.kws_tmpl {
 						"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(Frame).GetConstructors()[0]);" &
 						"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);" &
 						"\(indent)foreach(var \(Id) in \(field)) {" &
-						"\(indent)\t\(Id).PrepareValue(\(argument_list)\(matched_frames), \(current_ordinal.storage_name), \(current_name.storage_name), \(storage_name));" &
+						"\(indent)\t\(Id).PrepareValue(\(argument_list)\(matched_frames).ContainsKey(\(Id)) ? new MatchedFrameValue(\(matched_frames)[\(Id)], \(array)) : null, \(current_ordinal.storage_name), \(current_name.storage_name), \(storage_name));" &
 						"\(indent)}" &
 						code
 					}
 			}
 
 			gen_gen +: {
-				num_inputs : Id & "_count"
+				num_inputs : "\(field).Where(x => x.NeedsGeneration).Count()"
 
 				value :
-					"\(sum_indent)var \(num_inputs) = 0;" &
-					"\(sum_indent)var \(matched_frames) = new System.Collections.Generic.Dictionary<AstNode, LoadableValue>();" &
+					base_code &
+					"\(sum_indent)var \(Id)_pos = 0;" &
+					"\(sum_indent)var \(matched_frames) = new System.Collections.Generic.Dictionary<AstNode, int>();" &
 					"\(sum_indent)foreach(var \(Id) in \(field).Where(x => x.NeedsGeneration)) {" &
-					"\(sum_indent)\t\(num_inputs)++;" &
-					"\(sum_indent)\t\(Id).Generate(\(argument_list)(\(Id)_result) => \(matched_frames)[\(Id)] = \(Id)_result);" &
-					"\(sum_indent)}" &
-					base_code
-
-				load_inputs :
-					"\(sum_indent)var \(Id)_index = 0;" &
-					"\(sum_indent)foreach(var \(Id)_value in \(matched_frames).Values) {" &
-					"\(sum_indent)\tif (!typeof(IAttributeNames).IsAssignableFrom(\(Id)_value.BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Use of non-collection {0} in iteration.\", \(Id)_value.BackingType));" &
-					"\(sum_indent)\t\(array).Load(\(generator));" &
-					"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(Id)_index++);" &
-					"\(sum_indent)\t\(Id)_value.Load(\(generator));" &
-					"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem, typeof(IAttributeNames));" &
+					"\(sum_indent)\t\(matched_frames)[\(Id)] = \(Id)_pos;" &
+					"\(sum_indent)\tvar \(Id)_next = \(generator).Builder.DefineLabel();" &
+					"\(sum_indent)\t\(Id).Generate(\(argument_list)(\(Id)_result) => {" &
+					"\(sum_indent)\t\t\(array).Load(\(generator));" &
+					"\(sum_indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(Id)_pos);" &
+					"\(sum_indent)\t\t\(Id)_result.Load(\(generator));" &
+					"\(sum_indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem, typeof(IAttributeNames));" &
+					"\(sum_indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, \(Id)_next);" &
+					"\(sum_indent)\t});" &
+					"\(sum_indent)\t\(generator).Builder.MarkLabel(\(Id)_next);" &
+					"\(sum_indent)\t\(Id)_pos++;" &
 					"\(sum_indent)}"
 			}
 		}
@@ -1605,8 +1630,6 @@ codegen : compiler_lib.codegen_tmpl {
 			call_arguments.value
 
 		gen_gen +: {
-			sum_indent : indent & initial.extra_indent
-			expand : "\(Id)_block"
 			value :
 				"\(indent)var \(storage_name) = \(generator).MakeField(\"collapse_result\", typeof(\(type.real_type)));" &
 				"\(indent)var \(Id)_label = \(generator).Builder.DefineLabel();" &
@@ -1678,19 +1701,35 @@ codegen : compiler_lib.codegen_tmpl {
 			}
 		}
 	}
-	fold_into_frame +: {
+	mash_into_frame +: {
+		extra_indent : ""
 		call_arguments : target_flavour.non_accumulate_flavour.call_site {}
+		argument_list : "\(generator), " &
+			(If target_flavour.non_accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
+			(target_flavour.non_accumulate_flavour.call_site {}).value
+		storage_name : initial.storage_name
 		gen_gen +: {
-			expand :
-				"(\(Id)_result) => {" &
-				"\(sum_indent)\t\(generator).DebugPosition(this);" &
-				"\(sum_indent)\t\(fold_name).Load(\(generator));" &
-				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I8, (long) \(Id)_index);" &
-				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(TaskMaster).GetMethod(\"OrdinalNameStr\", new System.Type[] { typeof(long) }));" &
-				"\(sum_indent)\t\(generator).LoadReboxed(\(Id)_result, typeof(object));" &
-				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Frame).GetMethod(\"set_Item\", new System.Type[] { typeof(string), typeof(object) }));" &
-				"\(sum_indent)\t\(Id)_block(\(fold_name));" &
-				"\(sum_indent)}"
+			value :
+				"\(indent)var \(Id)_label = \(generator).Builder.DefineLabel();" &
+				initial.gen_gen(
+					indent : indent,
+					code :
+						"\(indent)\(initial.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, \(Id)_label);"
+					) &
+				"\(indent)for (var \(Id)_index = 0; \(Id)_index < \(field).Count; \(Id)_index++) {" &
+				"\(indent)\t\(generator).Builder.MarkLabel(\(Id)_label);" &
+				"\(indent)\t\(Id)_label = \(generator).Builder.DefineLabel();" &
+				"\(indent)\t\(field)[\(Id)_index].Generate(\(argument_list)(\(Id)_result) => {" &
+				"\(indent)\t\t\(storage_name).Load(\(generator));" &
+				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I8, (long) \(Id)_index + 1);" &
+				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(TaskMaster).GetMethod(\"OrdinalNameStr\", new System.Type[] { typeof(long) }));" &
+				"\(indent)\t\t\(generator).LoadReboxed(\(Id)_result, typeof(object));" &
+				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Frame).GetMethod(\"set_Item\", new System.Type[] { typeof(string), typeof(object) }));" &
+				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, \(Id)_label);" &
+				"\(indent)\t});" &
+				"\(indent)}" &
+				"\(indent)\(generator).Builder.MarkLabel(\(Id)_label);" &
+				code
 		}
 	}
 	lookup_cached +: {
@@ -2214,21 +2253,21 @@ compiler : compiler_lib.language_tmpl {
 				}
 				matched_frame : codegen.gen_tmpl {
 					extra_indent : ""
-					storage_name : "_matched_frames[this]"
+					storage_name : "_matched_frame"
 				}
 			}
 			super_class_extra :
 				"\tinternal void AddMask(ErrorCollector collector, Environment environment) { environment.AddMask(name.ToString(), this); }\n" &
 				"\tinternal abstract void PrepareValue(" &
 					generation_flavour.parameter_str &
-					"System.Collections.Generic.Dictionary<AstNode, LoadableValue> _matched_frames, LoadableValue _ordinal, LoadableValue _name, LoadableValue _target_frame);\n" &
+					"LoadableValue _matched_frame, LoadableValue _ordinal, LoadableValue _name, LoadableValue _target_frame);\n" &
 					"\tinternal abstract bool NeedsGeneration { get; }\n"
 
 				merge_input_tmpl +: {
 					class_extra :
 						"\tinternal override void PrepareValue(" &
 							generation_flavour.parameter_str &
-							"System.Collections.Generic.Dictionary<AstNode, LoadableValue> _matched_frames, LoadableValue _ordinal, LoadableValue _name, LoadableValue _target_frame) {\n" &
+							"LoadableValue _matched_frame, LoadableValue _ordinal, LoadableValue _name, LoadableValue _target_frame) {\n" &
 							"\t\t\(generator).DebugPosition(this);" &
 							"\t\tvar _label = \(generator).Builder.DefineLabel();" &
 							prepare_value.gen_gen(

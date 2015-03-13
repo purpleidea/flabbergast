@@ -708,8 +708,6 @@ internal class Generator {
 			if (target_type == typeof(object)) {
 				if (source.BackingType == typeof(bool) || source.BackingType == typeof(double) ||source.BackingType == typeof(long)) {
 					Builder.Emit(OpCodes.Box, source.BackingType);
-				} else {
-					Builder.Emit(OpCodes.Castclass, typeof(object));
 				}
 			} else {
 				Builder.Emit(OpCodes.Unbox_Any, target_type);
@@ -1132,6 +1130,22 @@ internal class TypeCheckValue : LoadableValue {
 		generator.Emit(OpCodes.Dup);
 		generator.Emit(OpCodes.Isinst, type);
 		generator.Emit(OpCodes.Ceq);
+	}
+}
+internal class MatchedFrameValue : LoadableValue {
+	public delegate void GenerationBlock(ILGenerator g);
+	int index;
+	LoadableValue array;
+	public MatchedFrameValue(int index, LoadableValue array) {
+		this.index = index;
+		this.array = array;
+	}
+	public override System.Type BackingType { get { return typeof(Frame); } }
+	public override void Load(ILGenerator generator) {
+		array.Load(generator);
+		generator.Emit(OpCodes.Ldc_I4, index);
+		generator.Emit(OpCodes.Ldelem, typeof(IAttributeNames));
+		generator.Emit(OpCodes.Castclass, typeof(Frame));
 	}
 }
 internal class GeneratedValue : LoadableValue {

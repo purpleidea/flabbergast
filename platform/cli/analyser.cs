@@ -179,7 +179,7 @@ internal abstract class NameInfo {
 		return false;
 	}
 	protected LoadableValue GenerateLookupField(Generator generator, LoadableValue source_reference, LoadableValue context) {
-		var lookup_result = generator.MakeField("lookup", typeof(object));
+		var lookup_result = generator.MakeField("lookup_" + Name, typeof(object));
 		generator.LoadTaskMaster();
 		generator.Builder.Emit(OpCodes.Dup);
 		source_reference.Load(generator);
