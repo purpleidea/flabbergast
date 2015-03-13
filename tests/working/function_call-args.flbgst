@@ -1,10 +1,10 @@
 sum_with_base: Template {
 	args ?:
 	x ?:
-	value: For v : args Reduce v + a With a : x
+	value : For v : args Reduce v + a With a : x
 }
 sum : Template {
 	args ?:
-	value: For v : args Reduce v + a With a : 0
+	value : For v : args Reduce v + a With a : 0
 }
-value: sum(1, 2, 3) == 6 && sum(args : 1 Through 3) == 6 && sum_with_base(1, 2, 3, x : 5) == 11
+value : sum(1, 2, 3) == 6 && sum(args : 1 Through 3) == 6 && sum_with_base(1, 2, 3, x : 5) == 11
