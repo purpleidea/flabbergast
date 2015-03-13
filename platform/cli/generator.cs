@@ -411,7 +411,8 @@ internal class Generator {
 	 * the field types.
 	 */
 	public void CopyField(LoadableValue source, FieldValue target) {
-		CopyField(source, target.Field);
+		if (source != target)
+			CopyField(source, target.Field);
 	}
 	void CopyField(LoadableValue source, FieldInfo target) {
 		Builder.Emit(OpCodes.Ldarg_0);
