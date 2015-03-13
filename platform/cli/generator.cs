@@ -330,7 +330,7 @@ internal class Generator {
 			Builder.Emit(OpCodes.Ldarg_0);
 			Builder.Emit(OpCodes.Ldfld, original_computation);
 			Builder.Emit(OpCodes.Dup);
-			GenerateConsumeResult(InitialOriginal);
+			GenerateConsumeResult(InitialOriginal, false);
 			Builder.Emit(OpCodes.Callvirt, typeof(Computation).GetMethod("Notify", new System.Type[] { typeof(ConsumeResult) }));
 			Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new System.Type[] { typeof(Computation) }));
 			Builder.Emit(OpCodes.Ldc_I4_0);
@@ -534,7 +534,7 @@ internal class Generator {
 	/**
 	 * Generate a function to receive a value and request continued computation from the task master.
 	 */
-	public void GenerateConsumeResult(FieldValue result_target, bool interlocked = false) {
+	public void GenerateConsumeResult(FieldValue result_target, bool interlocked, ILGenerator builder = null) {
 		var method = TypeBuilder.DefineMethod("ConsumeResult" + result_consumer++, MethodAttributes.Public, typeof(void), new System.Type[] { typeof(object) });
 		var consume_builder = method.GetILGenerator();
 
@@ -552,9 +552,9 @@ internal class Generator {
 		consume_builder.MarkLabel(return_label);
 		consume_builder.Emit(OpCodes.Ret);
 
-		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(OpCodes.Ldftn, method);
-		Builder.Emit(OpCodes.Newobj, typeof(ConsumeResult).GetConstructors()[0]);
+		(builder ?? Builder).Emit(OpCodes.Ldarg_0);
+		(builder ?? Builder).Emit(OpCodes.Ldftn, method);
+		(builder ?? Builder).Emit(OpCodes.Newobj, typeof(ConsumeResult).GetConstructors()[0]);
 	}
 	public void GenerateNextId() {
 		LoadTaskMaster();
@@ -741,8 +741,8 @@ internal class Generator {
 	/**
 	 * Mark the current code position as the entry point for a state.
 	 */
-	public void MarkState(int id) {
-		Builder.MarkLabel(entry_points[id]);
+	public void MarkState(int id, ILGenerator builder = null) {
+		(builder ?? Builder).MarkLabel(entry_points[id]);
 	}
 	private void PushSourceReferenceHelper(AstNode node, LoadableValue original_reference) {
 		Builder.Emit(OpCodes.Ldstr, node.FileName);
@@ -796,7 +796,7 @@ internal class Generator {
 	public void SetState(int state) {
 		SetState(state, Builder);
 	}
-	private void SetState(int state, ILGenerator builder) {
+	internal void SetState(int state, ILGenerator builder) {
 		builder.Emit(OpCodes.Ldarg_0);
 		builder.Emit(OpCodes.Ldc_I4, state);
 		builder.Emit(OpCodes.Stfld, state_field);
@@ -817,10 +817,10 @@ internal class Generator {
 		Builder.Emit(OpCodes.Ldc_I4_0);
 		Builder.Emit(OpCodes.Ret);
 	}
-	public void StartInterlock(int count) {
-		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(OpCodes.Ldc_I4, count + 1);
-		Builder.Emit(OpCodes.Stfld, interlock_field);
+	public void StartInterlock(int count, ILGenerator builder = null) {
+		(builder ?? Builder).Emit(OpCodes.Ldarg_0);
+		(builder ?? Builder).Emit(OpCodes.Ldc_I4, count + 1);
+		(builder ?? Builder).Emit(OpCodes.Stfld, interlock_field);
 	}
 	public void StopInterlock() {
 		var state = DefineState();
@@ -830,6 +830,9 @@ internal class Generator {
 	public void StopInterlock(int state) {
 		SetState(state);
 		DecrementInterlock(Builder);
+		JumpToState(state);
+	}
+	public void JumpToState(int state) {
 		Builder.Emit(OpCodes.Brfalse, entry_points[state]);
 		Builder.Emit(OpCodes.Ldc_I4_0);
 		Builder.Emit(OpCodes.Ret);

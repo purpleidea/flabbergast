@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 
 namespace Flabbergast {
@@ -171,33 +172,33 @@ internal abstract class NameInfo {
 	}
 	public abstract void EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox);
 	public abstract void CreateChild(ErrorCollector collector, string name, string root, ref bool success);
-	public abstract LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context);
+	public abstract LoadableCache Load(Generator generator, ILGenerator builder, LoadableValue source_reference, LoadableValue context);
 	public virtual string CheckValidNarrowing(LookupCache next, LookupCache current) {
 		return null;
 	}
 	public virtual bool NeedsLoad(LookupCache current) {
 		return false;
 	}
-	protected LoadableValue GenerateLookupField(Generator generator, LoadableValue source_reference, LoadableValue context) {
+	protected LoadableValue GenerateLookupField(Generator generator, ILGenerator builder, LoadableValue source_reference, LoadableValue context) {
 		var lookup_result = generator.MakeField("lookup_" + Name, typeof(object));
-		generator.LoadTaskMaster();
-		generator.Builder.Emit(OpCodes.Dup);
-		source_reference.Load(generator);
+		generator.LoadTaskMaster(builder);
+		builder.Emit(OpCodes.Dup);
+		source_reference.Load(builder);
 		var name_parts = Name.Split('.');
-		generator.Builder.Emit(OpCodes.Ldc_I4, name_parts.Length);
-		generator.Builder.Emit(OpCodes.Newarr, typeof(string));
+		builder.Emit(OpCodes.Ldc_I4, name_parts.Length);
+		builder.Emit(OpCodes.Newarr, typeof(string));
 		for (var it = 0; it < name_parts.Length; it++) {
-			generator.Builder.Emit(OpCodes.Dup);
-			generator.Builder.Emit(OpCodes.Ldc_I4, it);
-			generator.Builder.Emit(OpCodes.Ldstr, name_parts[it]);
-			generator.Builder.Emit(OpCodes.Stelem, typeof(string));
+			builder.Emit(OpCodes.Dup);
+			builder.Emit(OpCodes.Ldc_I4, it);
+			builder.Emit(OpCodes.Ldstr, name_parts[it]);
+			builder.Emit(OpCodes.Stelem, typeof(string));
 		}
-		context.Load(generator);
-		generator.Builder.Emit(OpCodes.Newobj, typeof(Lookup).GetConstructors()[0]);
-		generator.Builder.Emit(OpCodes.Dup);
-		generator.GenerateConsumeResult(lookup_result, true);
-		generator.Builder.Emit(OpCodes.Call, typeof(Lookup).GetMethod("Notify", new System.Type[] { typeof(ConsumeResult) }));
-		generator.Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new System.Type[] { typeof(Computation) }));
+		context.Load(builder);
+		builder.Emit(OpCodes.Newobj, typeof(Lookup).GetConstructors()[0]);
+		builder.Emit(OpCodes.Dup);
+		generator.GenerateConsumeResult(lookup_result, true, builder);
+		builder.Emit(OpCodes.Call, typeof(Lookup).GetMethod("Notify", new System.Type[] { typeof(ConsumeResult) }));
+		builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new System.Type[] { typeof(Computation) }));
 		return lookup_result;
 	}
 }
@@ -224,8 +225,8 @@ internal class OpenNameInfo : NameInfo {
 	public override bool NeedsLoad(LookupCache current) {
 		return true;
 	}
-	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
-		return new LoadableCache(GenerateLookupField(generator, source_reference, context), RealType, this, must_unbox);
+	public override LoadableCache Load(Generator generator, ILGenerator builder, LoadableValue source_reference, LoadableValue context) {
+		return new LoadableCache(GenerateLookupField(generator, builder, source_reference, context), RealType, this, must_unbox);
 	}
 }
 internal class OverrideNameInfo : RestrictableType {
@@ -250,7 +251,7 @@ internal class OverrideNameInfo : RestrictableType {
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
 	}
-	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
+	public override LoadableCache Load(Generator generator, ILGenerator builder, LoadableValue source_reference, LoadableValue context) {
 		return new LoadableCache(generator.InitialOriginal, RealType, this, must_unbox);
 	}
 }
@@ -262,7 +263,7 @@ internal class JunkInfo : NameInfo {
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		Children[name] = new JunkInfo();
 	}
-	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
+	public override LoadableCache Load(Generator generator, ILGenerator builder, LoadableValue source_reference, LoadableValue context) {
 		throw new InvalidOperationException("Attempted to load invalid name.");
 	}
 }
@@ -289,8 +290,8 @@ internal class BoundNameInfo : RestrictableType {
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
 	}
-	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
-		return new LoadableCache(GenerateLookupField(generator, source_reference, context), RestrictedType, this, must_unbox);
+	public override LoadableCache Load(Generator generator, ILGenerator builder, LoadableValue source_reference, LoadableValue context) {
+		return new LoadableCache(GenerateLookupField(generator, builder, source_reference, context), RestrictedType, this, must_unbox);
 	}
 }
 internal class CopyFromParentInfo : NameInfo {
@@ -348,8 +349,8 @@ internal class CopyFromParentInfo : NameInfo {
 			return null;
 		}
 	}
-	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
-		var source_cache = Source.Load(generator, source_reference, context);
+	public override LoadableCache Load(Generator generator, ILGenerator builder, LoadableValue source_reference, LoadableValue context) {
+		var source_cache = Source.Load(generator, builder, source_reference, context);
 		return new LoadableCache(source_cache.Value, source_cache.PossibleTypes & Mask, this, must_unbox);
 	}
 }
@@ -481,13 +482,22 @@ internal class Environment : CodeRegion {
 			load_count += info.NeedsLoad(current) ? 1 : 0;
 		}
 		if (load_count > 0) {
-			generator.StartInterlock(load_count);
+			var method = generator.TypeBuilder.DefineMethod("PrepareLookup", MethodAttributes.Private | MethodAttributes.HideBySig, typeof(bool), new System.Type[0]);
+			var builder = method.GetILGenerator();
+			generator.StartInterlock(load_count, builder);
 			foreach (var info in all_children) {
 				if (info.NeedsLoad(current)) {
-					lookup_results.Add(info.Load(generator, source_reference, context));
+					lookup_results.Add(info.Load(generator, builder, source_reference, context));
 				}
 			}
-			generator.StopInterlock();
+			var state = generator.DefineState();
+			generator.SetState(state, builder);
+			generator.DecrementInterlock(builder);
+			builder.Emit(OpCodes.Ret);
+			generator.Builder.Emit(OpCodes.Ldarg_0);
+			generator.Builder.Emit(OpCodes.Call, method);
+			generator.JumpToState(state);
+			generator.MarkState(state);
 		}
 		foreach (var lookup_result in lookup_results.Where(x => x.DirectCopy)) {
 			base_lookup_cache[lookup_result.NameInfo] = lookup_result.Value;
