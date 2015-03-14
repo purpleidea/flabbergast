@@ -625,19 +625,17 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 	filter +: {
 		type_bits : For t : types Reduce acc & " | " & t.union_type With acc : "0"
 
-		parent_indent : Lookup indent In Container
-		indent : parent_indent & "\t"
-
 		parent_type : Lookup current_type In Container
 		current_type : Id
+		result : ensure_type_of.result
 
-		value : "\(parent_indent)var \(Id) = \(parent_type) & (\(type_bits));" &
-			"\(parent_indent)if (\(Id) == 0) {" &
-			"\(indent)_success = false;" &
-			"\(indent)_collector.ReportExpressionTypeError(this, \(type_bits), \(parent_type));" &
-			"\(parent_indent)} else {" &
-			ensure_type_of.value &
-			"\(parent_indent)}"
+		value :
+			"\(indent)var \(Id) = \(parent_type) & (\(type_bits));" &
+			"\(indent)if (\(Id) == 0) {" &
+			"\(indent)\t_success = false;" &
+			"\(indent)\t_collector.ReportExpressionTypeError(this, \(type_bits), \(parent_type));" &
+			"\(indent)}" &
+			ensure_type_of.value
 	}
 	# Pass this type to a child node.
 	propagate +: {
@@ -645,50 +643,57 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 		value :
 			For field : fields
 				Where !(field Is Null)
-				Reduce acc & "\(indent)if (\(field) != null) \(field).EnsureType(_collector, \(allowed_type_bits), ref _success, \(If needs_unbox Then "true" Else "_needs_unbox"));"
-				With acc : ""
+				Reduce acc & "\(indent)if (\(field) != null) \(Id) &= \(field).EnsureType(_collector, \(allowed_type_bits), ref _success, \(If needs_unbox Then "true" Else "_needs_unbox"));"
+				With acc : "\(indent)var \(Id) = NameInfo.AnyType;"
+		result : Id
+
 	}
 	# Pass this type to all child nodes in a list.
 	propagate_all +: {
 		allowed_type_bits : For t : extra_types Reduce acc & " | " & t.union_type With acc : current_type
-		value : "\(indent)if (\(field) != null) foreach (var \(Id) in \(field)) \(Id).EnsureType(_collector, \(allowed_type_bits), ref _success, \(If needs_unbox Then "true" Else "_needs_unbox"));"
+		result : Id
+		value :
+			"\(indent)var \(Id) = NameInfo.AnyType;" &
+			"\(indent)if (\(field) != null) foreach (var \(Id)_item in \(field)) \(Id) &= \(Id)_item.EnsureType(_collector, \(allowed_type_bits), ref _success, \(If needs_unbox Then "true" Else "_needs_unbox"));"
 	}
 	# This works similarly to filter, but takes the type from a syntax node
 	# rather than a literal in the compiler.
 	dynamic +: {
-		parent_indent : Lookup indent In Container
-		indent : parent_indent & "\t"
-
 		parent_type : Lookup current_type In Container
 		current_type : Id
 
 		type_bits : "\(field).\(If propagate_castable Then "CastableFrom" Else "TypeId")"
-		value : "\(parent_indent)var \(Id) = \(parent_type) & \(type_bits);" &
-			"\(parent_indent)if (\(Id) == 0) {" &
-			"\(indent)_success = false; " &
-			"\(indent)_collector.ReportExpressionTypeError(this, \(type_bits), \(parent_type));" &
-			"\(parent_indent)} else {" &
-			ensure_type_of.value &
-			"\(parent_indent)}"
+		result : Id
+		value :
+			"\(indent)var \(Id) = \(parent_type) & \(type_bits);" &
+			"\(indent)if (\(Id) == 0) {" &
+			"\(indent)\t_success = false; " &
+			"\(indent)\t_collector.ReportExpressionTypeError(this, \(type_bits), \(parent_type));" &
+			"\(indent)}" &
+			ensure_type_of.value
 	}
 	special +: {
-		value : "\(indent)\(type_storage).EnsureType(_collector, \(current_type), ref _success,  \(If needs_unbox Then "true" Else "_needs_unbox"));"
+		result : Id
+		value : "\(indent)var \(Id) = \(type_storage).EnsureType(_collector, \(current_type), ref _success,  \(If needs_unbox Then "true" Else "_needs_unbox"));"
 	}
 	# Stores the type information in the environment by lookup name.
 	stored +: {
-		value : "\(indent)Environment.Lookup(_collector, \(field).Select((s) => s.ToString()), ref _success).EnsureType(_collector, \(current_type), ref _success, _needs_unbox);"
+		result : Id
+		value : "\(indent)var \(Id) = Environment.Lookup(_collector, \(field).Select((s) => s.ToString()), ref _success).EnsureType(_collector, \(current_type), ref _success, _needs_unbox);"
 	}
 	# Stores the type information in the environment by syntax node.
 	intrinsic +: {
-		value : "\(indent)Environment.EnsureIntrinsic(_collector, this, \(current_type), \(If needs_unbox Then "true" Else "_needs_unbox"), ref _success);"
+		result : Id
+		value : "\(indent)var \(Id) = Environment.EnsureIntrinsic(_collector, this, \(current_type), \(If needs_unbox Then "true" Else "_needs_unbox"), ref _success);"
 	}
-	stop +: { value : "" }
+	stop +: { value : ""  result : current_type }
 	multiple +: {
+		result : Id
 		value :
 			For action : actions
 				Where !(action Is Null)
-				Reduce acc & action.value
-				With acc : ""
+				Reduce acc & action.value & "\(indent)\(Id) &= \(action.result);"
+				With acc : "\(indent)var \(Id) = NameInfo.AnyType;"
 	}
 }
 default_indent : "\n\t\t"
@@ -2067,7 +2072,7 @@ compiler : compiler_lib.language_tmpl {
 
 		current_type : "_type"
 		type_assurance : If is_typeable
-			Then "\tpublic override void EnsureType(ErrorCollector _collector, Type _type, ref bool _success, bool _needs_unbox) {\(ensure_type_is.value)\n\t}\n"
+			Then "\tpublic override Type EnsureType(ErrorCollector _collector, Type _type, ref bool _success, bool _needs_unbox) {\n\(ensure_type_is.value)\n\t\treturn \(ensure_type_is.result);\n\t}\n"
 			Else ""
 		type_demands : If environment_enabled
 			Then "\tinternal override void MakeTypeDemands(ErrorCollector _collector, ref bool _success) {\n" &
@@ -2151,17 +2156,20 @@ compiler : compiler_lib.language_tmpl {
 			"\t\treturn false;\n\t}\n"
 			Else ""
 
-		parse_rule_initiator :
-			For rule_name : Name, rule : expanded_rules
-				Select rule_name :
-					"\t\tslave_position = position.Clone();\n" &
-					"\t\tif (ParseRule_" &
-					(If rule.is_real_element Then rule_name Else rule.alternate_name) &
-					"(ref slave_position, out result)) {\n" &
-					"\t\t\tposition = slave_position;\n" &
-					"\t\t\tposition.TraceExit(\"\(group_name):\(alternate_name)\", true);\n" &
-					"\t\t\tposition.Cache<\(group_name)>(\"\(group_name).\(alternate_name)\", start_index, result);\n" &
-					"\t\t\treturn true;\n\t\t}\n"
+		parse_rule_initiator : Template {
+			alternate_name ?:
+			value :
+				For rule_name : Name, rule : expanded_rules
+					Select rule_name :
+						"\t\tslave_position = position.Clone();\n" &
+						"\t\tif (ParseRule_" &
+						(If rule.is_real_element Then rule_name Else rule.alternate_name) &
+						"(ref slave_position, out result)) {\n" &
+						"\t\t\tposition = slave_position;\n" &
+						"\t\t\tposition.TraceExit(\"\(group_name):\(alternate_name)\", true);\n" &
+						"\t\t\tposition.Cache<\(group_name)>(\"\(group_name).\(alternate_name)\", start_index, result);\n" &
+						"\t\t\treturn true;\n\t\t}\n"
+		}
 
 		parse_alternates : For alternate_rules : alternatives, alternate_name : Name
 			Reduce
@@ -2172,7 +2180,7 @@ compiler : compiler_lib.language_tmpl {
 				"\t\tParserPosition slave_position;\n" &
 				"\t\tvar start_index = position.Index;\n" &
 				"\t\tposition.Update(\"\(alternate_name)\", \"\(group_name)\");\n" &
-				(For rule_name : Name, initiator : parse_rule_initiator, rule : expanded_rules
+				(For rule_name : Name, initiator : parse_rule_initiator(alternate_name : alternate_name), rule : expanded_rules
 					Where (For rule_alts : rule.alternatives, rule_alt_name : Name Where rule_alt_name == alternate_name Reduce True With junk_acc : False)
 					Reduce acc & initiator
 					With acc : "") &
@@ -2191,7 +2199,7 @@ compiler : compiler_lib.language_tmpl {
 			Where rule.is_real_element
 			Reduce acc & rule.class_gen
 			With acc : "internal abstract class \(group_name) : \(If environment_enabled Then "AstTypeableNode" Else "AstNode")\(If is_typeable Then ", ITypeableElement" Else "") {\n" &
-				(If is_typeable Then "\tpublic abstract void EnsureType(ErrorCollector _collector, Type _type, ref bool _success, bool needs_unbox);\n" Else "") &
+				(If is_typeable Then "\tpublic abstract Type EnsureType(ErrorCollector _collector, Type _type, ref bool _success, bool needs_unbox);\n" Else "") &
 				common_field_class_gen &
 				super_class_extra &
 				parse_base &
@@ -2356,7 +2364,8 @@ compiler : compiler_lib.language_tmpl {
 						}
 					]
 					ensure_type_is : {
-						value : "\(indent)CheckReflectedMethod(_collector, this, Methods, arguments, \(current_type), ref _success);"
+						value : "\(indent)var \(Id) = CheckReflectedMethod(_collector, this, Methods, arguments, \(current_type), ref _success);"
+						result : Id
 					}
 					code_value : codegen.gen_tmpl {
 						extra_indent : "\t"

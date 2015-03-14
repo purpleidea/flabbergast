@@ -66,22 +66,23 @@ internal abstract class AstTypeableNode : AstNode {
 		}
 		return true;
 	}
-	internal static void CheckReflectedMethod(ErrorCollector collector, AstNode where, List<System.Reflection.MethodInfo> methods, List<expression> arguments, Type return_type, ref bool success) {
+	internal static Type CheckReflectedMethod(ErrorCollector collector, AstNode where, List<System.Reflection.MethodInfo> methods, List<expression> arguments, Type return_type, ref bool success) {
 		/* If there are no candidate methods, don't bother checking the types. */
 		if (methods.Count == 0)
-			return;
+			return 0;
 		/* Find all the methods that match the needed type. */
 		var candidate_methods = from method in methods
 			where (TypeFromClrType(method.ReturnType) & return_type) != 0
 			select method;
+
+		Type candiate_return = 0;
+		foreach (var method in candidate_methods.Count() == 0 ? methods : candidate_methods) {
+			candiate_return |= TypeFromClrType(method.ReturnType);
+		}
+		/* Produce an error for the union of all the types. */
 		if (candidate_methods.Count() == 0) {
-			/* Produce an error for the union of all the types. */
-			Type candiate_return = 0;
-			foreach (var method in methods) {
-				candiate_return |= TypeFromClrType(method.ReturnType);
-			}
 			collector.ReportExpressionTypeError(where, return_type, candiate_return);
-			return;
+			return 0;
 		}
 		/* Check that the arguments match the union of the parameters of all the methods. This means that we might still not have a valid method, but we can check again during codegen. */
 		for (var it = 0; it < arguments.Count; it++) {
@@ -92,6 +93,7 @@ internal abstract class AstTypeableNode : AstNode {
 			}
 			arguments[it].EnsureType(collector, candidate_parameter_type, ref success, true);
 		}
+		return candiate_return;
 	}
 	public static Type TypeFromClrType(System.Type clr_type) {
 		if (clr_type == typeof(bool)) {
@@ -132,7 +134,7 @@ internal abstract class AstTypeableNode : AstNode {
 	}
 }
 internal interface ITypeableElement {
-	void EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox);
+	Type EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox);
 }
 internal class EnvironmentPrioritySorter : IComparer<AstTypeableNode> {
 	public int Compare(AstTypeableNode x, AstTypeableNode y) {
@@ -170,7 +172,7 @@ internal abstract class NameInfo {
 	public virtual bool HasName(string name) {
 		return Children.ContainsKey(name);
 	}
-	public abstract void EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox);
+	public abstract Type EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox);
 	public abstract void CreateChild(ErrorCollector collector, string name, string root, ref bool success);
 	public abstract LoadableCache Load(Generator generator, ILGenerator builder, LoadableValue source_reference, LoadableValue context);
 	public virtual string CheckValidNarrowing(LookupCache next, LookupCache current) {
@@ -210,7 +212,7 @@ internal class OpenNameInfo : NameInfo {
 		Environment = environment;
 		Name = name;
 	}
-	public override void EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
+	public override Type EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
 		this.must_unbox |= must_unbox;
 		if ((RealType & type) == 0) {
 			success = false;
@@ -218,6 +220,7 @@ internal class OpenNameInfo : NameInfo {
 		} else {
 			RealType &= type;
 		}
+		return RealType;
 	}
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
@@ -239,7 +242,7 @@ internal class OverrideNameInfo : RestrictableType {
 		Environment = environment;
 		Name = name;
 	}
-	public override void EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
+	public override Type EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
 		this.must_unbox |= must_unbox;
 		if ((RealType & type) == 0) {
 			success = false;
@@ -247,6 +250,7 @@ internal class OverrideNameInfo : RestrictableType {
 		} else {
 			RealType &= type;
 		}
+		return RealType;
 	}
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
@@ -258,7 +262,8 @@ internal class OverrideNameInfo : RestrictableType {
 internal class JunkInfo : NameInfo {
 	public JunkInfo() {
 	}
-	public override void EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
+	public override Type EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
+		return AnyType;
 	}
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		Children[name] = new JunkInfo();
@@ -279,10 +284,10 @@ internal class BoundNameInfo : RestrictableType {
 		Name = name;
 		Target = target;
 	}
-	public override void EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
+	public override Type EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
 		this.must_unbox |= must_unbox;
 		restricted_type &= type;
-		Target.EnsureType(collector, type, ref success, must_unbox);
+		return Target.EnsureType(collector, type, ref success, must_unbox);
 	}
 	public override bool NeedsLoad(LookupCache current) {
 		return !current.Has(this);
@@ -307,16 +312,17 @@ internal class CopyFromParentInfo : NameInfo {
 		Source = source;
 		ForceBack = force_back;
 	}
-	public override void EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
+	public override Type EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
 		this.must_unbox |= must_unbox;
 		if (ForceBack) {
-			Source.EnsureType(collector, type, ref success, must_unbox);
+			return Source.EnsureType(collector, type, ref success, must_unbox);
 		} else {
 			if ((Mask & type) == 0) {
 				success = false;
 				collector.ReportLookupTypeError(Environment, Name, Mask, type);
 			}
 			Mask &= type;
+			return Mask;
 		}
 	}
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
@@ -576,7 +582,7 @@ internal class Environment : CodeRegion {
 		Children[name] = copy_info;
 		return copy_info;
 	}
-	internal void EnsureIntrinsic(ErrorCollector collector, AstNode node, Type type, bool must_unbox, ref bool success) {
+	internal Type EnsureIntrinsic(ErrorCollector collector, AstNode node, Type type, bool must_unbox, ref bool success) {
 		if (Intrinsics.ContainsKey(node)) {
 			var intrinsic = Intrinsics[node];
 			var original_type = intrinsic.Item1;
@@ -587,8 +593,10 @@ internal class Environment : CodeRegion {
 			} else {
 				Intrinsics[node] = new Tuple<Type, bool>(result, intrinsic.Item2 & must_unbox);
 			}
+			return result;
 		} else {
 			Intrinsics[node] = new Tuple<Type, bool>(type, must_unbox);
+			return type;
 		}
 	}
 	internal System.Type[] GetIntrinsicRealTypes(AstNode node) {
