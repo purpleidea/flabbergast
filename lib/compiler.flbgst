@@ -1035,6 +1035,10 @@ language_tmpl : Template {
 			Select field_name : common_tmpl {}
 	}
 
+	pure_space : Template parser.many {
+		of : parser.single { char : " \\t\\n\\r\\f\\v" }
+	}
+
 	# Parse a space and/or comment
 	space : Template parser.accumulate_string {
 		# Whether there must be some space for successful parsing.
@@ -1671,10 +1675,15 @@ language_tmpl : Template {
 								type : $attribute
 								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
-									of : parser.other {
-										type : $attribute
-										alternate : $plain_attribute
-										field : Null
+									of : parser.sequence {
+										of : [
+												pure_space {},
+												parser.other {
+												type : $attribute
+												alternate : $plain_attribute
+												field : Null
+											}
+										]
 									}
 									nonempty : True
 								}
@@ -1826,10 +1835,15 @@ language_tmpl : Template {
 								field : $overrides
 								type : $attribute
 								in : parser.many {
-									of : parser.other {
-										type : $attribute
-										alternate : $extend_tmpl_attributes
-										field : Null
+									of : parser.sequence {
+										of : [
+											pure_space {},
+											parser.other {
+												type : $attribute
+												alternate : $extend_tmpl_attributes
+												field : Null
+											}
+										]
 									}
 								}
 							},
@@ -3408,10 +3422,15 @@ language_tmpl : Template {
 								type : $attribute
 								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
-									of : parser.other {
-										type : $attribute
-										field : Null
-										alternate : $plain_attribute
+									of : parser.sequence {
+										of : [
+											pure_space {},
+											parser.other {
+												type : $attribute
+												field : Null
+												alternate : $plain_attribute
+											}
+										]
 									}
 								}
 							},
@@ -3493,10 +3512,15 @@ language_tmpl : Template {
 								type : $attribute
 								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
-									of : parser.other {
-										type : $attribute
-										field : Null
-										alternate : $new_tmpl_attributes
+									of : parser.sequence {
+										of : [
+											pure_space {},
+											parser.other {
+												type : $attribute
+												field : Null
+												alternate : $new_tmpl_attributes
+											}
+										]
 									}
 								}
 							},
@@ -3533,10 +3557,15 @@ language_tmpl : Template {
 								type : $attribute
 								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
-									of : parser.other {
-										type : $attribute
-										field : Null
-										alternate : $extend_tmpl_attributes
+									of : parser.sequence {
+										of : [
+											pure_space {},
+											parser.other {
+												type : $attribute
+												field : Null
+												alternate : $extend_tmpl_attributes
+											}
+										]
 									}
 								}
 							},
