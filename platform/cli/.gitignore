@@ -1,3 +1,5 @@
+*.dll
+*.il
 *.userprefs
 bin
 compiler-cli.cs
