@@ -643,8 +643,8 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 		value :
 			For field : fields
 				Where !(field Is Null)
-				Reduce acc & "\(indent)if (\(field) != null) \(Id) &= \(field).EnsureType(_collector, \(allowed_type_bits), ref _success, \(If needs_unbox Then "true" Else "_needs_unbox"));"
-				With acc : "\(indent)var \(Id) = NameInfo.AnyType;"
+				Reduce acc & "\(indent)if (\(field) != null) \(Id) &= AstTypeableNode.HorrendousTypeMerge(\(field).EnsureType(_collector, \(allowed_type_bits), ref _success, \(If needs_unbox Then "true" Else "_needs_unbox")), \(current_type));"
+				With acc : "\(indent)var \(Id) =  \(current_type);"
 		result : Id
 
 	}

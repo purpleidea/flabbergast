@@ -132,6 +132,16 @@ internal abstract class AstTypeableNode : AstNode {
 		if (type.HasFlag(Type.Unit)) types[index++] = typeof(Unit);
 		return types;
 	}
+	public static Type HorrendousTypeMerge(Type expr_result, Type original) {
+		/* This mostly revolves around null coalesence. Imagine we want to ensure
+		 * the type of `Null ?? 3` is an integer. The alternate branch is just fine, so
+		 * we let it alone. The main path is a problem. It can be integer or unit. If
+		 * it's not in the original type mask (i.e., unit), that's okay, because we
+		 * expect the collescence expression to fix the problem at run-time. */
+		if (expr_result == 0)
+			return 0;
+		return (expr_result & original) == 0 ? original : expr_result;
+	}
 }
 internal interface ITypeableElement {
 	Type EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox);
