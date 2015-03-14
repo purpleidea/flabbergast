@@ -331,6 +331,10 @@ ensure_type_tmpl : Template {
 	}
 	# Stored associated with the node.
 	intrinsic : Template {}
+	# Cause all types in the downsteam rules to have exactly the same type.
+	shared_fate : Template {
+		ensure_type_of ?:
+	}
 	# Perform no further action.
 	stop : Template {}
 	# Perform multiple independent actions.
@@ -1138,7 +1142,9 @@ language_tmpl : Template {
 		ensure_type_is : ensure_type.filter { types : [ known_types.bool ] }
 		type_demand : ensure_type.filter {
 			types : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
-			ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
+			ensure_type_of : ensure_type.shared_fate {
+				ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
+			}
 		}
 		code_value : kws.int_to_bool {
 			number -:
@@ -2924,7 +2930,9 @@ language_tmpl : Template {
 					operator : "<=>"
 					type_demand : ensure_type.filter {
 						types : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
-						ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
+						ensure_type_of : ensure_type.shared_fate {
+							ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
+						}
 					}
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
 					code_value : kws.compare {
@@ -3859,7 +3867,7 @@ language_tmpl : Template {
 						}
 					}
 					apply_environment_to : [ ]
-					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					ensure_type_is : ensure_type.filter { types : [ known_types.int, known_types.float ] }
 					code_value : kws.numeric_constant {
 						type : known_types.int
 						number : $amount

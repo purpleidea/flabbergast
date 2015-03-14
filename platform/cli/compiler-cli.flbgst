@@ -686,6 +686,19 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 		result : Id
 		value : "\(indent)var \(Id) = Environment.EnsureIntrinsic(_collector, this, \(current_type), \(If needs_unbox Then "true" Else "_needs_unbox"), ref _success);"
 	}
+	shared_fate +: {
+		current_type : Id
+		original_type : Lookup current_type In Container
+		indent : parent_indent & "\t"
+		parent_indent : Lookup indent In Container
+		value :
+			"\(parent_indent)var \(Id) = \(original_type);" &
+			"\(parent_indent)for(var \(Id)_junk = 0; \(Id)_junk < 2; \(Id)_junk++) {" &
+			ensure_type_of.value &
+			"\(indent)\(Id) &= \(ensure_type_of.result);" &
+			"\(parent_indent)}"
+		result : Id
+	}
 	stop +: { value : ""  result : current_type }
 	multiple +: {
 		result : Id
