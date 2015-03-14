@@ -761,7 +761,13 @@ internal class Generator {
 	public LoadableValue PushSourceReference(AstNode node, LoadableValue original_reference) {
 		var reference = MakeField("source_reference", typeof(SourceReference));
 		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(OpCodes.Ldstr, node.PrettyName);
+		if (node is attribute) {
+			Builder.Emit(OpCodes.Ldstr, String.Format("{0}: {1}", node.PrettyName, (node as attribute).name));
+		} else if (node is named_definition) {
+			Builder.Emit(OpCodes.Ldstr, String.Format("{0}: {1}", node.PrettyName, (node as named_definition).name));
+		} else{
+			Builder.Emit(OpCodes.Ldstr, node.PrettyName);
+		}
 		PushSourceReferenceHelper(node, original_reference);
 		Builder.Emit(OpCodes.Stfld, reference.Field);
 		return reference;
