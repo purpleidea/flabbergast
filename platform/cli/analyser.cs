@@ -388,6 +388,7 @@ internal class Environment : CodeRegion {
 	Environment Parent;
 	Dictionary<string, NameInfo> Children = new Dictionary<string, NameInfo>();
 	Dictionary<AstNode, Tuple<Type, bool>> Intrinsics = new Dictionary<AstNode, Tuple<Type, bool>>();
+	public string PrettyName { get { return "region of lookups"; } }
 	public string FileName { get; private set; }
 	public int StartRow { get; private set; }
 	public int StartColumn { get; private set; }
