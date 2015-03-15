@@ -3101,6 +3101,21 @@ language_tmpl : Template {
 										}
 									]
 								}
+							},
+							# Any → *
+							choice_tmpl {
+								type : known_vm_types.any
+								action : codegen.type_dispatch_parsed {
+									field : $right
+									choices : [
+										choice_tmpl {
+											type : known_types.str
+											action : kws.cast_to_string {
+												source : left_result
+											}
+										}
+									]
+								}
 							}
 						]
 					}
