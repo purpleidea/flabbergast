@@ -71,7 +71,7 @@ public class TestHarness {
 		var directory = Path.GetDirectoryName(uri.LocalPath);
 		var assembly_builder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("Test"), AssemblyBuilderAccess.Run);
 		var module_builder = assembly_builder.DefineDynamicModule("TestModule");
-		var unit = new CompilationUnit("<tests>", module_builder, false);
+		var unit = new CompilationUnit(module_builder, false);
 		var id = 0;
 		var success = true;
 		success &= DoTests(Path.Combine(directory, "..", "..", "..", "..", "tests"), "*", unit, ref id);

@@ -19,15 +19,13 @@ public class CompilationUnit {
 	 */
 	internal delegate void FunctionOverrideBlock(Generator generator, LoadableValue source_reference, LoadableValue context, LoadableValue self, LoadableValue container, LoadableValue original);
 
+	public bool Debuggable { get; private set; }
+
 	public IEnumerable<string> ExternalUris { get { return externals.Keys; } }
 	/**
 	 * The backing module builder from the library.
 	 */
 	public ModuleBuilder ModuleBuilder { get; private set; }
-	/**
-	 * The debugging symbol for this file.
-	 */
-	public System.Diagnostics.SymbolStore.ISymbolDocumentWriter SymbolDocument { get; private set; }
 
 	internal Dictionary<string, bool> externals = new Dictionary<string, bool>();
 
@@ -43,23 +41,32 @@ public class CompilationUnit {
 	 */
 	private Dictionary<string, MethodInfo> functions = new Dictionary<string, MethodInfo>();
 
-	public CompilationUnit(string filename, ModuleBuilder module_builder, bool debuggable) {
+	public static readonly Guid Vendor = new Guid("36bc9776-67a2-4e40-9532-f55c96f3ee35");
+	public static readonly Guid Language = new Guid("2710c476-c308-48c8-a624-69905afce39e");
+
+	public static void MakeDebuggable(AssemblyBuilder assembly_builder) {
+		var ctor = typeof(System.Diagnostics.DebuggableAttribute).GetConstructor(new System.Type[] { typeof(System.Diagnostics.DebuggableAttribute.DebuggingModes) });
+		var builder = new CustomAttributeBuilder(ctor, new object[] { System.Diagnostics.DebuggableAttribute.DebuggingModes.Default });
+		assembly_builder.SetCustomAttribute(builder);
+	}
+
+	public CompilationUnit(ModuleBuilder module_builder, bool debuggable) {
 		ModuleBuilder = module_builder;
-		SymbolDocument = debuggable ? module_builder.DefineDocument(filename, Guid.Empty, Guid.Empty, Guid.Empty) : null;
+		Debuggable = debuggable;
 	}
 
 	/**
 	 * Create a new function, and use the provided block to fill it with code.
 	 */
-	internal MethodInfo CreateFunction(AstNode instance, string syntax_id, FunctionBlock block, string root_prefix, Dictionary<string, bool> owner_externals) {
+	internal MethodInfo CreateFunction(AstNode node, string syntax_id, FunctionBlock block, string root_prefix, Dictionary<string, bool> owner_externals) {
 		bool used;
-		var name = String.Concat(root_prefix, "Function", id_gen.GetId(instance, out used), syntax_id);
+		var name = String.Concat(root_prefix, "Function", id_gen.GetId(node, out used), syntax_id);
 		if (functions.ContainsKey(name)) {
 			return functions[name];
 		}
-		var generator = CreateFunctionGenerator(name, false, root_prefix, owner_externals);
+		var generator = CreateFunctionGenerator(node, name, false, root_prefix, owner_externals);
 		block(generator, generator.InitialContainerFrame, generator.InitialContext, generator.InitialSelfFrame, generator.InitialSourceReference);
-		generator.GenerateSwitchBlock(instance);
+		generator.GenerateSwitchBlock(node);
 		functions[name] = generator.Initialiser;
 		generator.TypeBuilder.CreateType();
 
@@ -68,31 +75,31 @@ public class CompilationUnit {
 	/**
 	 * Create a new override function, and use the provided block to fill it with code.
 	 */
-	internal MethodInfo CreateFunctionOverride(AstNode instance, string syntax_id, FunctionOverrideBlock block, string root_prefix, Dictionary<string, bool> owner_externals) {
+	internal MethodInfo CreateFunctionOverride(AstNode node, string syntax_id, FunctionOverrideBlock block, string root_prefix, Dictionary<string, bool> owner_externals) {
 		bool used;
-		var name = String.Concat(root_prefix, "Override", id_gen.GetId(instance, out used), syntax_id);
+		var name = String.Concat(root_prefix, "Override", id_gen.GetId(node, out used), syntax_id);
 		if (functions.ContainsKey(name)) {
 			return functions[name];
 		}
-		 var generator = CreateFunctionGenerator(name, true, root_prefix, owner_externals);
+		 var generator = CreateFunctionGenerator(node, name, true, root_prefix, owner_externals);
 		block(generator, generator.InitialContainerFrame, generator.InitialContext, generator.InitialOriginal, generator.InitialSelfFrame, generator.InitialSourceReference);
-		generator.GenerateSwitchBlock(instance);
+		generator.GenerateSwitchBlock(node);
 		functions[name] = generator.Initialiser;
 		generator.TypeBuilder.CreateType();
 
 		return generator.Initialiser;
 	}
 
-	private Generator CreateFunctionGenerator(string name, bool has_original, string root_prefix, Dictionary<string, bool> owner_externals) {
+	private Generator CreateFunctionGenerator(AstNode node, string name, bool has_original, string root_prefix, Dictionary<string, bool> owner_externals) {
 		var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.NotPublic | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
-		return new Generator(this, type_builder, has_original, root_prefix, owner_externals);
+		return new Generator(node, this, type_builder, has_original, root_prefix, owner_externals);
 	}
 
-	internal System.Type CreateRootGenerator(AstNode instance, string name, Generator.Block block) {
+	internal System.Type CreateRootGenerator(AstNode node, string name, Generator.Block block) {
 		var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
-		var generator = new Generator(this, type_builder, name);
+		var generator = new Generator(node, this, type_builder, name);
 		block(generator);
-		generator.GenerateSwitchBlock(instance, true);
+		generator.GenerateSwitchBlock(node, true);
 		return type_builder.CreateType();
 	}
 }
@@ -160,6 +167,10 @@ internal class Generator {
 	 */
 	private FieldInfo state_field;
 	/**
+	 * The debugging symbol for this file.
+	 */
+	public System.Diagnostics.SymbolStore.ISymbolDocumentWriter SymbolDocument { get; private set; }
+	/**
 	 * A reference count to control mutual exclusion.
 	 */
 	private FieldInfo interlock_field;
@@ -201,6 +212,9 @@ internal class Generator {
 	private int num_fields = 0;
 
 	private Dictionary<System.Type, LocalBuilder> locals = new Dictionary<System.Type, LocalBuilder>();
+	private AstNode node;
+
+	private CodeRegion last_node;
 
 	private Dictionary<LoadableValue, LoadableValue> string_conversion_cache = new Dictionary<LoadableValue, LoadableValue>();
 
@@ -208,11 +222,13 @@ internal class Generator {
 		return type == typeof(double) || type == typeof(long);
 	}
 
-	internal Generator(CompilationUnit owner, TypeBuilder type_builder, string root_prefix) {
+	internal Generator(AstNode node, CompilationUnit owner, TypeBuilder type_builder, string root_prefix) {
+		this.node = node;
 		Owner = owner;
 		TypeBuilder = type_builder;
 		Paths = 1;
-		this.root_prefix = root_prefix + "__" ;
+		this.root_prefix = root_prefix + "__";
+		SymbolDocument = Owner.Debuggable ? Owner.ModuleBuilder.DefineDocument(node.FileName, System.Diagnostics.SymbolStore.SymDocumentType.Text, CompilationUnit.Language, CompilationUnit.Vendor) : null;
 		owner_externals = new Dictionary<string, bool>();
 		state_field = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
 		interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
@@ -429,9 +445,9 @@ internal class Generator {
 	 * Insert debugging information based on an AST node.
 	 */
 	public void DebugPosition(CodeRegion node) {
-		if (Owner.SymbolDocument != null) {
-			Builder.MarkSequencePoint(Owner.SymbolDocument, node.StartRow, node.StartColumn, node.EndRow, node.EndColumn);
-		}
+		last_node = node;
+		if (SymbolDocument != null) {
+			Builder.MarkSequencePoint(SymbolDocument, node.StartRow, node.StartColumn, node.EndRow, node.EndColumn);
 	}
 	private void DeclareLocals() {
 		foreach (var type in new System.Type[] { typeof(bool), typeof(long), typeof(double) }) {

@@ -48,8 +48,9 @@ public class Compiler {
 			var assembly_name = new AssemblyName(type_name);
 			assembly_name.CodeBase = "file://" + Path.GetDirectoryName(filename);
 			var assembly_builder = AppDomain.CurrentDomain.DefineDynamicAssembly(assembly_name, AssemblyBuilderAccess.RunAndSave);
-			var module_builder = assembly_builder.DefineDynamicModule(type_name, dll_name);
-			var unit = new CompilationUnit(filename, module_builder, true);
+			CompilationUnit.MakeDebuggable(assembly_builder);
+			var module_builder = assembly_builder.DefineDynamicModule(type_name, dll_name, true);
+			var unit = new CompilationUnit(module_builder, true);
 			var type = parser.ParseFile(collector, unit, type_name);
 			if (type != null) {
 				assembly_builder.Save(dll_name);

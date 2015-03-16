@@ -83,8 +83,9 @@ public class Printer {
 		}
 
 		var assembly_builder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("Print"), AssemblyBuilderAccess.Run);
-		var module_builder = assembly_builder.DefineDynamicModule("PrintModule");
-		var unit = new CompilationUnit("<input>", module_builder, false);
+		CompilationUnit.MakeDebuggable(assembly_builder);
+		var module_builder = assembly_builder.DefineDynamicModule("PrintModule", true);
+		var unit = new CompilationUnit(module_builder, true);
 		var collector = new ConsoleCollector();
 		var task_master = new ConsoleTaskMaster();
 		task_master.AddUriHandler(BuiltInLibraries.INSTANCE);

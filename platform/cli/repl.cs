@@ -99,7 +99,7 @@ public class REPL {
 
 		var assembly_builder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("Repl"), AssemblyBuilderAccess.Run);
 		var module_builder = assembly_builder.DefineDynamicModule("ReplModule");
-		var unit = new CompilationUnit("<repl>", module_builder, false);
+		var unit = new CompilationUnit(module_builder, false);
 		var id = 0;
 
 		var task_master = new ConsoleTaskMaster();

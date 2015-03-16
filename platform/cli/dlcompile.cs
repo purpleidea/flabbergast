@@ -15,8 +15,9 @@ namespace Flabbergast {
 			this.collector = collector;
 			var name = "DynamicallyCompiledLibraries" + GetHashCode();
 			var assembly_builder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName(name), AssemblyBuilderAccess.Run);
-			var module_builder = assembly_builder.DefineDynamicModule(name);
-			unit = new CompilationUnit("<dynamic>", module_builder, false);
+			CompilationUnit.MakeDebuggable(assembly_builder);
+			var module_builder = assembly_builder.DefineDynamicModule(name, true);
+			unit = new CompilationUnit(module_builder, true);
 		}
 		public override System.Type ResolveUri(string uri, out bool stop) {
 			if (cache.ContainsKey(uri)) {
