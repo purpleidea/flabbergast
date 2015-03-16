@@ -66,7 +66,7 @@ public class CompilationUnit {
 		}
 		var generator = CreateFunctionGenerator(node, name, false, root_prefix, owner_externals);
 		block(generator, generator.InitialContainerFrame, generator.InitialContext, generator.InitialSelfFrame, generator.InitialSourceReference);
-		generator.GenerateSwitchBlock(node);
+		generator.GenerateSwitchBlock();
 		functions[name] = generator.Initialiser;
 		generator.TypeBuilder.CreateType();
 
@@ -83,7 +83,7 @@ public class CompilationUnit {
 		}
 		 var generator = CreateFunctionGenerator(node, name, true, root_prefix, owner_externals);
 		block(generator, generator.InitialContainerFrame, generator.InitialContext, generator.InitialOriginal, generator.InitialSelfFrame, generator.InitialSourceReference);
-		generator.GenerateSwitchBlock(node);
+		generator.GenerateSwitchBlock();
 		functions[name] = generator.Initialiser;
 		generator.TypeBuilder.CreateType();
 
@@ -99,7 +99,7 @@ public class CompilationUnit {
 		var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
 		var generator = new Generator(node, this, type_builder, name);
 		block(generator);
-		generator.GenerateSwitchBlock(node, true);
+		generator.GenerateSwitchBlock(true);
 		return type_builder.CreateType();
 	}
 }
@@ -130,9 +130,9 @@ internal class Generator {
 	 */
 	public TypeBuilder TypeBuilder { get; private set; }
 	/**
-	 * The body of the `Run` method for this function.
+	 * The body of the current `Run` method for this function.
 	 */
-	public ILGenerator Builder { get; private set; }
+	public ILGenerator Builder { get; set; }
 	/**
 	 * A static method capable of creating a new instance of the class.
 	 */
@@ -165,7 +165,7 @@ internal class Generator {
 	 * The field containing the current state for this function to continue upon
 	 * re-entry.
 	 */
-	private FieldInfo state_field;
+	internal FieldInfo StateField { get; private set; }
 	/**
 	 * The debugging symbol for this file.
 	 */
@@ -182,20 +182,11 @@ internal class Generator {
 	 * The labels in the code where the function may enter into a particular
 	 * state. The index is the state number.
 	 */
-	private List<Label> entry_points = new List<Label>();
+	private List<MethodBuilder> entry_points = new List<MethodBuilder>();
 	/**
 	 * A counter for producing unique result consumers names.
 	 */
 	private int result_consumer = 0;
-	/**
-	 * The branch point, at the end of the function, that does dispatch from the
-	 * state field to the correct branch.
-	 *
-	 * It would be ideal to place the dispatch at the start of the function, but
-	 * the number of states is not known, so the function branches to this
-	 * address, then branches based on the dispatch.
-	 */
-	private Label switch_label;
 	/**
 	 * The collection of external URIs needed by this computation and where they are stored.
 	 */
@@ -211,7 +202,6 @@ internal class Generator {
 	 */
 	private int num_fields = 0;
 
-	private Dictionary<System.Type, LocalBuilder> locals = new Dictionary<System.Type, LocalBuilder>();
 	private AstNode node;
 
 	private CodeRegion last_node;
@@ -230,7 +220,7 @@ internal class Generator {
 		this.root_prefix = root_prefix + "__";
 		SymbolDocument = Owner.Debuggable ? Owner.ModuleBuilder.DefineDocument(node.FileName, System.Diagnostics.SymbolStore.SymDocumentType.Text, CompilationUnit.Language, CompilationUnit.Vendor) : null;
 		owner_externals = new Dictionary<string, bool>();
-		state_field = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
+		StateField = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
 		interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
 		task_master = TypeBuilder.DefineField("task_master", typeof(TaskMaster), FieldAttributes.Private);
 		var ctor = type_builder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new System.Type[] { typeof(TaskMaster) });
@@ -242,26 +232,24 @@ internal class Generator {
 		ctor_builder.Emit(OpCodes.Stfld, task_master);
 		ctor_builder.Emit(OpCodes.Ldarg_0);
 		ctor_builder.Emit(OpCodes.Ldc_I4_0);
-		ctor_builder.Emit(OpCodes.Stfld, state_field);
+		ctor_builder.Emit(OpCodes.Stfld, StateField);
 		ctor_builder.Emit(OpCodes.Ret);
-		Builder = type_builder.DefineMethod("Run", MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig, typeof(bool), new System.Type[0]).GetILGenerator();
-		switch_label = Builder.DefineLabel();
+
 		// Label for load externals
-		entry_points.Add(Builder.DefineLabel());
+		DefineState();
 		// Label for main body
-		entry_points.Add(Builder.DefineLabel());
-		Builder.Emit(OpCodes.Br, switch_label);
-		MarkState(1);
-		DeclareLocals();
+		MarkState(DefineState());
 	}
-	internal Generator(CompilationUnit owner, TypeBuilder type_builder, bool has_original, string root_prefix, Dictionary<string, bool> owner_externals) {
+	internal Generator(AstNode node, CompilationUnit owner, TypeBuilder type_builder, bool has_original, string root_prefix, Dictionary<string, bool> owner_externals) {
+		this.node = node;
 		Owner = owner;
 		TypeBuilder = type_builder;
 		Paths = 1;
 		this.owner_externals = owner_externals;
 		this.root_prefix = root_prefix;
+		SymbolDocument = Owner.Debuggable ? Owner.ModuleBuilder.DefineDocument(node.FileName, System.Diagnostics.SymbolStore.SymDocumentType.Text, CompilationUnit.Language, CompilationUnit.Vendor) : null;
 		// Create fields for all information provided by the caller.
-		state_field = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
+		StateField = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
 		interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
 		task_master = TypeBuilder.DefineField("task_master", typeof(TaskMaster), FieldAttributes.Private);
 		InitialSourceReference = new FieldValue(TypeBuilder.DefineField("source_reference", typeof(SourceReference), FieldAttributes.Private));
@@ -284,7 +272,7 @@ internal class Generator {
 		}
 		ctor_builder.Emit(OpCodes.Ldarg_0);
 		ctor_builder.Emit(OpCodes.Ldc_I4_0);
-		ctor_builder.Emit(OpCodes.Stfld, state_field);
+		ctor_builder.Emit(OpCodes.Stfld, StateField);
 		ctor_builder.Emit(OpCodes.Ret);
 
 		System.Type[] init_params;
@@ -330,15 +318,10 @@ internal class Generator {
 
 		init_builder.Emit(OpCodes.Ret);
 
-		// Create a run method with an initial state.
-		Builder = type_builder.DefineMethod("Run", MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig, typeof(bool), new System.Type[0]).GetILGenerator();
-		switch_label = Builder.DefineLabel();
 		// Label for load externals
-		entry_points.Add(Builder.DefineLabel());
+		DefineState();
 		// Label for main body
-		entry_points.Add(Builder.DefineLabel());
-		Builder.Emit(OpCodes.Br, switch_label);
-		MarkState(1);
+		MarkState(DefineState());
 		if (has_original) {
 			var state = DefineState();
 			SetState(state);
@@ -353,7 +336,6 @@ internal class Generator {
 			Builder.Emit(OpCodes.Ret);
 			MarkState(state);
 		}
-		DeclareLocals();
 	}
 
 	/**
@@ -388,37 +370,40 @@ internal class Generator {
 				return null;
 			}
 		}
-		return new CompareValue(locals, left, right);
+		return new CompareValue(left, right);
 	}
 	public void ConditionalFlow(ParameterisedBlock<ParameterisedBlock<LoadableValue>> conditional_part, ParameterisedBlock<ParameterisedBlock<LoadableValue>> true_part, ParameterisedBlock<ParameterisedBlock<LoadableValue>> false_part, ParameterisedBlock<LoadableValue> result_block) {
-		var true_label = Builder.DefineLabel();
-		var else_label = Builder.DefineLabel();
+		var true_state = DefineState();
+		var else_state = DefineState();
 		conditional_part((condition) => {
 			if (!typeof(bool).IsAssignableFrom(condition.BackingType))
 				throw new System.InvalidOperationException(System.String.Format("Use of non-Boolean type {0} in conditional.", condition.BackingType));
 			condition.Load(this);
+			var else_label = Builder.DefineLabel();
 			Builder.Emit(OpCodes.Brfalse, else_label);
-			Builder.Emit(OpCodes.Br, true_label);
+			JumpToState(true_state);
+			Builder.MarkLabel(else_label);
+			JumpToState(else_state);
 		});
 
-		var type_dispatch = new Dictionary<System.Type, Tuple<Label, FieldValue>>();
+		var type_dispatch = new Dictionary<System.Type, Tuple<int, FieldValue>>();
 		ParameterisedBlock<LoadableValue> end_handler = (result) => {
 			if (!type_dispatch.ContainsKey(result.BackingType)) {
-				type_dispatch[result.BackingType] = new Tuple<Label,FieldValue>(Builder.DefineLabel(), MakeField("if_result", result.BackingType));
+				type_dispatch[result.BackingType] = new Tuple<int,FieldValue>(DefineState(), MakeField("if_result", result.BackingType));
 			}
 			Builder.Emit(OpCodes.Ldarg_0);
 			result.Load(this);
 			Builder.Emit(OpCodes.Stfld, type_dispatch[result.BackingType].Item2.Field);
-			Builder.Emit(OpCodes.Br, type_dispatch[result.BackingType].Item1);
+			JumpToState(type_dispatch[result.BackingType].Item1);
 		};
 
-		Builder.MarkLabel(true_label);
+		MarkState(true_state);
 		true_part(end_handler);
-		Builder.MarkLabel(else_label);
+		MarkState(else_state);
 		false_part(end_handler);
 
 		foreach(var tuple in type_dispatch.Values) {
-			Builder.MarkLabel(tuple.Item1);
+			MarkState(tuple.Item1);
 			result_block(tuple.Item2);
 		}
 	}
@@ -448,10 +433,6 @@ internal class Generator {
 		last_node = node;
 		if (SymbolDocument != null) {
 			Builder.MarkSequencePoint(SymbolDocument, node.StartRow, node.StartColumn, node.EndRow, node.EndColumn);
-	}
-	private void DeclareLocals() {
-		foreach (var type in new System.Type[] { typeof(bool), typeof(long), typeof(double) }) {
-			locals[type] = Builder.DeclareLocal(type);
 		}
 	}
 	public void DecrementInterlock(ILGenerator builder) {
@@ -480,21 +461,21 @@ internal class Generator {
 			source_reference.Load(Builder);
 			Builder.Emit(OpCodes.Ldstr, String.Format("Unexpected type {0} instead of {1}.", original.BackingType, string.Join(", ", (object[]) types)));
 			Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
+			Builder.Emit(OpCodes.Ldc_I4_0);
+			Builder.Emit(OpCodes.Ret);
 			return;
 		}
-		var labels = new Label[types.Length];
 		for(var it = 0; it < types.Length; it++) {
-			labels[it] = Builder.DefineLabel();
+			var label = Builder.DefineLabel();
 			original.Load(Builder);
 			Builder.Emit(OpCodes.Isinst, types[it]);
-			Builder.Emit(OpCodes.Brtrue, labels[it]);
+			Builder.Emit(OpCodes.Brfalse, label);
+			var builder = Builder;
+			block(new AutoUnboxValue(original, types[it]));
+			Builder = builder;
+			Builder.MarkLabel(label);
 		}
 		EmitTypeError(source_reference, String.Format("Unexpected type {0} instead of {1}.", "{0}", string.Join(", ", (object[]) types)), original);
-
-		for(var it = 0; it < types.Length; it++) {
-			Builder.MarkLabel(labels[it]);
-			block(new AutoUnboxValue(original, types[it]));
-		}
 	}
 	/**
 	 * Create a new state and put it in the dispatch logic.
@@ -502,9 +483,8 @@ internal class Generator {
 	 * This state must later be attached to a place in the code using `MarkState`.
 	 */
 	public int DefineState() {
-		var label = Builder.DefineLabel();
 		var id = entry_points.Count;
-		entry_points.Add(label);
+		entry_points.Add(TypeBuilder.DefineMethod("Run_" + id, MethodAttributes.Private | MethodAttributes.HideBySig, typeof(bool), new System.Type[0]));
 		return id;
 	}
 	public void EmitTypeError(LoadableValue source_reference, string message, params LoadableValue[] data) {
@@ -583,7 +563,7 @@ internal class Generator {
 	 * switch (computed goto). Also generate the block that loads all the
 	 * external values.
 	 */
-	internal void GenerateSwitchBlock(AstNode instance, bool load_owner_externals = false) {
+	internal void GenerateSwitchBlock(bool load_owner_externals = false) {
 		MarkState(0);
 		// If this is a top level function, load all the external values for our children.
 		if (load_owner_externals) {
@@ -603,16 +583,24 @@ internal class Generator {
 			}
 			StopInterlock(1);
 		} else {
-			Builder.Emit(OpCodes.Br, entry_points[1]);
+			JumpToState(1);
 		}
 
-		Builder.MarkLabel(switch_label);
-		Builder.Emit(OpCodes.Ldarg_0);
-		Builder.Emit(OpCodes.Ldfld, state_field);
-		Builder.Emit(OpCodes.Switch, entry_points.ToArray());
-		Builder.ThrowException(typeof(ArgumentOutOfRangeException));
-		if (Builder.ILOffset >= 20000) {
-			throw new ArgumentOutOfRangeException(String.Format("{1}:{2}:{3}-{4}:{5}: The method contains {0} bytes, which exceeds Mono's maximum limit.", Builder.ILOffset, instance.FileName, instance.StartRow, instance.StartColumn, instance.EndRow, instance.EndColumn));
+		var run_builder = TypeBuilder.DefineMethod("Run", MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig, typeof(bool), new System.Type[0]).GetILGenerator();
+		var call_labels = new Label[entry_points.Count];
+		for (var it = 0; it < entry_points.Count; it++) {
+			call_labels[it] = run_builder.DefineLabel();
+		}
+		run_builder.Emit(OpCodes.Ldarg_0);
+		run_builder.Emit(OpCodes.Ldfld, StateField);
+		run_builder.Emit(OpCodes.Switch, call_labels);
+		run_builder.ThrowException(typeof(ArgumentOutOfRangeException));
+		for(var it = 0; it < entry_points.Count; it++) {
+			run_builder.MarkLabel(call_labels[it]);
+			run_builder.Emit(OpCodes.Ldarg_0);
+			run_builder.Emit(OpCodes.Tailcall);
+			run_builder.Emit(OpCodes.Call, entry_points[it]);
+			run_builder.Emit(OpCodes.Ret);
 		}
 	}
 	private bool InvokeParameterPenalty(System.Type method, System.Type given, ref int penalty) {
@@ -758,8 +746,14 @@ internal class Generator {
 	/**
 	 * Mark the current code position as the entry point for a state.
 	 */
-	public void MarkState(int id, ILGenerator builder = null) {
-		(builder ?? Builder).MarkLabel(entry_points[id]);
+	public void MarkState(int id) {
+		if (Builder != null && Builder.ILOffset >= 20000) {
+			throw new ArgumentOutOfRangeException(String.Format("{1}:{2}:{3}-{4}:{5}: The method contains {0} bytes, which exceeds Mono's maximum limit.", Builder.ILOffset, node.FileName, node.StartRow, node.StartColumn, node.EndRow, node.EndColumn));
+		}
+		Builder = entry_points[id].GetILGenerator();
+		if (last_node != null) {
+			DebugPosition(last_node);
+		}
 	}
 	private void PushSourceReferenceHelper(AstNode node, LoadableValue original_reference) {
 		Builder.Emit(OpCodes.Ldstr, node.FileName);
@@ -794,7 +788,7 @@ internal class Generator {
 		Builder.Emit(OpCodes.Ldstr, "fricassée iteration {0}: {1}");
 		iterator.Load(Builder);
 		Builder.Emit(OpCodes.Call, typeof(MergeIterator).GetMethod("get_Position"));
-		var local = locals[typeof(long)];
+		var local = Builder.DeclareLocal(typeof(long));
 		Builder.Emit(OpCodes.Stloc, local);
 		Builder.Emit(OpCodes.Ldloca, local);
 		Builder.Emit(OpCodes.Call, typeof(long).GetMethod("ToString", new System.Type[] { }));
@@ -822,7 +816,7 @@ internal class Generator {
 	internal void SetState(int state, ILGenerator builder) {
 		builder.Emit(OpCodes.Ldarg_0);
 		builder.Emit(OpCodes.Ldc_I4, state);
-		builder.Emit(OpCodes.Stfld, state_field);
+		builder.Emit(OpCodes.Stfld, StateField);
 	}
 	/**
 	 * Slot a computation for execution by the task master.
@@ -853,11 +847,17 @@ internal class Generator {
 	public void StopInterlock(int state) {
 		SetState(state);
 		DecrementInterlock(Builder);
+		var label = Builder.DefineLabel();
+		Builder.Emit(OpCodes.Brfalse, label);
+		Builder.Emit(OpCodes.Ldc_I4_0);
+		Builder.Emit(OpCodes.Ret);
+		Builder.MarkLabel(label);
 		JumpToState(state);
 	}
 	public void JumpToState(int state) {
-		Builder.Emit(OpCodes.Brfalse, entry_points[state]);
-		Builder.Emit(OpCodes.Ldc_I4_0);
+		Builder.Emit(OpCodes.Ldarg_0);
+		Builder.Emit(OpCodes.Tailcall);
+		Builder.Emit(OpCodes.Call, entry_points[state]);
 		Builder.Emit(OpCodes.Ret);
 	}
 	/**
@@ -886,7 +886,7 @@ internal class Generator {
 		if (source.BackingType == typeof(bool)) {
 			return new BooleanStringish(source);
 		} else if (source.BackingType == typeof(long) || source.BackingType == typeof(double)) {
-			return new NumericStringish(locals, source);
+			return new NumericStringish(source);
 		} else if (source.BackingType == typeof(Stringish)) {
 			return source;
 		} else {
@@ -1085,10 +1085,8 @@ internal class UpgradeValue : LoadableValue {
 internal class CompareValue : LoadableValue {
 	private LoadableValue left;
 	private LoadableValue right;
-	private Dictionary<System.Type, LocalBuilder> locals;
 	public override System.Type BackingType { get { return typeof(long); } }
-	public CompareValue(Dictionary<System.Type, LocalBuilder> locals, LoadableValue left, LoadableValue right) {
-		this.locals = locals;
+	public CompareValue(LoadableValue left, LoadableValue right) {
 		this.left = left;
 		this.right = right;
 	}
@@ -1100,7 +1098,7 @@ internal class CompareValue : LoadableValue {
 		} else {
 			left.Load(generator);
 			if (Generator.IsNumeric(left.BackingType)) {
-				var local = locals[left.BackingType];
+				var local = generator.DeclareLocal(left.BackingType);
 				generator.Emit(OpCodes.Stloc, local);
 				generator.Emit(OpCodes.Ldloca, local);
 			}
@@ -1128,15 +1126,13 @@ internal class BooleanStringish : LoadableValue {
 }
 internal class NumericStringish : LoadableValue {
 	private LoadableValue source;
-	private Dictionary<System.Type, LocalBuilder> locals;
 	public override System.Type BackingType { get { return typeof(Stringish); } }
-	public NumericStringish(Dictionary<System.Type, LocalBuilder> locals, LoadableValue source) {
-		this.locals = locals;
+	public NumericStringish(LoadableValue source) {
 		this.source = source;
 	}
 	public override void Load(ILGenerator generator) {
 		source.Load(generator);
-		var local = locals[source.BackingType];
+		var local = generator.DeclareLocal(source.BackingType);
 		generator.Emit(OpCodes.Stloc, local);
 		generator.Emit(OpCodes.Ldloca, local);
 		generator.Emit(OpCodes.Call, source.BackingType.GetMethod("ToString", new System.Type[] {}));

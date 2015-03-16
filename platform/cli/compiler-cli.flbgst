@@ -1356,17 +1356,18 @@ kws : compiler_lib.kws_tmpl {
 				input.gen_gen(indent : indent) &
 				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_accumulator\", typeof(\(accumulator_type.real_type)));" &
 				create_initial &
+				define_dispatcher_states &
 				create_iterator &
 				iterator_trampoline &
 				# Create a block for the default dispatcher.
-				"\(sum_indent)\(generator).Builder.MarkLabel(\(iterator_dispatchers)[1]);" &
+				"\(sum_indent)\(generator).MarkState(\(iterator_dispatchers)[1]);" &
 				dispatch_code &
 				case_dispatchers &
-				"\(sum_indent)\(generator).Builder.MarkLabel(\(iterator_dispatchers)[0]);" &
+				"\(sum_indent)\(generator).MarkState(\(iterator_dispatchers)[0]);" &
 				code
 
 			create_initial :
-				"\(sum_indent)var \(iterator_start_block) = \(generator).Builder.DefineLabel();" &
+				"\(sum_indent)var \(iterator_start_block) = \(generator).DefineState();" &
 				(If modify_source_reference
 					Then "\(indent)LoadableValue \(parameters.source_reference.storage_name) = \(parent_source_reference.storage_name);"
 					Else "") &
@@ -1374,9 +1375,9 @@ kws : compiler_lib.kws_tmpl {
 					indent : indent,
 					code :
 						"\(indent)\(initial.extra_indent)\(generator).CopyField(\(initial.storage_name), \(storage_name));" &
-						"\(indent)\(initial.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, \(iterator_start_block));"
+						"\(indent)\(initial.extra_indent)\(generator).JumpToState(\(iterator_start_block));"
 					) &
-				"\(sum_indent)\(generator).Builder.MarkLabel(\(iterator_start_block));"
+				"\(sum_indent)\(generator).MarkState(\(iterator_start_block));"
 
 			create_iterator :
 				# Create new fields for all the bits of stuff we need.
@@ -1387,8 +1388,8 @@ kws : compiler_lib.kws_tmpl {
 				"\(sum_indent)#pragma warning restore 219" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
 				"\(sum_indent)\(input.array).Load(\(generator));" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_1);" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(iterator_dispatchers)[1]);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(iterator_dispatchers)[0]);" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(MergeIterator).GetConstructors()[0]);" &
 				# Load all the special dispatchers.
 				add_cases &
@@ -1396,21 +1397,26 @@ kws : compiler_lib.kws_tmpl {
 
 			iterator_trampoline :
 				# Create a re-entry point for the end of input (i.e., the iterator returning).
-				"\(sum_indent)var \(iterator_next) = \(generator).Builder.DefineLabel();" &
-				"\(sum_indent)\(generator).Builder.MarkLabel(\(iterator_next));" &
+				"\(sum_indent)var \(iterator_next) = \(generator).DefineState();" &
+				"\(sum_indent)\(generator).JumpToState(\(iterator_next));" &
+				"\(sum_indent)\(generator).MarkState(\(iterator_next));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
 				"\(sum_indent)\(iterator_instance).Load(\(generator));" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(MergeIterator).GetMethod(\"Next\"));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(generator).StateField);" &
 				(If modify_source_reference
 					Then "\(sum_indent)\(parameters.source_reference.storage_name) = \(generator).PushIteratorSourceReference(this, \(iterator_instance), \(parent_source_reference.storage_name));"
 					Else "") &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Switch, \(iterator_dispatchers));" &
-				"\(sum_indent)\(generator).Builder.ThrowException(typeof(System.ArgumentOutOfRangeException));"
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Tailcall);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Callvirt, typeof(Computation).GetMethod(\"Run\", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);"
 
 			dispatch_code : default_case.gen_gen(
 				indent : sum_indent,
 				code :
 					"\(sum_indent)\(default_case.extra_indent)\(generator).CopyField(\(default_case.storage_name), \(storage_name));" &
-					"\(sum_indent)\(default_case.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, \(iterator_next));"
+					"\(sum_indent)\(default_case.extra_indent)\(generator).JumpToState(\(iterator_next));"
 					)
 
 			num_cases :
@@ -1419,14 +1425,16 @@ kws : compiler_lib.kws_tmpl {
 					Reduce acc & case.count
 					With acc : "2"
 
+			define_dispatcher_states :
+				"\(sum_indent)var \(iterator_dispatchers) = new int[ \(num_cases) ];" &
+				"\(sum_indent)for(var \(Id)_it = 0; \(Id)_it < \(iterator_dispatchers).Length; \(Id)_it++) { \(iterator_dispatchers)[\(Id)_it] = \(generator).DefineState(); }"
+
 			add_cases :
 				For case : cases
 					Where !(case Is Null)
 					Reduce
 						acc & case.add(indent : sum_indent)
 					With acc :
-						"\(sum_indent)var \(iterator_dispatchers) = new System.Reflection.Emit.Label[ \(num_cases) ];" &
-						"\(sum_indent)for(var \(Id)_it = 0; \(Id)_it < \(iterator_dispatchers).Length; \(Id)_it++) { \(iterator_dispatchers)[\(Id)_it] = \(generator).Builder.DefineLabel(); }" &
 						"\(sum_indent)#pragma warning disable 219" &
 						"\(sum_indent)var \(position) = 2;" &
 						"\(sum_indent)#pragma warning restore 219"
@@ -1463,7 +1471,7 @@ kws : compiler_lib.kws_tmpl {
 					For item : items, index : Ordinal
 						Reduce
 							acc &
-							"\(indent)\(Id)_next = \(generator).Builder.DefineLabel();" &
+							"\(indent)\(Id)_next = \(generator).DefineState();" &
 							item.gen_gen(
 								indent : indent,
 								code :
@@ -1472,10 +1480,10 @@ kws : compiler_lib.kws_tmpl {
 									"\(indent)\(item.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(index - 1));" &
 									"\(indent)\(item.extra_indent)\(item.storage_name).Load(\(generator));" &
 									"\(indent)\(item.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem, typeof(IAttributeNames));" &
-									"\(indent)\(item.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, \(Id)_next);"
+									"\(indent)\(item.extra_indent)\(generator).JumpToState(\(Id)_next);"
 								) &
-							"\(indent)\(generator).Builder.MarkLabel(\(Id)_next);"
-						With acc : base_code & "\(indent)System.Reflection.Emit.Label \(Id)_next;"
+							"\(indent)\(generator).MarkState(\(Id)_next);"
+						With acc : base_code & "\(indent)int \(Id)_next;"
 			}
 		}
 		input_merge +: {
@@ -1514,15 +1522,15 @@ kws : compiler_lib.kws_tmpl {
 					"\(sum_indent)var \(matched_frames) = new System.Collections.Generic.Dictionary<AstNode, int>();" &
 					"\(sum_indent)foreach(var \(Id) in \(field).Where(x => x.NeedsGeneration)) {" &
 					"\(sum_indent)\t\(matched_frames)[\(Id)] = \(Id)_pos;" &
-					"\(sum_indent)\tvar \(Id)_next = \(generator).Builder.DefineLabel();" &
+					"\(sum_indent)\tvar \(Id)_next = \(generator).DefineState();" &
 					"\(sum_indent)\t\(Id).Generate(\(argument_list)(\(Id)_result) => {" &
 					"\(sum_indent)\t\t\(array).Load(\(generator));" &
 					"\(sum_indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(Id)_pos);" &
 					"\(sum_indent)\t\t\(Id)_result.Load(\(generator));" &
 					"\(sum_indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem, typeof(IAttributeNames));" &
-					"\(sum_indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, \(Id)_next);" &
+					"\(sum_indent)\t\t\(generator).JumpToState(\(Id)_next);" &
 					"\(sum_indent)\t});" &
-					"\(sum_indent)\t\(generator).Builder.MarkLabel(\(Id)_next);" &
+					"\(sum_indent)\t\(generator).MarkState(\(Id)_next);" &
 					"\(sum_indent)\t\(Id)_pos++;" &
 					"\(sum_indent)}"
 			}
@@ -1537,7 +1545,7 @@ kws : compiler_lib.kws_tmpl {
 				value :
 					"\(indent)\(loop_tab)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
 					"\(indent)\(loop_tab)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(name_str));" &
-					"\(indent)\(loop_tab)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(position)++);" &
+					"\(indent)\(loop_tab)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(iterator_dispatchers)[\(position)++]);" &
 					"\(indent)\(loop_tab)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(MergeIterator).GetMethod(\"AddDispatcher\", new System.Type[] { typeof(string), typeof(int) }));"
 			}
 			gen_gen : Template {
@@ -1545,9 +1553,9 @@ kws : compiler_lib.kws_tmpl {
 				sum_indent : indent & action.extra_indent & loop_tab
 				base_code :
 					"\(sum_indent)\(generator).CopyField(\(action.storage_name), \(storage_name));" &
-					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, \(iterator_next));"
+					"\(sum_indent)\(generator).JumpToState(\(iterator_next));"
 				value :
-					"\(indent)\(loop_tab)\(generator).Builder.MarkLabel(\(iterator_dispatchers)[\(position)++]);" &
+					"\(indent)\(loop_tab)\(generator).MarkState(\(iterator_dispatchers)[\(position)++]);" &
 					action.gen_gen(indent : indent & loop_tab, code : base_code)
 			}
 		}
@@ -1650,22 +1658,22 @@ codegen : compiler_lib.codegen_tmpl {
 		gen_gen +: {
 			value :
 				"\(indent)var \(storage_name) = \(generator).MakeField(\"collapse_result\", typeof(\(type.real_type)));" &
-				"\(indent)var \(Id)_label = \(generator).Builder.DefineLabel();" &
+				"\(indent)var \(Id)_label = \(generator).DefineState();" &
 				initial.gen_gen(
 					indent : indent,
 					code :
 						"\(indent)\(initial.extra_indent)\(generator).CopyField(\(initial.storage_name), \(storage_name));" &
-						"\(indent)\(initial.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, \(Id)_label);"
+						"\(indent)\(initial.extra_indent)\(generator).JumpToState(\(Id)_label);"
 					) &
 				"\(indent)foreach (var \(Id)_item in \(field)) {" &
-				"\(indent)\t\(generator).Builder.MarkLabel(\(Id)_label);" &
-				"\(indent)\t\(Id)_label = \(generator).Builder.DefineLabel();" &
+				"\(indent)\t\(generator).MarkState(\(Id)_label);" &
+				"\(indent)\t\(Id)_label = \(generator).DefineState();" &
 				"\(indent)\t\(Id)_item.Generate(\(argument_list)(\(Id)_result) => {" &
 				"\(indent)\t\t\(generator).CopyField(\(Id)_result, \(storage_name));" &
-				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, \(Id)_label);" &
+				"\(indent)\t\t\(generator).JumpToState(\(Id)_label);" &
 				"\(indent)\t});" &
 				"\(indent)}" &
-				"\(indent)\(generator).Builder.MarkLabel(\(Id)_label);" &
+				"\(indent)\(generator).MarkState(\(Id)_label);" &
 				code
 		}
 		parameters : {
@@ -1728,25 +1736,25 @@ codegen : compiler_lib.codegen_tmpl {
 		storage_name : initial.storage_name
 		gen_gen +: {
 			value :
-				"\(indent)var \(Id)_label = \(generator).Builder.DefineLabel();" &
+				"\(indent)var \(Id)_label = \(generator).DefineState();" &
 				initial.gen_gen(
 					indent : indent,
 					code :
-						"\(indent)\(initial.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, \(Id)_label);"
+						"\(indent)\(initial.extra_indent)\(generator).JumpToState(\(Id)_label);"
 					) &
 				"\(indent)for (var \(Id)_index = 0; \(Id)_index < \(field).Count; \(Id)_index++) {" &
-				"\(indent)\t\(generator).Builder.MarkLabel(\(Id)_label);" &
-				"\(indent)\t\(Id)_label = \(generator).Builder.DefineLabel();" &
+				"\(indent)\t\(generator).MarkState(\(Id)_label);" &
+				"\(indent)\t\(Id)_label = \(generator).DefineState();" &
 				"\(indent)\t\(field)[\(Id)_index].Generate(\(argument_list)(\(Id)_result) => {" &
 				"\(indent)\t\t\(storage_name).Load(\(generator));" &
 				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I8, (long) \(Id)_index + 1);" &
 				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(TaskMaster).GetMethod(\"OrdinalNameStr\", new System.Type[] { typeof(long) }));" &
 				"\(indent)\t\t\(generator).LoadReboxed(\(Id)_result, typeof(object));" &
 				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Frame).GetMethod(\"set_Item\", new System.Type[] { typeof(string), typeof(object) }));" &
-				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, \(Id)_label);" &
+				"\(indent)\t\t\(generator).JumpToState(\(Id)_label);" &
 				"\(indent)\t});" &
 				"\(indent)}" &
-				"\(indent)\(generator).Builder.MarkLabel(\(Id)_label);" &
+				"\(indent)\(generator).MarkState(\(Id)_label);" &
 				code
 		}
 	}
@@ -1902,7 +1910,7 @@ codegen : compiler_lib.codegen_tmpl {
 		value : of.gen_gen(
 			indent : indent,
 			code :
-				"\(indent)\(of.extra_indent)Environment.IntrinsicDispatch(\(generator), this, \(of.storage_name), (\(storage_name)) => {\(code)\(indent)\(of.extra_indent)});"
+				"\(indent)\(of.extra_indent)Environment.IntrinsicDispatch(\(generator), this, \(of.storage_name), \(parameters.source_reference.storage_name), (\(storage_name)) => {\(code)\(indent)\(of.extra_indent)});"
 			)
 		}
 	}
@@ -2290,13 +2298,13 @@ compiler : compiler_lib.language_tmpl {
 							generation_flavour.parameter_str &
 							"LoadableValue _matched_frame, LoadableValue _ordinal, LoadableValue _name, LoadableValue _target_frame) {\n" &
 							"\t\t\(generator).DebugPosition(this);" &
-							"\t\tvar _label = \(generator).Builder.DefineLabel();" &
+							"\t\tvar _state = \(generator).DefineState();" &
 							prepare_value.gen_gen(
 								indent : default_indent,
 								code :
-									"\(default_indent)\(prepare_value.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Br, _label);"
+									"\(default_indent)\(prepare_value.extra_indent)\(generator).JumpToState(_state);"
 								) &
-							"\n\t\t\(generator).Builder.MarkLabel(_label);\n" &
+							"\n\t\t\(generator).MarkState(_state);\n" &
 							"\t}\n" &
 							"\tinternal override bool NeedsGeneration { get { return \(If needs_generation Then "true" Else "false"); } }\n"
 
