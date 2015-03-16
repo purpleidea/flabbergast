@@ -576,6 +576,7 @@ known_types : compiler_lib.known_types_tmpl {
 		max : "true"
 		min : "false"
 		constant_creator : "BoolConstant"
+		unbox : True
 	}
 	float : {
 		union_type : "Flabbergast.Type.Float"
@@ -583,10 +584,12 @@ known_types : compiler_lib.known_types_tmpl {
 		max : "System.Double.MaxValue"
 		min : "System.Double.MinValue"
 		constant_creator : "FloatConstant"
+		unbox : True
 	}
 	frame : {
 		union_type : "Flabbergast.Type.Frame"
 		real_type : "Flabbergast.Frame"
+		unbox : True
 	}
 	int : {
 		union_type : "Flabbergast.Type.Int"
@@ -594,18 +597,22 @@ known_types : compiler_lib.known_types_tmpl {
 		max : "System.Int64.MaxValue"
 		min : "System.Int64.MinValue"
 		constant_creator : "IntConstant"
+		unbox : True
 	}
 	str : {
 		union_type : "Flabbergast.Type.Str"
 		real_type : "Flabbergast.Stringish"
+		unbox : False
 	}
 	template : {
 		union_type : "Flabbergast.Type.Template"
 		real_type : "Flabbergast.Template"
+		unbox : True
 	}
 	unit : {
 		union_type : "Flabbergast.Type.Unit"
 		real_type : "Flabbergast.Unit"
+		unbox : True
 	}
 }
 # These are types known by the KWS VM that are not found in the Flabbergast
@@ -643,7 +650,7 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 		value :
 			For field : fields
 				Where !(field Is Null)
-				Reduce acc & "\(indent)if (\(field) != null) \(Id) &= AstTypeableNode.HorrendousTypeMerge(\(field).EnsureType(_collector, \(allowed_type_bits), ref _success, \(If needs_unbox Then "true" Else "_needs_unbox")), \(current_type));"
+				Reduce acc & "\(indent)if (\(field) != null) \(Id) &= AstTypeableNode.HorrendousTypeMerge(\(field).EnsureType(_collector, \(allowed_type_bits), ref _success, \(If needs_unbox Then "true" Else current_unbox)), \(current_type));"
 				With acc : "\(indent)var \(Id) =  \(current_type);"
 		result : Id
 
@@ -654,7 +661,7 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 		result : Id
 		value :
 			"\(indent)var \(Id) = NameInfo.AnyType;" &
-			"\(indent)if (\(field) != null) foreach (var \(Id)_item in \(field)) \(Id) &= \(Id)_item.EnsureType(_collector, \(allowed_type_bits), ref _success, \(If needs_unbox Then "true" Else "_needs_unbox"));"
+			"\(indent)if (\(field) != null) foreach (var \(Id)_item in \(field)) \(Id) &= \(Id)_item.EnsureType(_collector, \(allowed_type_bits), ref _success, \(If needs_unbox Then "true" Else current_unbox));"
 	}
 	# This works similarly to filter, but takes the type from a syntax node
 	# rather than a literal in the compiler.
@@ -663,6 +670,9 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 		current_type : Id
 
 		type_bits : "\(field).\(If propagate_castable Then "CastableFrom" Else "TypeId")"
+		current_unbox :
+			Lookup current_unbox In Container &
+			(If propagate_castable Then " | \(field).Unbox" Else "")
 		result : Id
 		value :
 			"\(indent)var \(Id) = \(parent_type) & \(type_bits);" &
@@ -674,17 +684,17 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 	}
 	special +: {
 		result : Id
-		value : "\(indent)var \(Id) = \(type_storage).EnsureType(_collector, \(current_type), ref _success,  \(If needs_unbox Then "true" Else "_needs_unbox"));"
+		value : "\(indent)var \(Id) = \(type_storage).EnsureType(_collector, \(current_type), ref _success,  \(If needs_unbox Then "true" Else current_unbox));"
 	}
 	# Stores the type information in the environment by lookup name.
 	stored +: {
 		result : Id
-		value : "\(indent)var \(Id) = Environment.Lookup(_collector, \(field).Select((s) => s.ToString()), ref _success).EnsureType(_collector, \(current_type), ref _success, _needs_unbox);"
+		value : "\(indent)var \(Id) = Environment.Lookup(_collector, \(field).Select((s) => s.ToString()), ref _success).EnsureType(_collector, \(current_type), ref _success, \(current_unbox));"
 	}
 	# Stores the type information in the environment by syntax node.
 	intrinsic +: {
 		result : Id
-		value : "\(indent)var \(Id) = Environment.EnsureIntrinsic(_collector, this, \(current_type), \(If needs_unbox Then "true" Else "_needs_unbox"), ref _success);"
+		value : "\(indent)var \(Id) = Environment.EnsureIntrinsic(_collector, this, \(current_type), \(If needs_unbox Then "true" Else current_unbox), ref _success);"
 	}
 	shared_fate +: {
 		current_type : Id
@@ -2092,6 +2102,7 @@ compiler : compiler_lib.language_tmpl {
 				Else ""
 
 		current_type : "_type"
+		current_unbox : "_needs_unbox"
 		type_assurance : If is_typeable
 			Then "\tpublic override Type EnsureType(ErrorCollector _collector, Type _type, ref bool _success, bool _needs_unbox) {\n\(ensure_type_is.value)\n\t\treturn \(ensure_type_is.result);\n\t}\n"
 			Else ""
@@ -2321,10 +2332,10 @@ compiler : compiler_lib.language_tmpl {
 			}
 		}
 		type +: {
-			super_class_extra : "\tinternal abstract Type TypeId { get; }\n\tinternal abstract Type CastableFrom { get; }\n"
+			super_class_extra : "\tinternal abstract Type TypeId { get; }\n\tinternal abstract Type CastableFrom { get; }\n\tinternal abstract bool Unbox { get; }\n"
 			type_element +: {
 				castable_from_type_bits : For t : castable_from Reduce acc & " | " & t.union_type With acc : type.union_type
-				class_extra : "\tinternal override Type TypeId { get { return \(type.union_type); } }\n\tinternal override Type CastableFrom { get { return \(castable_from_type_bits); }}\n"
+				class_extra : "\tinternal override Type TypeId { get { return \(type.union_type); } }\n\tinternal override Type CastableFrom { get { return \(castable_from_type_bits); }}\n\tinternal override bool Unbox { get { return \(type.unbox); }}\n"
 			}
 		}
 		expression +: {
