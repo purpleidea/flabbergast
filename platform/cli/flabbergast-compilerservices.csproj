@@ -37,8 +37,8 @@
 		<Compile Include="compiler-cli.cs"/>
 		<Compile Include="analyser.cs"/>
 		<Compile Include="dlcompile.cs"/>
+		<Compile Include="library-compiler.cs"/>
 		<Compile Include="generator.cs"/>
-		<Compile Include="library.cs"/>
 		<Compile Include="parser.cs"/>
 		<Compile Include="AssemblyInfo.cs"/>
 	</ItemGroup>

@@ -6,47 +6,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using NDesk.Options;
 
-public class PrintResult : Computation {
-	private TaskMaster task_master;
-	private System.Type test_target;
-	private string output_filename;
-	public bool Success { get; private set; }
-	public PrintResult(TaskMaster task_master, System.Type test_target, string output_filename) {
-		this.task_master = task_master;
-		this.test_target = test_target;
-		this.output_filename = output_filename;
-	}
-
-	protected override bool Run() {
-		var computation = (Computation) Activator.CreateInstance(test_target, task_master);
-		computation.Notify(HandleFrameResult);
-		task_master.Slot(computation);
-		return false;
-	}
-
-	private void HandleFrameResult(object result) {
-		if (result is Frame) {
-			var lookup = new Lookup(task_master, null, new string[] { "value" }, (result as Frame).Context);
-			lookup.Notify(HandleFinalResult);
-			task_master.Slot(lookup);
-		} else {
-			Console.Error.WriteLine("File did not contain a frame. That should be impossible.");
-		}
-	}
-	private void HandleFinalResult(object result) {
-		if (result is Stringish || result is long || result is bool || result is double) {
-			Success = true;
-			if (output_filename == null) {
-				Console.WriteLine(result);
-			} else {
-				System.IO.File.WriteAllText(output_filename, result.ToString(), System.Text.Encoding.UTF8);
-			}
-		} else {
-			Console.Error.WriteLine("Cowardly refusing to print result of type {0}.", result.GetType());
-		}
-	}
-}
-
 public class Printer {
 	public static int Main(string[] args) {
 		bool trace = false;
@@ -95,7 +54,8 @@ public class Printer {
 		parser.Trace = trace;
  		var run_type = parser.ParseFile(collector, unit, "Printer");
 		if (run_type != null) {
-			var filewriter = new PrintResult(task_master, run_type, output_filename);
+			var computation = (Computation) Activator.CreateInstance(run_type, task_master);
+			var filewriter = new PrintResult(task_master, computation, output_filename);
 			task_master.Slot(filewriter);
 			task_master.Run();
 			return filewriter.Success ? 0 : 1;

@@ -38,6 +38,7 @@
 		<Compile Include="dlopen.cs"/>
 		<Compile Include="exec.cs"/>
 		<Compile Include="iterator.cs"/>
+		<Compile Include="library-runtime.cs"/>
 		<Compile Include="srcref.cs"/>
 		<Compile Include="stringish.cs"/>
 		<Compile Include="AssemblyInfo.cs"/>
