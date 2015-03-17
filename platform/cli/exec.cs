@@ -41,6 +41,9 @@ public abstract class Computation {
 	 */
 	internal void Compute() {
 		if (result == null && Run()) {
+			if (result == null) {
+				throw new InvalidOperationException("The computation " + GetType() + " did not return a value. This is a bug.");
+			}
 			if (consumer != null) {
 				consumer(result);
 				consumer = null;
