@@ -432,7 +432,7 @@ internal class Generator {
 	public void DebugPosition(CodeRegion node) {
 		last_node = node;
 		if (SymbolDocument != null) {
-			Builder.MarkSequencePoint(SymbolDocument, node.StartRow, node.StartColumn, node.EndRow, node.EndColumn);
+			Builder.MarkSequencePoint(SymbolDocument, node.StartRow, node.StartColumn, node.EndRow, node.EndColumn + 1);
 		}
 	}
 	public void DecrementInterlock(ILGenerator builder) {
