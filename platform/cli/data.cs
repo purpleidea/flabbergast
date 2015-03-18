@@ -9,8 +9,6 @@ namespace Flabbergast {
  * The collection of frames in which lookup should be performed.
  */
 public abstract class Context {
-	public delegate void SetFrame(int i, Frame frame);
-
 	/**
 	 * The total number of frames in this context.
 	 */
@@ -37,13 +35,7 @@ public abstract class Context {
 		}
 		return new ForkedContext(original, new_tail);
 	}
-	/**
-	 * Visit all the frames in a context.
-	 */
-	public void Fill(SetFrame f) {
-		Fill(f, 0);
-	}
-	internal abstract void Fill(SetFrame f, int start_index);
+	public abstract IEnumerable<Frame> Fill();
 }
 
 /**
@@ -58,10 +50,12 @@ internal class LinkedContext : Context {
 		this.Tail = tail;
 		Length = tail == null ? 1 : (tail.Length + 1);
 	}
-	internal override void Fill(SetFrame set_frame, int start_index) {
-		set_frame(start_index, Frame);
+	public override IEnumerable<Frame> Fill() {
+		yield return Frame;
 		if (Tail != null) {
-			Tail.Fill(set_frame, start_index + 1);
+			foreach (var f in Tail.Fill()) {
+				yield return f;
+			}
 		}
 	}
 }
@@ -81,9 +75,13 @@ internal class ForkedContext : Context {
 		this.Tail = tail;
 		Length = Head.Length + Tail.Length;
 	}
-	internal override void Fill(SetFrame set_frame, int start_index) {
-		Head.Fill(set_frame, start_index);
-		Tail.Fill(set_frame, start_index + Head.Length);
+	public override IEnumerable<Frame> Fill() {
+		foreach (var h in Head.Fill()) {
+			yield return h;
+		}
+		foreach (var t in Tail.Fill()) {
+			yield return t;
+		}
 	}
 }
 

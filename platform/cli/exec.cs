@@ -295,9 +295,13 @@ public class Lookup : Computation {
 		this.master = master;
 		this.SourceReference = source_ref;
 		this.names = names;
+
 		/* Create  grid where the first entry is the frame under consideration. */
 		values = new object[context.Length, names.Length + 1];
-		context.Fill((index, frame) => values[index, 0] = frame);
+		var index = 0;
+		foreach(var frame in context.Fill()) {
+			values[index++, 0] = frame;
+		}
 	}
 
 	public int NameCount { get { return names.Length; } }
