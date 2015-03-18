@@ -289,10 +289,7 @@ public class Lookup : Computation {
 	 * The current name in the current context being considered.
 	 */
 	private int name = 0;
-	/**
-	 * This is the result supplied by the callback to GetOrSubscribe.
-	 */
-	private Frame.AttemptResult state = Frame.AttemptResult.RETURNED;
+	private int interlock;
 
 	public Lookup(TaskMaster master, SourceReference source_ref, string[] names, Context context) {
 		this.master = master;
@@ -315,7 +312,7 @@ public class Lookup : Computation {
 	 */
 	private void ConsumeResult(object return_value) {
 		values[frame, ++name] = return_value;
-		if (state == Frame.AttemptResult.PENDING) {
+		if (System.Threading.Interlocked.Decrement(ref interlock) == 0) {
 			master.Slot(this);
 		}
 	}
@@ -335,17 +332,14 @@ public class Lookup : Computation {
 			}
 
 			// Otherwise, try to get the current value for the current name
-			state = (values[frame, name] as Frame).GetOrSubscribe(names[name], ConsumeResult);
-			switch (state) {
-				case Frame.AttemptResult.PENDING:
+			interlock = 2;
+			if ((values[frame, name] as Frame).GetOrSubscribe(names[name], ConsumeResult)) {
+				if (System.Threading.Interlocked.Decrement(ref interlock) > 0) {
 					return false;
-				case Frame.AttemptResult.MISSING:
+				}
+			} else {
 				name = 0;
 				frame++;
-				break;
-				case Frame.AttemptResult.RETURNED:
-				// The callback will increment name
-				break;
 			}
 		}
 		// The name is undefined.

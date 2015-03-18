@@ -177,11 +177,6 @@ public class Template : IAttributeNames {
  * A Frame in the Flabbergast language.
  */
 public class Frame : DynamicObject, IAttributeNames {
-	public enum AttemptResult {
-		RETURNED,
-		PENDING,
-		MISSING
-	}
 	/**
 	 * The lookup context when this frame was created and any of its ancestors.
 	 */
@@ -294,20 +289,20 @@ public class Frame : DynamicObject, IAttributeNames {
 	 * Access a value if available, or be notified upon completion.
 	 * Returns: true if the value was available, false if the caller should wait to be reinvoked.
 	 */
-	internal AttemptResult GetOrSubscribe(string name, ConsumeResult consumer) {
+	internal bool GetOrSubscribe(string name, ConsumeResult consumer) {
 		// If this frame is being looked at, then all its pending attributes should
 		// be slotted.
 		Slot();
 
 		if (pending.ContainsKey(name)) {
 			pending[name].Notify(consumer);
-			return AttemptResult.PENDING;
+			return true;
 		}
 		if (attributes.ContainsKey(name)) {
 			consumer(attributes[name]);
-			return AttemptResult.RETURNED;
+			return true;
 		}
-		return AttemptResult.MISSING;
+		return false;
 	}
 
 	/**
