@@ -1,3 +1,4 @@
+*.?db
 *.dll
 *.il
 *.userprefs
