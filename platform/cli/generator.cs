@@ -206,8 +206,6 @@ internal class Generator {
 
 	private CodeRegion last_node;
 
-	private Dictionary<LoadableValue, LoadableValue> string_conversion_cache = new Dictionary<LoadableValue, LoadableValue>();
-
 	public static bool IsNumeric(System.Type type) {
 		return type == typeof(double) || type == typeof(long);
 	}
@@ -894,16 +892,13 @@ internal class Generator {
 		}
 	}
 	public LoadableValue ToStringish(LoadableValue source, LoadableValue source_reference) {
-		if (string_conversion_cache.ContainsKey(source)) {
-			return string_conversion_cache[source];
-		}
 		LoadableValue result;
 		if (source.BackingType == typeof(object)) {
 			var field = MakeField("str", typeof(Stringish));
 			var end = Builder.DefineLabel();
 			Builder.Emit(OpCodes.Ldarg_0);
 			source.Load(Builder);
-			Builder.Emit(OpCodes.Call, typeof(Stringish).GetMethod("FromObject", new System.Type [] { typeof(object) }));
+			Builder.Emit(OpCodes.Call, typeof(Stringish).GetMethod("FromObject", new System.Type[] { typeof(object) }));
 			Builder.Emit(OpCodes.Stfld, field.Field);
 			field.Load(Builder);
 			Builder.Emit(OpCodes.Brtrue, end);
@@ -913,7 +908,6 @@ internal class Generator {
 		} else {
 			result = ToStringishHelper(source);
 		}
-		string_conversion_cache[source] = result;
 		return result;
 	}
 }
