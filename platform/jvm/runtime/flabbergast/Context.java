@@ -1,36 +1,13 @@
 package flabbergast;
 
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Stack;
+import java.util.List;
 
 /**
  * The collection of frames in which lookup should be performed.
  */
-public abstract class Context implements Iterable<Frame> {
-	public static class FrameIterator implements Iterator<Frame> {
-		private Stack<Context> stack = new Stack<Context>();
-
-		public FrameIterator(Context context) {
-			stack.push(context);
-		}
-
-		@Override
-		public boolean hasNext() {
-			return !stack.isEmpty();
-		}
-
-		@Override
-		public Frame next() {
-			Context context = stack.pop();
-			return context.iterateHelper(stack);
-		}
-
-		@Override
-		public void remove() {
-			throw new UnsupportedOperationException();
-		}
-	}
-
+public class Context implements Iterable<Frame> {
 	/**
 	 * Conjoin two contexts, placing all the frames of the provided context
 	 * after all the frames in the original context.
@@ -42,30 +19,46 @@ public abstract class Context implements Iterable<Frame> {
 		if (new_tail == null) {
 			return original;
 		}
-		return new ForkedContext(original, new_tail);
+		List<Frame> list = new ArrayList<Frame>();
+		list.addAll(original.frames);
+		for (Frame frame : new_tail.frames) {
+			if (!list.contains(frame)) {
+				list.add(frame);
+			}
+		}
+		return new Context(list);
 	}
 
-	public static Context Prepend(Frame head, Context tail) {
+	public static Context prepend(Frame head, Context tail) {
 		if (head == null) {
 			throw new IllegalArgumentException(
 					"Cannot prepend a null frame to a context.");
 		}
-		return new LinkedContext(head, tail);
+		List<Frame> list = new ArrayList<Frame>();
+		list.add(head);
+		if (tail != null) {
+			for (Frame frame : tail.frames) {
+				if (head != frame) {
+					list.add(frame);
+				}
+			}
+		}
+		return new Context(list);
 	}
 
-	protected int length;
+	private List<Frame> frames;
 
-	/**
-	 * The total number of frames in this context.
-	 */
+	private Context(List<Frame> frames) {
+		this.frames = frames;
+	}
+
 	public int getLength() {
-		return length;
+		return frames.size();
 	}
-
-	public abstract Frame iterateHelper(Stack<Context> stack);
 
 	@Override
 	public Iterator<Frame> iterator() {
-		return new FrameIterator(this);
+		return frames.iterator();
 	}
+
 }
