@@ -8,19 +8,27 @@ namespace Flabbergast {
 /**
  * The collection of frames in which lookup should be performed.
  */
-public abstract class Context {
+public class Context {
 	/**
 	 * The total number of frames in this context.
 	 */
 	public int Length {
-		get;
-		protected set;
+		get { return frames.Count; }
 	}
 	public static Context Prepend(Frame head, Context tail) {
 		if (head == null) {
 			throw new InvalidOperationException("Cannot prepend a null frame to a context.");
 		}
-		return new LinkedContext(head, tail);
+		var list = new List<Frame>();
+		list.Add(head);
+		if (tail != null) {
+			foreach (var frame in tail.frames) {
+				if (head != frame) {
+					list.Add(frame);
+				}
+			}
+		}
+		return new Context(list);
 	}
 	/**
 	 * Conjoin two contexts, placing all the frames of the provided context after
@@ -33,55 +41,21 @@ public abstract class Context {
 		if (new_tail == null) {
 			return original;
 		}
-		return new ForkedContext(original, new_tail);
-	}
-	public abstract IEnumerable<Frame> Fill();
-}
-
-/**
- * An element in a single-linked list of contexts.
- */
-internal class LinkedContext : Context {
-	private Frame Frame;
-	private Context Tail;
-
-	internal LinkedContext(Frame frame, Context tail) {
-		this.Frame = frame;
-		this.Tail = tail;
-		Length = tail == null ? 1 : (tail.Length + 1);
-	}
-	public override IEnumerable<Frame> Fill() {
-		yield return Frame;
-		if (Tail != null) {
-			foreach (var f in Tail.Fill()) {
-				yield return f;
+		var list = new List<Frame>();
+		list.AddRange(original.frames);
+		foreach(var frame in new_tail.frames) {
+			if (!list.Contains(frame)) {
+				list.Add(frame);
 			}
 		}
+		return new Context(list);
 	}
-}
-
-/**
- * A join between two contexts.
- *
- * This is an optimisation: rather than creating a new linked-list of contexts,
- * store a fork and it can be linearised when needed.
- */
-internal class ForkedContext : Context {
-	private Context Head;
-	private Context Tail;
-
-	internal ForkedContext(Context head, Context tail) {
-		this.Head = head;
-		this.Tail = tail;
-		Length = Head.Length + Tail.Length;
+	private List<Frame> frames;
+	private Context(List<Frame> frames) {
+		this.frames = frames;
 	}
-	public override IEnumerable<Frame> Fill() {
-		foreach (var h in Head.Fill()) {
-			yield return h;
-		}
-		foreach (var t in Tail.Fill()) {
-			yield return t;
-		}
+	public IEnumerable<Frame> Fill() {
+		return frames;
 	}
 }
 
