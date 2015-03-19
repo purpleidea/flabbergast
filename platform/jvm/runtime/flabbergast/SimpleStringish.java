@@ -20,10 +20,12 @@ public class SimpleStringish extends Stringish {
 		return 1;
 	}
 
+	@Override
 	public long getLength() {
 		return str.length();
 	}
 
+	@Override
 	public void write(Writer writer) throws IOException {
 		writer.write(str);
 	}

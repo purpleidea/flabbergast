@@ -28,6 +28,7 @@ public class JunctionReference extends SourceReference {
 		return junction;
 	}
 
+	@Override
 	public void write(Writer writer, String prefix) throws IOException {
 		writer.write(prefix);
 		writer.write(this.caller == null ? "└─┬ " : "├─┬ ");

@@ -3,7 +3,6 @@ package flabbergast;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.Iterator;
 
 public abstract class Stringish implements Comparable<Stringish> {
 	public static Stringish[] BOOLEANS = new Stringish[] {
@@ -31,6 +30,7 @@ public abstract class Stringish implements Comparable<Stringish> {
 
 	abstract void collect(String[] bits, int start);
 
+	@Override
 	public int compareTo(Stringish other) {
 		String[] this_stream = new String[this.getCount()];
 		this.collect(this_stream, 0);
@@ -71,6 +71,7 @@ public abstract class Stringish implements Comparable<Stringish> {
 
 	public abstract long getLength();
 
+	@Override
 	public String toString() {
 		StringWriter writer = new StringWriter();
 		try {

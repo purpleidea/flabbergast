@@ -25,10 +25,12 @@ public class ConcatStringish extends Stringish {
 		return head.getCount() + tail.getCount();
 	}
 
+	@Override
 	public long getLength() {
 		return chars;
 	}
 
+	@Override
 	public void write(Writer writer) throws IOException {
 		head.write(writer);
 		tail.write(writer);

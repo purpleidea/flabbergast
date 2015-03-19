@@ -35,6 +35,7 @@ public class Template implements AttributeNames {
 		return get(name.toString());
 	}
 
+	@Override
 	public Iterator<String> getAttributeNames() {
 		return attributes.keySet().iterator();
 	}

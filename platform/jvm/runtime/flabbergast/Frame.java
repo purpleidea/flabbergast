@@ -51,6 +51,7 @@ public class Frame implements AttributeNames {
 		return attributes.containsKey(name) ? attributes.get(name) : null;
 	}
 
+	@Override
 	public Iterator<String> getAttributeNames() {
 		return new ConcatIterator<String>(attributes.keySet().iterator(),
 				pending.keySet().iterator());

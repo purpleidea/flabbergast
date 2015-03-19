@@ -119,6 +119,7 @@ public abstract class TaskMaster implements Iterable<Computation> {
 		reportExternalError(uri);
 	}
 
+	@Override
 	public Iterator<Computation> iterator() {
 		return inflight.iterator();
 	}
