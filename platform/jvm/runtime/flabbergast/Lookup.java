@@ -2,13 +2,11 @@ package flabbergast;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import flabbergast.Context.SetFrame;
-
 /**
  * Do lookup by creating a grid of contexts where the value might reside and all
  * the needed names.
  */
-public class Lookup extends Computation implements ConsumeResult, SetFrame {
+public class Lookup extends Computation implements ConsumeResult {
 	/**
 	 * The current context in the grid being considered.
 	 */
@@ -40,9 +38,12 @@ public class Lookup extends Computation implements ConsumeResult, SetFrame {
 		this.names = names;
 		/* Create grid where the first entry is the frame under consideration. */
 		values = new Object[context.getLength()][];
-		for (int it = 0; it < context.getLength(); it++)
-			values[it] = new Object[names.length + 1];
-		context.fill(this);
+		int index = 0;
+		for (Frame frame : context) {
+			values[index] = new Object[names.length + 1];
+			values[index][0] = frame;
+			index++;
+		}
 	}
 
 	/**
@@ -52,6 +53,7 @@ public class Lookup extends Computation implements ConsumeResult, SetFrame {
 	 * If that was not immediately, then delayed will be true, so we slot
 	 * ourselves for further evaluation.
 	 */
+	@Override
 	public void consume(Object return_value) {
 		values[frame][++name] = return_value;
 		if (outstanding.decrementAndGet() == 0) {
@@ -89,6 +91,7 @@ public class Lookup extends Computation implements ConsumeResult, SetFrame {
 		return source_reference;
 	}
 
+	@Override
 	protected boolean run() {
 		while (frame < values.length && name < values[0].length) {
 			// If we have reached the end of a list of names for the current
@@ -122,9 +125,4 @@ public class Lookup extends Computation implements ConsumeResult, SetFrame {
 		return false;
 	}
 
-	@Override
-	public void set(int index, Frame frame) {
-		values[index][0] = frame;
-
-	}
 }

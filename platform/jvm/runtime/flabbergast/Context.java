@@ -1,11 +1,34 @@
 package flabbergast;
 
+import java.util.Iterator;
+import java.util.Stack;
+
 /**
  * The collection of frames in which lookup should be performed.
  */
-public abstract class Context {
-	public interface SetFrame {
-		abstract void set(int i, Frame frame);
+public abstract class Context implements Iterable<Frame> {
+	public static class FrameIterator implements Iterator<Frame> {
+		private Stack<Context> stack = new Stack<Context>();
+
+		public FrameIterator(Context context) {
+			stack.push(context);
+		}
+
+		@Override
+		public boolean hasNext() {
+			return !stack.isEmpty();
+		}
+
+		@Override
+		public Frame next() {
+			Context context = stack.pop();
+			return context.iterateHelper(stack);
+		}
+
+		@Override
+		public void remove() {
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	/**
@@ -33,18 +56,16 @@ public abstract class Context {
 	protected int length;
 
 	/**
-	 * Visit all the frames in a context.
-	 */
-	public void fill(SetFrame setFrame) {
-		fill(setFrame, 0);
-	}
-
-	abstract void fill(SetFrame f, int start_index);
-
-	/**
 	 * The total number of frames in this context.
 	 */
 	public int getLength() {
 		return length;
+	}
+
+	public abstract Frame iterateHelper(Stack<Context> stack);
+
+	@Override
+	public Iterator<Frame> iterator() {
+		return new FrameIterator(this);
 	}
 }

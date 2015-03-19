@@ -1,5 +1,7 @@
 package flabbergast;
 
+import java.util.Stack;
+
 /**
  * An element in a single-linked list of contexts.
  */
@@ -13,10 +15,12 @@ class LinkedContext extends Context {
 		length = tail == null ? 1 : (tail.length + 1);
 	}
 
-	void fill(SetFrame set_frame, int start_index) {
-		set_frame.set(start_index, frame);
+	@Override
+	public Frame iterateHelper(Stack<Context> stack) {
 		if (tail != null) {
-			tail.fill(set_frame, start_index + 1);
+			stack.push(tail);
 		}
+		return frame;
 	}
+
 }

@@ -1,5 +1,7 @@
 package flabbergast;
 
+import java.util.Stack;
+
 /**
  * A join between two contexts.
  * 
@@ -16,8 +18,10 @@ class ForkedContext extends Context {
 		length = head.length + tail.length;
 	}
 
-	void fill(SetFrame set_frame, int start_index) {
-		head.fill(set_frame, start_index);
-		tail.fill(set_frame, start_index + head.length);
+	@Override
+	public Frame iterateHelper(Stack<Context> stack) {
+		stack.push(tail);
+		return head.iterateHelper(stack);
 	}
+
 }
