@@ -26,7 +26,12 @@ public abstract class Stringish : IComparable<Stringish> {
 		return typeof(Stringish).IsAssignableFrom(t) ? typeof(Stringish) : t;
 	}
 	public abstract long Length { get; }
-	public abstract void Write(TextWriter writer);
+	public void Write(TextWriter writer) {
+		var stream = Stream();
+		while (stream.MoveNext()) {
+			writer.Write(stream.Current);
+		}
+	}
 	public int CompareTo(Stringish other) {
 		var this_stream = this.Stream();
 		var other_stream = other.Stream();
@@ -77,9 +82,6 @@ public class SimpleStringish : Stringish {
 	public override IEnumerator<string> Stream() {
 		yield return str;
 	}
-	public override void Write(TextWriter writer) {
-		writer.Write(str);
-	}
 }
 
 public class ConcatStringish : Stringish {
@@ -97,10 +99,6 @@ public class ConcatStringish : Stringish {
 		while(head_enumerator.MoveNext()) yield return head_enumerator.Current;
 		var tail_enumerator = tail.Stream();
 		while(tail_enumerator.MoveNext()) yield return tail_enumerator.Current;
-	}
-	public override void Write(TextWriter writer) {
-		head.Write(writer);
-		tail.Write(writer);
 	}
 }
 }
