@@ -1,6 +1,8 @@
 *.?db
 *.dll
 *.il
+*.suo
+*.user
 *.userprefs
 bin
 compiler-cli.cs
