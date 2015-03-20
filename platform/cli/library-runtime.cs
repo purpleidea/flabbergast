@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace Flabbergast {
 
 public class ConsoleTaskMaster : TaskMaster {
-	public override void ReportLookupError(Lookup lookup, System.Type fail_type) {
+	public override void ReportLookupError(Lookup lookup, Type fail_type) {
 		if (fail_type == null) {
 			Console.Error.WriteLine("Undefined name “{0}”. Lookup was as follows:", lookup.Name);
 		} else {
@@ -51,9 +51,9 @@ public class ConsoleTaskMaster : TaskMaster {
 	}
 }
 public class PrintResult : Computation {
-	private TaskMaster task_master;
-	private string output_filename;
-	private Computation source;
+	private readonly TaskMaster task_master;
+	private readonly string output_filename;
+	private readonly Computation source;
 	public bool Success { get; private set; }
 	public PrintResult(TaskMaster task_master, Computation source, string output_filename) {
 		this.task_master = task_master;
@@ -67,16 +67,19 @@ public class PrintResult : Computation {
 		return false;
 	}
 
-	private void HandleFrameResult(object result) {
-		if (result is Frame) {
-			var lookup = new Lookup(task_master, null, new string[] { "value" }, (result as Frame).Context);
+	private void HandleFrameResult(object result)
+	{
+	    var frame = result as Frame;
+	    if (frame != null) {
+			var lookup = new Lookup(task_master, null, new[] { "value" }, frame.Context);
 			lookup.Notify(HandleFinalResult);
 			task_master.Slot(lookup);
 		} else {
 			Console.Error.WriteLine("File did not contain a frame. That should be impossible.");
 		}
 	}
-	private void HandleFinalResult(object result) {
+
+    private void HandleFinalResult(object result) {
 		if (result is Stringish || result is long || result is bool || result is double) {
 			Success = true;
 			if (output_filename == null) {

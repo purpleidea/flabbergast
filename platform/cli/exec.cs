@@ -25,15 +25,15 @@ public abstract class Computation {
 	/**
 	 * The delegate(s) to be invoked when the computation is complete.
 	 */
-	private ConsumeResult consumer = null;
+	private ConsumeResult consumer;
 	/**
 	 * The return value of the computation.
 	 *
 	 * This should be assigned by the subclass.
 	 */
-	protected object result = null;
+	protected object result;
 
-	public Computation() {
+    protected Computation() {
 	}
 
 	/**
@@ -77,25 +77,25 @@ public abstract class Computation {
 
 public interface UriHandler {
 	string UriName { get; }
-	System.Type ResolveUri(string uri, out bool stop);
+	Type ResolveUri(string uri, out bool stop);
 }
 
 /**
  * Scheduler for computations.
  */
 public abstract class TaskMaster : IEnumerable<Computation> {
-	private Queue<Computation> computations = new Queue<Computation>();
-	private List<UriHandler> handlers = new List<UriHandler>();
-	private Dictionary<string, Computation> external_cache = new Dictionary<string, Computation>();
+	private readonly Queue<Computation> computations = new Queue<Computation>();
+	private readonly List<UriHandler> handlers = new List<UriHandler>();
+	private readonly Dictionary<string, Computation> external_cache = new Dictionary<string, Computation>();
 
-	private long next_id = 0;
+	private long next_id;
 
 	private static readonly char[] symbols = CreateOrdinalSymbols();
 
 	/**
 	 * These are computations that have not completed.
 	 */
-	private Dictionary<Computation, bool> inflight = new Dictionary<Computation, bool>();
+	private readonly Dictionary<Computation, bool> inflight = new Dictionary<Computation, bool>();
 
 	private static char[] CreateOrdinalSymbols() {
 		var array = new char[62];
@@ -126,9 +126,7 @@ public abstract class TaskMaster : IEnumerable<Computation> {
 		return new string(id_str);
 	}
 
-	public TaskMaster() {}
-
-	public void AddUriHandler(UriHandler handler) {
+    public void AddUriHandler(UriHandler handler) {
 		handlers.Add(handler);
 	}
 
@@ -137,7 +135,7 @@ public abstract class TaskMaster : IEnumerable<Computation> {
 	}
 
 	System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
-		return this.GetEnumerator();
+		return GetEnumerator();
 	}
 
 	public virtual void GetExternal(string uri, ConsumeResult target) {
@@ -199,7 +197,7 @@ public abstract class TaskMaster : IEnumerable<Computation> {
 	/**
 	 * Report an error during lookup.
 	 */
-	public virtual void ReportLookupError(Lookup lookup, System.Type fail_type) {
+	public virtual void ReportLookupError(Lookup lookup, Type fail_type) {
 		if (fail_type == null) {
 			ReportOtherError(lookup.SourceReference, String.Format("Undefined name “{0}”. Lookup was as follows:", lookup.Name));
 		} else {
@@ -217,7 +215,7 @@ public abstract class TaskMaster : IEnumerable<Computation> {
 	 */
 	public void Slot(Computation computation) {
 		if (!inflight.ContainsKey(computation)) {
-			computation.Notify((x) => inflight.Remove(computation));
+			computation.Notify(x => inflight.Remove(computation));
 		}
 		computations.Enqueue(computation);
 	}
@@ -262,11 +260,11 @@ public abstract class TaskMaster : IEnumerable<Computation> {
  * Do lookup by creating a grid of contexts where the value might reside and all the needed names.
  */
 public class Lookup : Computation {
-	private TaskMaster master;
+	private readonly TaskMaster master;
 	/**
 	 * The name components in the lookup expression.
 	 */
-	private string[] names;
+	private readonly string[] names;
 
 	public string Name {
 			get { return string.Join(".", names); }
@@ -274,7 +272,7 @@ public class Lookup : Computation {
 	/**
 	 * The dynamic programming grid. The first dimension is the context and the second is the name.
 	 */
-	private object[,] values;
+	private readonly object[,] values;
 
 	public SourceReference SourceReference {
 		get;
@@ -284,16 +282,16 @@ public class Lookup : Computation {
 	/**
 	 * The current context in the grid being considered.
 	 */
-	private int frame = 0;
+	private int frame;
 	/**
 	 * The current name in the current context being considered.
 	 */
-	private int name = 0;
+	private int name;
 	private int interlock;
 
 	public Lookup(TaskMaster master, SourceReference source_ref, string[] names, Context context) {
 		this.master = master;
-		this.SourceReference = source_ref;
+		SourceReference = source_ref;
 		this.names = names;
 
 		/* Create  grid where the first entry is the frame under consideration. */
@@ -337,7 +335,7 @@ public class Lookup : Computation {
 
 			// Otherwise, try to get the current value for the current name
 			interlock = 2;
-			if ((values[frame, name] as Frame).GetOrSubscribe(names[name], ConsumeResult)) {
+			if (((Frame) values[frame, name]).GetOrSubscribe(names[name], ConsumeResult)) {
 				if (System.Threading.Interlocked.Decrement(ref interlock) > 0) {
 					return false;
 				}

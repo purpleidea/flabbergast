@@ -19,15 +19,10 @@ public class Context {
 		if (head == null) {
 			throw new InvalidOperationException("Cannot prepend a null frame to a context.");
 		}
-		var list = new List<Frame>();
-		list.Add(head);
-		if (tail != null) {
-			foreach (var frame in tail.frames) {
-				if (head != frame) {
-					list.Add(frame);
-				}
-			}
-		}
+	    var list = new List<Frame> {head};
+	    if (tail != null) {
+	        list.AddRange(tail.frames.Where(frame => head != frame));
+	    }
 		return new Context(list);
 	}
 	/**
@@ -50,7 +45,7 @@ public class Context {
 		}
 		return new Context(list);
 	}
-	private List<Frame> frames;
+	private readonly List<Frame> frames;
 	private Context(List<Frame> frames) {
 		this.frames = frames;
 	}
@@ -90,7 +85,7 @@ public interface IAttributeNames {
  * A Flabbergast Template, holding functions for computing attributes.
  */
 public class Template : IAttributeNames {
-	private IDictionary<string, ComputeValue> attributes = new SortedDictionary<string, ComputeValue>();
+	private readonly IDictionary<string, ComputeValue> attributes = new SortedDictionary<string, ComputeValue>();
 
 	public Frame Container {
 		get;
@@ -113,9 +108,9 @@ public class Template : IAttributeNames {
 	}
 
 	public Template(SourceReference source_ref, Context context, Frame container) {
-		this.SourceReference = source_ref;
-		this.Context = context;
-		this.Container = container;
+		SourceReference = source_ref;
+		Context = context;
+		Container = container;
 	}
 
 	/**
@@ -177,10 +172,10 @@ public class Frame : DynamicObject, IAttributeNames {
 		private set;
 	}
 
-	private IDictionary<string, Computation> pending = new SortedDictionary<string, Computation>();
+	private readonly IDictionary<string, Computation> pending = new SortedDictionary<string, Computation>();
 	private List<Computation> unslotted = new List<Computation>();
-	private IDictionary<string, Object> attributes = new SortedDictionary<string, Object>();
-	private TaskMaster task_master;
+	private readonly IDictionary<string, Object> attributes = new SortedDictionary<string, Object>();
+	private readonly TaskMaster task_master;
 
 	public static Frame Through(TaskMaster task_master, long id, SourceReference source_ref, long start, long end, Context context, Frame container) {
 		var result = new Frame(task_master, id, source_ref, context, container);
@@ -194,10 +189,10 @@ public class Frame : DynamicObject, IAttributeNames {
 
 	public Frame(TaskMaster task_master, long id, SourceReference source_ref, Context context, Frame container) {
 		this.task_master = task_master;
-		this.SourceReference = source_ref;
-		this.Context = Context.Prepend(this, context);
-		this.Container = container;
-		this.Id = TaskMaster.OrdinalName(id);
+		SourceReference = source_ref;
+		Context = Context.Prepend(this, context);
+		Container = container;
+		Id = TaskMaster.OrdinalName(id);
 	}
 
 	/**
@@ -216,12 +211,12 @@ public class Frame : DynamicObject, IAttributeNames {
 				throw new InvalidOperationException("Redefinition of attribute " + name + ".");
 			}
 			if (value is ComputeValue) {
-				var computation = (value as ComputeValue)(task_master, SourceReference, Context, this, Container);
+				var computation = ((ComputeValue) value)(task_master, SourceReference, Context, this, Container);
 				pending[name] = computation;
 				/*
 				 * When this computation has completed, replace its value in the frame.
 				 */
-				computation.Notify((result) => {
+				computation.Notify(result => {
 					attributes[name] = result;
 					pending.Remove(name);
 				});
@@ -240,7 +235,7 @@ public class Frame : DynamicObject, IAttributeNames {
 					 * into another frame.
 					 */
 
-					var other = value as Frame;
+					var other = (Frame) value;
 					unslotted.AddRange(other.unslotted);
 					other.unslotted = unslotted;
 				}

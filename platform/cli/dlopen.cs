@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace Flabbergast {
@@ -8,7 +9,7 @@ namespace Flabbergast {
 		public static readonly BuiltInLibraries INSTANCE = new BuiltInLibraries();
 		public string UriName { get { return "built-in libraries"; } }
 		private BuiltInLibraries() {}
-		public System.Type ResolveUri(string uri, out bool stop) {
+		public Type ResolveUri(string uri, out bool stop) {
 			stop = false;
 			if (!uri.StartsWith("lib:"))
 				return null;
@@ -22,11 +23,9 @@ namespace Flabbergast {
 			var paths = new List<string>();
 			var env_var = Environment.GetEnvironmentVariable("FLABBERGAST_PATH");
 			if (env_var != null) {
-				foreach(var path in env_var.Split(Path.PathSeparator)) {
-					paths.Add(Path.GetFullPath(path));
-				}
+			    paths.AddRange(env_var.Split(Path.PathSeparator).Select(Path.GetFullPath));
 			}
-			var full_path = System.Reflection.Assembly.GetAssembly(typeof(Frame)).Location;
+			var full_path = Assembly.GetAssembly(typeof(Frame)).Location;
 			var directory = Path.GetDirectoryName(full_path);
 			paths.Add(Path.Combine(directory, "..", "lib", "flabbergast"));
 			if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX) {
@@ -42,11 +41,11 @@ namespace Flabbergast {
 		public void PrependPath(string path) {
 			paths.Insert(0, path);
 		}
-		public abstract System.Type ResolveUri(string uri, out bool stop);
+		public abstract Type ResolveUri(string uri, out bool stop);
 	}
 	public class LoadPrecompiledLibraries : LoadLibraries  {
 		public override string UriName { get { return "pre-compiled libraries"; } }
-		public override System.Type ResolveUri(string uri, out bool stop) {
+		public override Type ResolveUri(string uri, out bool stop) {
 			stop = false;
 			var base_name = uri.Substring(4).Replace('/', '.');
 			var type_name = "Flabbergast.Library." + base_name;

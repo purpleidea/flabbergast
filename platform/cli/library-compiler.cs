@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+
 namespace Flabbergast {
 public interface CodeRegion {
 	string PrettyName { get; }
@@ -21,7 +21,7 @@ public class ConsoleCollector : ErrorCollector {
 		if (existing_type == 0) {
 			Console.Error.WriteLine("{0}:{1}:{2}-{3}:{4}: No possible type for {5}. Expression should have types: {6}.", where.FileName, where.StartRow, where.StartColumn, where.EndRow, where.EndColumn, where.PrettyName, new_type);
 		} else {
-			Console.Error.WriteLine("{0}:{1}:{2}-{3}:{4}: Conflicting types for {5}: {6} versus {6}.", where.FileName, where.StartRow, where.StartColumn, where.EndRow, where.EndColumn, where.PrettyName, new_type, existing_type);
+			Console.Error.WriteLine("{0}:{1}:{2}-{3}:{4}: Conflicting types for {5}: {6} versus {7}.", where.FileName, where.StartRow, where.StartColumn, where.EndRow, where.EndColumn, where.PrettyName, new_type, existing_type);
 		}
 	}
 	public void ReportLookupTypeError(CodeRegion environment, string name, Type new_type, Type existing_type) {

@@ -5,11 +5,11 @@ using System.Reflection;
 using System.Reflection.Emit;
 
 namespace Flabbergast {
-	public class DynamicallyCompiledLibraries : LoadLibraries {
+	public sealed class DynamicallyCompiledLibraries : LoadLibraries {
 		public override string UriName { get { return "dynamically compiled libraries"; } }
-		private CompilationUnit unit;
-		private ErrorCollector collector;
-		private Dictionary<string, System.Type> cache = new Dictionary<string, System.Type>();
+		private readonly CompilationUnit unit;
+		private readonly ErrorCollector collector;
+		private readonly Dictionary<string, System.Type> cache = new Dictionary<string, System.Type>();
 
 		public DynamicallyCompiledLibraries(ErrorCollector collector) {
 			this.collector = collector;

@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Flabbergast {
 
@@ -25,9 +23,9 @@ public class MergeIterator {
 		private set;
 	}
 
-	private SortedDictionary<string, int> dispatchers = new SortedDictionary<string, int>();
-	private int exit_dispatcher;
-	private IEnumerator<KeyValuePair<string, int>> enumerator = null;
+	private readonly SortedDictionary<string, int> dispatchers = new SortedDictionary<string, int>();
+	private readonly int exit_dispatcher;
+	private IEnumerator<KeyValuePair<string, int>> enumerator;
 
 	public MergeIterator(IAttributeNames[] inputs, int default_dispatcher, int exit_dispatcher) {
 		this.exit_dispatcher = exit_dispatcher;

@@ -32,20 +32,20 @@ public class CompilationUnit {
 	/**
 	 * For generating unique class names.
 	 */
-	private System.Runtime.Serialization.ObjectIDGenerator id_gen = new System.Runtime.Serialization.ObjectIDGenerator();
+	private readonly System.Runtime.Serialization.ObjectIDGenerator id_gen = new System.Runtime.Serialization.ObjectIDGenerator();
 	/**
 	 * Functions and override functions we have generated before.
 	 *
 	 * Since the surrounding syntax cannot affect a function, we cache the
 	 * functions to avoid regenerating them.
 	 */
-	private Dictionary<string, MethodInfo> functions = new Dictionary<string, MethodInfo>();
+	private readonly Dictionary<string, MethodInfo> functions = new Dictionary<string, MethodInfo>();
 
 	public static readonly Guid Vendor = new Guid("36bc9776-67a2-4e40-9532-f55c96f3ee35");
 	public static readonly Guid Language = new Guid("2710c476-c308-48c8-a624-69905afce39e");
 
 	public static void MakeDebuggable(AssemblyBuilder assembly_builder) {
-		var ctor = typeof(System.Diagnostics.DebuggableAttribute).GetConstructor(new System.Type[] { typeof(System.Diagnostics.DebuggableAttribute.DebuggingModes) });
+		var ctor = typeof(System.Diagnostics.DebuggableAttribute).GetConstructor(new[] { typeof(System.Diagnostics.DebuggableAttribute.DebuggingModes) });
 		var builder = new CustomAttributeBuilder(ctor, new object[] { System.Diagnostics.DebuggableAttribute.DebuggingModes.Default });
 		assembly_builder.SetCustomAttribute(builder);
 	}
@@ -116,7 +116,7 @@ internal class Generator {
 	 * Generate code for an item during a fold operation, using an initial value
 	 * and passing the output to a result block.
 	 */
-	public delegate void FoldBlock<T, R>(int index, T item, R left, ParameterisedBlock<R> result);
+	public delegate void FoldBlock<in T, R>(int index, T item, R left, ParameterisedBlock<R> result);
 	/**
 	 * Generate code given a single input.
 	 */
@@ -173,36 +173,36 @@ internal class Generator {
 	/**
 	 * A reference count to control mutual exclusion.
 	 */
-	private FieldInfo interlock_field;
+	private readonly FieldInfo interlock_field;
 	/**
 	 * The field containing the task master.
 	 */
-	private FieldInfo task_master;
+	private readonly FieldInfo task_master;
 	/**
 	 * The labels in the code where the function may enter into a particular
 	 * state. The index is the state number.
 	 */
-	private List<MethodBuilder> entry_points = new List<MethodBuilder>();
+	private readonly List<MethodBuilder> entry_points = new List<MethodBuilder>();
 	/**
 	 * A counter for producing unique result consumers names.
 	 */
-	private int result_consumer = 0;
+	private int result_consumer;
 	/**
 	 * The collection of external URIs needed by this computation and where they are stored.
 	 */
-	private Dictionary<string, FieldValue> externals = new Dictionary<string, FieldValue>();
-	private Dictionary<string, bool> owner_externals;
+	private readonly Dictionary<string, FieldValue> externals = new Dictionary<string, FieldValue>();
+	private readonly Dictionary<string, bool> owner_externals;
 	/**
 	 * The namespace in which all the child types will live.
 	 */
-	private string root_prefix;
+	private readonly string root_prefix;
 
 	/**
 	 * The number of fields holding temporary variables that cross sleep boundaries.
 	 */
-	private int num_fields = 0;
+	private int num_fields;
 
-	private AstNode node;
+	private readonly AstNode node;
 
 	private CodeRegion last_node;
 
@@ -221,7 +221,7 @@ internal class Generator {
 		StateField = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
 		interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
 		task_master = TypeBuilder.DefineField("task_master", typeof(TaskMaster), FieldAttributes.Private);
-		var ctor = type_builder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new System.Type[] { typeof(TaskMaster) });
+		var ctor = type_builder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new[] { typeof(TaskMaster) });
 		var ctor_builder = ctor.GetILGenerator();
 		ctor_builder.Emit(OpCodes.Ldarg_0);
 		ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
@@ -254,8 +254,8 @@ internal class Generator {
 		InitialContext = new FieldValue(TypeBuilder.DefineField("context", typeof(Context), FieldAttributes.Private));
 		InitialSelfFrame = new FieldValue(TypeBuilder.DefineField("self", typeof(Frame), FieldAttributes.Private));
 		InitialContainerFrame = new FieldValue(TypeBuilder.DefineField("container", typeof(Frame), FieldAttributes.Private));
-		var construct_params = new System.Type[] { typeof(TaskMaster), typeof(SourceReference), typeof(Context), typeof(Frame), typeof(Frame) };
-		var initial_information = new FieldInfo[] { task_master, InitialSourceReference.Field, InitialContext.Field, InitialSelfFrame.Field, InitialContainerFrame.Field };
+		var construct_params = new[] { typeof(TaskMaster), typeof(SourceReference), typeof(Context), typeof(Frame), typeof(Frame) };
+		var initial_information = new[] { task_master, InitialSourceReference.Field, InitialContext.Field, InitialSelfFrame.Field, InitialContainerFrame.Field };
 
 		// Create a constructor the takes all the state information provided by the
 		// caller and stores it in appropriate fields.
@@ -294,7 +294,7 @@ internal class Generator {
 			init_builder.Emit(OpCodes.Ldarg_0);
 			init_builder.Emit(OpCodes.Ldarg_1);
 			init_builder.Emit(OpCodes.Ldstr, "Cannot perform override. No value in source tuple to override!");
-			init_builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
+			init_builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new[] { typeof(SourceReference), typeof(string) }));
 			init_builder.Emit(OpCodes.Ldnull);
 			init_builder.Emit(OpCodes.Ret);
 			init_builder.MarkLabel(has_instance);
@@ -328,8 +328,8 @@ internal class Generator {
 			Builder.Emit(OpCodes.Ldfld, original_computation);
 			Builder.Emit(OpCodes.Dup);
 			GenerateConsumeResult(InitialOriginal, false);
-			Builder.Emit(OpCodes.Callvirt, typeof(Computation).GetMethod("Notify", new System.Type[] { typeof(ConsumeResult) }));
-			Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new System.Type[] { typeof(Computation) }));
+			Builder.Emit(OpCodes.Callvirt, typeof(Computation).GetMethod("Notify", new[] { typeof(ConsumeResult) }));
+			Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new[] { typeof(Computation) }));
 			Builder.Emit(OpCodes.Ldc_I4_0);
 			Builder.Emit(OpCodes.Ret);
 			MarkState(state);
@@ -358,11 +358,11 @@ internal class Generator {
 	}
 	public LoadableValue Compare(LoadableValue left, LoadableValue right, LoadableValue source_reference) {
 		if (left.BackingType == typeof(object) || right.BackingType == typeof(object)) {
-			throw new System.InvalidOperationException(System.String.Format("Can't compare values of type {0} and {1}.", left.BackingType, right.BackingType));
+			throw new InvalidOperationException(String.Format("Can't compare values of type {0} and {1}.", left.BackingType, right.BackingType));
 		}
 		if (left.BackingType != right.BackingType) {
-			if (Generator.IsNumeric(left.BackingType) && Generator.IsNumeric(right.BackingType)) {
-				return Compare(new UpgradeValue(left), new UpgradeValue(right), source_reference);
+			if (IsNumeric(left.BackingType) && IsNumeric(right.BackingType)) {
+				return new CompareValue(new UpgradeValue(left), new UpgradeValue(right));
 			} else {
 				EmitTypeError(source_reference, "Cannot compare value of type {0} and type {1}.", left, right);
 				return null;
@@ -373,9 +373,9 @@ internal class Generator {
 	public void ConditionalFlow(ParameterisedBlock<ParameterisedBlock<LoadableValue>> conditional_part, ParameterisedBlock<ParameterisedBlock<LoadableValue>> true_part, ParameterisedBlock<ParameterisedBlock<LoadableValue>> false_part, ParameterisedBlock<LoadableValue> result_block) {
 		var true_state = DefineState();
 		var else_state = DefineState();
-		conditional_part((condition) => {
+		conditional_part(condition => {
 			if (!typeof(bool).IsAssignableFrom(condition.BackingType))
-				throw new System.InvalidOperationException(System.String.Format("Use of non-Boolean type {0} in conditional.", condition.BackingType));
+				throw new InvalidOperationException(String.Format("Use of non-Boolean type {0} in conditional.", condition.BackingType));
 			condition.Load(this);
 			var else_label = Builder.DefineLabel();
 			Builder.Emit(OpCodes.Brfalse, else_label);
@@ -385,7 +385,7 @@ internal class Generator {
 		});
 
 		var type_dispatch = new Dictionary<System.Type, Tuple<int, FieldValue>>();
-		ParameterisedBlock<LoadableValue> end_handler = (result) => {
+		ParameterisedBlock<LoadableValue> end_handler = result => {
 			if (!type_dispatch.ContainsKey(result.BackingType)) {
 				type_dispatch[result.BackingType] = new Tuple<int,FieldValue>(DefineState(), MakeField("if_result", result.BackingType));
 			}
@@ -436,7 +436,7 @@ internal class Generator {
 	public void DecrementInterlock(ILGenerator builder) {
 		builder.Emit(OpCodes.Ldarg_0);
 		builder.Emit(OpCodes.Ldflda, interlock_field);
-		builder.Emit(OpCodes.Call, typeof(System.Threading.Interlocked).GetMethod("Decrement", new System.Type[] { typeof(int).MakeByRefType() }));
+		builder.Emit(OpCodes.Call, typeof(System.Threading.Interlocked).GetMethod("Decrement", new[] { typeof(int).MakeByRefType() }));
 	}
 	/**
 	 * Generate a runtime dispatch that checks each of the provided types.
@@ -496,10 +496,10 @@ internal class Generator {
 			if (item.BackingType == typeof(object)) {
 				item.Load(Builder);
 				Builder.Emit(OpCodes.Call, typeof(object).GetMethod("GetType"));
-				Builder.Emit(OpCodes.Call, typeof(Stringish).GetMethod("HideImplementation", new System.Type[] { typeof(System.Type) }));
+				Builder.Emit(OpCodes.Call, typeof(Stringish).GetMethod("HideImplementation", new[] { typeof(System.Type) }));
 			} else {
 				Builder.Emit(OpCodes.Ldtoken, Stringish.HideImplementation(item.BackingType));
-				Builder.Emit(OpCodes.Call, typeof(System.Type).GetMethod("GetTypeFromHandle", new System.Type[] { typeof(RuntimeTypeHandle) }));
+				Builder.Emit(OpCodes.Call, typeof(System.Type).GetMethod("GetTypeFromHandle", new[] { typeof(RuntimeTypeHandle) }));
 			}
 		}
 		var signature = new System.Type[data.Length + 1];
@@ -508,7 +508,7 @@ internal class Generator {
 			signature[it + 1] =  typeof(object);
 		}
 		Builder.Emit(OpCodes.Call, typeof(String).GetMethod("Format", signature));
-		Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
+		Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new [] { typeof(SourceReference), typeof(string) }));
 		Builder.Emit(OpCodes.Ldc_I4_0);
 		Builder.Emit(OpCodes.Ret);
 	}
@@ -521,7 +521,7 @@ internal class Generator {
 	}
 	private void FoldHelper<T, R>(List<T> list, FoldBlock<T, R> expand, ParameterisedBlock<R> result, R curr_result, int it) {
 		if (it < list.Count) {
-			expand(it, list[it], curr_result, (next_result) => FoldHelper(list, expand, result, next_result, it + 1));
+			expand(it, list[it], curr_result, next_result => FoldHelper(list, expand, result, next_result, it + 1));
 		} else {
 			result(curr_result);
 		}
@@ -530,7 +530,7 @@ internal class Generator {
 	 * Generate a function to receive a value and request continued computation from the task master.
 	 */
 	public void GenerateConsumeResult(FieldValue result_target, bool interlocked, ILGenerator builder = null) {
-		var method = TypeBuilder.DefineMethod("ConsumeResult" + result_consumer++, MethodAttributes.Public, typeof(void), new System.Type[] { typeof(object) });
+		var method = TypeBuilder.DefineMethod("ConsumeResult" + result_consumer++, MethodAttributes.Public, typeof(void), new[] { typeof(object) });
 		var consume_builder = method.GetILGenerator();
 
 		consume_builder.Emit(OpCodes.Ldarg_0);
@@ -543,7 +543,7 @@ internal class Generator {
 		}
 		LoadTaskMaster(consume_builder);
 		consume_builder.Emit(OpCodes.Ldarg_0);
-		consume_builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new System.Type[] { typeof(Computation) }));
+		consume_builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new[] { typeof(Computation) }));
 		consume_builder.MarkLabel(return_label);
 		consume_builder.Emit(OpCodes.Ret);
 
@@ -577,7 +577,7 @@ internal class Generator {
 				LoadTaskMaster();
 				Builder.Emit(OpCodes.Ldstr, entry.Key);
 				GenerateConsumeResult(entry.Value, true);
-				Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("GetExternal", new System.Type[] { typeof(string), typeof(ConsumeResult) }));
+				Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("GetExternal", new[] { typeof(string), typeof(ConsumeResult) }));
 			}
 			StopInterlock(1);
 		} else {
@@ -629,8 +629,8 @@ internal class Generator {
 		}
 		return false;
 	}
-	public LoadableValue InvokeNative(LoadableValue source_reference, List<System.Reflection.MethodInfo> methods, LoadableValue[] arguments) {
-		System.Reflection.MethodInfo best_method = null;
+	public LoadableValue InvokeNative(LoadableValue source_reference, List<MethodInfo> methods, LoadableValue[] arguments) {
+		MethodInfo best_method = null;
 		var best_penalty = int.MaxValue;
 		foreach (var method in methods) {
 			var penalty = 0;
@@ -649,7 +649,7 @@ internal class Generator {
 		if (best_method == null) {
 			LoadTaskMaster();
 			source_reference.Load(Builder);
-			Builder.Emit(OpCodes.Ldstr, String.Format("Cannot find overloaded matching method for {0}.{1}({3}).", methods[0].Name, methods[0].ReflectedType.Name, String.Join(",", arguments.Select(a => a.BackingType.Name)))); 
+			Builder.Emit(OpCodes.Ldstr, String.Format("Cannot find overloaded matching method for {0}.{1}({2}).", methods[0].Name, methods[0].ReflectedType.Name, String.Join(",", arguments.Select(a => a.BackingType.Name)))); 
 			Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
 			Builder.Emit(OpCodes.Ldc_I4_0);
 			Builder.Emit(OpCodes.Ret);
@@ -728,7 +728,7 @@ internal class Generator {
 	 */
 	public void LoadTaskMaster(ILGenerator builder) {
 		builder.Emit(OpCodes.Ldarg_0);
-		builder.Emit(System.Reflection.Emit.OpCodes.Ldfld, task_master);
+		builder.Emit(OpCodes.Ldfld, task_master);
 	}
 	/**
 	 * Create an anonymous field with the specified type.
@@ -792,7 +792,7 @@ internal class Generator {
 		Builder.Emit(OpCodes.Call, typeof(long).GetMethod("ToString", new System.Type[] { }));
 		iterator.Load(Builder);
 		Builder.Emit(OpCodes.Call, typeof(MergeIterator).GetMethod("get_Current"));
-		Builder.Emit(OpCodes.Call, typeof(String).GetMethod("Format", new System.Type[] { typeof(string), typeof(object), typeof(object) }));
+		Builder.Emit(OpCodes.Call, typeof(String).GetMethod("Format", new[] { typeof(string), typeof(object), typeof(object) }));
 		PushSourceReferenceHelper(node, original_reference);
 		Builder.Emit(OpCodes.Stfld, reference.Field);
 		return reference;
@@ -822,7 +822,7 @@ internal class Generator {
 	public void Slot(LoadableValue target) {
 		LoadTaskMaster();
 		target.Load(Builder);
-		Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new System.Type[] { typeof(Computation) }));
+		Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new[] { typeof(Computation) }));
 	}
 	/**
 	 * Slot a computation for execution and stop execution.
@@ -876,9 +876,9 @@ internal class Generator {
 			Builder.Emit(OpCodes.Call, typeof(Frame).GetMethod("Slot"));
 			Builder.MarkLabel(end);
 		}
-		CopyField(result, typeof(Computation).GetField("result", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));
+		CopyField(result, typeof(Computation).GetField("result", BindingFlags.NonPublic | BindingFlags.Instance));
 		Builder.Emit(OpCodes.Ldc_I4_1);
-		Builder.Emit(System.Reflection.Emit.OpCodes.Ret);
+		Builder.Emit(OpCodes.Ret);
 	}
 	private LoadableValue ToStringishHelper(LoadableValue source) {
 		if (source.BackingType == typeof(bool)) {
@@ -898,7 +898,7 @@ internal class Generator {
 			var end = Builder.DefineLabel();
 			Builder.Emit(OpCodes.Ldarg_0);
 			source.Load(Builder);
-			Builder.Emit(OpCodes.Call, typeof(Stringish).GetMethod("FromObject", new System.Type[] { typeof(object) }));
+			Builder.Emit(OpCodes.Call, typeof(Stringish).GetMethod("FromObject", new[] { typeof(object) }));
 			Builder.Emit(OpCodes.Stfld, field.Field);
 			field.Load(Builder);
 			Builder.Emit(OpCodes.Brtrue, end);
@@ -912,8 +912,8 @@ internal class Generator {
 	}
 }
 internal class LookupCache {
-	private LookupCache parent;
-	private Dictionary<NameInfo, LoadableValue> defined_values = new Dictionary<NameInfo, LoadableValue>();
+	private readonly LookupCache parent;
+	private readonly Dictionary<NameInfo, LoadableValue> defined_values = new Dictionary<NameInfo, LoadableValue>();
 
 	public LookupCache(LookupCache parent) {
 		this.parent = parent;
@@ -935,7 +935,7 @@ internal class LookupCache {
 		if (defined_values.ContainsKey(name_info)) {
 			return true;
 		}
-		return parent == null ? false : parent.Has(name_info);
+		return parent != null && parent.Has(name_info);
 	}
 }
 internal abstract class LoadableValue {
@@ -949,7 +949,7 @@ internal abstract class LoadableValue {
 }
 internal class NullValue : LoadableValue {
 	public override System.Type BackingType { get { return backing; } }
-	private System.Type backing;
+	private readonly System.Type backing;
 	public NullValue(System.Type backing) {
 		this.backing = backing;
 	}
@@ -969,8 +969,8 @@ internal class FieldValue : LoadableValue {
 	}
 }
 internal class AutoUnboxValue : LoadableValue {
-	private System.Type unbox_type;
-	private LoadableValue backing_value;
+	private readonly System.Type unbox_type;
+	private readonly LoadableValue backing_value;
 	public override System.Type BackingType { get { return unbox_type; } }
 	public AutoUnboxValue(LoadableValue backing_value, System.Type unbox_type) {
 		this.backing_value = backing_value;
@@ -982,7 +982,7 @@ internal class AutoUnboxValue : LoadableValue {
 	}
 }
 internal class BoolConstant : LoadableValue {
-	private bool number;
+	private readonly bool number;
 	public override System.Type BackingType { get { return typeof(bool); } }
 	public BoolConstant(bool number) {
 		this.number = number;
@@ -992,7 +992,7 @@ internal class BoolConstant : LoadableValue {
 	}
 }
 internal class FloatConstant : LoadableValue {
-	private double number;
+	private readonly double number;
 	public readonly static FloatConstant NAN = new FloatConstant(Double.NaN);
 	public readonly static FloatConstant INFINITY = new FloatConstant(Double.PositiveInfinity);
 	public FloatConstant(double number) {
@@ -1004,7 +1004,7 @@ internal class FloatConstant : LoadableValue {
 	}
 }
 internal class IntConstant : LoadableValue {
-	private long number;
+	private readonly long number;
 	public IntConstant(long number) {
 		this.number = number;
 	}
@@ -1014,7 +1014,7 @@ internal class IntConstant : LoadableValue {
 	}
 }
 internal class StringishValue : LoadableValue {
-	private string str;
+	private readonly string str;
 	public StringishValue(string str) {
 		this.str = str;
 	}
@@ -1033,8 +1033,8 @@ internal class UnitConstant : LoadableValue {
 	}
 }
 internal class DelegateValue : LoadableValue {
-	private System.Type backing_type;
-	private MethodInfo method;
+	private readonly System.Type backing_type;
+	private readonly MethodInfo method;
 	public DelegateValue(MethodInfo method, System.Type backing_type) {
 		this.method = method;
 		this.backing_type = backing_type;
@@ -1047,8 +1047,8 @@ internal class DelegateValue : LoadableValue {
 	}
 }
 internal class MethodValue : LoadableValue {
-	private LoadableValue instance;
-	private MethodInfo method;
+	private readonly LoadableValue instance;
+	private readonly MethodInfo method;
 	public MethodValue(LoadableValue instance, MethodInfo method) {
 		this.method = method;
 		this.instance = instance;
@@ -1064,7 +1064,7 @@ internal class MethodValue : LoadableValue {
 	}
 }
 internal class UpgradeValue : LoadableValue {
-	private LoadableValue original;
+	private readonly LoadableValue original;
 	public UpgradeValue(LoadableValue original) {
 		this.original = original;
 	}
@@ -1077,8 +1077,8 @@ internal class UpgradeValue : LoadableValue {
 	}
 }
 internal class CompareValue : LoadableValue {
-	private LoadableValue left;
-	private LoadableValue right;
+	private readonly LoadableValue left;
+	private readonly LoadableValue right;
 	public override System.Type BackingType { get { return typeof(long); } }
 	public CompareValue(LoadableValue left, LoadableValue right) {
 		this.left = left;
@@ -1097,17 +1097,17 @@ internal class CompareValue : LoadableValue {
 				generator.Emit(OpCodes.Ldloca, local);
 			}
 			right.Load(generator);
-			generator.Emit(OpCodes.Call, left.BackingType.GetMethod("CompareTo", new System.Type[] { left.BackingType }));
+			generator.Emit(OpCodes.Call, left.BackingType.GetMethod("CompareTo", new[] { left.BackingType }));
 			generator.Emit(OpCodes.Ldc_I4_1);
-			generator.Emit(OpCodes.Call, typeof(Math).GetMethod("Min", new System.Type[] { typeof(int), typeof(int) }));
+			generator.Emit(OpCodes.Call, typeof(Math).GetMethod("Min", new[] { typeof(int), typeof(int) }));
 			generator.Emit(OpCodes.Ldc_I4_M1);
-			generator.Emit(OpCodes.Call, typeof(Math).GetMethod("Max", new System.Type[] { typeof(int), typeof(int) }));
+			generator.Emit(OpCodes.Call, typeof(Math).GetMethod("Max", new[] { typeof(int), typeof(int) }));
 		}
 		generator.Emit(OpCodes.Conv_I8);
 	}
 }
 internal class BooleanStringish : LoadableValue {
-	private LoadableValue source;
+	private readonly LoadableValue source;
 	public override System.Type BackingType { get { return typeof(Stringish); } }
 	public BooleanStringish(LoadableValue source) {
 		this.source = source;
@@ -1119,7 +1119,7 @@ internal class BooleanStringish : LoadableValue {
 	}
 }
 internal class NumericStringish : LoadableValue {
-	private LoadableValue source;
+	private readonly LoadableValue source;
 	public override System.Type BackingType { get { return typeof(Stringish); } }
 	public NumericStringish(LoadableValue source) {
 		this.source = source;
@@ -1134,8 +1134,8 @@ internal class NumericStringish : LoadableValue {
 	}
 }
 internal class TypeCheckValue : LoadableValue {
-	System.Type type;
-	LoadableValue instance;
+    readonly System.Type type;
+    readonly LoadableValue instance;
 	public TypeCheckValue(System.Type type, LoadableValue instance) {
 		this.type = type;
 		this.instance = instance;
@@ -1150,8 +1150,9 @@ internal class TypeCheckValue : LoadableValue {
 }
 internal class MatchedFrameValue : LoadableValue {
 	public delegate void GenerationBlock(ILGenerator g);
-	int index;
-	LoadableValue array;
+
+    readonly int index;
+    readonly LoadableValue array;
 	public MatchedFrameValue(int index, LoadableValue array) {
 		this.index = index;
 		this.array = array;
@@ -1166,8 +1167,9 @@ internal class MatchedFrameValue : LoadableValue {
 }
 internal class GeneratedValue : LoadableValue {
 	public delegate void GenerationBlock(ILGenerator g);
-	System.Type type;
-	GenerationBlock block;
+
+    readonly System.Type type;
+    readonly GenerationBlock block;
 	public GeneratedValue(System.Type type, GenerationBlock block) {
 		this.type = type;
 		this.block = block;
@@ -1178,9 +1180,9 @@ internal class GeneratedValue : LoadableValue {
 	}
 }
 internal class RevCons<T> {
-	private T head;
-	private RevCons<T> tail;
-	private int index;
+	private readonly T head;
+	private readonly RevCons<T> tail;
+	private readonly int index;
 	internal RevCons(T item, RevCons<T> tail) {
 		head = item;
 		this.tail = tail;

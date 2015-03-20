@@ -21,7 +21,7 @@ internal abstract class AstTypeableNode : AstNode {
 	internal abstract Environment PropagateEnvironment(ErrorCollector collector, List<AstTypeableNode> queue, Environment environment, ref bool success);
 	internal abstract void MakeTypeDemands(ErrorCollector collector, ref bool _success);
 	public bool Analyse(ErrorCollector collector) {
-		var environment = new Environment (FileName, StartRow, StartColumn, EndRow, EndColumn, null, false);
+		var environment = new Environment (FileName, StartRow, StartColumn, EndRow, EndColumn);
 		var queue = new List<AstTypeableNode>();
 		var success = true;
 		PropagateEnvironment(collector, queue, environment, ref success);
@@ -40,7 +40,7 @@ internal abstract class AstTypeableNode : AstNode {
 		}
 		return success;
 	}
-	internal static void ReflectMethod(ErrorCollector collector, AstNode where, string type_name, string method_name, int arity, List<System.Reflection.MethodInfo> methods, ref bool success) {
+	internal static void ReflectMethod(ErrorCollector collector, AstNode where, string type_name, string method_name, int arity, List<MethodInfo> methods, ref bool success) {
 		var reflected_type = System.Type.GetType(type_name, false);
 		if (reflected_type == null) {
 			success = false;
@@ -58,7 +58,7 @@ internal abstract class AstTypeableNode : AstNode {
 			}
 		}
 	}
-	internal static bool AllInParameteres (System.Reflection.MethodInfo method) {
+	internal static bool AllInParameteres (MethodInfo method) {
 		foreach(var parameter in method.GetParameters()) {
 			if (parameter.IsOut) {
 				return false;
@@ -66,7 +66,7 @@ internal abstract class AstTypeableNode : AstNode {
 		}
 		return true;
 	}
-	internal static Type CheckReflectedMethod(ErrorCollector collector, AstNode where, List<System.Reflection.MethodInfo> methods, List<expression> arguments, Type return_type, ref bool success) {
+	internal static Type CheckReflectedMethod(ErrorCollector collector, AstNode where, List<MethodInfo> methods, List<expression> arguments, Type return_type, ref bool success) {
 		/* If there are no candidate methods, don't bother checking the types. */
 		if (methods.Count == 0)
 			return 0;
@@ -76,11 +76,11 @@ internal abstract class AstTypeableNode : AstNode {
 			select method;
 
 		Type candiate_return = 0;
-		foreach (var method in candidate_methods.Count() == 0 ? methods : candidate_methods) {
+		foreach (var method in !candidate_methods.Any() ? methods : candidate_methods) {
 			candiate_return |= TypeFromClrType(method.ReturnType);
 		}
 		/* Produce an error for the union of all the types. */
-		if (candidate_methods.Count() == 0) {
+		if (!candidate_methods.Any()) {
 			collector.ReportExpressionTypeError(where, return_type, candiate_return);
 			return 0;
 		}
@@ -209,15 +209,15 @@ internal abstract class NameInfo {
 		generator.Builder.Emit(OpCodes.Newobj, typeof(Lookup).GetConstructors()[0]);
 		generator.Builder.Emit(OpCodes.Dup);
 		generator.GenerateConsumeResult(lookup_result, true);
-		generator.Builder.Emit(OpCodes.Call, typeof(Lookup).GetMethod("Notify", new System.Type[] { typeof(ConsumeResult) }));
-		generator.Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new System.Type[] { typeof(Computation) }));
+		generator.Builder.Emit(OpCodes.Call, typeof(Lookup).GetMethod("Notify", new[] { typeof(ConsumeResult) }));
+		generator.Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new[] { typeof(Computation) }));
 		return lookup_result;
 	}
 }
 internal class OpenNameInfo : NameInfo {
-	private Environment Environment;
+	private readonly Environment Environment;
 	protected Type RealType = AnyType;
-	private bool must_unbox = false;
+	private bool must_unbox;
 	public OpenNameInfo(Environment environment, string name) {
 		Environment = environment;
 		Name = name;
@@ -243,9 +243,9 @@ internal class OpenNameInfo : NameInfo {
 	}
 }
 internal class OverrideNameInfo : RestrictableType {
-	private Environment Environment;
+	private readonly Environment Environment;
 	protected Type RealType = AnyType;
-	private bool must_unbox = false;
+	private bool must_unbox;
 	public override Type RestrictedType { get { return RealType; } }
 	public override bool MustUnbox { get { return must_unbox; } }
 	public OverrideNameInfo(Environment environment, string name) {
@@ -270,9 +270,7 @@ internal class OverrideNameInfo : RestrictableType {
 	}
 }
 internal class JunkInfo : NameInfo {
-	public JunkInfo() {
-	}
-	public override Type EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
+    public override Type EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
 		return AnyType;
 	}
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
@@ -283,9 +281,9 @@ internal class JunkInfo : NameInfo {
 	}
 }
 internal class BoundNameInfo : RestrictableType {
-	private Environment Environment;
-	ITypeableElement Target;
-	private bool must_unbox = false;
+	private readonly Environment Environment;
+    readonly ITypeableElement Target;
+	private bool must_unbox;
 	public override Type RestrictedType { get { return restricted_type; } }
 	public override bool MustUnbox { get { return must_unbox; } }
 	private Type restricted_type = AnyType;
@@ -310,11 +308,11 @@ internal class BoundNameInfo : RestrictableType {
 	}
 }
 internal class CopyFromParentInfo : NameInfo {
-	Environment Environment;
-	NameInfo Source;
+    readonly Environment Environment;
+    readonly NameInfo Source;
 	Type Mask = AnyType;
-	private bool must_unbox = false;
-	bool ForceBack;
+	private bool must_unbox;
+    readonly bool ForceBack;
 
 	public CopyFromParentInfo(Environment environment, string name, NameInfo source, bool force_back) {
 		Environment = environment;
@@ -395,9 +393,9 @@ internal class LoadableCache {
 	}
 }
 internal class Environment : CodeRegion {
-	Environment Parent;
-	Dictionary<string, NameInfo> Children = new Dictionary<string, NameInfo>();
-	Dictionary<AstNode, Tuple<Type, bool>> Intrinsics = new Dictionary<AstNode, Tuple<Type, bool>>();
+    readonly Environment Parent;
+    readonly Dictionary<string, NameInfo> Children = new Dictionary<string, NameInfo>();
+    readonly Dictionary<AstNode, Tuple<Type, bool>> Intrinsics = new Dictionary<AstNode, Tuple<Type, bool>>();
 	public string PrettyName { get { return "region of lookups"; } }
 	public string FileName { get; private set; }
 	public int StartRow { get; private set; }
@@ -406,8 +404,8 @@ internal class Environment : CodeRegion {
 	public int EndColumn { get; private set; }
 	public int Priority { get; private set; }
 	public bool TopLevel { get { return Parent == null ? top_level : Parent.TopLevel; } }
-	bool top_level;
-	bool ForceBack;
+    readonly bool top_level;
+    readonly bool ForceBack;
 	bool combinatorial_explosion;
 
 	public Environment(string filename, int start_row, int start_column, int end_row, int end_column, Environment parent = null, bool force_back = false, bool top_level = false) {
@@ -458,11 +456,11 @@ internal class Environment : CodeRegion {
 				generator.Builder.Emit(OpCodes.Dup);
 				generator.Builder.Emit(OpCodes.Ldstr, entry.Item1);
 				generator.LoadReboxed(entry.Item2.Value, typeof(object));
-				generator.Builder.Emit(OpCodes.Call, typeof(Frame).GetMethod("set_Item", new System.Type[] { typeof(string), typeof(object) }));
+				generator.Builder.Emit(OpCodes.Call, typeof(Frame).GetMethod("set_Item", new[] { typeof(string), typeof(object) }));
 				lookup_results.Add(entry.Item2);
 			}
 			context.Load(generator);
-			generator.Builder.Emit(OpCodes.Call, typeof(Context).GetMethod("Prepend", new System.Type[] { typeof(Frame), typeof(Context) }));
+			generator.Builder.Emit(OpCodes.Call, typeof(Context).GetMethod("Prepend", new[] { typeof(Frame), typeof(Context) }));
 			generator.Builder.Emit(OpCodes.Stfld, child_context.Field);
 			// Promote the context with the specials to proper status
 			context = child_context;
@@ -489,23 +487,16 @@ internal class Environment : CodeRegion {
 			generator.LoadTaskMaster();
 			source_reference.Load(generator);
 			generator.Builder.Emit(OpCodes.Ldstr, narrow_error);
-			generator.Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
+			generator.Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new[] { typeof(SourceReference), typeof(string) }));
 			generator.Builder.Emit(OpCodes.Ldc_I4_0);
 			generator.Builder.Emit(OpCodes.Ret);
 			return;
 		}
-		var load_count = 0;
-		foreach (var info in all_children) {
-			load_count += info.NeedsLoad(current) ? 1 : 0;
-		}
-		if (load_count > 0) {
+		var load_count = all_children.Sum(info => info.NeedsLoad(current) ? 1 : 0);
+	    if (load_count > 0) {
 			generator.StartInterlock(load_count);
-			foreach (var info in all_children) {
-				if (info.NeedsLoad(current)) {
-					lookup_results.Add(info.Load(generator, source_reference, context));
-				}
-			}
-			var state = generator.DefineState();
+	        lookup_results.AddRange(from info in all_children where info.NeedsLoad(current) select info.Load(generator, source_reference, context));
+	        var state = generator.DefineState();
 			generator.SetState(state);
 			generator.DecrementInterlock(generator.Builder);
 			var end_label = generator.Builder.DefineLabel();
@@ -562,7 +553,7 @@ internal class Environment : CodeRegion {
 		}
 	}
 	public NameInfo Lookup(ErrorCollector collector, IEnumerable<string> names, ref bool success) {
-		IEnumerator<string> enumerator = names.GetEnumerator();
+		var enumerator = names.GetEnumerator();
 		if (!enumerator.MoveNext()) {
 			throw new ArgumentOutOfRangeException("List of names cannot be empty.");
 		}

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 
 namespace Flabbergast {
@@ -8,21 +9,21 @@ public abstract class Stringish : IComparable<Stringish> {
 	public static Stringish FromObject(object o) {
 		if (o == null)
 			return null;
-		if (typeof(Stringish).IsAssignableFrom(o.GetType())) {
-			return o as Stringish;
+		if (o is Stringish) {
+			return (Stringish) o;
 		}
-		if (typeof(long).IsAssignableFrom(o.GetType())) {
+		if (o is long) {
 			return new SimpleStringish(((long) o).ToString());
 		}
-		if (typeof(double).IsAssignableFrom(o.GetType())) {
-			return new SimpleStringish(((double) o).ToString());
+		if (o is double) {
+			return new SimpleStringish(((double) o).ToString(CultureInfo.InvariantCulture));
 		}
-		if (typeof(bool).IsAssignableFrom(o.GetType())) {
+		if (o is bool) {
 			return BOOLEANS[((bool) o) ? 1 : 0];
 		}
 		return null;
 	}
-	public static System.Type HideImplementation(System.Type t) {
+	public static Type HideImplementation(Type t) {
 		return typeof(Stringish).IsAssignableFrom(t) ? typeof(Stringish) : t;
 	}
 	public abstract long Length { get; }
@@ -33,7 +34,7 @@ public abstract class Stringish : IComparable<Stringish> {
 		}
 	}
 	public int CompareTo(Stringish other) {
-		var this_stream = this.Stream();
+		var this_stream = Stream();
 		var other_stream = other.Stream();
 		var this_offset = 0;
 		var other_offset = 0;
@@ -68,13 +69,13 @@ public abstract class Stringish : IComparable<Stringish> {
 	public abstract IEnumerator<string> Stream();
 	public override string ToString() {
 		var writer = new StringWriter();
-		this.Write(writer);
+		Write(writer);
 		return writer.ToString();
 	}
 }
 
 public class SimpleStringish : Stringish {
-	private string str;
+	private readonly string str;
 	public override long Length { get { return str.Length; } }
 	public SimpleStringish(string str) {
 		this.str = str;
@@ -85,14 +86,14 @@ public class SimpleStringish : Stringish {
 }
 
 public class ConcatStringish : Stringish {
-	private Stringish head;
-	private Stringish tail;
-	private long chars;
+	private readonly Stringish head;
+	private readonly Stringish tail;
+	private readonly long chars;
 	public override long Length { get { return chars; } }
 	public ConcatStringish(Stringish head, Stringish tail) {
 		this.head = head;
 		this.tail = tail;
-		this.chars = head.Length + tail.Length;
+		chars = head.Length + tail.Length;
 	}
 	public override IEnumerator<string> Stream() {
 		var head_enumerator = head.Stream();

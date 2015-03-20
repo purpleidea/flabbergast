@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
-using Flabbergast;
 using NDesk.Options;
 
 namespace Flabbergast {
@@ -20,14 +19,14 @@ public class Compiler {
 		try {
 			files = options.Parse (args);
 		} catch (OptionException e) {
-			Console.Write (System.AppDomain.CurrentDomain.FriendlyName + ": ");
+			Console.Write (AppDomain.CurrentDomain.FriendlyName + ": ");
 			Console.WriteLine (e.Message);
-			Console.WriteLine ("Try “" + System.AppDomain.CurrentDomain.FriendlyName + " --help” for more information.");
+			Console.WriteLine ("Try “" + AppDomain.CurrentDomain.FriendlyName + " --help” for more information.");
 			return;
 		}
 
 		if (show_help) {
-			Console.WriteLine ("Usage: " + System.AppDomain.CurrentDomain.FriendlyName + " files ...");
+			Console.WriteLine ("Usage: " + AppDomain.CurrentDomain.FriendlyName + " files ...");
 			Console.WriteLine ("Compile a Flabbergast file to native CLR.");
 			Console.WriteLine ();
 			Console.WriteLine ("Options:");
@@ -45,9 +44,8 @@ public class Compiler {
 
 			var dll_name = Path.ChangeExtension(Path.GetFileNameWithoutExtension(filename), ".dll");
 			var type_name = "Flabbergast.Library." + Path.GetDirectoryName(filename).Replace(Path.DirectorySeparatorChar, '.') + Path.GetFileNameWithoutExtension(filename);
-			var assembly_name = new AssemblyName(type_name);
-			assembly_name.CodeBase = "file://" + Path.GetDirectoryName(filename);
-			var assembly_builder = AppDomain.CurrentDomain.DefineDynamicAssembly(assembly_name, AssemblyBuilderAccess.RunAndSave);
+		    var assembly_name = new AssemblyName(type_name) {CodeBase = "file://" + Path.GetDirectoryName(filename)};
+		    var assembly_builder = AppDomain.CurrentDomain.DefineDynamicAssembly(assembly_name, AssemblyBuilderAccess.RunAndSave);
 			CompilationUnit.MakeDebuggable(assembly_builder);
 			var module_builder = assembly_builder.DefineDynamicModule(type_name, dll_name, true);
 			var unit = new CompilationUnit(module_builder, true);

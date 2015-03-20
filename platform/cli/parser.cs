@@ -96,7 +96,7 @@ public class Parser {
 		var position = new ParserPosition(this, collector);
 		if (file.ParseRule_Base(ref position, out result) && position.Finished) {
 			if (result.Analyse(collector)) {
-				return unit.CreateRootGenerator(result, type_name, (generator) => result.Generate(generator, generator.Return));
+				return unit.CreateRootGenerator(result, type_name, generator => result.Generate(generator, generator.Return));
 			}
 		} else {
 			collector.ReportParseError(FileName, Index, Row, Column, Message);
@@ -113,7 +113,7 @@ internal class ParserPosition {
 	internal int Row { get; private set; }
 	internal int Column { get; private set; }
 	internal bool Finished { get { return Index >= Parser.Input.Length; } }
-	private ErrorCollector error_collector;
+	private readonly ErrorCollector error_collector;
 	private int TraceDepth;
 	internal ParserPosition(Parser parser, ErrorCollector error_collector) {
 		Parser = parser;
@@ -135,9 +135,9 @@ internal class ParserPosition {
 			Column = memory.Column;
 			if (Parser.Trace) {
 				for (var it = 1; it < TraceDepth; it++) {
-					System.Console.Write(" ");
+					Console.Write(" ");
 				}
-				System.Console.WriteLine(Row + ":" + Column + (result == null ? " M " : " H ") + typeof(T));
+				Console.WriteLine(Row + ":" + Column + (result == null ? " M " : " H ") + typeof(T));
 				TraceDepth++;
 			}
 			return true;
@@ -157,9 +157,9 @@ internal class ParserPosition {
 			Column = memory.Column;
 			if (Parser.Trace) {
 				for (var it = 1; it < TraceDepth; it++) {
-					System.Console.Write(" ");
+					Console.Write(" ");
 				}
-				System.Console.WriteLine(Row + ":" + Column + (result == null ? " M " : " H ") + name);
+				Console.WriteLine(Row + ":" + Column + (result == null ? " M " : " H ") + name);
 				TraceDepth++;
 			}
 			return true;
@@ -190,12 +190,14 @@ internal class ParserPosition {
 		Parser.AlternateCache[start_index][name] = new Parser.Memory() { Result = result, Index = Index, Row = Row, Column = Column };
 	}
 	internal ParserPosition Clone() {
-		var child = new ParserPosition(Parser, error_collector);
-		child.Index = Index;
-		child.Row = Row;
-		child.Column = Column;
-		child.TraceDepth = TraceDepth;
-		return child;
+	    var child = new ParserPosition(Parser, error_collector)
+	    {
+	        Index = Index,
+	        Row = Row,
+	        Column = Column,
+	        TraceDepth = TraceDepth
+	    };
+	    return child;
 	}
 	/**
 	 * Consume a character from the input and return it.
@@ -256,9 +258,9 @@ internal class ParserPosition {
 		if (Parser.Trace) {
 			TraceDepth++;
 			for (var it = 1; it < TraceDepth; it++) {
-				System.Console.Write(" ");
+				Console.Write(" ");
 			}
-			System.Console.WriteLine(Row + ":" + Column + " > " + rule);
+			Console.WriteLine(Row + ":" + Column + " > " + rule);
 		}
 	}
 
@@ -271,9 +273,9 @@ internal class ParserPosition {
 		if (Parser.Trace) {
 			TraceDepth--;
 			for (var it = 1; it < TraceDepth; it++) {
-				System.Console.Write(" ");
+				Console.Write(" ");
 			}
-			System.Console.WriteLine(Row + ":" + Column + " <" + (success ? "+" : "-") + " " + rule);
+			Console.WriteLine(Row + ":" + Column + " <" + (success ? "+" : "-") + " " + rule);
 		}
 	}
 
