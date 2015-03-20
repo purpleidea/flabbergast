@@ -1,7 +1,8 @@
 package flabbergast;
 
-import java.io.IOException;
-import java.io.Writer;
+import java.util.Stack;
+
+import flabbergast.RamblingIterator.GetNext;
 
 public class ConcatStringish extends Stringish {
 	private long chars;
@@ -15,12 +16,6 @@ public class ConcatStringish extends Stringish {
 	}
 
 	@Override
-	void collect(String[] bits, int start) {
-		head.collect(bits, start);
-		tail.collect(bits, start + head.getCount());
-	}
-
-	@Override
 	int getCount() {
 		return head.getCount() + tail.getCount();
 	}
@@ -31,8 +26,8 @@ public class ConcatStringish extends Stringish {
 	}
 
 	@Override
-	public void write(Writer writer) throws IOException {
-		head.write(writer);
-		tail.write(writer);
+	public String ramblingNext(Stack<GetNext<String>> stack) {
+		stack.push(tail);
+		return head.ramblingNext(stack);
 	}
 }

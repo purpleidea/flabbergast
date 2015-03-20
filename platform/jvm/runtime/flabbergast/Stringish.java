@@ -3,8 +3,12 @@ package flabbergast;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.text.Collator;
+import java.util.Iterator;
+import java.util.Stack;
 
-public abstract class Stringish implements Comparable<Stringish> {
+public abstract class Stringish implements Comparable<Stringish>,
+		Iterable<String>, RamblingIterator.GetNext<String> {
 	public static Stringish[] BOOLEANS = new Stringish[] {
 			new SimpleStringish("False"), new SimpleStringish("True") };
 
@@ -28,25 +32,22 @@ public abstract class Stringish implements Comparable<Stringish> {
 		return Stringish.class.isAssignableFrom(t) ? Stringish.class : t;
 	}
 
-	abstract void collect(String[] bits, int start);
-
 	@Override
 	public int compareTo(Stringish other) {
-		String[] this_stream = new String[this.getCount()];
-		this.collect(this_stream, 0);
-		String[] other_stream = new String[other.getCount()];
-		other.collect(other_stream, 0);
+		Collator collator = Collator.getInstance();
+		Iterator<String> this_stream = iterator();
+		Iterator<String> other_stream = other.iterator();
 		Ptr<Integer> this_offset = new Ptr<Integer>(0);
 		Ptr<Integer> other_offset = new Ptr<Integer>(0);
-		Ptr<Integer> this_index = new Ptr<Integer>(0);
-		Ptr<Integer> other_index = new Ptr<Integer>(0);
+		Ptr<String> this_current = new Ptr<String>();
+		Ptr<String> other_current = new Ptr<String>();
 		int result = 0;
 		boolean first = true;
 		while (result == 0) {
-			boolean this_empty = updateIterator(this_stream, this_index,
-					this_offset, first);
-			boolean other_empty = updateIterator(other_stream, other_index,
-					other_offset, first);
+			boolean this_empty = updateIterator(this_stream, this_offset,
+					this_current, first);
+			boolean other_empty = updateIterator(other_stream, other_offset,
+					this_current, first);
 			first = false;
 			if (this_empty) {
 				return other_empty ? 0 : -1;
@@ -55,12 +56,10 @@ public abstract class Stringish implements Comparable<Stringish> {
 				return 1;
 			}
 			int length = Math.min(
-					this_stream[this_index.get()].length() - this_offset.get(),
-					other_stream[other_index.get()].length()
-							- other_offset.get());
-			result = this_stream[this_index.get()].regionMatches(
-					this_offset.get(), other_stream[other_index.get()],
-					other_offset.get(), length);
+					this_current.get().length() - this_offset.get(),
+					other_current.get().length() - other_offset.get());
+			result = collator.compare(this_current.get(), this_offset.get(),
+					other_current.get(), other_offset.get(), length);
 			this_offset.set(this_offset.get() + length);
 			other_offset.set(other_offset.get() + length);
 		}
@@ -70,6 +69,14 @@ public abstract class Stringish implements Comparable<Stringish> {
 	abstract int getCount();
 
 	public abstract long getLength();
+
+	@Override
+	public Iterator<String> iterator() {
+		return new RamblingIterator<String>(this);
+	}
+
+	public abstract String ramblingNext(
+			Stack<RamblingIterator.GetNext<String>> stack);
 
 	@Override
 	public String toString() {
@@ -82,18 +89,22 @@ public abstract class Stringish implements Comparable<Stringish> {
 		}
 	}
 
-	private boolean updateIterator(String[] bits, Ptr<Integer> index,
-			Ptr<Integer> offset, boolean first) {
+	private boolean updateIterator(Iterator<String> iterator,
+			Ptr<Integer> offset, Ptr<String> current, boolean first) {
 		// This is in a loop to consume any empty strings at the end of input.
-		while (first || offset.get() >= bits[index.get()].length()) {
-			index.set(index.get() + 1);
-			if (index.get() < bits.length)
-				return true;
+		while (first || offset.get() >= current.get().length()) {
+			if (!iterator.hasNext())
+				return false;
+			current.set(iterator.next());
 			offset.set(0);
 			first = false;
 		}
-		return false;
+		return true;
 	}
 
-	public abstract void write(Writer writer) throws IOException;
+	public final void write(Writer writer) throws IOException {
+		for (String s : this) {
+			writer.write(s);
+		}
+	}
 }

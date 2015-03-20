@@ -1,18 +1,15 @@
 package flabbergast;
 
-import java.io.IOException;
-import java.io.Writer;
+import java.util.Iterator;
+import java.util.Stack;
+
+import flabbergast.RamblingIterator.GetNext;
 
 public class SimpleStringish extends Stringish {
 	private String str;
 
 	public SimpleStringish(String str) {
 		this.str = str;
-	}
-
-	@Override
-	void collect(String[] bits, int start) {
-		bits[start] = str;
 	}
 
 	@Override
@@ -26,7 +23,13 @@ public class SimpleStringish extends Stringish {
 	}
 
 	@Override
-	public void write(Writer writer) throws IOException {
-		writer.write(str);
+	public Iterator<String> iterator() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String ramblingNext(Stack<GetNext<String>> stack) {
+		return str;
 	}
 }
