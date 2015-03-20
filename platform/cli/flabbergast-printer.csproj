@@ -7,7 +7,7 @@
 		<SchemaVersion>2.0</SchemaVersion>
 		<ProjectGuid>{D1D4485E-9CD6-4E06-B1D3-60BEF67AAB0B}</ProjectGuid>
 		<OutputType>Exe</OutputType>
-		<RootNamespace>flabbergastprinter</RootNamespace>
+		<RootNamespace>Flabbergast</RootNamespace>
 		<AssemblyName>flabbergast</AssemblyName>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

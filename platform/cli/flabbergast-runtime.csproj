@@ -7,7 +7,7 @@
 		<SchemaVersion>2.0</SchemaVersion>
 		<ProjectGuid>{B54764C8-8812-4DC0-BB5D-88890F1DB5BC}</ProjectGuid>
 		<OutputType>Library</OutputType>
-		<RootNamespace>flabbergastruntime</RootNamespace>
+		<RootNamespace>Flabbergast</RootNamespace>
 		<AssemblyName>Flabbergast.Runtime</AssemblyName>
 		<SignAssembly>true</SignAssembly>
 		<AssemblyOriginatorKeyFile>flabbergast.snk</AssemblyOriginatorKeyFile>
