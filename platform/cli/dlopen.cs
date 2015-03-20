@@ -7,8 +7,12 @@ using System.Reflection;
 namespace Flabbergast {
 	public class BuiltInLibraries : UriHandler {
 		public static readonly BuiltInLibraries INSTANCE = new BuiltInLibraries();
-		public string UriName { get { return "built-in libraries"; } }
 		private BuiltInLibraries() {}
+
+		public string UriName {
+			get { return "built-in libraries"; }
+		}
+
 		public Type ResolveUri(string uri, out bool stop) {
 			stop = false;
 			if (!uri.StartsWith("lib:"))
@@ -17,13 +21,21 @@ namespace Flabbergast {
 			return Type.GetType(type_name, false);
 		}
 	}
+
 	public abstract class LoadLibraries : UriHandler {
 		protected readonly List<string> paths = GenerateDefaultPaths();
+		public abstract string UriName { get; }
+		public abstract Type ResolveUri(string uri, out bool stop);
+
+		public void AppendPath(string path) {
+			paths.Add(path);
+		}
+
 		public static List<string> GenerateDefaultPaths() {
 			var paths = new List<string>();
 			var env_var = Environment.GetEnvironmentVariable("FLABBERGAST_PATH");
 			if (env_var != null) {
-			    paths.AddRange(env_var.Split(Path.PathSeparator).Select(Path.GetFullPath));
+				paths.AddRange(env_var.Split(Path.PathSeparator).Select(Path.GetFullPath));
 			}
 			var full_path = Assembly.GetAssembly(typeof(Frame)).Location;
 			var directory = Path.GetDirectoryName(full_path);
@@ -34,17 +46,17 @@ namespace Flabbergast {
 			}
 			return paths;
 		}
-		public abstract string UriName { get; }
-		public void AppendPath(string path) {
-			paths.Add(path);
-		}
+
 		public void PrependPath(string path) {
 			paths.Insert(0, path);
 		}
-		public abstract Type ResolveUri(string uri, out bool stop);
 	}
-	public class LoadPrecompiledLibraries : LoadLibraries  {
-		public override string UriName { get { return "pre-compiled libraries"; } }
+
+	public class LoadPrecompiledLibraries : LoadLibraries {
+		public override string UriName {
+			get { return "pre-compiled libraries"; }
+		}
+
 		public override Type ResolveUri(string uri, out bool stop) {
 			stop = false;
 			var base_name = uri.Substring(4).Replace('/', '.');

@@ -1,43 +1,42 @@
-using Flabbergast;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
+using Flabbergast;
 using NDesk.Options;
 
 public class Printer {
 	public static int Main(string[] args) {
-		bool trace = false;
+		var trace = false;
 		string output_filename = null;
-		bool show_help = false;
-		var options = new OptionSet () {
-			{ "o:|output", "Write output to file instead of standard output.", v => output_filename = v },
-			{ "t|trace-parsing", "Produce a trace of the parse process.", v => trace = v != null },
-			{ "h|help",  "show this message and exit", v => show_help = v != null },
+		var show_help = false;
+		var options = new OptionSet {
+			{"o:|output", "Write output to file instead of standard output.", v => output_filename = v},
+			{"t|trace-parsing", "Produce a trace of the parse process.", v => trace = v != null},
+			{"h|help", "show this message and exit", v => show_help = v != null}
 		};
 
 		List<string> files;
 		try {
-			files = options.Parse (args);
+			files = options.Parse(args);
 		} catch (OptionException e) {
-			Console.Error.Write (System.AppDomain.CurrentDomain.FriendlyName + ": ");
-			Console.Error.WriteLine (e.Message);
-			Console.Error.WriteLine ("Try “" + System.AppDomain.CurrentDomain.FriendlyName + " --help” for more information.");
+			Console.Error.Write(AppDomain.CurrentDomain.FriendlyName + ": ");
+			Console.Error.WriteLine(e.Message);
+			Console.Error.WriteLine("Try “" + AppDomain.CurrentDomain.FriendlyName + " --help” for more information.");
 			return 1;
 		}
 
 		if (show_help) {
-			Console.WriteLine("Usage: " + System.AppDomain.CurrentDomain.FriendlyName + " input.flbgst");
+			Console.WriteLine("Usage: " + AppDomain.CurrentDomain.FriendlyName + " input.flbgst");
 			Console.WriteLine("Run a Flabbergast file and display the “value” attribute.");
 			Console.WriteLine();
 			Console.WriteLine("Options:");
-			options.WriteOptionDescriptions (Console.Out);
+			options.WriteOptionDescriptions(Console.Out);
 			return 1;
 		}
 
 		if (files.Count != 1) {
-			Console.Error.WriteLine ("Exactly one Flabbergast script must be given.");
+			Console.Error.WriteLine("Exactly one Flabbergast script must be given.");
 			return 1;
 		}
 
@@ -52,7 +51,7 @@ public class Printer {
 		task_master.AddUriHandler(new DynamicallyCompiledLibraries(collector));
 		var parser = Parser.Open(files[0]);
 		parser.Trace = trace;
- 		var run_type = parser.ParseFile(collector, unit, "Printer");
+		var run_type = parser.ParseFile(collector, unit, "Printer");
 		if (run_type != null) {
 			var computation = (Computation) Activator.CreateInstance(run_type, task_master);
 			var filewriter = new PrintResult(task_master, computation, output_filename);
