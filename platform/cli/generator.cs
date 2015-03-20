@@ -344,7 +344,7 @@ internal class Generator {
 		if (source_template == null) {
 			source_reference.Load(Builder);
 		} else {
-			Builder.Emit(OpCodes.Ldstr, message + ":");
+			Builder.Emit(OpCodes.Ldstr, message);
 			Builder.Emit(OpCodes.Ldstr, node.FileName);
 			Builder.Emit(OpCodes.Ldc_I4, node.StartRow);
 			Builder.Emit(OpCodes.Ldc_I4, node.StartColumn);
