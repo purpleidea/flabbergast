@@ -37,7 +37,7 @@ public class Frame implements AttributeNames {
 			Context context, Frame container) {
 		this.task_master = task_master;
 		this.source_reference = source_ref;
-		this.context = Context.Prepend(this, context);
+		this.context = Context.prepend(this, context);
 		this.container = container;
 		this.id = TaskMaster.OrdinalName(id);
 	}
