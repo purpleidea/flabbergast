@@ -12,10 +12,12 @@ class StringishValue extends LoadableValue {
 		this.str = str;
 	}
 
+	@Override
 	public Class<?> getBackingType() {
 		return Stringish.class;
 	}
 
+	@Override
 	public void load(MethodVisitor generator) {
 		generator.visitTypeInsn(Opcodes.NEW,
 				getInternalName(SimpleStringish.class));

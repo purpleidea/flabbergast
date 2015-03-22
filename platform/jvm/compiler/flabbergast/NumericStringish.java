@@ -8,14 +8,16 @@ import org.objectweb.asm.Opcodes;
 class NumericStringish extends LoadableValue {
 	private final LoadableValue source;
 
-	public Class<?> getBackingType() {
-		return Stringish.class;
-	}
-
 	public NumericStringish(LoadableValue source) {
 		this.source = source;
 	}
 
+	@Override
+	public Class<?> getBackingType() {
+		return Stringish.class;
+	}
+
+	@Override
 	public void load(MethodVisitor generator) {
 		generator.visitTypeInsn(Opcodes.NEW,
 				getInternalName(SimpleStringish.class));

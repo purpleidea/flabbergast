@@ -1,13 +1,13 @@
 package flabbergast;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import flabbergast.Generator.ParameterisedBlock;
 
 /**
  * The input being parsed along with all the memorised information from the
@@ -18,146 +18,20 @@ public class Parser {
 	 * A memory from previously-parsed passes and the final parse state.
 	 */
 	class Memory {
-		Object result;
-		int index;
-		int row;
 		int column;
-	}
-
-	Map<Integer, Map<Class<? extends AstNode>, Memory>> cache = new HashMap<Integer, Map<Class<? extends AstNode>, Memory>>();
-	Map<Integer, Map<String, Memory>> alternate_cache = new HashMap<Integer, Map<String, Memory>>();
-	private String file_name;
-
-	/**
-	 * The name of the file being parsed for debugging and error information.
-	 */
-	public String getFileName() {
-		return file_name;
-	}
-
-	/**
-	 * The characters to parse.
-	 */
-	String input;
-	/**
-	 * The position of the most helpful error yet produced by the parser.
-	 */
-	int index = -1;
-	/**
-	 * The most helpful error yet produced by the parser.
-	 * 
-	 * This may have a value even if the parse was successful.
-	 */
-	String message;
-	int row;
-	int column;
-	private boolean trace;
-
-	/**
-	 * Whether to produce copious junk on standard output.
-	 */
-	public boolean getTrace() {
-		return trace;
-	}
-
-	public void setTrance(boolean trace) {
-		this.trace = trace;
-	}
-
-	/**
-	 * Open a file for parsing.
-	 * 
-	 * @throws IOException
-	 */
-	public static Parser open(String filename) throws IOException {
-		return new Parser(filename, new String(Files.readAllBytes(Paths
-				.get(filename))));
-	}
-
-	/**
-	 * Format a string for public viewing.
-	 */
-	public static String toLiteral(String input) {
-		if (input.length() == 0 || isWhiteSpace(input)) {
-			return "whitespace";
-		} else {
-			return "one of \"" + input + "\"";
-		}
-	}
-
-	private static boolean isWhiteSpace(String input) {
-		for (int it = 0; it < input.length(); it++) {
-			if (!Character.isWhitespace(input.charAt(it))) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	public Parser(String filename, String input) {
-		file_name = filename;
-		this.input = input;
-	}
-
-	/**
-	 * Parse in the “file” context defined in the language specification.
-	 */
-	public Class<Compiler.file> ParseFile(ErrorCollector collector,
-			CompilationUnit unit, String type_name) {
-		Ptr<Compiler.file> result = new Ptr<Compiler.File>();
-		Ptr<ParserPosition> position = new Ptr<ParserPosition>(
-				new ParserPosition(collector));
-		if (Compiler.file.ParseRule_Base(position, result)
-				&& position.get().isFinished()) {
-			if (result.Analyse(collector)) {
-				return unit.CreateRootGenerator(result, type_name, null);
-				// TODO: (generator) => result.Generate(generator,
-				// generator.Return));
-			}
-		} else {
-			collector.reportParseError(file_name, index, row, column, message);
-		}
-		return null;
-	}
-
-	/**
-	 * Parse a rule and, if successful, put the result into the provided list.
-	 */
-	<T> boolean parseIntoList(Ptr<ParserPosition> position, List<T> result,
-			ParseRule<T> rule) {
-		Ptr<T> obj = new Ptr<T>();
-		if (rule.invoke(position, obj)) {
-			result.add(obj.get());
-			return true;
-		} else {
-			return false;
-		}
+		int index;
+		Object result;
+		int row;
 	}
 
 	/**
 	 * The current position during parsing
 	 */
 	class ParserPosition {
-		private int index;
-		private int row;
 		private int column;
 		private ErrorCollector error_collector;
-
-		int getIndex() {
-			return index;
-		}
-
-		int getRow() {
-			return row;
-		}
-
-		int getColumn() {
-			return column;
-		}
-
-		boolean isFinished() {
-			return index >= input.length();
-		}
+		private int index;
+		private int row;
 
 		private int trace_depth;
 
@@ -167,56 +41,6 @@ public class Parser {
 			column = 1;
 			trace_depth = 0;
 			this.error_collector = error_collector;
-		}
-
-		/**
-		 * Determine if the current position has been parsed based on the type
-		 * of the rule.
-		 */
-		<U, T extends U> boolean checkCache(Ptr<U> result, Class<T> clazz) {
-			if (cache.containsKey(index) && cache.get(index).containsKey(clazz)) {
-				Memory memory = cache.get(index).get(clazz);
-				result.set((U) memory.result);
-				index = memory.index;
-				row = memory.row;
-				column = memory.column;
-				if (trace) {
-					for (int it = 1; it < trace_depth; it++) {
-						System.out.print(" ");
-					}
-					System.out.printf("%d:%d %s %s\n", row, column,
-							(result.get() == null ? " M " : " H "),
-							clazz.getName());
-					trace_depth++;
-				}
-				return true;
-			}
-			return false;
-		}
-
-		/**
-		 * Determine if the current position has been parsed based on the name
-		 * of the rule.
-		 */
-		<T> boolean checkCache(String name, Ptr<T> result) {
-			if (alternate_cache.containsKey(index)
-					&& alternate_cache.get(index).containsKey(name)) {
-				Memory memory = alternate_cache.get(index).get(name);
-				result.set((T) memory.result);
-				index = memory.index;
-				row = memory.row;
-				column = memory.column;
-				if (trace) {
-					for (int it = 1; it < trace_depth; it++) {
-						System.out.print(" ");
-					}
-					System.out.printf("%d:%d %s %s\n", row, column,
-							(result.get() == null ? " M " : " H "), name);
-					trace_depth++;
-				}
-				return true;
-			}
-			return false;
 		}
 
 		/**
@@ -257,12 +81,97 @@ public class Parser {
 			alternate_cache.get(start_index).put(name, memory);
 		}
 
+		/**
+		 * Determine if the current position has been parsed based on the type
+		 * of the rule.
+		 */
+		@SuppressWarnings("unchecked")
+		<U, T extends U> boolean checkCache(Ptr<U> result, Class<T> clazz) {
+			if (cache.containsKey(index) && cache.get(index).containsKey(clazz)) {
+				Memory memory = cache.get(index).get(clazz);
+				result.set((U) memory.result);
+				index = memory.index;
+				row = memory.row;
+				column = memory.column;
+				if (trace) {
+					for (int it = 1; it < trace_depth; it++) {
+						System.out.print(" ");
+					}
+					System.out.printf("%d:%d %s %s\n", row, column,
+							(result.get() == null ? " M " : " H "),
+							clazz.getName());
+					trace_depth++;
+				}
+				return true;
+			}
+			return false;
+		}
+
+		/**
+		 * Determine if the current position has been parsed based on the name
+		 * of the rule.
+		 */
+		@SuppressWarnings("unchecked")
+		<T> boolean checkCache(String name, Ptr<T> result) {
+			if (alternate_cache.containsKey(index)
+					&& alternate_cache.get(index).containsKey(name)) {
+				Memory memory = alternate_cache.get(index).get(name);
+				result.set((T) memory.result);
+				index = memory.index;
+				row = memory.row;
+				column = memory.column;
+				if (trace) {
+					for (int it = 1; it < trace_depth; it++) {
+						System.out.print(" ");
+					}
+					System.out.printf("%d:%d %s %s\n", row, column,
+							(result.get() == null ? " M " : " H "), name);
+					trace_depth++;
+				}
+				return true;
+			}
+			return false;
+		}
+
 		ParserPosition dup() {
 			ParserPosition child = new ParserPosition(error_collector);
 			child.index = index;
 			child.row = row;
 			child.column = column;
 			return child;
+		}
+
+		int getColumn() {
+			return column;
+		}
+
+		int getIndex() {
+			return index;
+		}
+
+		int getRow() {
+			return row;
+		}
+
+		boolean isFinished() {
+			return index >= input.length();
+		}
+
+		/**
+		 * Match a fixed string in the input.
+		 */
+		boolean match(String word) {
+			for (int it = 0; it < word.length(); it++) {
+				if (word.charAt(it) != next()) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		void nameConstraint(String name) {
+			error_collector.reportParseError(file_name, index, row, column,
+					"The name " + name + " is already in use in this context.");
 		}
 
 		/**
@@ -292,18 +201,6 @@ public class Parser {
 			} else {
 				return '\0';
 			}
-		}
-
-		/**
-		 * Match a fixed string in the input.
-		 */
-		boolean match(String word) {
-			for (int it = 0; it < word.length(); it++) {
-				if (word.charAt(it) != next()) {
-					return false;
-				}
-			}
-			return true;
 		}
 
 		/**
@@ -350,10 +247,135 @@ public class Parser {
 				Parser.this.index = index;
 			}
 		}
+	}
 
-		void nameConstraint(String name) {
-			error_collector.reportParseError(file_name, index, row, column,
-					"The name " + name + " is already in use in this context.");
+	private static boolean isWhiteSpace(String input) {
+		for (int it = 0; it < input.length(); it++) {
+			if (!Character.isWhitespace(input.charAt(it))) {
+				return false;
+			}
 		}
+		return true;
+	}
+
+	/**
+	 * Open a file for parsing.
+	 * 
+	 * @throws IOException
+	 */
+	public static Parser open(String filename) throws IOException {
+		return new Parser(filename, new String(Files.readAllBytes(Paths
+				.get(filename))));
+	}
+
+	/**
+	 * Format a string for public viewing.
+	 */
+	public static String toLiteral(String input) {
+		if (input.length() == 0 || isWhiteSpace(input)) {
+			return "whitespace";
+		} else {
+			return "one of \"" + input + "\"";
+		}
+	}
+
+	Map<Integer, Map<String, Memory>> alternate_cache = new HashMap<Integer, Map<String, Memory>>();
+	Map<Integer, Map<Class<? extends AstNode>, Memory>> cache = new HashMap<Integer, Map<Class<? extends AstNode>, Memory>>();
+	int column;
+	private String file_name;
+	/**
+	 * The position of the most helpful error yet produced by the parser.
+	 */
+	int index = -1;
+	/**
+	 * The characters to parse.
+	 */
+	String input;
+
+	/**
+	 * The most helpful error yet produced by the parser.
+	 * 
+	 * This may have a value even if the parse was successful.
+	 */
+	String message;
+
+	int row;
+
+	private boolean trace;
+
+	public Parser(String filename, String input) {
+		file_name = filename;
+		this.input = input;
+	}
+
+	/**
+	 * The name of the file being parsed for debugging and error information.
+	 */
+	public String getFileName() {
+		return file_name;
+	}
+
+	/**
+	 * Whether to produce copious junk on standard output.
+	 */
+	public boolean getTrace() {
+		return trace;
+	}
+
+	/**
+	 * Parse in the “file” context defined in the language specification.
+	 */
+	public <T> T parseFile(ErrorCollector collector, CompilationUnit<T> unit,
+			String type_name) {
+		final Ptr<Compiler.file> result = new Ptr<Compiler.File>();
+		Ptr<ParserPosition> position = new Ptr<ParserPosition>(
+				new ParserPosition(collector));
+		if (Compiler.file.ParseRule_Base(position, result)
+				&& position.get().isFinished()) {
+			if (result.Analyse(collector)) {
+				return unit.createRootGenerator(result, type_name,
+						new Generator.Block() {
+
+							@Override
+							public void invoke(final Generator generator) {
+								result.get()
+										.generate(
+												new ParameterisedBlock<LoadableValue>() {
+
+													@Override
+													public void invoke(
+															LoadableValue value) {
+														generator
+																.doReturn(value);
+
+													}
+
+												});
+
+							}
+						});
+			}
+		} else {
+			collector.reportParseError(file_name, index, row, column, message);
+		}
+		return null;
+	}
+
+	/**
+	 * Parse a rule and, if successful, put the result into the provided list.
+	 */
+	<T> boolean parseIntoList(Ptr<ParserPosition> position, List<T> result,
+			ParseRule<T> rule) {
+		Ptr<T> obj = new Ptr<T>();
+		if (rule.invoke(position, obj)) {
+			result.add(obj.get());
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public void setTrace(boolean trace) {
+		this.trace = trace;
 	}
 }

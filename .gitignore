@@ -2,6 +2,7 @@
 *.build
 *.c
 *.changes
+*.class
 *.deps
 *.dsc
 *.gir
@@ -36,9 +37,9 @@ config.log
 config.status
 configure
 doc/
-flabbergast
-flabbergast-fmt
-flabbergast-print
+/flabbergast
+/flabbergast-fmt
+/flabbergast-print
 libtool
 m4/lt*.m4
 m4/libtool.m4

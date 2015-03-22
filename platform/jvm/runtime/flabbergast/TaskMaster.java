@@ -15,9 +15,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Scheduler for computations.
  */
 public abstract class TaskMaster implements Iterable<Computation> {
-	private static char[] symbols = CreateOrdinalSymbols();
+	private static char[] symbols = createOrdinalSymbols();
 
-	private static char[] CreateOrdinalSymbols() {
+	private static char[] createOrdinalSymbols() {
 		char[] array = new char[62];
 		for (int it = 0; it < 10; it++) {
 			array[it] = (char) ('0' + it);
@@ -29,11 +29,11 @@ public abstract class TaskMaster implements Iterable<Computation> {
 		return array;
 	}
 
-	public static Stringish OrdinalName(long id) {
-		return new SimpleStringish(OrdinalNameStr(id));
+	public static Stringish ordinalName(long id) {
+		return new SimpleStringish(ordinalNameStr(id));
 	}
 
-	public static String OrdinalNameStr(long id) {
+	public static String ordinalNameStr(long id) {
 		char[] id_str = new char[(int) (Long.SIZE * Math.log(2) / Math
 				.log(symbols.length)) + 1];
 		if (id < 0) {
@@ -65,7 +65,7 @@ public abstract class TaskMaster implements Iterable<Computation> {
 	public TaskMaster() {
 	}
 
-	public void AddUriHandler(UriHandler handler) {
+	public void addUriHandler(UriHandler handler) {
 		handlers.add(handler);
 	}
 
@@ -90,7 +90,7 @@ public abstract class TaskMaster implements Iterable<Computation> {
 
 		for (UriHandler handler : handlers) {
 			Ptr<Boolean> stop = new Ptr<Boolean>(false);
-			Class<? extends Computation> t = handler.ResolveUri(uri, stop);
+			Class<? extends Computation> t = handler.resolveUri(uri, stop);
 			if (stop.get()) {
 				reportExternalError(uri);
 				return;

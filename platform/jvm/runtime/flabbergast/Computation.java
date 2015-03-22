@@ -51,10 +51,10 @@ public abstract class Computation {
 	 * Called by the TaskMaster to start or continue computation.
 	 */
 	void compute() {
-		if (result == null && run()) {
+		if (result == null) {
+			run();
 			if (result == null) {
-				throw new IllegalStateException("The computation " + getClass()
-						+ " did not return a value. This is a bug.");
+				return;
 			}
 			for (ConsumeResult cr : consumer)
 				cr.consume(result);
@@ -79,5 +79,5 @@ public abstract class Computation {
 	 * returns true, the computation is finished. Otherwise, it is assumed that
 	 * the computation needs to wait another value.
 	 */
-	protected abstract boolean run();
+	protected abstract void run();
 }

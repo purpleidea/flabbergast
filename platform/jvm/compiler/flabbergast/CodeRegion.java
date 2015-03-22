@@ -1,10 +1,15 @@
 package flabbergast;
 
 public interface CodeRegion {
-	String getPrettyName ();
-	int getStartRow ();
-	int getStartColumn ();
-	int getEndRow ();
-	int getEndColumn ();
-	String getFileName ();
+	int getEndColumn();
+
+	int getEndRow();
+
+	String getFileName();
+
+	String getPrettyName();
+
+	int getStartColumn();
+
+	int getStartRow();
 }

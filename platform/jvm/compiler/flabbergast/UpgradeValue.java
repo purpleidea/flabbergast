@@ -1,12 +1,21 @@
 package flabbergast;
 
-import org.objectweb.asm.*;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+
 class UpgradeValue extends LoadableValue {
 	private final LoadableValue original;
+
 	public UpgradeValue(LoadableValue original) {
 		this.original = original;
 	}
-	public Class<?> getBackingType() { return double.class; }
+
+	@Override
+	public Class<?> getBackingType() {
+		return double.class;
+	}
+
+	@Override
 	public void load(MethodVisitor generator) {
 		original.load(generator);
 		if (original.getBackingType() == long.class) {

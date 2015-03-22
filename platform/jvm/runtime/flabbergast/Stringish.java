@@ -58,8 +58,11 @@ public abstract class Stringish implements Comparable<Stringish>,
 			int length = Math.min(
 					this_current.get().length() - this_offset.get(),
 					other_current.get().length() - other_offset.get());
-			result = collator.compare(this_current.get(), this_offset.get(),
-					other_current.get(), other_offset.get(), length);
+			result = collator.compare(
+					this_current.get().substring(this_offset.get(),
+							this_offset.get() + length),
+					other_current.get().substring(other_offset.get(),
+							other_offset.get() + length));
 			this_offset.set(this_offset.get() + length);
 			other_offset.set(other_offset.get() + length);
 		}
@@ -75,6 +78,7 @@ public abstract class Stringish implements Comparable<Stringish>,
 		return new RamblingIterator<String>(this);
 	}
 
+	@Override
 	public abstract String ramblingNext(
 			Stack<RamblingIterator.GetNext<String>> stack);
 

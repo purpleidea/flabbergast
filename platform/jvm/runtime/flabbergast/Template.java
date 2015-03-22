@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * A Flabbergast Template, holding functions for computing attributes.
  */
-public class Template implements AttributeNames {
+public class Template implements Iterable<String> {
 	private Map<String, ComputeValue> attributes = new HashMap<String, ComputeValue>();
 
 	private Frame container;
@@ -35,11 +35,6 @@ public class Template implements AttributeNames {
 		return get(name.toString());
 	}
 
-	@Override
-	public Iterator<String> getAttributeNames() {
-		return attributes.keySet().iterator();
-	}
-
 	public Frame getContainer() {
 		return container;
 	}
@@ -56,6 +51,11 @@ public class Template implements AttributeNames {
 	 */
 	public SourceReference getSourceReference() {
 		return source_reference;
+	}
+
+	@Override
+	public Iterator<String> iterator() {
+		return attributes.keySet().iterator();
 	}
 
 	public void set(String name, ComputeValue value) {

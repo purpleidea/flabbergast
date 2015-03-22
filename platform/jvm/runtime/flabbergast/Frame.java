@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * A Frame in the Flabbergast language.
  */
-public class Frame implements AttributeNames {
+public class Frame implements Iterable<String> {
 
 	public static Frame Through(TaskMaster task_master, long id,
 			SourceReference source_ref, long start, long end, Context context,
@@ -18,7 +18,7 @@ public class Frame implements AttributeNames {
 		if (end < start)
 			return result;
 		for (long it = 0; it <= (end - start); it++) {
-			result.set(TaskMaster.OrdinalNameStr(it + 1), start + it);
+			result.set(TaskMaster.ordinalNameStr(it + 1), start + it);
 		}
 		return result;
 	}
@@ -39,7 +39,7 @@ public class Frame implements AttributeNames {
 		this.source_reference = source_ref;
 		this.context = Context.prepend(this, context);
 		this.container = container;
-		this.id = TaskMaster.OrdinalName(id);
+		this.id = TaskMaster.ordinalName(id);
 	}
 
 	/**
@@ -49,12 +49,6 @@ public class Frame implements AttributeNames {
 	 */
 	public Object get(String name) {
 		return attributes.containsKey(name) ? attributes.get(name) : null;
-	}
-
-	@Override
-	public Iterator<String> getAttributeNames() {
-		return new ConcatIterator<String>(attributes.keySet().iterator(),
-				pending.keySet().iterator());
 	}
 
 	/**
@@ -110,6 +104,12 @@ public class Frame implements AttributeNames {
 	public boolean has(String name) {
 		boolean is_pending = pending.containsKey(name);
 		return is_pending || attributes.containsKey(name);
+	}
+
+	@Override
+	public Iterator<String> iterator() {
+		return new ConcatIterator<String>(attributes.keySet().iterator(),
+				pending.keySet().iterator());
 	}
 
 	public void set(final String name, Object value) {

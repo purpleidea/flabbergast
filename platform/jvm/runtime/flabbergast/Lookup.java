@@ -69,10 +69,6 @@ public class Lookup extends Computation implements ConsumeResult {
 		return values.length;
 	}
 
-	public String getGetName(int index) {
-		return names[index];
-	}
-
 	public String getName() {
 		StringBuilder sb = new StringBuilder();
 		for (int n = 0; n < names.length; n++) {
@@ -81,6 +77,10 @@ public class Lookup extends Computation implements ConsumeResult {
 			sb.append(names[n]);
 		}
 		return sb.toString();
+	}
+
+	public String getName(int index) {
+		return names[index];
 	}
 
 	public int getNameCount() {
@@ -92,28 +92,28 @@ public class Lookup extends Computation implements ConsumeResult {
 	}
 
 	@Override
-	protected boolean run() {
+	protected void run() {
 		while (frame < values.length && name < values[0].length) {
 			// If we have reached the end of a list of names for the current
 			// frame, then we have an answer!
 			if (name == values[0].length - 1) {
 
 				result = values[frame][name];
-				return true;
+				return;
 			}
 
 			// If this is not a frame, but there are still more names, then this
 			// is an error.
 			if (!(values[frame][name] instanceof Frame)) {
 				master.reportLookupError(this, values[frame][name].getClass());
-				return false;
+				return;
 			}
 
 			// Otherwise, try to get the current value for the current name
 			outstanding.set(2);
 			if (((Frame) values[frame][name]).getOrSubscribe(names[name], this)) {
 				if (outstanding.decrementAndGet() > 0) {
-					return false;
+					return;
 				}
 			} else {
 				name = 0;
@@ -122,7 +122,7 @@ public class Lookup extends Computation implements ConsumeResult {
 		}
 		// The name is undefined.
 		master.reportLookupError(this, null);
-		return false;
+		return;
 	}
 
 }
