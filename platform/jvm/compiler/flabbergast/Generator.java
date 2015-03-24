@@ -206,6 +206,7 @@ class Generator {
 				getInternalName(Object.class), "<init>", "()V", false);
 		init_ctor.visitInsn(Opcodes.RETURN);
 		init_ctor.visitEnd();
+		init_ctor.visitMaxs(0, 0);
 
 		// Create a static method that wraps the constructor. This is needed to
 		// create a delegate.
@@ -244,6 +245,7 @@ class Generator {
 
 		init_builder.visitInsn(Opcodes.ARETURN);
 		init_builder.visitEnd();
+		init_builder.visitMaxs(0, 0);
 
 		// Label for load externals
 		defineState();
@@ -297,6 +299,7 @@ class Generator {
 				getDescriptor(int.class));
 		ctor_builder.visitInsn(Opcodes.RETURN);
 		ctor_builder.visitEnd();
+		ctor_builder.visitMaxs(0, 0);
 
 		initial_container = null;
 		initial_context = null;
@@ -671,6 +674,7 @@ class Generator {
 				"task_master", getDescriptor(TaskMaster.class));
 		ctor_builder.visitInsn(Opcodes.RETURN);
 		ctor_builder.visitEnd();
+		ctor_builder.visitMaxs(0, 0);
 
 		MethodVisitor consume_builder = getter_class.visitMethod(
 				Opcodes.ACC_PUBLIC, "consume",
@@ -698,6 +702,7 @@ class Generator {
 		consume_builder.visitLabel(return_label);
 		consume_builder.visitInsn(Opcodes.RETURN);
 		consume_builder.visitEnd();
+		consume_builder.visitMaxs(0, 0);
 
 		builder.visitTypeInsn(Opcodes.NEW, getter_class_name);
 		builder.visitVarInsn(Opcodes.ALOAD, 0);
@@ -746,6 +751,7 @@ class Generator {
 			jumpToState(1);
 		}
 		builder.visitEnd();
+		builder.visitMaxs(0, 0);
 
 		MethodVisitor run_builder = type_builder.visitMethod(
 				Opcodes.ACC_PROTECTED, "run", makeSignature(null), null, null);
@@ -783,6 +789,7 @@ class Generator {
 		run_builder.visitInsn(Opcodes.POP);
 		run_builder.visitInsn(Opcodes.RETURN);
 		run_builder.visitEnd();
+		run_builder.visitMaxs(0, 0);
 		type_builder.visitEnd();
 	}
 
@@ -1080,8 +1087,10 @@ class Generator {
 	 * Mark the current code position as the entry point for a state.
 	 */
 	public void markState(int id) {
-		if (builder != null)
+		if (builder != null) {
 			builder.visitEnd();
+			builder.visitMaxs(0, 0);
+		}
 		builder = entry_points.get(id);
 		builder.visitCode();
 		if (last_node != null) {
