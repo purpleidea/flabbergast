@@ -36,6 +36,10 @@ class FieldValue extends LoadableValue {
 				Type.getDescriptor(type));
 	}
 
+	public void store(Generator generator) {
+		store(generator.getBuilder());
+	}
+
 	public void store(MethodVisitor generator) {
 		generator.visitFieldInsn(Opcodes.PUTFIELD, class_name, name,
 				Type.getDescriptor(type));

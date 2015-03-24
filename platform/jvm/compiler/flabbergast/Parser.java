@@ -27,7 +27,7 @@ public class Parser {
 	/**
 	 * The current position during parsing
 	 */
-	class ParserPosition {
+	class Position {
 		private int column;
 		private ErrorCollector error_collector;
 		private int index;
@@ -35,7 +35,7 @@ public class Parser {
 
 		private int trace_depth;
 
-		ParserPosition(ErrorCollector error_collector) {
+		Position(ErrorCollector error_collector) {
 			index = 0;
 			row = 1;
 			column = 1;
@@ -49,7 +49,7 @@ public class Parser {
 		 * @param result
 		 *            The result to cache, or null if parsing failed.
 		 */
-		<T extends AstNode> void Cache(int start_index, T result, Class<T> clazz) {
+		<T extends AstNode> void cache(int start_index, T result, Class<T> clazz) {
 			if (!cache.containsKey(start_index)) {
 				cache.put(start_index,
 						new HashMap<Class<? extends AstNode>, Parser.Memory>());
@@ -68,7 +68,7 @@ public class Parser {
 		 * @param result
 		 *            The result to cache, or null if parsing failed.
 		 */
-		public <T> void Cache(String name, int start_index, T result) {
+		public <T> void cache(String name, int start_index, T result) {
 			if (!alternate_cache.containsKey(start_index)) {
 				alternate_cache.put(start_index,
 						new HashMap<String, Parser.Memory>());
@@ -133,8 +133,8 @@ public class Parser {
 			return false;
 		}
 
-		ParserPosition dup() {
-			ParserPosition child = new ParserPosition(error_collector);
+		Position dup() {
+			Position child = new Position(error_collector);
 			child.index = index;
 			child.row = row;
 			child.column = column;
@@ -198,6 +198,17 @@ public class Parser {
 		char peekLast() {
 			if (index > 0 && index <= input.length()) {
 				return input.charAt(index - 1);
+			} else {
+				return '\0';
+			}
+		}
+
+		/**
+		 * Look the character to be consumed.
+		 */
+		char peekNext() {
+			if (index > 0 && index < input.length()) {
+				return input.charAt(index);
 			} else {
 				return '\0';
 			}
@@ -328,8 +339,7 @@ public class Parser {
 	public <T> T parseFile(ErrorCollector collector, CompilationUnit<T> unit,
 			String type_name) {
 		final Ptr<Compiler.file> result = new Ptr<Compiler.File>();
-		Ptr<ParserPosition> position = new Ptr<ParserPosition>(
-				new ParserPosition(collector));
+		Ptr<Position> position = new Ptr<Position>(new Position(collector));
 		if (Compiler.file.ParseRule_Base(position, result)
 				&& position.get().isFinished()) {
 			if (result.Analyse(collector)) {
@@ -364,7 +374,7 @@ public class Parser {
 	/**
 	 * Parse a rule and, if successful, put the result into the provided list.
 	 */
-	<T> boolean parseIntoList(Ptr<ParserPosition> position, List<T> result,
+	<T> boolean parseIntoList(Ptr<Position> position, List<T> result,
 			ParseRule<T> rule) {
 		Ptr<T> obj = new Ptr<T>();
 		if (rule.invoke(position, obj)) {

@@ -18,6 +18,13 @@ public class TypeSet {
 		}
 	}
 
+	public TypeSet(TypeSet original, Type... additional) {
+		this.flags = original.flags;
+		for (Type t : additional) {
+			this.flags |= t.get();
+		}
+	}
+
 	public boolean contains(Type type) {
 		return (type.get() & flags) != 0;
 	}

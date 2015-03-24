@@ -378,13 +378,13 @@ class Environment implements CodeRegion {
 		return copy_info;
 	}
 
-	public NameInfo Lookup(ErrorCollector collector, Iterable<String> names,
-			Ptr<Boolean> success) {
-		Iterator<String> iter = names.iterator();
+	public NameInfo lookup(ErrorCollector collector,
+			Iterable<? extends CharSequence> names, Ptr<Boolean> success) {
+		Iterator<? extends CharSequence> iter = names.iterator();
 		if (!iter.hasNext()) {
 			throw new IllegalArgumentException("List of names cannot be empty.");
 		}
-		String current = iter.next();
+		String current = iter.next().toString();
 		if (children.containsKey(current)) {
 			if (children.get(current) == null) {
 				success.set(false);
@@ -394,7 +394,7 @@ class Environment implements CodeRegion {
 			return children.get(current).lookup(collector, iter, success);
 		}
 		if (force_back) {
-			parent.Lookup(collector, names, success);
+			parent.lookup(collector, names, success);
 		}
 		if (parent != null && parent.hasName(current)) {
 			return lookback(current).lookup(collector, iter, success);

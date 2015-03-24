@@ -12,7 +12,7 @@ import java.util.TreeMap;
 abstract class AstTypeableNode extends AstNode {
 	static TypeSet checkReflectedMethod(ErrorCollector collector,
 			AstNode where, List<Method> methods,
-			List<? extends Ensurable> arguments, TypeSet return_type,
+			List<? extends TypeableElement> arguments, TypeSet return_type,
 			Ptr<Boolean> success) {
 		/* If there are no candidate methods, don't bother checking the types. */
 		if (methods.size() == 0)

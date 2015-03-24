@@ -80,11 +80,11 @@ abstract class NameInfo {
 			LoadableValue source_reference, LoadableValue context)
 			throws NoSuchMethodException, SecurityException;
 
-	NameInfo lookup(ErrorCollector collector, Iterator<String> names,
-			Ptr<Boolean> success) {
+	NameInfo lookup(ErrorCollector collector,
+			Iterator<? extends CharSequence> names, Ptr<Boolean> success) {
 		NameInfo info = this;
 		while (names.hasNext()) {
-			String current = names.next();
+			String current = names.next().toString();
 			info.ensureType(collector, Type.Frame.toSet(), success, false);
 			if (!info.children.containsKey(current)) {
 				info.createChild(collector, current, info.getName(), success);

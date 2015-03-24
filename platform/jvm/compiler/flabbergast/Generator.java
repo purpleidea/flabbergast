@@ -3,6 +3,7 @@ package flabbergast;
 import static org.objectweb.asm.Type.getDescriptor;
 import static org.objectweb.asm.Type.getInternalName;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.AbstractMap;
@@ -75,6 +76,12 @@ class Generator {
 			signature.append(Type.getDescriptor(returntype));
 		}
 		return signature.toString();
+	}
+
+	static void visitMethod(Constructor<?> method, MethodVisitor builder) {
+		builder.visitMethodInsn(Opcodes.INVOKESPECIAL, "<init>",
+				getInternalName(method.getDeclaringClass()),
+				Type.getConstructorDescriptor(method), false);
 	}
 
 	static void visitMethod(Method method, MethodVisitor builder) {
@@ -517,7 +524,7 @@ class Generator {
 	 * @throws NoSuchMethodException
 	 */
 	public void dynamicTypeDispatch(LoadableValue original,
-			LoadableValue source_reference, Class<?>[] types,
+			LoadableValue source_reference, List<Class<?>> types,
 			ParameterisedBlock<LoadableValue> block)
 			throws NoSuchMethodException, SecurityException {
 		// In dynamic_type_dispatch_from_stored_mask, we might not
@@ -528,10 +535,10 @@ class Generator {
 		}
 		StringBuilder error_message = new StringBuilder();
 		error_message.append("Unexpected type %s instead of ");
-		for (int it = 0; it < types.length; it++) {
+		for (int it = 0; it < types.size(); it++) {
 			if (it > 0)
 				error_message.append(" or ");
-			error_message.append(types[it].getSimpleName());
+			error_message.append(types.get(it).getSimpleName());
 		}
 		if (original.getBackingType() != Object.class) {
 			for (Class<?> type : types) {
@@ -550,14 +557,14 @@ class Generator {
 			builder.visitInsn(Opcodes.IRETURN);
 			return;
 		}
-		for (int it = 0; it < types.length; it++) {
+		for (int it = 0; it < types.size(); it++) {
 			Label label = new Label();
 			original.load(builder);
 			builder.visitTypeInsn(Opcodes.INSTANCEOF,
-					getInternalName(types[it]));
+					getInternalName(types.get(it)));
 			builder.visitJumpInsn(Opcodes.IFEQ, label);
 			MethodVisitor old_builder = builder;
-			block.invoke(new AutoUnboxValue(original, types[it]));
+			block.invoke(new AutoUnboxValue(original, types.get(it)));
 			builder = old_builder;
 			builder.visitLabel(label);
 		}
@@ -1276,6 +1283,10 @@ class Generator {
 	 */
 	public ClassVisitor TypeBuilder() {
 		return type_builder;
+	}
+
+	void visitMethod(Constructor<?> method) {
+		visitMethod(method, builder);
 	}
 
 	void visitMethod(Method method) {
