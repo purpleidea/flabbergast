@@ -30,7 +30,7 @@ class OpenNameInfo extends NameInfo {
 	@Override
 	public LoadableCache load(Generator generator,
 			LoadableValue source_reference, LoadableValue context)
-			throws NoSuchMethodException, SecurityException {
+			throws Exception {
 		return new LoadableCache(generateLookupField(generator,
 				source_reference, context), real_type, this, must_unbox);
 	}

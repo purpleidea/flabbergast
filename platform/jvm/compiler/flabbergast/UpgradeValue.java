@@ -16,7 +16,7 @@ class UpgradeValue extends LoadableValue {
 	}
 
 	@Override
-	public void load(MethodVisitor generator) {
+	public void load(MethodVisitor generator) throws Exception {
 		original.load(generator);
 		if (original.getBackingType() == long.class) {
 			generator.visitInsn(Opcodes.L2D);

@@ -20,7 +20,7 @@ class CompareValue extends LoadableValue {
 	}
 
 	@Override
-	public void load(MethodVisitor generator) {
+	public void load(MethodVisitor generator) throws Exception{
 		if (left.getBackingType() == boolean.class) {
 			left.load(generator);
 			right.load(generator);

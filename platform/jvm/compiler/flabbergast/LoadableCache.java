@@ -7,7 +7,7 @@ class LoadableCache {
 	private boolean needs_unbox;
 	private TypeSet possible_types;
 
-	private List<Class<?>> types;
+	private List<Class<Object>> types;
 
 	private LoadableValue value;
 
@@ -47,7 +47,7 @@ class LoadableCache {
 		return types.size() == 1;
 	}
 
-	public List<Class<?>> getTypes() {
+	public List<Class<Object>> getTypes() {
 		return types;
 	}
 

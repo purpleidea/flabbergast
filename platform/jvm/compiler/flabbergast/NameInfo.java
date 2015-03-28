@@ -34,7 +34,7 @@ abstract class NameInfo {
 
 	protected LoadableValue generateLookupField(Generator generator,
 			LoadableValue source_reference, LoadableValue context)
-			throws NoSuchMethodException, SecurityException {
+			throws Exception {
 		FieldValue lookup_result = generator.makeField("lookup_" + getName(),
 				Object.class);
 		generator.loadTaskMaster();
@@ -78,7 +78,7 @@ abstract class NameInfo {
 
 	public abstract LoadableCache load(Generator generator,
 			LoadableValue source_reference, LoadableValue context)
-			throws NoSuchMethodException, SecurityException;
+			throws Exception;
 
 	NameInfo lookup(ErrorCollector collector,
 			Iterator<? extends CharSequence> names, Ptr<Boolean> success) {

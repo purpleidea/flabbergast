@@ -7,11 +7,11 @@ package flabbergast;
  * the original file for generating debugging and error information.
  */
 abstract class AstNode implements CodeRegion {
-	private int end_column;
-	private int end_row;
-	private String file_name;
-	private int start_column;
-	private int start_row;
+	protected int end_column;
+	protected int end_row;
+	protected String file_name;
+	protected int start_column;
+	protected int start_row;
 
 	@Override
 	public int getEndColumn() {

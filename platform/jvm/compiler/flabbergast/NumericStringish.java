@@ -18,7 +18,7 @@ class NumericStringish extends LoadableValue {
 	}
 
 	@Override
-	public void load(MethodVisitor generator) {
+	public void load(MethodVisitor generator) throws Exception {
 		generator.visitTypeInsn(Opcodes.NEW,
 				getInternalName(SimpleStringish.class));
 		generator.visitInsn(Opcodes.DUP);

@@ -72,7 +72,7 @@ class CopyFromParentInfo extends NameInfo {
 	@Override
 	public LoadableCache load(Generator generator,
 			LoadableValue source_reference, LoadableValue context)
-			throws NoSuchMethodException, SecurityException {
+			throws Exception {
 		LoadableCache source_cache = source.load(generator, source_reference,
 				context);
 		return new LoadableCache(source_cache.getValue(), source_cache

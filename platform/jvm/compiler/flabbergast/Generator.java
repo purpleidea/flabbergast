@@ -30,22 +30,23 @@ class Generator {
 	 * Generate code with no input.
 	 */
 	public interface Block {
-		void invoke(Generator generator);
+		void invoke(Generator generator) throws Exception;
 	}
 
 	/**
 	 * Generate code for an item during a fold operation, using an initial value
 	 * and passing the output to a result block.
 	 */
-	public interface FoldBlock<T, R> {
-		void invoke(int index, T item, R left, ParameterisedBlock<R> result);
+	interface FoldBlock<T, R> {
+		void invoke(int index, T item, R left, ParameterisedBlock<R> result)
+				throws Exception;
 	}
 
 	/**
 	 * Generate code given a single input.
 	 */
-	public interface ParameterisedBlock<R> {
-		void invoke(R result);
+	interface ParameterisedBlock<R> {
+		void invoke(R result) throws Exception;
 	}
 
 	static Class<?> getBoxedType(Class<?> type) {
@@ -319,9 +320,9 @@ class Generator {
 	 * @throws SecurityException
 	 * @throws NoSuchMethodException
 	 */
-	public void AmendSourceReference(AstNode node, String message,
+	public void amendSourceReference(AstNode node, String message,
 			LoadableValue source_reference, LoadableValue source_template)
-			throws NoSuchMethodException, SecurityException {
+			throws Exception {
 		if (source_template == null) {
 			source_reference.load(builder);
 		} else {
@@ -347,8 +348,7 @@ class Generator {
 	}
 
 	public LoadableValue compare(LoadableValue left, LoadableValue right,
-			LoadableValue source_reference) throws NoSuchMethodException,
-			SecurityException {
+			LoadableValue source_reference) throws Exception {
 		if (left.getBackingType() == Object.class
 				|| right.getBackingType() == Object.class) {
 			throw new IllegalArgumentException(String.format(
@@ -375,13 +375,13 @@ class Generator {
 			ParameterisedBlock<ParameterisedBlock<LoadableValue>> conditional_part,
 			ParameterisedBlock<ParameterisedBlock<LoadableValue>> true_part,
 			ParameterisedBlock<ParameterisedBlock<LoadableValue>> false_part,
-			ParameterisedBlock<LoadableValue> result_block) {
+			ParameterisedBlock<LoadableValue> result_block) throws Exception {
 		final int true_state = defineState();
 		final int else_state = defineState();
 		conditional_part.invoke(new ParameterisedBlock<LoadableValue>() {
 
 			@Override
-			public void invoke(LoadableValue condition) {
+			public void invoke(LoadableValue condition) throws Exception {
 				if (boolean.class != condition.getBackingType())
 					throw new IllegalArgumentException(String.format(
 							"Use of non-Boolean type %s in conditional.",
@@ -398,7 +398,7 @@ class Generator {
 		ParameterisedBlock<LoadableValue> end_handler = new ParameterisedBlock<LoadableValue>() {
 
 			@Override
-			public void invoke(LoadableValue result) {
+			public void invoke(LoadableValue result) throws Exception {
 				if (!type_dispatch.containsKey(result.getBackingType())) {
 					type_dispatch
 							.put(result.getBackingType(),
@@ -430,7 +430,8 @@ class Generator {
 	 * Copies the contents of one field to another, boxing or unboxing based on
 	 * the field types.
 	 */
-	public void copyField(LoadableValue source, FieldValue target) {
+	public void copyField(LoadableValue source, FieldValue target)
+			throws Exception {
 		if (source != target) {
 			builder.visitVarInsn(Opcodes.ALOAD, 0);
 			loadReboxed(source, target.getBackingType());
@@ -438,7 +439,8 @@ class Generator {
 		}
 	}
 
-	void copyField(LoadableValue source, String target, Class<?> type) {
+	void copyField(LoadableValue source, String target, Class<?> type)
+			throws Exception {
 		builder.visitVarInsn(Opcodes.ALOAD, 0);
 		loadReboxed(source, type);
 		builder.visitFieldInsn(Opcodes.PUTFIELD, class_name, target,
@@ -446,15 +448,13 @@ class Generator {
 	}
 
 	DelegateValue createFunction(AstNode instance, String syntax_id,
-			CompilationUnit.FunctionBlock block) throws NoSuchMethodException,
-			SecurityException {
+			CompilationUnit.FunctionBlock block) throws Exception {
 		return owner.createFunction(instance, syntax_id, block, class_name,
 				owner_externals);
 	}
 
 	DelegateValue createFunctionOverride(AstNode instance, String syntax_id,
-			CompilationUnit.FunctionOverrideBlock block)
-			throws NoSuchMethodException, SecurityException {
+			CompilationUnit.FunctionOverrideBlock block) throws Exception {
 		return owner.createFunctionOverride(instance, syntax_id, block,
 				class_name, owner_externals);
 	}
@@ -496,8 +496,7 @@ class Generator {
 	 * @throws SecurityException
 	 * @throws NoSuchMethodException
 	 */
-	public void doReturn(LoadableValue result) throws NoSuchMethodException,
-			SecurityException {
+	public void doReturn(LoadableValue result) throws Exception {
 		if (result.getBackingType() == Frame.class
 				|| result.getBackingType() == Object.class) {
 			Label end = new Label();
@@ -526,10 +525,9 @@ class Generator {
 	 * @throws SecurityException
 	 * @throws NoSuchMethodException
 	 */
-	public void dynamicTypeDispatch(LoadableValue original,
-			LoadableValue source_reference, List<Class<?>> types,
-			ParameterisedBlock<LoadableValue> block)
-			throws NoSuchMethodException, SecurityException {
+	public <T> void dynamicTypeDispatch(LoadableValue original,
+			LoadableValue source_reference, List<Class<T>> types,
+			ParameterisedBlock<LoadableValue> block) throws Exception {
 		// In dynamic_type_dispatch_from_stored_mask, we might not
 		// have to unbox, in which case, don't.
 		if (types == null) {
@@ -575,8 +573,7 @@ class Generator {
 	}
 
 	public void emitTypeError(LoadableValue source_reference, String message,
-			LoadableValue... data) throws NoSuchMethodException,
-			SecurityException {
+			LoadableValue... data) throws Exception {
 		if (data.length == 0) {
 			throw new IllegalArgumentException(
 					"Type errors must have at least one argument.");
@@ -614,21 +611,22 @@ class Generator {
 	 * is made from the previous computation).
 	 */
 
-	public <T, R> void Fold(R initial, List<T> list, FoldBlock<T, R> expand,
-			ParameterisedBlock<R> result) {
-		FoldHelper(list, expand, result, initial, 0);
+	public <T, R> void fold(R initial, List<? extends T> list,
+			FoldBlock<T, R> expand, ParameterisedBlock<R> result)
+			throws Exception {
+		foldHelper(list, expand, result, initial, 0);
 	}
 
-	private <T, R> void FoldHelper(final List<T> list,
+	private <T, R> void foldHelper(final List<? extends T> list,
 			final FoldBlock<T, R> expand, final ParameterisedBlock<R> result,
-			R curr_result, final int it) {
+			R curr_result, final int it) throws Exception {
 		if (it < list.size()) {
 			expand.invoke(it, list.get(it), curr_result,
 					new ParameterisedBlock<R>() {
 
 						@Override
-						public void invoke(R next_result) {
-							FoldHelper(list, expand, result, next_result,
+						public void invoke(R next_result) throws Exception {
+							foldHelper(list, expand, result, next_result,
 									it + 1);
 						}
 					});
@@ -852,8 +850,8 @@ class Generator {
 	}
 
 	public LoadableValue invokeNative(LoadableValue source_reference,
-			List<Method> methods, LoadableValue[] arguments)
-			throws NoSuchMethodException, SecurityException {
+			List<Method> methods, List<LoadableValue> arguments)
+			throws Exception {
 		Method best_method = null;
 		int best_penalty = Integer.MAX_VALUE;
 		for (Method method : methods) {
@@ -862,13 +860,14 @@ class Generator {
 			boolean is_static = Modifier.isStatic(method.getModifiers());
 			if (!is_static
 					&& !invokeParameterPenalty(method.getDeclaringClass(),
-							arguments[0].getBackingType(), penalty)) {
+							arguments.get(0).getBackingType(), penalty)) {
 				break;
 			}
 			boolean possible = true;
 			for (int it = 0; it < parameters.length && possible; it++) {
-				possible = invokeParameterPenalty(parameters[it], arguments[it
-						+ (is_static ? 0 : 1)].getBackingType(), penalty);
+				possible = invokeParameterPenalty(parameters[it], arguments
+						.get(it + (is_static ? 0 : 1)).getBackingType(),
+						penalty);
 			}
 			if (possible && penalty.get() < best_penalty) {
 				best_method = method;
@@ -878,10 +877,10 @@ class Generator {
 			loadTaskMaster();
 			source_reference.load(builder);
 			StringBuilder arg_types = new StringBuilder();
-			for (int it = 0; it < arguments.length; it++) {
+			for (int it = 0; it < arguments.size(); it++) {
 				if (it > 0)
 					arg_types.append(", ");
-				arg_types.append(arguments[it].getBackingType()
+				arg_types.append(arguments.get(it).getBackingType()
 						.getCanonicalName());
 			}
 			builder.visitLdcInsn(String.format(
@@ -909,9 +908,9 @@ class Generator {
 		FieldValue result = makeField(best_method.getName(), flabbergast.Type
 				.fromNative(best_method.getReturnType()).getRealClass());
 		builder.visitVarInsn(Opcodes.ALOAD, 0);
-		for (int it = 0; it < arguments.length; it++) {
-			arguments[it].load(this);
-			if (arguments[it].getBackingType() != method_arguments[it]) {
+		for (int it = 0; it < arguments.size(); it++) {
+			arguments.get(it).load(this);
+			if (arguments.get(it).getBackingType() != method_arguments[it]) {
 				if (method_arguments[it] == byte.class
 						|| method_arguments[it] == short.class
 						|| method_arguments[it] == int.class) {
@@ -945,7 +944,7 @@ class Generator {
 					throw new IllegalArgumentException(
 							String.format(
 									"No conversation from %s to %s while invoking %s.%s.",
-									arguments[it].getBackingType()
+									arguments.get(it).getBackingType()
 											.getCanonicalName(),
 									method_arguments[it].getName(), best_method
 											.getDeclaringClass()
@@ -1024,7 +1023,8 @@ class Generator {
 	 * 
 	 * This can be boxing, unboxing, or casting.
 	 */
-	public void loadReboxed(LoadableValue source, Class<?> target_type) {
+	public void loadReboxed(LoadableValue source, Class<?> target_type)
+			throws Exception {
 		source.load(builder);
 		if (source.getBackingType() != target_type) {
 			if (target_type == Object.class) {
@@ -1100,7 +1100,7 @@ class Generator {
 
 	public LoadableValue pushIteratorSourceReference(AstNode node,
 			LoadableValue iterator, LoadableValue original_reference)
-			throws NoSuchMethodException, SecurityException {
+			throws Exception {
 		FieldValue reference = makeField("source_reference",
 				SourceReference.class);
 		builder.visitVarInsn(Opcodes.ALOAD, 0);
@@ -1126,15 +1126,15 @@ class Generator {
 	}
 
 	public LoadableValue pushSourceReference(AstNode node,
-			LoadableValue original_reference) {
+			LoadableValue original_reference) throws Exception {
 		FieldValue reference = makeField("source_reference",
 				SourceReference.class);
 		builder.visitVarInsn(Opcodes.ALOAD, 0);
 		if (node instanceof attribute) {
-			builder.visitLdc(String.format("%s: %s", node.getPrettyName(),
+			builder.visitLdcInsn(String.format("%s: %s", node.getPrettyName(),
 					((attribute) node).name));
 		} else if (node instanceof named_definition) {
-			builder.visitLdc(String.format("%s: %s", node.getPrettyName(),
+			builder.visitLdcInsn(String.format("%s: %s", node.getPrettyName(),
 					((named_definition) node).name));
 		} else {
 			builder.visitLdcInsn(node.getPrettyName());
@@ -1145,7 +1145,7 @@ class Generator {
 	}
 
 	private void pushSourceReferenceHelper(AstNode node,
-			LoadableValue original_reference) {
+			LoadableValue original_reference) throws Exception {
 		builder.visitTypeInsn(Opcodes.NEW,
 				getInternalName(SourceReference.class));
 		builder.visitLdcInsn(node.getFileName());
@@ -1201,8 +1201,7 @@ class Generator {
 	 * @throws SecurityException
 	 * @throws NoSuchMethodException
 	 */
-	public void slot(LoadableValue target) throws NoSuchMethodException,
-			SecurityException {
+	public void slot(LoadableValue target) throws Exception {
 		loadTaskMaster();
 		target.load(builder);
 		visitMethod(TaskMaster.class.getMethod("slot", Computation.class));
@@ -1214,8 +1213,7 @@ class Generator {
 	 * @throws SecurityException
 	 * @throws NoSuchMethodException
 	 */
-	public void slotSleep(LoadableValue target) throws NoSuchMethodException,
-			SecurityException {
+	public void slotSleep(LoadableValue target) throws Exception {
 		slot(target);
 		builder.visitInsn(Opcodes.ICONST_0);
 		builder.visitInsn(Opcodes.IRETURN);
@@ -1249,9 +1247,8 @@ class Generator {
 		jumpToState(state);
 	}
 
-	public LoadableValue ToStringish(LoadableValue source,
-			LoadableValue source_reference) throws NoSuchMethodException,
-			SecurityException {
+	public LoadableValue toStringish(LoadableValue source,
+			LoadableValue source_reference) throws Exception {
 		LoadableValue result;
 		if (source.getBackingType() == Object.class) {
 			FieldValue field = makeField("str", Stringish.class);

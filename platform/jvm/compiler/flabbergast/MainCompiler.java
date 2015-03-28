@@ -115,7 +115,7 @@ public class MainCompiler {
 						: filename).replace(File.separatorChar, '.');
 				parser.parseFile(collector, unit, "flabbergast.library."
 						+ file_root);
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}

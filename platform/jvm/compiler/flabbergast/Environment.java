@@ -16,7 +16,7 @@ import org.objectweb.asm.Opcodes;
 
 class Environment implements CodeRegion {
 	public interface Block {
-		void invoke(LoadableValue context, LookupCache cache);
+		void invoke(LoadableValue context, LookupCache cache) throws Exception;
 	}
 
 	Map<String, NameInfo> children = new HashMap<String, NameInfo>();
@@ -97,7 +97,7 @@ class Environment implements CodeRegion {
 			RevCons<Entry<String, LoadableCache>> specials,
 			LookupCache current, LoadableValue source_reference,
 			LoadableValue context, LoadableValue self_frame, Block block)
-			throws NoSuchMethodException, SecurityException {
+			throws Exception {
 		generator.debugPosition(this);
 		MethodVisitor builder = generator.getBuilder();
 		List<LoadableCache> lookup_results = new ArrayList<LoadableCache>();
@@ -240,7 +240,7 @@ class Environment implements CodeRegion {
 	private void generateLookupPermutation(Generator generator,
 			LoadableValue context, LookupCache cache, int index,
 			List<LoadableCache> values, LoadableValue source_reference,
-			Block block) throws NoSuchMethodException, SecurityException {
+			Block block) throws Exception {
 		if (index >= values.size()) {
 			block.invoke(context, cache);
 			generator.debugPosition(this);
@@ -296,7 +296,7 @@ class Environment implements CodeRegion {
 		return file_name;
 	}
 
-	List<Class<?>> getIntrinsicRealTypes(AstNode node) {
+	List<Class<Object>> getIntrinsicRealTypes(AstNode node) {
 		if (intrinsics.containsKey(node)) {
 			return intrinsics.get(node).getKey().getClasses();
 		} else if (parent != null) {
@@ -336,15 +336,14 @@ class Environment implements CodeRegion {
 
 	void intrinsicDispatch(Generator generator, AstNode node,
 			LoadableValue original, LoadableValue source_reference,
-			Generator.ParameterisedBlock<LoadableValue> block)
-			throws NoSuchMethodException, SecurityException {
+			Generator.ParameterisedBlock<LoadableValue> block) throws Exception {
 		Entry<TypeSet, Boolean> intrinsic = intrinsics.get(node);
 		if (!intrinsic.getValue()) {
 			block.invoke(original);
 			return;
 		}
-		List<Class<?>> types = intrinsic.getKey().getClasses();
-		for (Class<?> type : types) {
+		List<Class<Object>> types = intrinsic.getKey().getClasses();
+		for (Class<Object> type : types) {
 			Label next_label = new Label();
 			original.load(generator);
 			MethodVisitor builder = generator.getBuilder();

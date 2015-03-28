@@ -8,9 +8,9 @@ abstract class LoadableValue {
 
 	public abstract Class<?> getBackingType();
 
-	public void load(Generator generator) {
+	public void load(Generator generator) throws Exception {
 		load(generator.getBuilder());
 	}
 
-	public abstract void load(MethodVisitor generator);
+	public abstract void load(MethodVisitor generator) throws Exception;
 }

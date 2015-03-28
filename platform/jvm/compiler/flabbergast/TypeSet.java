@@ -29,11 +29,12 @@ public class TypeSet {
 		return (type.get() & flags) != 0;
 	}
 
-	public List<Class<?>> getClasses() {
-		List<Class<?>> classes = new ArrayList<Class<?>>();
+	@SuppressWarnings("unchecked")
+	public <T> List<Class<T>> getClasses() {
+		List<Class<T>> classes = new ArrayList<Class<T>>();
 		for (Type t : Type.values()) {
 			if ((t.get() & flags) != 0) {
-				classes.add(t.getRealClass());
+				classes.add((Class<T>) t.getRealClass());
 			}
 		}
 		return classes;

@@ -784,6 +784,7 @@ kws_tmpl : Template {
 			field ?:
 			# The field in the element of interest containing the name.
 			name_field ?:
+			type ?:
 			# A name, which may be used in a `other_code` to access the element in the
 			# list in `action`.
 			current_element ?:
@@ -1036,7 +1037,7 @@ language_tmpl : Template {
 	}
 
 	pure_space : Template parser.many {
-		of : parser.single { char : " \\t\\n\\r\\f\\v" }
+		of : parser.single { char : " \\t\\n\\r\\f\\u000b" }
 	}
 
 	# Parse a space and/or comment
@@ -1051,7 +1052,7 @@ language_tmpl : Template {
 			nonempty : mandatory
 			of : parser.alternate {
 				of : [
-					parser.single { char : " \\t\\n\\r\\f\\v" },
+					parser.single { char : " \\t\\n\\r\\f\\u000b" },
 					parser.sequence {
 						of : [
 							parser.exact { word : "#" },
@@ -1530,6 +1531,7 @@ language_tmpl : Template {
 											Then list_case {
 												field : $named_args
 												name_field : $name
+												type : $named_definition
 												action : kws.set_frame_or_tmpl {
 													name : current_name
 													returns : into
@@ -1590,6 +1592,7 @@ language_tmpl : Template {
 						cases : [ list_case {
 							field : $overrides
 							name_field : $name
+							type : $attribute
 							action : codegen.other_code {
 								parameters : {
 									source_template : converted_result

@@ -145,6 +145,14 @@ public class Parser {
 			return column;
 		}
 
+		String getFileName() {
+			return Parser.this.file_name;
+		}
+
+		Parser getParser() {
+			return Parser.this;
+		}
+
 		int getIndex() {
 			return index;
 		}
@@ -337,24 +345,27 @@ public class Parser {
 	 * Parse in the “file” context defined in the language specification.
 	 */
 	public <T> T parseFile(ErrorCollector collector, CompilationUnit<T> unit,
-			String type_name) {
-		final Ptr<Compiler.file> result = new Ptr<Compiler.File>();
+			String type_name) throws Exception {
+		final Ptr<file> result = new Ptr<file>();
 		Ptr<Position> position = new Ptr<Position>(new Position(collector));
-		if (Compiler.file.ParseRule_Base(position, result)
+		if (file.parseRule_Base(position, result)
 				&& position.get().isFinished()) {
-			if (result.Analyse(collector)) {
-				return unit.createRootGenerator(result, type_name,
+			if (result.get().analyse(collector)) {
+				return unit.createRootGenerator(result.get(), type_name,
 						new Generator.Block() {
 
 							@Override
-							public void invoke(final Generator generator) {
+							public void invoke(final Generator generator)
+									throws Exception {
 								result.get()
 										.generate(
+												generator,
 												new ParameterisedBlock<LoadableValue>() {
 
 													@Override
 													public void invoke(
-															LoadableValue value) {
+															LoadableValue value)
+															throws Exception {
 														generator
 																.doReturn(value);
 

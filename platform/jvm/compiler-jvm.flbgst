@@ -1,0 +1,2518 @@
+compiler_lib : From lib:compiler
+
+# The Java implementation of the parser. The parser definitions also create the
+# class definitions. Each syntax group in the compiler becomes an abstract
+# class and each syntax element derives this class. The parser generated is a
+# packrat parser. The memorisation logic and state information is managed by
+# code elsewhere.
+#
+# The parser makes heavy use of labelled `breaks` for control flow. The best
+# strategy (based on a search of the literature) for error reporting in a PEG
+# parser is to keep the error that occurs having consumed the most input, even
+# if the parser has backed up since then. The `update` methods record and
+# error, keeping only the most extreme.
+#
+# In the Flabbergast compiler code, the action to be taken at the end of
+# parsing is the `parse_complete` template, which takes the success state and
+# indentation. Parser components can redefine `parse_complete` as needed to
+# define the behaviour of their children.
+parser : compiler_lib.parser_tmpl {
+	nop +: {
+		class_gen : ""
+		copy_instance : ""
+		parser_gen : parse_complete(ok : True, indent : indent )
+	}
+	# Call `Parser.Position.match` and record a failure otherwise.
+	exact +: {
+		class_gen : ""
+		copy_instance : ""
+		parser_gen :
+			"\(indent)if (_position.get().match(\"\(word)\")) {" &
+			parse_complete(ok : True, indent : indent & "\t") &
+			"\(indent)} else {" &
+			"\(indent)\t_position.get().update(\"“\(word)”\", \"\(pretty_name)\");" &
+			parse_complete(ok : False, indent : indent & "\t") &
+			"\(indent)}"
+	}
+	# Duplicate the current state of the object under parse, then parse another
+	# rule, redefining `parse_complete` so the error state restores the previous
+	# object under parse and then call the parent's `parse_complete` always with
+	# success.
+	optional +: {
+		id : Id
+		class_gen : of.class_gen
+		copy_instance : of.copy_instance
+
+		parent_indent : Lookup indent In Container
+		indent : parent_indent & "\t"
+
+		parse_complete : Template {
+			ok ?:
+			value : If ok
+				Then "\(indent)break optional_\(id);"
+				Else
+					"\(indent)_obj.set(_optional_obj_\(id));" &
+					"\(indent)_position.set(_optional_position_\(id));" &
+					"\(indent)break optional_\(id);"
+		}
+		parser_gen :
+			"\(parent_indent)optional_\(id):" &
+			"\(parent_indent)do {" &
+			"\(indent)\(class_name) _optional_obj_\(id) = _obj.get().dup();" &
+			"\(indent)Parser.Position _optional_position_\(id) = _position.get().dup();" &
+			of.parser_gen &
+			"\(parent_indent)} while(false);" &
+			(Lookup parse_complete In Container)(ok : True, indent : indent)
+	}
+	# Parse a number of items by parsing each item in sequence. If an error
+	# occurs, a flag is set and flow is short circuited to the end. At the end,
+	# the error flag is checked and the appropriate `parse_complete` is invoked.
+	sequence +: {
+		id : Id
+		class_gen : For x : of Reduce acc & x.class_gen With acc : ""
+		copy_instance : For x : of Reduce acc & x.copy_instance With acc : ""
+
+		parent_indent : Lookup indent In Container
+		indent : parent_indent & "\t"
+
+		parent_parse_complete : Lookup parse_complete In Container
+		parse_complete : Template {
+			ok ?:
+			value : If ok Then "" Else "\(indent)_sequence_fail_\(id) = true;\(indent)break _sequence_\(id);"
+		}
+		parser_gen :
+			"\(parent_indent)boolean _sequence_fail_\(id) = false;" &
+			"\(parent_indent)_sequence_\(id):" &
+			"\(parent_indent)do {" &
+			(For x : of Reduce acc & x.parser_gen With acc : "") &
+			"\(parent_indent)} while(false);" &
+			"\(parent_indent)if (_sequence_fail_\(id)) {"&
+			parent_parse_complete(ok : False, indent : indent & "\t") &
+			"\(indent)} else {" &
+			parent_parse_complete(ok : True, indent : indent & "\t") &
+			"\(parent_indent)}"
+	}
+	# Parse a list of items. Inside an endless loop, the object state is copied,
+	# then, if this is not the first iteration, the separator is parsed, then the
+	# main parse action. If an error occurred, the object state is restored and
+	# the loop exited. There is no “success” case that exits the loop.
+	many +: {
+		id : Id
+		class_gen : of.class_gen & (If separator Is Null Then "" Else separator.class_gen)
+		copy_instance : of.copy_instance & (If separator Is Null Then "" Else separator.copy_instance)
+
+		parent_indent : Lookup indent In Container
+		indent : parent_indent & "\t"
+
+		parent_parse_complete : Lookup parse_complete In Container
+		pok : parent_parse_complete(ok : True, indent : indent)
+		perr : parent_parse_complete(ok : False, indent : indent)
+		parse_complete : Template {
+			ok ?:
+			value: If ok Then "" Else "\(indent)_position.set(_many_position_\(id));\(indent)_obj.set(_many_obj_\(id));\(indent)break;"
+		}
+		need_first : nonempty || !(separator Is Null)
+		parser_gen :
+			(If need_first Then "\(parent_indent)boolean _first_\(id) = true;" Else "") &
+			"\(parent_indent)while(true) {" &
+			"\(indent)Parser.Position _many_position_\(id) = _position.get().dup();" &
+			"\(indent)\(class_name) _many_obj_\(id) = _obj.get().dup();" &
+			(If separator Is Null Then "" Else "\(indent)if (!_first_\(id)) {\(separator.parser_gen)\(indent)}") &
+			of.parser_gen &
+			(If need_first Then "\(indent)_first_\(id) = false;" Else "") &
+			"\(parent_indent)}" &
+			(If nonempty
+				Then
+					"\(parent_indent)if (_first_\(id)) {" &
+					perr &
+					"\(parent_indent)} else {" &
+					pok &
+					"\(parent_indent)}"
+				Else pok)
+	}
+	# Parse exactly one path. For each path, the current object state is
+	# duplicated, the parse action performed. If successful, all other paths are
+	# ignored. If it fails, the stored state is restored and the next path is
+	# attempted. If all paths are exhausted, the parent's `parse_complete` is
+	# called with failure.
+	alternate +: {
+		id : Id
+		class_gen : For x : of Reduce acc & x.class_gen With acc : ""
+		copy_instance : For x : of Reduce acc & x.copy_instance With acc : ""
+
+		parent_indent : Lookup indent In Container
+		indent : parent_indent & "\t"
+
+		parent_parse_complete : Lookup parse_complete In Container
+		pok : parent_parse_complete(ok : True, indent : indent)
+		perr : parent_parse_complete(ok : False, indent : indent)
+		parse_complete : Template {
+			ok ?:
+			value : If ok
+				Then "\(indent)_alternate_success_\(id) = true;"
+				Else "\(indent)_position.set(_alt_position_\(id));\(indent)_obj.set(_alt_obj_\(id));"
+		}
+		parser_gen :
+			"\(parent_indent)boolean _alternate_success_\(id) = false;" &
+			"\(parent_indent)Parser.Position _alt_position_\(id) = _position.get().dup();" &
+			"\(parent_indent)\(class_name) _alt_obj_\(id) = _obj.get();" &
+			(For x : of
+				Reduce acc &
+					"\(parent_indent)if (!_alternate_success_\(id)) {" &
+					"\(indent)_position.set(_alt_position_\(id).dup());" &
+					"\(indent)_obj.set(_alt_obj_\(id).dup());" &
+					x.parser_gen &
+					"\(parent_indent)}"
+				With acc : "") &
+			"\(parent_indent)if (_alternate_success_\(id)) {" &
+			pok &
+			"\(parent_indent)} else {" &
+			perr &
+			"\(parent_indent)}"
+	}
+	# Parse characters in an certain band. This simply reads the next character
+	# and checks its numerical value, then invokes `parse_complete`.
+	range +: {
+		class_gen : ""
+		copy_instance : ""
+		pok : parse_complete(ok : True, indent : indent & "\t")
+		perr :
+			"\(indent)\t_position.get().update(\"character between “\(from)” and “\(to)”\", \"\(pretty_name)\");" &
+			parse_complete(ok : False, indent : indent & "\t")
+		acc : If accumulate
+			Then (accumulate_char { input : "_position.get().peekLast()" }).value
+			Else ""
+		parser_gen :
+			"\(indent)if (_position.get().next() >= '\(from)' && _position.get().peekLast() <= '\(to)') {" &
+			acc & pok &
+			"\(indent)} else {" &
+			perr &
+			"\(indent)}"
+	}
+	# Simply read a character from the parse stream.
+	single +: {
+		class_gen : ""
+		copy_instance : ""
+		acc : If accumulate
+			Then (accumulate_char { input : "_position.get().peekLast()"  indent : Lookup indent In Container & "\t"}).value
+			Else ""
+		parser_gen : "\(indent)if (\"\(char)\".indexOf(_position.get().next()) \(If invert_match Then "==" Else "!=") -1) {" &
+			acc & parse_complete(ok : True, indent : indent & "\t") &
+			"\(indent)} else {" &
+			"\(indent)\t_position.get().update(Parser.toLiteral(\"\(char)\"), \"\(pretty_name)\");" &
+			parse_complete(ok : False, indent : indent & "\t") &
+			"\(indent)}"
+	}
+	# Parse a character and check its Unicode class. All the real work is done by
+	# the system libraries.
+	char_class +: {
+		class_gen : ""
+		copy_instance : ""
+
+		acc : If accumulate
+			Then (accumulate_char { input : "_position.get().peekLast()"  indent : Lookup indent In Container & "\t"}).value
+			Else ""
+
+		match_expr :
+			For class : classes
+			Reduce
+				"\(acc) || char_class_\(Id) == java.lang.Character.\(class.enum)"
+			With acc : "false"
+
+		accepted_names :
+			For class : classes
+			Reduce
+				If acc Is Null
+					Then class.name
+					Else (acc & " or " & class.name)
+			With acc : Null
+
+		parser_gen :
+			"\(indent)int char_class_\(Id) = java.lang.Character.getType(_position.get().next());" &
+			"\(indent)if (" &
+			(If invert_match Then "!(\(match_expr))" Else match_expr) &
+			") {" &
+			acc & parse_complete(ok : True, indent : indent & "\t") &
+			"\(indent)} else {" &
+			"\(indent)\t_position.get().update(\"character \(If invert_match Then "not " Else "")of type \(accepted_names ?? "unknown")\", \"\(pretty_name)\");" &
+			parse_complete(ok : False, indent : indent & "\t") &
+			"\(indent)}"
+
+		letter_lower : { name : "lower-case letter"  enum : "LOWERCASE_LETTER" }
+		letter_modifier : { name : "modifier letter"  enum : "MODIFIER_LETTER" }
+		letter_other : { name : "other letter"  enum : "OTHER_LETTER" }
+		letter_title : { name : "title-case letter"  enum : "TITLECASE_LETTER" }
+		letter_upper : { name : "upper-case letter"  enum : "UPPERCASE_LETTER" }
+		mark_combining : { name : "spacing combining mark"  enum : "COMBINING_SPACING_MARK" }
+		mark_enclosing : { name : "enclosing mark"  enum : "ENCLOSING_MARK" }
+		mark_nonspace : { name : "non-spaching modification mark"  enum : "NON_SPACING_MARK" }
+		number_decimal : { name : "decimal numeral"  enum : "DECIMAL_DIGIT_NUMBER" }
+		number_letter : { name : "letter-like numeral"  enum : "LETTER_NUMBER" }
+		number_other : { name : "other number"  enum : "OTHER_NUMBER" }
+		other_control : { name : "control code"  enum : "CONTROL" }
+		other_format : { name : "format layout"  enum : "FORMAT" }
+		other_private : { name : "private use"  enum : "PRIVATE_USE" }
+		other_surrogate : { name : "surrogate"  enum : "SURROGATE" }
+		other_unassigned : { name : "unassigned"  enum : "UNASSIGNED" }
+		punctuation_connector : { name : "connecting punctuation"  enum : "CONNECTOR_PUNCTUATION" }
+		punctuation_dash : { name : "dash"  enum : "DASH_PUNCTUATION" }
+		punctuation_final_quote : { name : "closing qutation mark"  enum : "FINAL_QUOTE_PUNCTUATION" }
+		punctuation_initial_quote : { name : "opening quotation mark"  enum : "INITIAL_QUOTE_PUNCTUATION" }
+		punctuation_other : { name : "miscellaneous punctuation"  enum : "OTHER_PUNCTUATION" }
+		punctuation_start : { name : "starting punctuation"  enum : "START_PUNCTUATION" }
+		separator_line : { name : "line separator"  enum : "LINE_SEPARATOR" }
+		separator_paragraph : { name : "paragraph separator"  enum : "PARAGRAPH_SEPARATOR" }
+		separator_space : { name : "space"  enum : "SPACE_SEPARATOR" }
+		symbol_currency : { name : "currency"  enum : "CURRENCY_SYMBOL" }
+		symbol_math : { name : "mathematical operator"  enum : "MATH_SYMBOL" }
+		symbol_modifier : { name : "modifier symbol"  enum : "MODIFIER_SYMBOL" }
+		symbol_other : { name : "miscellanous symbol"  enum : "OTHER_SYMBOL" }
+	}
+	# Peek a head in the buffer and make sure the buffer is either empty or the
+	# next character doesn't occur in the specified set of characters.
+	except +: {
+		class_gen : ""
+		copy_instance : ""
+		parser_gen : "\(indent)if (_position.get().isFinished() || \"\(char)\".indexOf(_position.get().peekNext()) == -1) {" &
+			parse_complete(ok : True, indent : indent & "\t") &
+			"\(indent)} else {" &
+			"\(indent)\t_position.get().update(\"anything except \" + Parser.toLiteral(\"\(char)\"), \"\(pretty_name)\");" &
+			parse_complete(ok : False, indent : indent & "\t") &
+			"\(indent)}"
+	}
+	# Define a field for a long integer and, for each character accumulated, do a
+	# multiply-and-accumulate operation on the field.
+	accumulate_integer +: {
+		require_definition :
+				For common_field : Name, common_type : expanded_common
+				Where common_field == field
+				Reduce False
+				With acc : True
+		class_gen : If require_definition Then "\tlong " & field & ";\n" & in.class_gen Else ""
+		copy_instance : If require_definition Then "\t\t_obj.\(field) = \(field);\n" & in.copy_instance Else ""
+
+		accumulate_char : Template {
+			input ?:
+			value : "\(indent)_obj.get().\(field) = _obj.get().\(field) * \(multiplier) + (\(input) - \(offset));"
+		}
+		parser_gen : in.parser_gen
+	}
+	# This is similar to `accumulate_integer`, but the accumulation is done in a
+	# local variable and then converted to a Unicode character in a field.
+	#
+	# Because this uses a local buffer, it is fragile when combined with
+	# `optional` or `alternate`, since they can turn failure into success,
+	# allowing a buffer that should be discarded to be saved.
+	accumulate_unichar_integer +: {
+		unicode_accumulate_char : "_unicode_acc_" & Id
+		class_gen : ""
+		copy_instance : ""
+
+		parent_parse_complete : Lookup parse_complete In Container
+		parent_unicode_accumulate_char : Lookup accumulate_char In Container
+		parse_complete : Template {
+			ok ?:
+			save_char : (parent_unicode_accumulate_char { input : "java.lang.Character.toChars(" & unicode_accumulate_char & ")" }).value
+			pok : parent_parse_complete(ok : True, indent : indent)
+			perr : parent_parse_complete(ok : False, indent : indent)
+			value : If ok Then (save_char & pok) Else perr
+		}
+		accumulate_char : Template {
+			input ?:
+			value : "\(indent)\(unicode_accumulate_char) = \(unicode_accumulate_char) * \(multiplier) + (\(input) - \(offset));"
+		}
+		parser_gen : "\(indent)int \(unicode_accumulate_char) = \(initial);" & in.parser_gen
+	}
+	# Accumulates a float. Doing character-at-a-time float conversion is
+	# impractical when compared to integers. It there for accumulates into a text
+	# buffer, then uses the system's float parser to do the work.
+	#
+	# Because this uses a local buffer, it is fragile when combined with
+	# `optional` or `alternate`, since they can turn failure into success,
+	# allowing a buffer that should be discarded to be saved.
+	accumulate_float +: {
+		require_definition :
+			For common_field : Name, common_type : expanded_common
+			Where common_field == field
+			Reduce False
+			With acc : True
+		class_gen : If require_definition Then "\tdouble " & field & ";\n" & in.class_gen Else ""
+		copy_instance : If require_definition Then "\t\t_obj.\(field) = \(field);\n" & in.copy_instance Else ""
+
+		float_accumulate_buffer : "_float_acc_" & Id
+		accumulate_char : Template {
+			input ?:
+			value : indent & float_accumulate_buffer & ".append(" & input & ");"
+		}
+		parent_parse_complete : Lookup parse_complete In Container
+		parse_complete : Template {
+			ok ?:
+			value : If ok
+				Then
+					"\(indent)try {" &
+					"\(indent)\t_obj.get().\(field) = java.lang.Double.parseDouble(\(float_accumulate_buffer).toString());" &
+					pok &
+					"\(indent)} catch(java.lang.NumberFormatException e) {" &
+					perr &
+					"\(indent)}"
+				Else perr
+			pok : parent_parse_complete(ok : True, indent : indent & "\t")
+			perr : parent_parse_complete(ok : False, indent : indent & "\t")
+		}
+		parser_gen : "java.lang.StringBuilder \(float_accumulate_buffer) = new java.lang.StringBuilder();" & in.parser_gen
+	}
+	# Accumulates items into a list. There is a second buffer to prevent
+	# duplication, prepopulated with forbidden values.
+	accumulate_list +: {
+		require_definition : If field Is Null Then False Else
+			(For common_field : Name, common_type : expanded_common Where common_field == field Reduce False With acc : True)
+		forbidden_values :
+			For f : forbid, pos : Ordinal
+				Reduce (If pos > 1 Then "\(acc), " Else "") & (If f Is Str Then "\"\(f)\"" Else f)
+				With acc : ""
+		initialiser : If forbidden_values == "" Then "" Else "java.util.Arrays.asList(\(forbidden_values))"
+
+		class_gen :
+			(If require_definition
+				Then
+					"\tjava.util.ArrayList<\(type)> \(field) = new java.util.ArrayList<\(type)>();\n" &
+					(If deduplicate Is Null
+						Then ""
+						Else "\tjava.util.HashSet<\(deduplicate.dedup_type)> \(field)_dedup = new java.util.HashSet<\(deduplicate.dedup_type)>(\(initialiser));\n")
+				Else "") & in.class_gen
+		copy_instance :
+			(If require_definition
+				Then
+					"\t\t_obj.\(field).addAll(\(field));\n" &
+					(If deduplicate Is Null Then "" Else "\t\t_obj.\(field)_dedup.addAll(\(field)_dedup);\n")
+				Else "")
+				& in.copy_instance
+		parser_gen : in.parser_gen
+	}
+	# Accumulates characters into a string builder.
+	accumulate_string +: {
+		require_definition : If field Is Null Then False Else
+			(For common_field : Name, common_type : expanded_common Where common_field == field Reduce False With acc : True)
+		class_gen : If require_definition Then "\tjava.lang.StringBuilder " & field & " = new java.lang.StringBuilder();\n" & in.class_gen Else ""
+		copy_instance : If require_definition
+			Then "\t\t_obj.\(field).append(\(field).toString());\n" & in.copy_instance
+			Else ""
+
+		accumulate_char : Template {
+			input ?:
+			value : "\(indent)_obj.get().\(field).append(\(input));"
+		}
+		parser_gen : in.parser_gen
+	}
+	# Accumulates a character from a numeric literal.
+	collect_codepoint +: {
+		class_gen : in.class_gen
+		copy_instance : in.copy_instance
+
+		parent_parse_complete : Lookup parse_complete In Container
+		parse_complete : Template {
+			ok ?:
+			value : If ok
+				Then
+					(accumulate_char { input : "java.lang.Character.toChars(" & codepoint & ")" }).value &
+					parent_parse_complete(ok : True, indent : indent)
+				Else parent_parse_complete(ok : False, indent : indent)
+		}
+		parser_gen : in.parser_gen
+	}
+	# Calls another parse rule, passing a reference to our current state to the
+	# other rule. The rule may change either the parse state object or instance
+	# to which the reference refers.
+	#
+	# There's a mess to handle parsing into lists versus fields and to handle
+	# de-duplication in lists.
+	other +: {
+		require_definition : If field Is Null Then False Else
+			(For common_field : Name, common_type : expanded_common Where common_field == field Reduce False With acc : True)
+		class_gen : If require_definition Then "\t\(type) \(field);\n" Else ""
+		copy_instance : If require_definition Then "\t\t_obj.\(field) = \(field);\n" Else ""
+
+		pok : ((Lookup parse_complete In Container) { ok : True }).value
+		perr : ((Lookup parse_complete In Container) { ok : False }).value
+		target_rule :
+			Let base : "\(type).parseRule_\(alternate ?? "Base")"
+			In
+				If field Is Null
+				Then
+					"new ParseRule<\(type)>() { public boolean invoke(Ptr<Parser.Position> \(Id)_iposition, Ptr<\(type)> \(Id)_iresult) { boolean \(Id)_success = \(base)(\(Id)_iposition, \(Id)_iresult); " &
+					(If deduplicate Is Null
+						Then ""
+						Else
+							(Let dedup_container : "_obj.get()." & Lookup field In Container & "_dedup"
+								In "if (\(Id)_success) { if (\(dedup_container).contains(\(Id)_iresult.get().\(deduplicate.dedup_key))) { \(Id)_iposition.get().nameConstraint(\(Id)_iresult.get().\(deduplicate.dedup_key)); return false; } else { \(dedup_container).add(\(Id)_iresult.get().\(deduplicate.dedup_key)); } } ")) &
+					"return \(Id)_success; } }"
+				Else base
+		parse_call : If field Is Null
+			Then "_position.get().getParser().parseIntoList(_position, _obj.get().\(Lookup field In Container), \(target_rule))"
+			Else "\(target_rule)(_position, \(Id)_ptr)"
+		parser_gen :
+			(If field Is Null Then "" Else "\(indent)Ptr<\(type)> \(Id)_ptr = new Ptr<\(type)>();") &
+			"\(indent)if (\(parse_call)) {" &
+			(If field Is Null Then "" Else "\(indent)\t_obj.get().\(field) = \(Id)_ptr.get();") &
+			"\(pok)\(indent)} else {\(perr)\(indent)}"
+	}
+}
+# Some times, different parse rules should share fields across classes. These
+# define the rules.
+common_fields : compiler_lib.common_fields_tmpl {
+	str +: {
+		class_gen : "\tjava.lang.StringBuilder \(field_name) = new java.lang.StringBuilder();\n"
+		copy_instance : "\t\t_obj.\(field_name).append(\(field_name).toString());\n"
+		dedup_type : "String"
+		dedup_key : "\(field_name).toString()"
+	}
+	int +: {
+		class_gen : "\tlong \(field_name);\n"
+		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
+		dedup_type : "Integer"
+		dedup_key : field_name
+	}
+	float +: {
+		class_gen : "\tinternal double \(field_name);\n"
+		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
+		dedup_type : "Double"
+		dedup_key : field_name
+	}
+	other +: {
+		class_gen : "\t\(type) \(field_name);\n"
+		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
+		dedup_type : type
+		dedup_key : field_name
+	}
+}
+
+# When making copies of a syntax node, the code to copy all support fields not
+# defined in the compiler proper.
+static_copy_instance : For field : [ "start_row", "end_row", "start_column", "end_column", "file_name" ]
+	Reduce acc & "\t\t_obj.\(field) = \(field);\n" With acc : ""
+
+# Definitions for environment-handling code. Most of the environment code is
+# defined in the `Environment` and `NameInfo` classes.
+environment : compiler_lib.environment_tmpl {
+	collect +: {
+		class_gen : ""
+		value : "\t\t_return = \(current_environment);\n"
+	}
+	other_elements +: {
+		class_gen : ""
+		value : For field : fields
+			Reduce acc & "\t\tif (\(field) != null) { \(field).propagateEnvironment(_collector, _queue, \(current_environment), _success); }\n"
+			With acc : ""
+	}
+	other_with_result +: {
+		current_environment : name
+		class_gen :
+			For application : apply_to
+				Where !(application Is Null)
+				Reduce acc & application.class_gen
+				With acc :
+					If name Is Null
+						Then ""
+						Else "\tEnvironment \(name);\n"
+		value :
+			"\t\tif (_return != null) throw new java.lang.IllegalStateException(\"Refusing to overwrite return value.\");\n" &
+			"\t\tif (\(field) == null) throw new java.lang.IllegalStateException(\"Field \(field) in \(rule_name) is empty.\");\n" &
+			"\t\t\(current_environment) = \(field).propagateEnvironment(_collector, _queue, \(Lookup current_environment In Container), _success);\n" &
+			"\t\tif (\(current_environment) == null) throw new java.lang.IllegalStateException(\"Field \(field) in \(rule_name) did not collect and environment.\");\n" &
+			(For application : apply_to
+				Where !(application Is Null)
+				Reduce acc & application.value
+				With acc : "")
+
+	}
+	list_of +: {
+		class_gen : ""
+		value : "\t\tif (\(field) != null) { for (AstTypeableNode \(Id) : \(field)) \(Id).propagateEnvironment(_collector, _queue, \(current_environment), _success); }\n"
+	}
+	list_independent +: {
+		class_gen : ""
+		value : "\t\tif (\(field) != null) { for (AstTypeableNode \(Id) : \(field)) \(Id).propagateEnvironment(_collector, _queue, new Environment(\(Id).getFileName(), \(Id).getStartRow(), \(Id).getStartColumn(), \(Id).getEndRow(), \(Id).getEndColumn(), \(If inherit Then current_environment Else "null"), false, \(If top_level Then "true" Else "false")), _success); }\n"
+	}
+	blank_environment +: {
+		current_environment : name
+		class_gen :
+			For application : apply_to
+				Where !(application Is Null)
+				Reduce acc & application.class_gen
+				With acc : "\tEnvironment \(name);\n"
+
+		value :
+			"\t\t\(name) = new Environment(getFileName(), getStartRow(), getStartColumn(), getEndRow(), getEndColumn(), null, false, false);\n" &
+			(For application : apply_to
+				Where !(application Is Null)
+				Reduce acc & application.value
+				With acc : "")
+	}
+	modified_environment +: {
+		current_environment : name
+		class_gen :
+			(For application : apply_to
+				Where !(application Is Null)
+				Reduce acc & application.class_gen
+				With acc : "\tEnvironment \(name);\n") &
+			(For special_name : special_names
+				Reduce acc & special_name.class_gen
+				With acc : "")
+		value :
+			"\t\t\(name) = new Environment(getFileName(), getStartRow(), getStartColumn(), getEndRow(), getEndColumn(), \(Lookup current_environment In Container), \(If force_back Then "true" Else "false"), false);\n" &
+			(For special_name : special_names Reduce acc & special_name.value With acc : "") &
+			(For application : apply_to
+				Where !(application Is Null)
+				Reduce acc & application.value
+				With acc : "")
+
+		masks_from_definitions +: {
+			value : "\t\tif (\(field) != null) for (Maskable \(Id) : \(field)) {\n" &
+				"\t\t\t\(Id).addMask(_collector, \(current_environment));\n" &
+				"\t\t}\n"
+			class_gen : ""
+		}
+		mask_from_fields +: {
+			value : "\t\t\(type_storage) = \(current_environment).addMask(\(name_field).toString(), \(expr_field));\n"
+			class_gen : "\tRestrictableType \(type_storage);\n"
+		}
+		override_name_from_field +: {
+			value : "\t\t\(type_storage) = \(current_environment).addOverrideName(\(field).toString());\n"
+			class_gen : "\tRestrictableType \(type_storage);\n"
+		}
+		forbidden_name_from_field +: {
+			value : "\t\t\(current_environment).addForbiddenName(\(field).toString());\n"
+			class_gen : ""
+		}
+	}
+	top_level +: {
+		class_gen : ""
+		value : "\t\tif (\(current_environment).getTopLevel() != \(If desired Then "true" Else "false")) { _success.set(false); _collector.reportRawError(\(class_name).this, \"At \(If desired Then "file-level" Else "nested") scope, \(pretty_name) is not allowed.\"); }"
+	}
+}
+# The correspondence between Flabbergast types in the compiler and their
+# implementation types (a.k.a. `real_type`) and the flag used in the union
+# types used by the environments to propagate type information (a.k.a.
+# `union_type`).
+known_types : compiler_lib.known_types_tmpl {
+	bool : {
+		union_type : "flabbergast.Type.Bool"
+		real_type : "boolean"
+		max : "true"
+		min : "false"
+		constant_creator : "BoolConstant"
+		unbox : True
+	}
+	float : {
+		union_type : "flabbergast.Type.Float"
+		real_type : "double"
+		max : "java.lang.Double.MAX_VALUE"
+		min : "java.lang.Double.MIN_VALUE"
+		constant_creator : "FloatConstant"
+		unbox : True
+	}
+	frame : {
+		union_type : "flabbergast.Type.Frame"
+		real_type : "flabbergast.Frame"
+		unbox : True
+	}
+	int : {
+		union_type : "flabbergast.Type.Int"
+		real_type : "long"
+		max : "java.lang.Long.MAX_VALUE"
+		min : "java.lang.Long.MIN_VALUE"
+		constant_creator : "IntConstant"
+		unbox : True
+	}
+	str : {
+		union_type : "flabbergast.Type.Str"
+		real_type : "flabbergast.Stringish"
+		unbox : False
+	}
+	template : {
+		union_type : "flabbergast.Type.Template"
+		real_type : "flabbergast.Template"
+		unbox : True
+	}
+	unit : {
+		union_type : "flabbergast.Type.Unit"
+		real_type : "flabbergast.Unit"
+		unbox : True
+	}
+}
+# These are types known by the KWS VM that are not found in the Flabbergast
+# language. Therefore, they have a `real_type`, but not a `union_type`.
+known_vm_types : compiler_lib.known_vm_types_tmpl {
+	any : { real_type : "Object"  union_type : "flabbergast.TypeSet.ALL" }
+	list : { real_type : "flabbergast.Context" }
+	function : { real_type : "flabbergast.ComputeValue" }
+	override_function : { real_type : "flabbergast.ComputeOverride" }
+}
+# The mechanism code to do type checking in the compiler. Each syntax element
+# is told what types it may return and it propagates this type information to
+# its children. If the union is ever empty, a type error occurs, since this
+# implies that there is no possible type that could satisfy this expression.
+ensure_type : compiler_lib.ensure_type_tmpl {
+	# Restrict the union and check if the intersection is empty.
+	filter +: {
+		type_bits : For t : types Reduce acc & ", " & t.union_type With acc : "TypeSet.EMPTY"
+
+		parent_type : Lookup current_type In Container
+		current_type : Id
+		result : ensure_type_of.result
+
+		value :
+			"\(indent)TypeSet \(Id) = new TypeSet(\(parent_type));" &
+			"\(indent)TypeSet \(Id)_restrict = new TypeSet(\(type_bits));" &
+			"\(indent)if (!\(Id).restrict(\(Id)_restrict)) {" &
+			"\(indent)\t_success.set(false);" &
+			"\(indent)\t_collector.reportExpressionTypeError(\(class_name).this, \(Id)_restrict, \(parent_type));" &
+			"\(indent)}" &
+			ensure_type_of.value
+	}
+	# Pass this type to a child node.
+	propagate +: {
+		allowed_type_bits : For t : extra_types Reduce acc & ", " & t.union_type With acc : current_type
+		value :
+			For field : fields
+				Where !(field Is Null)
+				Reduce acc & "\(indent)if (\(field) != null) \(Id).horrendousMerge(\(field).ensureType(_collector, new TypeSet(\(allowed_type_bits)), _success, \(If needs_unbox Then "true" Else current_unbox)));"
+				With acc : "\(indent)TypeSet \(Id) =  new TypeSet(\(current_type));"
+		result : Id
+
+	}
+	# Pass this type to all child nodes in a list.
+	propagate_all +: {
+		allowed_type_bits : For t : extra_types Reduce acc & ", " & t.union_type With acc : current_type
+		result : Id
+		value :
+			"\(indent)TypeSet \(Id) = new TypeSet(\(current_type));" &
+			"\(indent)if (\(field) != null) for (TypeableElement \(Id)_item : \(field)) \(Id).restrict(\(Id)_item.ensureType(_collector, new TypeSet(\(allowed_type_bits)), _success, \(If needs_unbox Then "true" Else current_unbox)));"
+	}
+	# This works similarly to filter, but takes the type from a syntax node
+	# rather than a literal in the compiler.
+	dynamic +: {
+		parent_type : Lookup current_type In Container
+		current_type : Id
+
+		type_bits : "\(field).\(If propagate_castable Then "getCastableFrom()" Else "getTypeId()")"
+		current_unbox :
+			Lookup current_unbox In Container &
+			(If propagate_castable Then " | \(field).getUnbox()" Else "")
+		result : Id
+		value :
+			"\(indent)TypeSet \(Id) = new TypeSet(\(parent_type));" &
+			"\(indent)TypeSet \(Id)_restrict = new TypeSet(\(type_bits));" &
+			"\(indent)if (\(Id).restrict(\(Id)_restrict)) {" &
+			"\(indent)\t_success.set(false); " &
+			"\(indent)\t_collector.reportExpressionTypeError(\(class_name).this, \(Id)_restrict, \(parent_type));" &
+			"\(indent)}" &
+			ensure_type_of.value
+	}
+	special +: {
+		result : Id
+		value : "\(indent)TypeSet \(Id) = \(type_storage).ensureType(_collector, \(current_type), _success,  \(If needs_unbox Then "true" Else current_unbox));"
+	}
+	# Stores the type information in the environment by lookup name.
+	stored +: {
+		result : Id
+		value :
+			"\(indent)java.util.List<String> \(Id)_names = new java.util.ArrayList<String>();" &
+			"\(indent)for (identifier \(Id)_item : \(field)) \(Id)_names.add(\(Id)_item.toString());" &
+			"\(indent)TypeSet \(Id) = environment.lookup(_collector, \(Id)_names, _success).ensureType(_collector, \(current_type), _success, \(current_unbox));"
+	}
+	# Stores the type information in the environment by syntax node.
+	intrinsic +: {
+		result : Id
+		value : "\(indent)TypeSet \(Id) = environment.ensureIntrinsic(_collector, this, \(current_type), \(If needs_unbox Then "true" Else current_unbox), _success);"
+	}
+	shared_fate +: {
+		current_type : Id
+		original_type : Lookup current_type In Container
+		indent : parent_indent & "\t"
+		parent_indent : Lookup indent In Container
+		value :
+			"\(parent_indent)TypeSet \(Id) = new TypeSet(\(original_type));" &
+			"\(parent_indent)for(int \(Id)_junk = 0; \(Id)_junk < 2; \(Id)_junk++) {" &
+			ensure_type_of.value &
+			"\(indent)\(Id).restrict(\(ensure_type_of.result));" &
+			"\(parent_indent)}"
+		result : Id
+	}
+	stop +: { value : ""  result : current_type }
+	multiple +: {
+		result : Id
+		value :
+			For action : actions
+				Where !(action Is Null)
+				Reduce acc & action.value & "\(indent)\(Id).restrict(\(action.result));"
+				With acc : "\(indent)TypeSet \(Id) = new TypeSet(TypeSet.ALL);"
+	}
+}
+default_indent : "\n\t\t"
+# Code to generate CIL opcodes, using System.Reflection.Emit for KWS VM
+# instructions. This is heavily supported by the `Generator` class. This code
+# also makes obscene use of callbacks. Per the compiler design manual, the
+# continuation passing flow of the language is represented in the compiler. At
+# most steps, a callback is created which takes the return value as an
+# argument.
+#
+# The compiler makes heavy use of “private scope” fields, which are essentially
+# anonymous fields. Each instruction stores its results in a field defined by
+# `storage_name`.
+kws : compiler_lib.kws_tmpl {
+	# The base template for most instructions. Since each instruction computes
+	# some values and then does one opcode, this is heavily applicable to most of
+	# the “normal” operations in the KWS VM. This template takes the arguments,
+	# expands their `gen_gen` templates in a fold operation, finally loading all
+	# the results, inserting the opcodes, then storing the result in a field.
+	base_tmpl +: {
+		opcode ?:
+		emit_method ?:
+		storage_name : If return_type Is Null Then "null" Else Id
+
+		extra_indent : For arg : arguments Reduce arg.value.extra_indent & acc With acc : "\t\t"
+		arg_indents : For arg_name : Name, arg : arguments, arg_pos : Ordinal
+			Select arg_name :
+				(For prev_arg : arguments, prev_arg_pos : Ordinal
+				Where prev_arg_pos < arg_pos
+				Reduce acc & prev_arg.value.extra_indent
+				With acc : "")
+
+		gen_gen +: {
+			sum_indent : indent & extra_indent
+			builder : Id & "_builder"
+
+			extra_load : ""
+			extra_emit : ""
+			extra_post : ""
+
+			load_args :
+				For arg : arguments
+					Reverse
+					Reduce
+						"\(sum_indent)if (\(arg.value.storage_name).getBackingType() != \(arg.type.real_type).class) throw new java.lang.IllegalStateException(java.lang.String.format(\"Expected %s but got %s in \(rule_name).\", \(arg.type.real_type).class.getSimpleName(), \(arg.value.storage_name).getBackingType().getSimpleName()));" &
+						"\(sum_indent)\(arg.value.storage_name).load(\(builder));" &
+						acc
+						With acc : ""
+			base_code :
+				"\(sum_indent)final LoadableValue \(storage_name) = new LoadableValue() {" &
+				"\(sum_indent)\tpublic Class<?> getBackingType() { return \(return_type.real_type).class; }" &
+				"\(sum_indent)\tpublic void load(org.objectweb.asm.MethodVisitor \(builder)) throws java.lang.Exception {" &
+				extra_load &
+				load_args &
+				(If emit_method Is Null
+					Then
+						extra_emit & "\(sum_indent)Generator.visitMethod(\(opcode), \(builder));"
+					Else
+						"\(sum_indent)\(builder).\(emit_method)(org.objectweb.asm.Opcodes.\(opcode)\(extra_emit));") &
+				extra_post &
+				"\(sum_indent)\t}\(sum_indent)};" &
+				code
+
+			value :
+				For arg : arguments, arg_indent : arg_indents
+				Reverse
+				Reduce arg.value.gen_gen(code : acc, indent : indent & arg_indent)
+				With acc : base_code
+		}
+	}
+	bool_negate +: {
+		opcode : "ICONST_1"
+		emit_method : "visitInsn"
+		gen_gen +: {
+			extra_post : "\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.IXOR);"
+		}
+	}
+	error +: {
+		extra_indent : message.extra_indent
+		gen_gen +: {
+			sum_indent : indent & message.extra_indent
+			value : message.gen_gen(
+				indent : indent,
+				code :
+					"\(sum_indent)\(generator).loadTaskMaster();" &
+					"\(sum_indent)\(parameters.source_reference.storage_name).load(\(generator));" &
+					"\(sum_indent)\(message.storage_name).load(\(generator));" &
+					"\(sum_indent)\(generator).visitMethod(Stringish.class.getMethod(\"toString\"));" &
+					"\(sum_indent)\(generator).visitMethod(TaskMaster.class.getMethod(\"ReportOtherError\", SourceReference.class, String.class));" &
+					"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.ICONST_0);" &
+					"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.IRETURN);"
+				)
+		}
+	}
+	float_add +: {
+		opcode : "DADD"
+		emit_method : "visitInsn"
+	}
+	float_divide +: {
+		opcode : "DDIV"
+		emit_method : "visitInsn"
+	}
+	float_is_finite +: {
+		opcode : "java.lang.Double.class.getMethod(\"isInfinite\", double.class)"
+		emit_method : Null
+		gen_gen +: {
+			extra_post:
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.ICONST_1);" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.IXOR);"
+		}
+	}
+	float_is_nan +: {
+		opcode : "java.lang.Double.class.getMethod(\"isNaN\", double.class)"
+		emit_method : Null
+	}
+	float_modulus +: {
+		opcode : "DREM"
+		emit_method : "visitInsn"
+	}
+	float_multiply +: {
+		opcode : "DMUL"
+		emit_method : "visitInsn"
+	}
+	float_negate +: {
+		opcode : "DNEG"
+		emit_method : "visitInsn"
+	}
+	float_subtract +: {
+		opcode : "DSUB"
+		emit_method : "visitInsn"
+	}
+	float_to_int +: {
+		opcode : "D2L"
+		emit_method : "visitInsn"
+	}
+	int_add +: {
+		opcode : "LADD"
+		emit_method : "visitInsn"
+	}
+	int_divide +: {
+		opcode : "LDIV"
+		emit_method : "visitInsn"
+	}
+	int_modulus +: {
+		opcode : "LREM"
+		emit_method : "visitInsn"
+	}
+	int_multiply +: {
+		opcode : "LMUL"
+		emit_method : "visitInsn"
+	}
+	int_negate +: {
+		opcode : "LNEG"
+		emit_method : "visitInsn"
+	}
+	int_subtract +: {
+		opcode : "LSUB"
+		emit_method : "visitInsn"
+	}
+	int_to_bool +: {
+		opcode : "Integer.class.getMethod(\"compare\", int.class, int.class)"
+		emit_method : Null
+		gen_gen +: {
+			extra_emit :
+				If number == 0
+					Then "\(builder).visitInsn(org.objectweb.asm.Opcodes.ICONST_0);"
+				Else If number == 1
+					Then "\(builder).visitInsn(org.objectweb.asm.Opcodes.ICONST_1);"
+				Else If number == -1
+					Then "\(builder).visitInsn(org.objectweb.asm.Opcodes.ICONST_M1);"
+				Else
+					"\(builder).visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(number));"
+
+			extra_post :
+				"\(sum_indent)org.objectweb.asm.Label \(Id)_end = new org.objectweb.asm.Label();" &
+				"\(sum_indent)org.objectweb.asm.Label \(Id)_branch = new org.objectweb.asm.Label();" &
+				"\(sum_indent)\(builder).visitJumpInsn(org.objectweb.asm.Opcodes.\(If invert Then "IFEQ" Else "IFNE"), \(Id)_branch);" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.ICONST_0);" &
+				"\(sum_indent)\(builder).visitJumpInsn(org.objectweb.asm.Opcodes.GOTO, \(Id)_end);" &
+				"\(sum_indent)\(builder).visitLabel(\(Id)_branch);" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.ICONST_1);" &
+				"\(sum_indent)\(builder).visitLabel(\(Id)_end);"
+		}
+	}
+	int_to_float +: {
+		opcode : "L2D"
+		emit_method : "visitInsn"
+ 	}
+	string_concatenate +: {
+		opcode : "ConcatStringish.class.getConstructors()[0]"
+		emit_method : Null
+		gen_gen +: {
+			extra_load :
+				"\(sum_indent)\(builder).visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(ConcatStringish.class));" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.DUP);"
+		}
+	}
+	string_ordinal +: {
+		opcode :  "TaskMaster.class.getMethod(\"ordinalName\", long.class)"
+		emit_method : Null
+	}
+	verify_symbol +: {
+		opcode : "TaskMaster.class.getMethod(\"VerifySymbol\", SourceReference.class, Stringish.class)"
+		emit_method : Null
+		gen_gen +: {
+			extra_load :
+				"\(sum_indent)\(generator).loadTaskMaster(\(builder));" &
+				"\(sum_indent)\(parameters.source_reference.storage_name).load(\(builder));"
+		}
+	}
+	frame_new +: {
+		extra_indent : context.extra_indent & container.extra_indent
+		gen_gen +: {
+			sum_indent : indent & extra_indent
+			base_code :
+				"\(sum_indent)final FieldValue \(storage_name) = \(generator).makeField(\"\(rule_name)_new_frame\", Frame.class);" &
+				"\(sum_indent)\(generator).getBuilder().visitVarInsn(org.objectweb.asm.Opcodes.ALOAD, 0);" &
+				"\(sum_indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(Frame.class));" &
+				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+				"\(sum_indent)\(generator).loadTaskMaster();" &
+				"\(sum_indent)\(generator).generateNextId();" &
+				"\(sum_indent)\(generator).amendSourceReference(\(class_name).this, \"\(creation_method)\", \(parameters.source_reference.storage_name), \(If source Is Null Then "null" Else source.storage_name));" &
+				"\(sum_indent)\(context.storage_name).load(\(generator));" &
+				"\(sum_indent)\(container.storage_name).load(\(generator));" &
+				"\(sum_indent)\(generator).visitMethod(Frame.class.getConstructors()[0]);" &
+				"\(sum_indent)\(storage_name).store(\(generator));" &
+				code
+			value : context.gen_gen(indent : indent, code : container.gen_gen(indent : indent & context.extra_indent, code : base_code))
+		}
+	}
+	frame_new_through +: {
+		extra_indent : container.extra_indent & context.extra_indent & start.extra_indent & end.extra_indent
+		gen_gen +: {
+			sum_indent : indent & extra_indent
+			base_code :
+				"\(sum_indent)final FieldValue \(storage_name) = \(generator).makeField(\"\(rule_name)_new_frame\", Frame.class);" &
+				"\(sum_indent)\(generator).getBuilder().visitVarInsn(org.objectweb.asm.Opcodes.ALOAD, 0);" &
+				"\(sum_indent)\(generator).loadTaskMaster();" &
+				"\(sum_indent)\(generator).generateNextId();" &
+				"\(sum_indent)\(parameters.source_reference.storage_name).load(\(generator));" &
+				"\(sum_indent)\(start.storage_name).load(\(generator));" &
+				"\(sum_indent)\(end.storage_name).load(\(generator));" &
+				"\(sum_indent)\(context.storage_name).load(\(generator));" &
+				"\(sum_indent)\(container.storage_name).load(\(generator));" &
+				"\(sum_indent)\(generator).visitMethod(Frame.class.getMethod(\"Through\", TaskMaster.class, long.class, SourceReference.class, long.class, long.class, Context.class, Frame.class));" &
+				"\(sum_indent)\(storage_name).store(\(generator));" &
+				code
+			value : container.gen_gen(
+				indent : indent,
+				code : context.gen_gen(
+					indent : indent & container.extra_indent,
+					code : start.gen_gen(
+						indent : indent & container.extra_indent & context.extra_indent,
+						code : end.gen_gen(
+							indent : indent & container.extra_indent & context.extra_indent & start.extra_indent,
+							code : base_code
+							)
+						)
+					)
+				)
+		}
+	}
+	frame_null +: {
+		extra_indent : ""
+		storage_name : "LoadableValue.NULL_FRAME"
+	}
+	frame_id +: {
+		opcode : "Frame.class.getMethod(\"getId\")"
+		emit_method : Null
+	}
+	frame_context +: {
+		opcode : "Frame.class.getMethod(\"getContext\")"
+		emit_method : Null
+	}
+	frame_has +: {
+		opcode : "Frame.class.getMethod(\"has\", Stringish.class)"
+		emit_method : Null
+	}
+	list_null +: {
+		extra_indent : ""
+		storage_name : "LoadableValue.NULL_LIST"
+	}
+	list_prepend +: {
+		opcode : "Context.class.getMethod(\"prepend\", Frame.class, Context.class)"
+		emit_method : Null
+	}
+	list_append +: {
+		opcode : "Context.class.getMethod(\"Append\", Context.class, Context.class)"
+		emit_method : Null
+	}
+	lookup_tmpl +: {
+		extra_indent : source.extra_indent & name_indent
+		name_indent : ""
+		gen_gen +: {
+			sum_indent : indent & source.extra_indent & name_indent
+			load_names ?:
+			base_code :
+				source.gen_gen(
+					indent : indent & name_indent,
+					code :
+						"\(sum_indent)\(generator).startInterlock(1);" &
+						"\(sum_indent)\(generator).loadTaskMaster();" &
+						"\(sum_indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(Lookup.class));" &
+						"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+						"\(sum_indent)\(generator).loadTaskMaster();" &
+						"\(sum_indent)\(parameters.source_reference.storage_name).load(\(generator));" &
+						load_names &
+						"\(sum_indent)\(source.storage_name).load(\(generator));" &
+						"\(sum_indent)\(generator).visitMethod(Lookup.class.getConstructors()[0]);" &
+						"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+						"\(sum_indent)final FieldValue \(storage_name) = \(generator).makeField(\"lookup\", Object.class);" &
+						"\(sum_indent)\(generator).generateConsumeResult(\(storage_name));" &
+						"\(sum_indent)\(generator).visitMethod(Lookup.class.getMethod(\"Notify\", ConsumeResult.class));" &
+						"\(sum_indent)\(generator).visitMethod(TaskMaster.class.getMethod(\"Slot\", Computation.class));" &
+						"\(sum_indent)\(generator).stopInterlock();" &
+						code
+					)
+			value : base_code
+		}
+	}
+	lookup_literal +: {
+		gen_gen +: {
+			names_length : For n : name Reduce acc + 1 With acc : 0
+			load_names :
+				For n : name, index : Ordinal
+					Reduce
+						acc &
+						"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+						"\(sum_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(index - 1));" &
+						"\(sum_indent)\(generator).getBuilder().visitLdcInsn(\"\(n)\");" &
+						"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.AASTORE);"
+					With acc :
+						"\(sum_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(names_length));" &
+						"\(sum_indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.ANEWARRAY, org.objectweb.asm.Type.getInternalName(String.class));"
+		}
+	}
+	lookup_field +: {
+		gen_gen +: {
+			load_names :
+				"\(sum_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(field).size());" &
+				"\(sum_indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.ANEWARRAY, org.objectweb.asm.Type.getInternalName(String.class));" &
+				"\(sum_indent)for (int \(Id)_iter = 0; \(Id)_iter < \(field).size(); \(Id)_iter++) {" &
+				"\(sum_indent)\t\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+				"\(sum_indent)\t\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(Id)_iter);" &
+				"\(sum_indent)\t\(generator).getBuilder().visitLdcInsn(\(field).get(\(Id)_iter).toString());" &
+				"\(sum_indent)\t\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.AASTORE);" &
+				"\(sum_indent)}"
+		}
+	}
+	lookup_dynamic +: {
+		name_indent : name.extra_indent
+		gen_gen +: {
+			load_names :
+				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.ICONST_1);" &
+				"\(sum_indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.ANEWARRAY, org.objectweb.asm.Type.getInternalName(String.class));" &
+				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.ICONST_0);" &
+				"\(sum_indent)\(name.storage_name).load(\(generator));" &
+				"\(sum_indent)\(generator).visitMethod(Stringish.class.getMethod(\"toString\"));" &
+				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.AASTORE);"
+			value : name.gen_gen(indent : indent, code : base_code)
+		}
+	}
+	apply_override +: {
+		opcode : "Computation.class.getMethod(\"PerformOverride\", String.class, int.class, int.class, int.class, int.class, ComputeOverride.class, ComputeValue.class)"
+		emit_method : Null
+		gen_gen +: {
+			extra_load :
+				"\(sum_indent)\(builder).visitLdcInsn(getFileName());" &
+				"\(sum_indent)\(builder).visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, getStartRow());" &
+				"\(sum_indent)\(builder).visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, getStartColumn());" &
+				"\(sum_indent)\(builder).visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, getEndRow());" &
+				"\(sum_indent)\(builder).visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, getEndColumn());"
+		}
+	}
+	create_function_tmpl +: {
+		extra_indent : ""
+		parameter_names ?:
+		method ?:
+		block_type ?:
+		parent_generator : Lookup generator In Container
+		generator : Id & "_generator"
+		lookup_cache : "null"
+		generation_flavour : codegen.flavour_aware
+		argument_list :
+			For parameter : parameters
+			Reduce acc & ", final LoadableValue " & parameter.storage_name
+			With acc : ""
+		parameters :
+			For parameter_name : parameter_names
+			Select parameter_name : codegen.gen_tmpl {
+				extra_indent : ""
+				storage_name : Id & "_" & parameter_name
+			}
+		gen_gen +: {
+			return_indent : indent & "\t" & returns.extra_indent
+			return_code :
+				"\(return_indent)\(generator).doReturn(\(returns.storage_name));"
+
+			value :
+				"\(indent)final DelegateValue \(storage_name) = \(parent_generator).\(method)(\(class_name).this, \"\(Id)\", new CompilationUnit.\(block_type)() { public void invoke(final Generator \(generator)\(argument_list)) throws java.lang.Exception {"	&
+				"\(indent)\t\(generator).debugPosition(\(class_name).this);" &
+				returns.gen_gen(indent : indent & "\t", code : return_code) &
+				"\(indent)} });" &
+				code
+		}
+	}
+	create_function +: {
+		method : "createFunction"
+		block_type : "FunctionBlock"
+		parameter_names : [ $source_reference, $context, $self_frame, $container_frame ]
+	}
+	create_override_function +: {
+		method : "createFunctionOverride"
+		block_type : "FunctionOverrideBlock"
+		parameter_names : [ $source_reference, $context, $self_frame, $container_frame, $original_value ]
+	}
+	set_frame_or_tmpl_tmpl +: {
+		string_indent ?:
+		extra_indent : into.extra_indent & with.extra_indent & string_indent
+		storage_name : returns.storage_name
+		gen_gen +: {
+			sum_indent : indent & into.extra_indent & with.extra_indent & string_indent
+			load_name ?:
+			base_code : into.gen_gen(
+				indent : indent & string_indent,
+				code : with.gen_gen(
+					indent : indent & into.extra_indent & string_indent,
+					code :
+						"\(sum_indent)\(into.storage_name).load(\(generator));" &
+						load_name &
+						"\(sum_indent)Class<?> \(Id)_boxed_type = \(into.storage_name).getBackingType() == Frame.class ? Object.class : ComputeValue.class;" &
+						"\(sum_indent)\(generator).loadReboxed(\(with.storage_name), \(Id)_boxed_type);" &
+						"\(sum_indent)\(generator).visitMethod(\(into.storage_name).getBackingType().getMethod(\"set\", String.class, \(Id)_boxed_type));" &
+						code
+					)
+				)
+		}
+	}
+	set_frame_or_tmpl +: {
+		string_indent : name.extra_indent
+		gen_gen +: {
+			value : name.gen_gen(indent : indent, code : base_code)
+			load_name :
+				"\(sum_indent)\(name.storage_name).load(\(generator));" &
+				"\(sum_indent)\(generator).visitMethod(Stringish.class.getMethod(\"toString\"));"
+		}
+	}
+	set_frame_or_tmpl_from_field +: {
+		string_indent : ""
+		gen_gen +: {
+			value : base_code
+			load_name :
+				"\(sum_indent)\(generator).getBuilder().visitLdcInsn(\(name_field).toString());"
+		}
+	}
+	tmpl_get +: {
+		opcode : "Template.class.getMethod(\"get\", Stringish.class)"
+		emit_method : Null
+	}
+	tmpl_container +: {
+		opcode : "Template.class.getMethod(\"getContainer\")"
+		emit_method : Null
+	}
+	tmpl_context +: {
+		opcode : "Template.class.getMethod(\"getContext\")"
+		emit_method : Null
+	}
+	tmpl_get_from_field +: {
+		opcode : "Template.class.getMethod(\"get\", String.class)"
+		emit_method : Null
+		gen_gen +: {
+			extra_emit : "\(sum_indent)\(builder).visitLdcInsn(\(field).toString());"
+		}
+	}
+	tmpl_new +: {
+		extra_indent : container.extra_indent & context.extra_indent & source_extra_indent
+		source_extra_indent : If source Is Null Then "" Else source.extra_indent
+		gen_gen +: {
+			sum_indent : indent & extra_indent
+			base_code :
+				container.gen_gen(
+					indent : indent & source_extra_indent,
+					code : context.gen_gen(
+						indent : indent & source_extra_indent & container.extra_indent,
+						code : inner_code
+					)
+				)
+			inner_code :
+				"\(sum_indent)final FieldValue \(storage_name) = \(generator).makeField(\"new_template\", Template.class);" &
+				"\(sum_indent)\(generator).getBuilder().visitVarInsn(org.objectweb.asm.Opcodes.ALOAD, 0);" &
+				"\(sum_indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(Template.class));" &
+				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+				"\(sum_indent)\(generator).amendSourceReference(\(class_name).this, \"amend template\", \(parameters.source_reference.storage_name), \(If source Is Null Then "null" Else source.storage_name));" &
+				"\(sum_indent)\(context.storage_name).load(\(generator));" &
+				"\(sum_indent)\(container.storage_name).load(\(generator));" &
+				"\(sum_indent)\(generator).visitMethod(Template.class.getConstructors()[0]);" &
+				"\(sum_indent)\(storage_name).store(\(generator));" &
+				code
+			value : If source Is Null Then base_code Else source.gen_gen(indent : indent, code : base_code)
+		}
+	}
+
+	cast_to_string +: {
+		extra_indent : source.extra_indent
+		gen_gen +: {
+			sum_indent : indent & source.extra_indent
+			value : source.gen_gen(
+				indent : indent,
+				code :
+					"\(sum_indent)final LoadableValue \(storage_name) = \(generator).toStringish(\(source.storage_name), \(parameters.source_reference.storage_name));" &
+					code
+				)
+		}
+	}
+	string_constant_tmpl +: {
+		extra_indent : ""
+		source ?:
+		gen_gen +: {
+			value : "\(indent)final LoadableValue \(storage_name) = new StringishValue(\(source));" & code
+		}
+	}
+	string_constant +: {
+		source : "\"" & str & "\""
+	}
+	string_constant_from_field +: {
+		source : field & ".toString()"
+	}
+	string_length +: {
+		opcode : "Stringish.class.getMethod(\"getLength\")"
+		emit_method : Null
+	}
+	numeric_constant +: {
+		extra_indent : ""
+		max : type.max
+		min : type.min
+		gen_gen +: {
+			value : "\(indent)final LoadableValue \(storage_name) = new \(type.constant_creator)(\(number));" & code
+		}
+	}
+	numeric_constant_units +: {
+		number : "\(field) * \(unit)"
+	}
+	null_constant +: {
+		extra_indent : ""
+		gen_gen +: {
+			value : "\(indent)final LoadableValue \(storage_name) = UnitConstant.NULL;" & code
+		}
+	}
+	nan_constant +: {
+		extra_indent : ""
+		gen_gen +: {
+			value : "\(indent)final LoadableValue \(storage_name) = FloatConstant.NAN;" & code
+		}
+	}
+	infinity_constant +: {
+		extra_indent : ""
+		gen_gen +: {
+			value : "\(indent)final LoadableValue \(storage_name) = FloatConstant.INFINITY;" & code
+		}
+	}
+	external_tmpl +: {
+		uri_str ?:
+		extra_indent : ""
+		gen_gen +: {
+				value : "\(indent)final LoadableValue \(storage_name) = \(generator).resolveUri(\(uri_str));" & code
+		}
+	}
+	external_literal +: {
+		uri_str : "\"\(uri)\""
+	}
+	external_from_field +: {
+		uri_str : "\(field).toString()"
+	}
+	compare +: {
+		extra_indent : left.extra_indent & right.extra_indent & "\t"
+		gen_gen +: {
+			sum_indent : indent & extra_indent
+			base_code :
+				"\(sum_indent)\tfinal LoadableValue \(storage_name) = \(generator).compare(\(left.storage_name), \(right.storage_name), \(parameters.source_reference.storage_name));" &
+				"\(sum_indent)if (\(storage_name) != null) {" &
+				code &
+				"\(sum_indent)}"
+
+			value : left.gen_gen(
+				indent : indent,
+				code : right.gen_gen(
+					indent : indent & left.extra_indent,
+					code : base_code
+					)
+				)
+		}
+	}
+	conditional +: {
+		extra_indent : "\t"
+		callback : Id & "_code"
+
+		gen_gen +: {
+			value :
+				"\(indent)\(generator).conditionalFlow(\(condition_lambda), \(true_lambda), \(false_lambda), new Generator.ParameterisedBlock<LoadableValue>() { public void invoke(final LoadableValue \(storage_name)) throws java.lang.Exception {\(code)\(indent)} });"
+
+			condition_lambda :
+				"new Generator.ParameterisedBlock<Generator.ParameterisedBlock<LoadableValue>>() { public void invoke(final Generator.ParameterisedBlock<LoadableValue> \(Id)_cond) throws java.lang.Exception {" &
+				condition.gen_gen(
+					indent : indent & "\t",
+					code : "\(indent)\(condition.extra_indent)\(Id)_cond.invoke(\(condition.storage_name));"
+				) &
+				"\(indent)} }"
+
+			true_lambda :
+				"new Generator.ParameterisedBlock<Generator.ParameterisedBlock<LoadableValue>>() { public void invoke(final Generator.ParameterisedBlock<LoadableValue> \(Id)_true) throws java.lang.Exception {" &
+				true_action.gen_gen(
+					indent : indent & "\t",
+					code : "\(indent)\(true_action.extra_indent)\(Id)_true.invoke(\(true_action.storage_name));"
+				) &
+				"\(indent)} }"
+
+			false_lambda :
+				"new Generator.ParameterisedBlock<Generator.ParameterisedBlock<LoadableValue>>() { public void invoke(final Generator.ParameterisedBlock<LoadableValue> \(Id)_false) throws java.lang.Exception {" &
+				false_action.gen_gen(
+					indent : indent & "\t",
+					code : "\(indent)\(false_action.extra_indent)\(Id)_false.invoke(\(false_action.storage_name));"
+				) &
+				"\(indent)} }"
+		}
+	}
+	dynamic_type_dispatch_tmpl +: {
+		extra_indent : of.extra_indent & "\t"
+		type_list ?:
+
+		gen_gen +: {
+			sum_indent : indent & of.extra_indent
+			value :
+				of.gen_gen(indent : indent, code :
+					"\(sum_indent)\(generator).dynamicTypeDispatch(\(of.storage_name), \(parameters.source_reference.storage_name), \(type_list), new Generator.ParameterisedBlock<LoadableValue>() { public void invoke(final LoadableValue \(storage_name)) throws java.lang.Exception {" &
+					"\(sum_indent)\t\(generator).debugPosition(\(class_name).this);" &
+					code &
+					"\(sum_indent)} });")
+		}
+	}
+	dynamic_type_dispatch +: {
+		type_list :
+			"java.util.Arrays.asList(" &
+			(For type : allow_types, pos : Ordinal
+				Reduce "(Class<?>) \(type.real_type).class" & (If pos > 1 Then ", \(acc)" Else "")
+				With acc : "") &
+			")"
+	}
+	dynamic_type_dispatch_from_intrinsic +: {
+		type_list : "\(environment ?? generation_environment).getIntrinsicRealTypes(\(class_name).this)"
+	}
+	dynamic_type_dispatch_from_stored_mask +: {
+		type_list : "\(type_storage).mustUnbox() ? \(type_storage).getRestrictedType().getClasses() : null"
+	}
+	dynamic_type_check_tmpl +: {
+		reference_type ?:
+		extra_indent : source.extra_indent
+		gen_gen +: {
+			value : source.gen_gen(
+				indent : indent,
+				code :
+					"\(indent)\(source.extra_indent)final LoadableValue \(storage_name) = new TypeCheckValue(\(reference_type), \(source.storage_name));" &
+					code
+				)
+		}
+	}
+	dynamic_type_check +: {
+		reference_type : "\(type.real_type).class"
+	}
+	dynamic_type_check_parsed +: {
+		reference_type : "\(field).getTypeId()"
+	}
+	iterator +: {
+		extra_indent : ""
+
+		parent_source_reference : Lookup parameters.source_reference In Container
+		parameters : {
+			source_reference :
+				If modify_source_reference
+					Then codegen.gen_tmpl { extra_indent : ""  storage_name : Id & ".get()" }
+					Else parent_source_reference
+		}
+
+		iterator_instance : Id & "_iterator"
+		iterator_next : Id & "_next"
+		iterator_dispatchers : Id & "_dispatchers"
+		iterator_key : Id & "_key"
+		iterator_ordinal : Id & "_ordinal"
+		iterator_start_block : Id & "_start_block"
+		position : Id & "_position"
+
+		gen_gen +: {
+			sum_indent : indent & extra_indent
+			value :
+				input.gen_gen(indent : indent) &
+				"\(sum_indent)final FieldValue \(storage_name) = \(generator).makeField(\"\(rule_name)_iterator_accumulator\", \(accumulator_type.real_type).class);" &
+				create_initial &
+				define_dispatcher_states &
+				create_iterator &
+				iterator_trampoline &
+				# Create a block for the default dispatcher.
+				"\(sum_indent)\(generator).markState(\(iterator_dispatchers)[1]);" &
+				dispatch_code &
+				case_dispatchers &
+				"\(sum_indent)\(generator).markState(\(iterator_dispatchers)[0]);" &
+				code
+
+			create_initial :
+				"\(sum_indent)final int \(iterator_start_block) = \(generator).defineState();" &
+				(If modify_source_reference
+					Then "\(indent)final Ptr<LoadableValue> \(GenerateId parameters.source_reference) = new Ptr<LoadableValue>(\(parent_source_reference.storage_name));"
+					Else "") &
+				initial.gen_gen(
+					indent : indent,
+					code :
+						"\(indent)\(initial.extra_indent)\(generator).copyField(\(initial.storage_name), \(storage_name));" &
+						"\(indent)\(initial.extra_indent)\(generator).jumpToState(\(iterator_start_block));"
+					) &
+				"\(sum_indent)\(generator).markState(\(iterator_start_block));"
+
+			create_iterator :
+				# Create new fields for all the bits of stuff we need.
+				"\(sum_indent)final FieldValue \(iterator_instance) = \(generator).makeField(\"\(rule_name)_iterator\", MergeIterator.class);" &
+				"\(sum_indent)@SuppressWarnings(\"unused\")\n" &
+				"\(sum_indent)final LoadableValue \(iterator_key) = new MethodValue(\(iterator_instance), MergeIterator.class.getMethod(\"get_Currentish\"));" &
+				"\(sum_indent)@SuppressWarnings(\"unused\")\n" &
+				"\(sum_indent)final LoadableValue \(iterator_ordinal) = new MethodValue(\(iterator_instance), MergeIterator.class.getMethod(\"get_Position\"));" &
+				"\(sum_indent)\(generator).getBuilder().visitVarInsn(org.objectweb.asm.Opcodes.ALOAD, 0);" &
+				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+				"\(sum_indent)\(input.array).load(\(generator));" &
+				"\(sum_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(iterator_dispatchers)[1]);" &
+				"\(sum_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(iterator_dispatchers)[0]);" &
+				"\(sum_indent)\(generator).visitMethod(MergeIterator.class.getConstructors()[0]);" &
+				# load all the special dispatchers.
+				add_cases &
+				"\(sum_indent)\(iterator_instance).store(\(generator));"
+
+			iterator_trampoline :
+				# Create a re-entry point for the end of input (i.e., the iterator returning).
+				"\(sum_indent)final int \(iterator_next) = \(generator).defineState();" &
+				"\(sum_indent)\(generator).jumpToState(\(iterator_next));" &
+				"\(sum_indent)\(generator).markState(\(iterator_next));" &
+				"\(sum_indent)\(generator).getBuilder().visitVarInsn(org.objectweb.asm.Opcodes.ALOAD, 0);" &
+				"\(sum_indent)\(iterator_instance).load(\(generator));" &
+				"\(sum_indent)\(generator).visitMethod(MergeIterator.class.getMethod(\"next\"));" &
+				(If modify_source_reference
+					Then "\(sum_indent)\(GenerateId parameters.source_reference).set(\(generator).pushIteratorSourceReference(\(class_name).this, \(iterator_instance), \(parent_source_reference.storage_name)));"
+					Else "") &
+				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.IRETURN);"
+
+			dispatch_code : default_case.gen_gen(
+				indent : sum_indent,
+				code :
+					"\(sum_indent)\(default_case.extra_indent)\(generator).copyField(\(default_case.storage_name), \(storage_name));" &
+					"\(sum_indent)\(default_case.extra_indent)\(generator).jumpToState(\(iterator_next));"
+					)
+
+			num_cases :
+				For case : cases
+					Where !(case Is Null)
+					Reduce acc & case.count
+					With acc : "2"
+
+			define_dispatcher_states :
+				"\(sum_indent)final int[] \(iterator_dispatchers) = new int[ \(num_cases) ];" &
+				"\(sum_indent)for(int \(Id)_it = 0; \(Id)_it < \(iterator_dispatchers).length; \(Id)_it++) { \(iterator_dispatchers)[\(Id)_it] = \(generator).defineState(); }"
+
+			add_cases :
+				For case : cases
+					Where !(case Is Null)
+					Reduce
+						acc & case.add(indent : sum_indent)
+					With acc :
+						"\(sum_indent)@SuppressWarnings(\"unused\")\n" &
+						"\(sum_indent)int \(position) = 2;"
+
+			case_dispatchers :
+				For case : cases
+					Where !(case Is Null)
+					Reduce
+						acc &
+						case.gen_gen(indent : sum_indent)
+					With acc : "\(sum_indent)\(position) = 2;"
+		}
+
+		input_tmpl +: {
+			array : Id
+			gen_gen : Template {
+				indent ?:
+				value ?:
+
+				sum_indent : indent & extra_indent
+				base_code :
+					"\(sum_indent)final FieldValue \(array) = \(generator).makeField(\"\(rule_name)_iterator_inputs\", java.lang.Iterable[].class);" &
+					"\(sum_indent)\(generator).getBuilder().visitVarInsn(org.objectweb.asm.Opcodes.ALOAD, 0);" &
+					"\(sum_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(num_inputs));" &
+					"\(sum_indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.ANEWARRAY, org.objectweb.asm.Type.getInternalName(java.lang.Iterable.class));" &
+					"\(sum_indent)\(array).store(\(generator));"
+			}
+		}
+		input_list +: {
+			num_inputs : For item : items Reduce len + 1 With len : 0
+
+			gen_gen +: {
+				value :
+					For item : items, index : Ordinal
+						Reduce
+							acc &
+							"\(indent)\(Id)_next.set(\(generator).defineState());" &
+							item.gen_gen(
+								indent : indent,
+								code :
+									"\(indent)\(item.extra_indent)\(array).load(\(generator));" &
+									"\(indent)\(item.extra_indent)if (!java.lang.Iterable.class.isAssignableFrom(\(item.storage_name).getBackingType())) throw new java.lang.IllegalStateException(java.lang.String.format(\"Use of non-collection %s in iteration.\", \(item.storage_name).getBackingType().getSimpleName()));" &
+									"\(indent)\(item.extra_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(index - 1));" &
+									"\(indent)\(item.extra_indent)\(item.storage_name).load(\(generator));" &
+									"\(indent)\(item.extra_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.AASTORE);" &
+									"\(indent)\(item.extra_indent)\(generator).jumpToState(\(Id)_next.get());"
+								) &
+							"\(indent)\(generator).markState(\(Id)_next.get());"
+						With acc : base_code & "\(indent)final Ptr<Integer> \(Id)_next = new Ptr<Integer>();"
+			}
+		}
+		input_merge +: {
+			matched_frames : Id & "_matched_frames"
+			call_arguments : codegen.flavour_aware.call_site {}
+			argument_list : "\(generator), " &
+				(If codegen.flavour_aware.has_cache Then lookup_cache & ", " Else "") &
+				call_arguments.value
+
+			make_merge_frame : codegen.gen_tmpl {
+				extra_indent : ""
+				gen_gen +: {
+					value :
+						"\(indent)final FieldValue \(storage_name) = \(generator).makeField(\"\(rule_name)_merge_frame\", Frame.class);" &
+						"\(indent)\(generator).getBuilder().visitVarInsn(org.objectweb.asm.Opcodes.ALOAD, 0);" &
+						"\(indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(Frame.class));" &
+						"\(indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+						"\(indent)\(generator).loadTaskMaster();" &
+						"\(indent)\(generator).generateNextId();" &
+						"\(indent)\(parameters.source_reference.storage_name).load(\(generator));" &
+						"\(indent)\(parameters.context.storage_name).load(\(generator));" &
+						"\(indent)\(parameters.self_frame.storage_name).load(\(generator));" &
+						"\(indent)\(generator).visitMethod(Frame.class.getConstructors()[0]);" &
+						"\(indent)\(storage_name).store(\(generator));" &
+						"\(indent)for(fricassee_merge_input \(Id) : \(field)) {" &
+						"\(indent)\t\(Id).prepareValue(\(argument_list)\(matched_frames).containsKey(\(Id)) ? new MatchedFrameValue(\(matched_frames).get(\(Id)), \(array)) : null, \(current_ordinal.storage_name), \(current_name.storage_name), \(storage_name));" &
+						"\(indent)}" &
+						code
+					}
+			}
+
+			gen_gen +: {
+				num_inputs : "\(Id)_num_inputs"
+
+				value :
+					"\(sum_indent)int \(Id)_num_inputs = 0;" &
+					"\(sum_indent)for (fricassee_merge_input \(Id)_item : \(field)) \(Id)_num_inputs += \(Id)_item.needsGeneration() ? 1 : 0;" &
+					base_code &
+					"\(sum_indent)int \(Id)_pos = 0;" &
+					"\(sum_indent)final java.util.Map<AstNode, Integer> \(matched_frames) = new java.util.HashMap<AstNode, Integer>();" &
+					"\(sum_indent)for (final fricassee_merge_input \(Id) : \(field)) {" &
+					"\(sum_indent)\tif (!\(Id).needsGeneration()) continue;" &
+					"\(sum_indent)\t\(matched_frames).put(\(Id), \(Id)_pos);" &
+					"\(sum_indent)\tfinal Ptr<Integer> \(Id)_next = new Ptr<Integer>(\(generator).defineState());" &
+					"\(sum_indent)\t\(Id).generate(\(argument_list)new Generator.ParameterisedBlock<LoadableValue>() { public void invoke(final LoadableValue \(Id)_result) throws java.lang.Exception {" &
+					"\(sum_indent)\t\t\(array).load(\(generator));" &
+					"\(sum_indent)\t\t\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(matched_frames).get(\(Id)));" &
+					"\(sum_indent)\t\t\(Id)_result.load(\(generator));" &
+					"\(sum_indent)\t\t\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.AASTORE);" &
+					"\(sum_indent)\t\t\(generator).jumpToState(\(Id)_next.get());" &
+					"\(sum_indent)\t} });" &
+					"\(sum_indent)\t\(generator).markState(\(Id)_next.get());" &
+					"\(sum_indent)\t\(Id)_pos++;" &
+					"\(sum_indent)}"
+			}
+		}
+
+		base_case_tmpl +: {
+			name_str ?:
+			count : " + 1"
+			loop_tab : ""
+			add : Template {
+				indent ?:
+				value :
+					"\(indent)\(loop_tab)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+					"\(indent)\(loop_tab)\(generator).getBuilder().visitLdcInsn(\(name_str));" &
+					"\(indent)\(loop_tab)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.BIPUSH, \(iterator_dispatchers)[\(position)++]);" &
+					"\(indent)\(loop_tab)\(generator).visitMethod(MergeIterator.class.getMethod(\"addDispatcher\", String.class, int.class));"
+			}
+			gen_gen : Template {
+				indent ?:
+				sum_indent : indent & action.extra_indent & loop_tab
+				base_code :
+					"\(sum_indent)\(generator).copyField(\(action.storage_name), \(storage_name));" &
+					"\(sum_indent)\(generator).jumpToState(\(iterator_next));"
+				value :
+					"\(indent)\(loop_tab)\(generator).markState(\(iterator_dispatchers)[\(position)++]);" &
+					action.gen_gen(indent : indent & loop_tab, code : base_code)
+			}
+		}
+		literal_case +: {
+			name_str : "\"\(name)\""
+		}
+		remote_field_case +: {
+			name_str : "\(field).toString()"
+		}
+		list_case +: {
+			name_str : "\(current_element).\(name_field).toString()"
+			current_element : Id
+			loop_tab : "\t"
+			count : " + \(field).size()"
+			add +: {
+				value +original:
+					"\(indent)for (\(type) \(current_element) : \(field)) {" &
+					original &
+					"\(indent)}"
+			}
+			gen_gen +: {
+				value +original:
+					"\(indent)for (\(type) \(current_element) : \(field)) {" &
+					original &
+					"\(indent)}"
+			}
+		}
+
+		current_name : codegen.gen_tmpl {
+			extra_indent : ""
+			storage_name : iterator_key
+		}
+		current_ordinal : codegen.gen_tmpl {
+			extra_indent : ""
+			storage_name : iterator_ordinal
+		}
+		current_accumulator : codegen.gen_tmpl {
+			extra_indent : ""
+			storage_name : Lookup storage_name In Container
+		}
+	}
+}
+# Generate hideously complicated flows in the compiler's code generation routines.
+codegen : compiler_lib.codegen_tmpl {
+	# This is the base template for all of the code generation. The `gen_gen`
+	# system is described in the compiler design manual.
+	gen_tmpl +: {
+		# Keeping tabbing correct in the code generator, but the OCD makes the
+		# final result intelligible. This attribute should be the tabbing that
+		# should be applied to `code` in addition to `indent` to make it appear at
+		# the correct indentation. It can be thought of as the indentation
+		# difference between the starting indentation and the indentation of the
+		# callback.
+		extra_indent ?:
+		storage_name : Id
+		gen_gen : Template {
+			# The indentation of the code.
+			indent ?:
+			# The code to execute when this operation is completed and its value is
+			# stored in a variable with the name of the value in `storage_name`.
+			code ?:
+			value : code
+		}
+	}
+	bind +: {
+		storage_name : (returns ?? jail.exp_in).storage_name
+
+		extra_indent : total_def_indent & jail.exp_in.extra_indent
+		total_def_indent : For def : define Reduce def.extra_indent & acc With acc : ""
+		def_indents : For def_name : Name, def : define, def_pos : Ordinal
+			Select def_name :
+				(For prev_def : define, prev_def_pos : Ordinal
+				Where prev_def_pos < def_pos
+				Reduce acc & prev_def.extra_indent
+				With acc : "")
+		jail : {
+			exp_in : in {}
+			parameters : For def_name : Name, def : define
+				Select def_name : codegen.gen_tmpl {
+					extra_indent : ""
+					storage_name : def.storage_name
+				}
+		}
+
+		gen_gen +: {
+			value :
+				For def : define, def_indent : def_indents
+					Reverse
+					Reduce def.gen_gen(code : acc, indent : indent & def_indent)
+					With acc : jail.exp_in.gen_gen(indent : indent & total_def_indent, code : code)
+		}
+	}
+	collapse_others +: {
+		extra_indent : ""
+		call_arguments : target_flavour.accumulate_flavour.call_site {}
+		argument_list : "\(generator), " &
+			(If target_flavour.accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
+			call_arguments.value
+
+		gen_gen +: {
+			value :
+				"\(indent)final FieldValue \(storage_name) = \(generator).makeField(\"collapse_result\", \(type.real_type).class);" &
+				"\(indent)final int \(Id)_start = \(generator).defineState();" &
+				initial.gen_gen(
+					indent : indent,
+					code :
+						"\(indent)\(initial.extra_indent)\(generator).copyField(\(initial.storage_name), \(storage_name));" &
+						"\(indent)\(initial.extra_indent)\(generator).jumpToState(\(Id)_start);"
+					) &
+				"\(indent)\(generator).markState(\(Id)_start);" &
+				"\(indent)for (\(target_flavour.accumulate_flavour.interface) \(Id)_item : \(field)) {" &
+				"\(indent)\tfinal int \(Id)_next = \(generator).defineState();" &
+				"\(indent)\t\(Id)_item.generate(\(argument_list)new Generator.ParameterisedBlock<LoadableValue>() { public void invoke(final LoadableValue \(Id)_result) throws java.lang.Exception {" &
+				"\(indent)\t\t\(generator).copyField(\(Id)_result, \(storage_name));" &
+				"\(indent)\t\t\(generator).jumpToState(\(Id)_next);" &
+				"\(indent)\t} });" &
+				"\(indent)\t\(generator).markState(\(Id)_next);" &
+				"\(indent)}" &
+				code
+		}
+		parameters : {
+			accumulator : codegen.gen_tmpl {
+				extra_indent : ""
+				storage_name : Lookup storage_name In Container
+			}
+		}
+	}
+	die +: {
+		extra_indent : ""
+		gen_gen +: {
+			value :
+				"\(indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.ICONST_0);" &
+				"\(indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.IRETURN);"
+		}
+	}
+	empty_parameter +: {
+		extra_indent : ""
+		storage_name : in.storage_name
+		gen_gen : in.gen_gen
+		emptiness : gen_tmpl {
+			extra_indent : ""
+			storage_name : "null"
+		}
+	}
+	# This nasty customer does a fold over a list of syntax elements. It
+	# accomplishes this using the painfully obtuse `Generator.Fold` function.
+	fold_others +: {
+		extra_indent : initial.extra_indent & "\t"
+		fold_name : "\(Id)_left"
+		call_arguments : target_flavour.accumulate_flavour.call_site {}
+		argument_list : "\(generator), " &
+			(If target_flavour.accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
+			call_arguments.value
+
+		gen_gen +: {
+			sum_indent : indent & initial.extra_indent
+			expand : "\(Id)_block"
+			value :
+				initial.gen_gen(
+					indent : indent,
+					code :
+						"\(sum_indent)\(generator).fold((LoadableValue) \(initial.storage_name), \(field), new Generator.FoldBlock<\(target_flavour.accumulate_flavour.interface), LoadableValue>() { public void invoke(final int \(Id)_index, final \(target_flavour.accumulate_flavour.interface) \(Id)_item, final LoadableValue \(fold_name), final Generator.ParameterisedBlock<LoadableValue> \(Id)_block) throws java.lang.Exception { \(Id)_item.generate(\(argument_list)\(expand)); } }, new Generator.ParameterisedBlock<LoadableValue>() { public void invoke(final LoadableValue \(storage_name)) throws java.lang.Exception {\(code)\(sum_indent)} });"
+						)
+		}
+		parameters : {
+			accumulator : codegen.gen_tmpl {
+				extra_indent : ""
+				storage_name : fold_name
+			}
+		}
+	}
+	mash_into_frame +: {
+		extra_indent : ""
+		call_arguments : target_flavour.non_accumulate_flavour.call_site {}
+		argument_list : "\(generator), " &
+			(If target_flavour.non_accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
+			(target_flavour.non_accumulate_flavour.call_site {}).value
+		storage_name : initial.storage_name
+		gen_gen +: {
+			value :
+				"\(indent)final int \(Id)_start = \(generator).defineState();" &
+				initial.gen_gen(
+					indent : indent,
+					code :
+						"\(indent)\(initial.extra_indent)\(generator).jumpToState(\(Id)_start);"
+					) &
+				"\(indent)\(generator).markState(\(Id)_start);" &
+				"\(indent)for (int \(Id)_index = 0; \(Id)_index < \(field).size(); \(Id)_index++) {" &
+				"\(indent)\tfinal int \(Id)_next = \(generator).defineState();" &
+				"\(indent)\t\(field).get(\(Id)_index).generate(\(argument_list)new Generator.ParameterisedBlock<LoadableValue>() { public void invoke(final LoadableValue \(Id)_result) throws java.lang.Exception {" &
+				"\(indent)\t\t\(storage_name).load(\(generator));" &
+				"\(indent)\t\t\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(Id)_next + 1);" &
+				"\(indent)\t\t\(generator).visitMethod(TaskMaster.class.getMethod(\"ordinalNameStr\", long.class));" &
+				"\(indent)\t\t\(generator).loadReboxed(\(Id)_result, Object.class);" &
+				"\(indent)\t\t\(generator).visitMethod(Frame.class.getMethod(\"set\", String.class, Object.class));" &
+				"\(indent)\t\t\(generator).jumpToState(\(Id)_next);" &
+				"\(indent)\t} } );" &
+				"\(indent)\t\(generator).markState(\(Id)_next);" &
+				"\(indent)}" &
+				code
+		}
+	}
+	lookup_cached +: {
+		extra_indent : ""
+		gen_gen +: {
+			value :
+				"\(indent)Ptr<Boolean> \(Id)_junk = new Ptr<Boolean>(true);" &
+				"\(indent)java.util.List<String> \(Id)_names = new java.util.ArrayList<String>();" &
+				"\(indent)for (identifier \(Id)_item : \(field)) \(Id)_names.add(\(Id)_item.toString());" &
+				"\(indent)final LoadableValue \(storage_name) = \(lookup_cache).get(\(generation_environment).lookup(null, \(Id)_names, \(Id)_junk));" &
+				code
+		}
+	}
+	# This changes the value of parameters by renaming them, then restoring the names.
+	mask_parameters +: {
+		storage_name : action.storage_name
+		extra_indent : For parameter : parameters Reduce parameter.extra_indent & acc With acc : action.extra_indent
+		parameter_indents : For parameter_name : Name, parameter : parameters, parameter_pos : Ordinal
+			Select parameter_name :
+				(For prev_parameter : parameters, prev_parameter_pos : Ordinal
+				Where prev_parameter_pos < parameter_pos
+				Reduce acc & prev_parameter.extra_indent
+				With acc : "")
+
+		gen_gen +: {
+			sum_indent : indent & extra_indent
+			base_code : For parameter_name : Name, parameter : parameters
+				Reduce
+					"\(sum_indent)LoadableValue \(Id)_\(parameter_name) = \(parameter_name);" &
+					"\(sum_indent)\(parameter_name) = \(parameters.storage_name);" &
+					acc &
+					"\(sum_indent)\(parameter_name) = \(Id)_\(parameter_name);"
+					With acc : action.gen_gen(code : code, indent : sum_indent)
+
+			value :
+				For parameter : parameters, parameter_indent : parameter_indents
+				Reduce parameter.gen_gen(code : acc, indent : indent & action.extra_indent & parameter_indent)
+				With acc : base_code
+		}
+	}
+	not_implemented +: {
+		extra_indent : ""
+		storage_name : "null"
+		gen_gen +: {
+			value : "\(indent)throw new java.lang.IllegalStateException(\"\(pretty_name) not implemented\");"
+		}
+	}
+	other_code +: {
+		extra_indent : "\t"
+		argument_list : "\(generator), " &
+			(If target_flavour.non_accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
+			(target_flavour.non_accumulate_flavour.call_site {}).value
+
+		gen_gen +: {
+			value :
+				"\(indent)\(field).generate(\(argument_list)new Generator.ParameterisedBlock<LoadableValue>() { public void invoke(final LoadableValue \(storage_name)) throws java.lang.Exception {\(indent)\t\(generator).debugPosition(\(class_name).this);\(code)\(indent)} });"
+		}
+	}
+	prepare_lookup_cache +: {
+		extra_indent : in.extra_indent & specials.extra_indent & "\t"
+		storage_name : in.storage_name
+		parent_context : Lookup parameters.context In Container
+		parent_lookup_cache : Lookup lookup_cache In Container
+		parameters : {
+			context : codegen.gen_tmpl {
+				extra_indent : ""
+				storage_name : new_context
+			}
+		}
+		lookup_cache : Id & "_cache"
+		new_context : Id & "_context"
+		gen_gen +: {
+			sum_indent : indent & specials.extra_indent
+			value :
+				specials.gen_gen(
+					indent : indent,
+					code :
+						"\(sum_indent)\(name ?? generation_environment).generateLookupCache(\(generator), \(specials.raw_material), \(parent_lookup_cache), \(parameters.source_reference.storage_name), \(parent_context.storage_name), \(parameters.self_frame.storage_name), new Environment.Block() { public void invoke(final LoadableValue \(new_context), final LookupCache \(lookup_cache)) throws java.lang.Exception {" &
+						"\(sum_indent)\t\(generator).debugPosition(\(class_name).this);" &
+						in.gen_gen(indent : sum_indent & "\t", code : code) &
+						"\(sum_indent)} });"
+					)
+		}
+		lookup_special_tmpl +: {
+			extra_indent : ""
+			raw_material ?:
+			gen_gen : Template {
+				code ?:
+				indent ?:
+			}
+
+			# This is here so that our call to the generate of the named elements
+			# uses the original lookup context.
+			parameters : { context : parent_context }
+			# Restore the lookup cache for the child definitions
+			lookup_cache : parent_lookup_cache
+		}
+		no_specials +: {
+			raw_material : "null"
+			gen_gen +: {
+				value : code
+			}
+		}
+		specials_from_definitions +: {
+			extra_indent : "\t"
+			raw_material : Id
+			argument_list : "\(generator), " &
+				(If target_flavour.non_accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
+				(target_flavour.non_accumulate_flavour.call_site {}).value
+
+			gen_gen +: {
+				value :
+					"\(indent)\(generator).fold((RevCons<java.util.Map.Entry<String, LoadableCache>>) null, \(field), new Generator.FoldBlock<named_definition, RevCons<java.util.Map.Entry<String, LoadableCache>>>() { public void invoke(final int \(Id)_index, final named_definition \(Id)_item, final RevCons<java.util.Map.Entry<String, LoadableCache>> \(Id)_revcons, final Generator.ParameterisedBlock<RevCons<java.util.Map.Entry<String, LoadableCache>>> \(Id)_block) throws java.lang.Exception {" &
+					"\(indent)\t\(Id)_item.generate(\(argument_list)new Generator.ParameterisedBlock<LoadableValue>() { public void invoke(final LoadableValue \(Id)_result) throws java.lang.Exception {" &
+					"\(indent)\t\t\(generator).debugPosition(\(class_name).this);" &
+					"\(indent)\t\t\(Id)_block.invoke(new RevCons<java.util.Map.Entry<String, LoadableCache>>(new java.util.AbstractMap.SimpleImmutableEntry<String, LoadableCache>(\(Id)_item.name.toString(), new LoadableCache(\(Id)_result, \(Id)_item._bound_info)), null));" &
+					"\(indent)} }); } }, new Generator.ParameterisedBlock<RevCons<java.util.Map.Entry<String, LoadableCache>>>() { public void invoke(final RevCons<java.util.Map.Entry<String, LoadableCache>>\(raw_material)) throws java.lang.Exception {" &
+					code &
+					"\(indent)} });"
+			}
+		}
+		special_from_expression +: {
+			extra_indent : is.extra_indent
+			raw_material : "new RevCons<java.util.Map.Entry<String, LoadableCache>>(new java.util.AbstractMap.SimpleImmutableEntry<String, LoadableCache>(\(field).toString(), new LoadableCache(\(is.storage_name), \(type_storage))), null)"
+			gen_gen +: {
+				sum_indent : indent & is.extra_indent
+				value : is.gen_gen(indent : indent, code : code)
+			}
+		}
+	}
+	push_source_reference +: {
+		storage_name : in.storage_name
+		extra_indent : in.extra_indent
+		parent_source_reference :
+			If inherit
+				Then Lookup parameters.source_reference.storage_name In Container
+				Else "null"
+		new_source_reference : Id
+		parameters : {
+			source_reference : codegen.gen_tmpl {
+				extra_indent : ""
+				storage_name : new_source_reference
+			}
+		}
+		gen_gen +: {
+			value :
+				"\(indent)final LoadableValue \(new_source_reference) = \(generator).pushSourceReference(\(syntax ?? "\(class_name).this"), \(parent_source_reference));" &
+				in.gen_gen(indent : indent, code : code)
+		}
+	}
+	return_intrinsic_dispatch +: {
+		extra_indent : of.extra_indent & "\t"
+		gen_gen +: {
+		value : of.gen_gen(
+			indent : indent,
+			code :
+				"\(indent)\(of.extra_indent)environment.intrinsicDispatch(\(generator), \(class_name).this, \(of.storage_name), \(parameters.source_reference.storage_name), new Generator.ParameterisedBlock<LoadableValue>() { public void invoke(final LoadableValue \(storage_name)) throws java.lang.Exception {\(code)\(indent)\(of.extra_indent)} });"
+			)
+		}
+	}
+	type_dispatch_tmpl +: {
+		callback : Id & "_code"
+		reference_type ?:
+		choice_tmpl +: {
+			target_type ?:
+		}
+
+		gen_gen +: {
+			sum_indent ?:
+
+			choice_block :
+				For choice : choices
+					Reduce
+						"if (\(reference_type) == \(choice.target_type)) {" &
+						choice.action.gen_gen(
+							indent : sum_indent & "\t",
+							code : "\(sum_indent)\(choice.action.extra_indent)\t\(callback).invoke(\(choice.action.storage_name));"
+						) & "\(sum_indent)} else " & acc
+					With acc :
+						"{" &
+						default_action.gen_gen(
+							indent : sum_indent & "\t",
+							code : "\(sum_indent)\(default_action.extra_indent)\t\(callback).invoke(\(default_action.storage_name));"
+							) & sum_indent & "}"
+			lift_code :
+				"\(sum_indent)final Generator.ParameterisedBlock<LoadableValue> \(callback) = new Generator.ParameterisedBlock<LoadableValue>() { public void invoke(final LoadableValue \(storage_name)) throws java.lang.Exception {\(code)\(sum_indent)} };"
+		}
+	}
+	type_dispatch +: {
+		extra_indent : "\t" & of.extra_indent
+		reference_type : of.storage_name & ".getBackingType()"
+		choice_tmpl +: {
+			target_type : "\(type.real_type).class"
+		}
+		converted_result : codegen.gen_tmpl {
+			extra_indent : ""
+			storage_name : of.storage_name
+		}
+
+		gen_gen +: {
+			sum_indent : indent & of.extra_indent
+			value : of.gen_gen(
+				indent : indent,
+				code : lift_code & sum_indent & choice_block
+			)
+		}
+	}
+	type_dispatch_parsed +: {
+		extra_indent : "\t"
+		reference_type : "\(field).getTypeId()"
+		choice_tmpl +: {
+			target_type : type.union_type
+		}
+
+		gen_gen +: {
+			sum_indent : indent
+			value : lift_code & sum_indent & choice_block
+		}
+	}
+
+	flavour_complex_tmpl : Template {
+		parameter_names ?:
+		parameter_str :
+			For parameter_name : parameter_names
+				Reduce "\(acc)final LoadableValue _\(parameter_name), "
+				With acc :
+					"final Generator _generator, " &
+					(If has_cache Then "final LookupCache _cache, " Else "")
+		parameter_definitions :
+			For parameter_name : parameter_names
+			Select parameter_name : gen_tmpl {
+				extra_indent : ""
+				storage_name : "_" & parameter_name
+			}
+		call_site : Template {
+			parameter_lookups ?:
+			value :
+				For x : parameter_lookups
+					Reduce acc & x.storage_name & ", "
+					With acc : ""
+		}
+	}
+	flavour_aware : flavour_complex_tmpl {
+		has_cache : True
+		parameter_names : [ $source_reference, $context, $self_frame, $container_frame ]
+		interface : "FlavourAware"
+		call_site +: {
+			parameter_lookups : [ parameters.source_reference, parameters.context, parameters.self_frame, parameters.container_frame ]
+		}
+		accumulate_flavour : flavour_aware_accumulate
+		non_accumulate_flavour : flavour_aware
+	}
+	flavour_aware_accumulate : flavour_complex_tmpl {
+		has_cache : True
+		parameter_names : [ $source_reference, $context, $self_frame, $container_frame, $accumulator ]
+		interface : "FlavourAwareAccumulate"
+		call_site +: {
+			parameter_lookups : [ parameters.source_reference, parameters.context, parameters.self_frame, parameters.container_frame, parameters.accumulator ]
+		}
+		accumulate_flavour : flavour_aware_accumulate
+		non_accumulate_flavour : flavour_aware
+	}
+	flavour_empty : flavour_complex_tmpl {
+		has_cache : False
+		parameter_names : []
+		interface : "FlavourEmpty"
+		call_site +: {
+			parameter_lookups : []
+		}
+		accumulate_flavour : flavour_accumulate
+		non_accumulate_flavour : flavour_empty
+	}
+	flavour_accumulate : flavour_complex_tmpl {
+		has_cache : False
+		parameter_names : [ $source_reference, $accumulator ]
+		interface : "FlavourAccumulate"
+		call_site +: {
+			parameter_lookups : [ parameters.source_reference, parameters.accumulator ]
+		}
+		accumulate_flavour : flavour_accumulate
+		non_accumulate_flavour : flavour_empty
+	}
+	flavour_attribute : flavour_complex_tmpl {
+		has_cache : False
+		parameter_names : [ $source_template, $target ]
+		interface : "FlavourAttribute"
+		call_site +: {
+			parameter_lookups : [ parameters.source_template, parameters.target ]
+		}
+		accumulate_flavour : flavour_attribute_accumulate
+		non_accumulate_flavour : flavour_attribute
+	}
+	flavour_attribute_accumulate : flavour_complex_tmpl {
+		has_cache : False
+		parameter_names : [ $source_template, $target ]
+		interface : "FlavourAttribute"
+		call_site +: {
+			parameter_lookups : [ parameters.source_template, parameters.accumulator ]
+		}
+		accumulate_flavour : flavour_attribute_accumulate
+		non_accumulate_flavour : flavour_attribute
+	}
+}
+
+# The compiler!
+compiler : compiler_lib.language_tmpl {
+	# Since each syntax element corresponds to a class, it should know how to
+	# generate a class with all the appropriate methods.
+	syntax_element +: {
+		class_extra : ""
+		indent : "\n\t\t"
+		class_name : group_name & rule_name
+		parser_gen :
+			"\tstatic boolean parseRule_\(rule_name)(Ptr<Parser.Position> _position, Ptr<\(group_name)> _result) {\n" &
+			"\t\tif (_position.get().checkCache(_result, \(class_name).class)) return _result.get() != null;\n" &
+			"\t\tint _start_index = _position.get().getIndex();\n" &
+			"\t\tfinal Ptr<\(class_name)> _obj = new Ptr<\(class_name)>(new \(class_name)());\n" &
+			"\t\t_obj.get().file_name = _position.get().getFileName();\n" &
+			"\t\t_obj.get().start_row = _position.get().getRow();\n" &
+			"\t\t_obj.get().start_column = _position.get().getColumn();\n" &
+			"\t\t_position.get().traceEnter(\"\(group_name):\(rule_name)\");\n" &
+			pattern.parser_gen & "\n\t}\n"
+
+		current_environment : "_environment"
+		environment_method :
+			If environment_enabled
+				Then
+					"\tEnvironment propagateEnvironment(ErrorCollector _collector, java.util.List<AstTypeableNode> _queue, Environment _environment, Ptr<Boolean> _success) {\n" &
+					"\t\tenvironment = _environment;\n" &
+					"\t\tEnvironment _return = null;\n" &
+					(If environment_enabled Then "\t\t_queue.add(this);\n" Else "") &
+					(For application : apply_environment_to
+						Where !(application Is Null)
+						Reduce acc & application.value
+						With acc : "")
+					& "\t\treturn _return;\n"
+					& "\t}\n" &
+					(For application : apply_environment_to
+						Where !(application Is Null)
+						Reduce acc & application.class_gen
+						With acc : "")
+				Else ""
+
+		current_type : "_type"
+		current_unbox : "_needs_unbox"
+		type_assurance : If is_typeable
+			Then "\tpublic TypeSet ensureType(ErrorCollector _collector, TypeSet _type, Ptr<Boolean> _success, boolean _needs_unbox) {\n\(ensure_type_is.value)\n\t\treturn \(ensure_type_is.result);\n\t}\n"
+			Else ""
+		type_demands : If environment_enabled
+			Then "\tvoid makeTypeDemands(ErrorCollector _collector, Ptr<Boolean> _success) {\n" &
+				"\t\t@SuppressWarnings(\"unused\")\n" &
+				"\t\tTypeSet _type = TypeSet.ALL;\n" &
+				"\t\t@SuppressWarnings(\"unused\")\n" &
+				"\t\tboolean _needs_unbox = false;\n" &
+				type_demand.value &
+				"\n\t}\n"
+			Else ""
+
+		generator : "_generator"
+		generation_environment : "environment"
+		lookup_cache : If !(generation_flavour Is Null) && generation_flavour.has_cache Then "_cache" Else Null
+		parameters : If generation_flavour Is Null Then Null Else generation_flavour.parameter_definitions
+		code_gen: If generation_flavour Is Null
+			Then ""
+			Else
+				("\tpublic void generate(" &
+					generation_flavour.parameter_str &
+					"final Generator.ParameterisedBlock<LoadableValue> _final_block) throws java.lang.Exception {\n" &
+					"\t\t\(generator).debugPosition(\(class_name).this);" &
+					code_value.gen_gen(indent : default_indent, code : "\(indent)\(code_value.extra_indent)_final_block.invoke(\(code_value.storage_name));") &
+					"\n\t}\n")
+
+		class_gen :
+			"class \(class_name) extends \(group_name) {\n" &
+			"\tpublic String getPrettyName() { return \"\(pretty_name)\"; }\n" &
+			pattern.class_gen &
+			environment_method &
+			type_assurance &
+			type_demands &
+			code_gen &
+			class_extra &
+			"\t\(class_name) dup() {\n" &
+			"\t\t\(class_name) _obj = new \(class_name)();\n" &
+			common_field_copy_instance & pattern.copy_instance &
+			"\t\treturn _obj;\n\t}\n}\n"
+
+		parse_complete : Template {
+			ok ?:
+			value :
+				"\(indent)_position.get().cache(_start_index, \(If ok Then "_obj.get()" Else "null"), \(class_name).class);" &
+				"\(indent)_position.get().traceExit(\"\(group_name):\(rule_name)\", \(If ok Then "true" Else "false"));" &
+				(If ok
+					Then "\(indent)_obj.get().end_row = _position.get().getRow();\(indent)_obj.get().end_column = _position.get().getColumn();\(indent)_result.set((\(group_name))_obj.get());\(indent)return true;"
+					Else "\(indent)_result.set(null);\(indent)return false;")
+		}
+	}
+	# Generates the super class for a syntax group and all the appropriate method stubs.
+	syntax_group +: {
+		super_class_extra : ""
+		interface_extra : ""
+		common_field_class_gen : For field : expanded_common Reduce acc & field.class_gen With acc : ""
+		common_field_copy_instance : For field : expanded_common Reduce acc & field.copy_instance With acc : static_copy_instance
+
+		parser_gen :
+			For rule : expanded_rules
+			Where rule.is_real_element
+			Reduce acc & rule.parser_gen
+			With acc : ""
+		parse_base : If include_base_parser Then
+			"\tstatic boolean parseRule_Base(Ptr<Parser.Position> position, Ptr<\(group_name)> result) {\n" &
+			"\t\tposition.get().traceEnter(\"\(group_name)\");\n" &
+			"\t\tif(position.get().checkCache(\"\(group_name)\", result)) return result.get() != null;\n" &
+			"\t\tPtr<Parser.Position> slave_position = new Ptr<Parser.Position>();\n" &
+			"\t\tint start_index = position.get().getIndex();\n" &
+			"\t\tposition.get().update(\"any \(group_name)\", \"\(group_name)\");" &
+			(For rule : expanded_rules, rule_name : Name
+				Where rule.is_real_element
+				Reduce acc &
+					"\t\tslave_position.set(position.get().dup());\n" &
+					"\t\tif (parseRule_\(rule_name)(slave_position, result)) {\n" &
+					"\t\t\tposition.set(slave_position.get());\n" &
+					"\t\t\tposition.get().traceExit(\"\(group_name)\", true);\n" &
+					"\t\t\tposition.get().cache(\"\(group_name)\", start_index, result);\n" &
+					"\t\t\treturn true;\n\t\t}\n"
+				With acc : "") &
+			"\t\tresult.set(null);\n" &
+			"\t\tposition.get().traceExit(\"\(group_name)\", false);\n" &
+			"\t\tposition.get().cache(\"\(group_name)\", start_index, null);\n" &
+			"\t\treturn false;\n\t}\n"
+			Else ""
+
+		parse_rule_initiator : Template {
+			alternate_name ?:
+			value :
+				For rule_name : Name, rule : expanded_rules
+					Select rule_name :
+						"\t\tslave_position.set(position.get().dup());\n" &
+						"\t\tif (parseRule_" &
+						(If rule.is_real_element Then rule_name Else rule.alternate_name) &
+						"(slave_position, result)) {\n" &
+						"\t\t\tposition.set(slave_position.get());\n" &
+						"\t\t\tposition.get().traceExit(\"\(group_name):\(alternate_name)\", true);\n" &
+						"\t\t\tposition.get().cache(\"\(group_name).\(alternate_name)\", start_index, result);\n" &
+						"\t\t\treturn true;\n\t\t}\n"
+		}
+
+		parse_alternates : For alternate_rules : alternatives, alternate_name : Name
+			Reduce
+				outer_acc &
+				"\tstatic boolean parseRule_\(alternate_name)(final Ptr<Parser.Position> position, final Ptr<\(group_name)> result) {\n" &
+				"\t\tposition.get().traceEnter(\"\(alternate_name)\");\n" &
+				"\t\tif(position.get().checkCache(\"\(group_name).\(alternate_name)\", result)) return result.get() != null;\n" &
+				"\t\tfinal Ptr<Parser.Position> slave_position = new Ptr<Parser.Position>();\n" &
+				"\t\tfinal int start_index = position.get().getIndex();\n" &
+				"\t\tposition.get().update(\"\(alternate_name)\", \"\(group_name)\");\n" &
+				(For rule_name : Name, initiator : parse_rule_initiator(alternate_name : alternate_name), rule : expanded_rules
+					Where (For rule_alts : rule.alternatives, rule_alt_name : Name Where rule_alt_name == alternate_name Reduce True With junk_acc : False)
+					Reduce acc & initiator
+					With acc : "") &
+				"\t\tresult.set(null);\n" &
+				"\t\tposition.get().traceExit(\"\(group_name):\(alternate_name)\", false);\n" &
+				"\t\tposition.get().cache(\"\(group_name).\(alternate_name)\", start_index, null);\n" &
+				"\t\treturn false;\n\t}\n"
+			With outer_acc : ""
+
+		code_gen: If generation_flavour Is Null
+			Then ""
+			Else
+				"\tpublic abstract void generate(\(generation_flavour.parameter_str)Generator.ParameterisedBlock<LoadableValue> _block) throws java.lang.Exception;\n"
+
+		value : For rule : expanded_rules
+			Where rule.is_real_element
+			Reduce acc & rule.class_gen
+			With acc : "abstract class \(group_name) extends \(If environment_enabled Then "AstTypeableNode" Else "AstNode") implements Nothing\(If is_typeable Then ", TypeableElement" Else "")\(If generation_flavour Is Null Then "" Else ", \(generation_flavour.interface)")\(interface_extra) {\n" &
+				(If is_typeable Then "\tpublic abstract TypeSet ensureType(ErrorCollector _collector, TypeSet _type, Ptr<Boolean> _success, boolean needs_unbox);\n" Else "") &
+				common_field_class_gen &
+				super_class_extra &
+				parse_base &
+				parse_alternates &
+				parser_gen &
+				code_gen &
+				"}\n"
+	}
+	# Defines a parser for a JVM-compliant name.
+	jvm_identifier : Template parser.sequence {
+		of : [
+			#TODO or _ or $
+			parser.char_class {
+				classes : [
+					letter_lower,
+					letter_modifier,
+					letter_other,
+					letter_title,
+					letter_upper,
+					number_letter
+				]
+			},
+			parser.many {
+			#TODO or _ or $
+				of : parser.char_class {
+					classes : [
+						letter_lower,
+						letter_modifier,
+						letter_other,
+						letter_title,
+						letter_upper,
+						mark_combining,
+						mark_nonspace,
+						number_decimal,
+						number_letter,
+						other_format,
+						punctuation_connector
+					]
+				}
+			}
+		]
+	}
+
+	# For rule groups, some require special handling not inferable from the
+	# compiler, so the `super_class_extra` and `class_extra` attributes provide
+	# that content.
+	rule_groups +: {
+		fricassee_merge_input +: {
+			prepare_operations : {
+				name : codegen.gen_tmpl {
+					extra_indent : ""
+					storage_name : "_name"
+				}
+				target_frame : codegen.gen_tmpl {
+					extra_indent : ""
+					storage_name : "_target_frame"
+				}
+				ordinal : codegen.gen_tmpl {
+					extra_indent : ""
+					storage_name : "_ordinal"
+				}
+				matched_frame : codegen.gen_tmpl {
+					extra_indent : ""
+					storage_name : "_matched_frame"
+				}
+			}
+			interface_extra : ", Maskable"
+			super_class_extra :
+				"\tpublic void addMask(ErrorCollector collector, Environment environment) { environment.addMask(name.toString(), this); }\n" &
+				"\tabstract void prepareValue(" &
+					generation_flavour.parameter_str &
+					"final LoadableValue _matched_frame, final LoadableValue _ordinal, final LoadableValue _name, final LoadableValue _target_frame) throws java.lang.Exception;\n" &
+					"\tabstract boolean needsGeneration();\n"
+
+				merge_input_tmpl +: {
+					class_extra :
+						"\tvoid prepareValue(" &
+							generation_flavour.parameter_str &
+							"final LoadableValue _matched_frame, final LoadableValue _ordinal, final LoadableValue _name, final LoadableValue _target_frame) throws java.lang.Exception {\n" &
+							"\t\t\(generator).debugPosition(\(class_name).this);" &
+							"\t\tfinal int _state = \(generator).defineState();" &
+							prepare_value.gen_gen(
+								indent : default_indent,
+								code :
+									"\(default_indent)\(prepare_value.extra_indent)\(generator).jumpToState(_state);"
+								) &
+							"\n\t\t\(generator).markState(_state);\n" &
+							"\t}\n" &
+							"\tboolean needsGeneration() { return \(If needs_generation Then "true" Else "false"); }\n"
+
+				}
+		}
+		named_definition +: {
+			interface_extra : ", Maskable"
+			super_class_extra : "\tpublic void addMask(ErrorCollector collector, Environment environment) { _bound_info = environment.addMask(name.toString(), this); }\n\tRestrictableType _bound_info;\n"
+		}
+		identifier +: {
+			rules +: {
+				literal_identifier +: {
+					class_extra : "\tpublic String toString() { return name.toString(); }\n"
+				}
+			}
+		}
+		type +: {
+			super_class_extra : "\tabstract Type getTypeId();\n\tabstract TypeSet getCastableFrom();\n\tabstract boolean getUnbox();\n"
+			type_element +: {
+				castable_from_type_bits : For t : castable_from Reduce acc & ", " & t.union_type With acc : type.union_type
+				class_extra : "\tType getTypeId() { return \(type.union_type); }\n\tTypeSet getCastableFrom() { return new TypeSet(\(castable_from_type_bits)); }\n\tboolean getUnbox() { return \(type.unbox); }\n"
+			}
+		}
+		expression +: {
+			rules +: {
+				# This is a special expression to call methods in the CLI libraries.
+				xinvoke : Template expression_tmpl {
+					level : 19
+					pretty_name : "invoke Java method"
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "XInvoke" },
+							space { mandatory : True },
+							parser.accumulate_string {
+								field : "type_name"
+								in : parser.many {
+									nonempty : True
+									accumulate : True
+									separator : parser.single { char : "." }
+									of : jvm_identifier { }
+								}
+							},
+							space { mandatory : True },
+							parser.accumulate_string {
+								field : "method_name"
+								accumulate: True
+								in : jvm_identifier { }
+							},
+							space { },
+							parser.exact { word : "(" },
+							parser.accumulate_list {
+								type : "expression"
+								field : "arguments"
+								in : parser.many_word {
+									separator_word : ","
+									of : parser.sequence {
+										of : [
+											space { preferred : True },
+											parser.other {
+												type : "expression"
+												alternate : "expression0"
+												field : Null
+											},
+											space { }
+										]
+									}
+								}
+							},
+							parser.exact { word : ")" }
+						]
+					}
+					class_extra : "\tprivate java.util.ArrayList<java.lang.reflect.Method> methods = new java.util.ArrayList<java.lang.reflect.Method>();\n"
+					apply_environment_to : [
+						environment.list_of { field : "arguments" },
+						environment.application_action {
+							class_gen : ""
+							value :
+								"\t\treflectMethod(_collector, this, type_name.toString(), method_name.toString(), arguments.size(), methods, _success);\n"
+						}
+					]
+					ensure_type_is : {
+						value : "\(indent)TypeSet \(Id) = checkReflectedMethod(_collector, this, methods, arguments, \(current_type), _success);"
+						result : Id
+					}
+					code_value : codegen.gen_tmpl {
+						extra_indent : "\t"
+						argument_list : "\(generator), " &
+							(If generation_flavour.non_accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
+							(generation_flavour.non_accumulate_flavour.call_site {}).value
+
+						gen_gen +: {
+							value :
+								"\(indent)\(generator).fold((RevCons<LoadableValue>) null, arguments, new Generator.FoldBlock<expression, RevCons<LoadableValue>>() { public void invoke(final int \(Id)_index, final expression \(Id)_item, final RevCons<LoadableValue> \(Id)_tail, final Generator.ParameterisedBlock<RevCons<LoadableValue>> \(Id)_block) throws java.lang.Exception { \(Id)_item.generate(\(argument_list)new Generator.ParameterisedBlock<LoadableValue>() { public void invoke(final LoadableValue \(Id)_result) throws java.lang.Exception { \(Id)_block.invoke(new RevCons<LoadableValue>(\(Id)_result, \(Id)_tail)); } }); } }, new Generator.ParameterisedBlock<RevCons<LoadableValue>>() { public void invoke(final RevCons<LoadableValue> \(Id)_args) throws java.lang.Exception {" &
+								"\(indent)\t\(generator).debugPosition(\(class_name).this);" &
+								"\(indent)\tfinal LoadableValue \(storage_name) = \(generator).invokeNative(\(parameters.source_reference.storage_name), methods, \(Id)_args.toList()); " &
+								code &
+								"\(indent)} });"
+						}
+					}
+				}
+			}
+		}
+	}
+	value : "package flabbergast;\n" & (For group : expanded_groups Reduce acc & group.value With acc : "")
+
+	#TODO This is due to a bug in the bootstrap interpreter, remove it
+	needs_unbox : True
+}
+value : compiler.value

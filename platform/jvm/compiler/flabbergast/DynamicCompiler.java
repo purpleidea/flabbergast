@@ -3,14 +3,15 @@ package flabbergast;
 import static org.objectweb.asm.Type.getInternalName;
 
 import java.io.File;
-import java.io.IOException;
-import java.security.SecureClassLoader;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
+
+import sun.invoke.anon.AnonymousClassLoader;
+import sun.misc.Unsafe;
 
 public class DynamicCompiler extends LoadLibraries {
 
@@ -32,37 +33,21 @@ public class DynamicCompiler extends LoadLibraries {
 					interfaces);
 		}
 
+		@SuppressWarnings("unchecked")
 		@Override
 		public void visitEnd() {
 			super.visitEnd();
-			class_loader.load(class_name, writer);
-		}
-
-	}
-
-	class DynamicClassLoader extends SecureClassLoader {
-		@SuppressWarnings("unchecked")
-		public <T> Class<? extends T> load(String name, ClassWriter writer) {
-			byte[] bytecode = writer.toByteArray();
-			try {
-				Class<? extends T> clazz = (Class<? extends T>) defineClass(
-						name, bytecode, 0, bytecode.length);
-				return clazz;
-			} catch (ClassFormatError e) {
-				System.err.println(e.getMessage());
-			} catch (VerifyError e) {
-				System.err.println(e.getMessage());
-			}
-			return null;
+			cache.put(class_name, (Class<? extends Computation>) class_loader
+					.loadClass(writer.toByteArray()));
 		}
 
 	}
 
 	private Map<String, Class<? extends Computation>> cache = new HashMap<String, Class<? extends Computation>>();
+	private final AnonymousClassLoader class_loader = AnonymousClassLoader
+			.make(Unsafe.getUnsafe(), DynamicCompiler.class);
 
-	private DynamicClassLoader class_loader = new DynamicClassLoader();
-
-	private final ErrorCollector collector;;
+	private final ErrorCollector collector;
 
 	private CompilationUnit<Class<? extends Computation>> unit = new CompilationUnit<Class<? extends Computation>>() {
 
@@ -80,16 +65,9 @@ public class DynamicCompiler extends LoadLibraries {
 			return visitor;
 		}
 
-		@SuppressWarnings("unchecked")
 		@Override
 		protected Class<? extends Computation> doMagic(String name) {
-			try {
-				return (Class<? extends Computation>) class_loader
-						.loadClass(name);
-			} catch (ClassNotFoundException e) {
-				System.err.println(e.getMessage());
-				return null;
-			}
+			return cache.get(name);
 		}
 	};
 
@@ -127,7 +105,7 @@ public class DynamicCompiler extends LoadLibraries {
 				stop.set(result == null);
 				cache.put(uri, result);
 				return result;
-			} catch (IOException e) {
+			} catch (Exception e) {
 				System.err.println(e.getMessage());
 			}
 		}

@@ -20,7 +20,7 @@ class MethodValue extends LoadableValue {
 	}
 
 	@Override
-	public void load(MethodVisitor generator) {
+	public void load(MethodVisitor generator) throws Exception {
 		if (instance == null) {
 			generator.visitInsn(Opcodes.ACONST_NULL);
 		} else {

@@ -38,7 +38,7 @@ public class MergeIterator {
 	 * invoked, even if they do not occur in the input key space.
 	 */
 
-	public void AddDispatcher(String name, int dispatcher) {
+	public void addDispatcher(String name, int dispatcher) {
 		dispatchers.put(name, dispatcher);
 	}
 

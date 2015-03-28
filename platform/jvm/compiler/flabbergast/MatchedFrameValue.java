@@ -21,7 +21,7 @@ class MatchedFrameValue extends LoadableValue {
 	}
 
 	@Override
-	public void load(MethodVisitor generator) {
+	public void load(MethodVisitor generator) throws Exception {
 		array.load(generator);
 		generator.visitIntInsn(Opcodes.SIPUSH, index);
 		generator.visitInsn(Opcodes.AALOAD);
