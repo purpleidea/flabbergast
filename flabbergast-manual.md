@@ -508,6 +508,8 @@ is rewritten as:
 
 In this example, `c` would be circular evaluation when using normal evaluation semantics, but because the evaluation of the parameters happens in the containing context, this is fine.
 
+For Java programmers, there's an easy analogy for the two modes of template instantiation: anonymous inner classes. Creating a template is a bit like instantiating an anonymous inner class. If that class has multiple methods, then template instantiation gives similar behaviour. If only one method is of interest, then it can be instantiated using function-like instantiation, much like lambda notation in Java 8.
+
 ### Data Reshaping
 
 It's useful to remember how all the pieces of structured data manipulation in the language work. The following diagram shows the different formats of data and the syntax that navigates between them.
