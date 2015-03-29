@@ -44,6 +44,10 @@ public class PrintResult extends Computation {
 								if (output_filename == null) {
 									if (result instanceof Stringish) {
 										System.out.print(result);
+									} else if (result instanceof Boolean) {
+										System.out
+												.println((Boolean) result ? "True"
+														: "False");
 									} else {
 										System.out.println(result);
 									}
