@@ -62,7 +62,10 @@ public class TypeSet {
 		 */
 		if (flags == 0)
 			return this;
-		return (flags & original.flags) == 0 ? original : this;
+		if ((flags & original.flags) != 0) {
+			this.flags &= original.flags;
+		}
+		return this;
 	}
 
 	public TypeSet intersect(TypeSet other) {
