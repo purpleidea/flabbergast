@@ -40,7 +40,7 @@ class AutoWriteClassVisitor extends ClassVisitor {
 	public void visitEnd() {
 		super.visitEnd();
 		try {
-			String path = class_name.replace('.', File.separatorChar)
+			String path = class_name.replace('/', File.separatorChar)
 					+ ".class";
 			new File(path).getParentFile().mkdirs();
 			Files.write(Paths.get(path), writer.toByteArray(),
@@ -91,13 +91,14 @@ public class MainCompiler {
 			public ClassVisitor defineClass(int access, String class_name,
 					Class<?> superclass, Class<?>... interfaces) {
 				ClassVisitor visitor = new AutoWriteClassVisitor(
-						new ClassWriter(ClassWriter.COMPUTE_MAXS));
+						new ClassWriter(ClassWriter.COMPUTE_MAXS
+								| ClassWriter.COMPUTE_FRAMES));
 				String[] interface_names = new String[interfaces.length];
 				for (int it = 0; it < interfaces.length; it++) {
 					interface_names[it] = getInternalName(interfaces[it]);
 				}
-				visitor.visit(Opcodes.V1_6, access, class_name,
-						getInternalName(superclass), null, interface_names);
+				visitor.visit(Opcodes.V1_7, access, class_name, null,
+						getInternalName(superclass), interface_names);
 				return visitor;
 			}
 
@@ -110,11 +111,12 @@ public class MainCompiler {
 			try {
 				Parser parser = Parser.open(filename);
 				parser.setTrace(result.hasOption('t'));
-				String file_root = (filename.endsWith(".flbgst") ? filename
-						.substring(filename.length() - ".flbgst".length())
-						: filename).replace(File.separatorChar, '.');
-				parser.parseFile(collector, unit, "flabbergast.library."
-						+ file_root);
+				String file_root = ("flabbergast/library." + (filename
+						.endsWith(".flbgst") ? filename.substring(0,
+						filename.length() - ".flbgst".length()) : filename))
+						.replace(File.separatorChar, '/')
+						.replaceAll("[/.]+", "/").replace('-', '_');
+				parser.parseFile(collector, unit, file_root);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

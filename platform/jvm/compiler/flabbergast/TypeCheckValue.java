@@ -22,6 +22,7 @@ class TypeCheckValue extends LoadableValue {
 	@Override
 	public void load(MethodVisitor generator) throws Exception {
 		instance.load(generator);
-		generator.visitTypeInsn(Opcodes.INSTANCEOF, getInternalName(type));
+		generator.visitTypeInsn(Opcodes.INSTANCEOF,
+				getInternalName(Generator.getBoxedType(type)));
 	}
 }

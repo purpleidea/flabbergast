@@ -20,7 +20,7 @@ class CompareValue extends LoadableValue {
 	}
 
 	@Override
-	public void load(MethodVisitor generator) throws Exception{
+	public void load(MethodVisitor generator) throws Exception {
 		if (left.getBackingType() == boolean.class) {
 			left.load(generator);
 			right.load(generator);
@@ -35,9 +35,12 @@ class CompareValue extends LoadableValue {
 							getInternalName(Generator.getBoxedType(left
 									.getBackingType())),
 							Generator.isNumeric(left.getBackingType()) ? "compare"
-									: "compareTo", Generator.makeSignature(
-									int.class, left.getBackingType(),
-									right.getBackingType()), false);
+									: "compareTo",
+							Generator.makeSignature(
+									int.class,
+									Generator.isNumeric(left.getBackingType()) ? left
+											.getBackingType() : null, right
+											.getBackingType()), false);
 			generator.visitInsn(Opcodes.ICONST_1);
 			generator.visitMethodInsn(Opcodes.INVOKESTATIC,
 					getInternalName(Math.class), "min",

@@ -3,7 +3,7 @@ package flabbergast;
 class OpenNameInfo extends NameInfo {
 	private Environment environment;
 	private boolean must_unbox = false;
-	private TypeSet real_type = new TypeSet();
+	private TypeSet real_type = new TypeSet(TypeSet.ALL);
 
 	public OpenNameInfo(Environment environment, String name) {
 		this.environment = environment;

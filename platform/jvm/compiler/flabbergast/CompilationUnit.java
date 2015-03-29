@@ -27,7 +27,8 @@ public abstract class CompilationUnit<T> {
 	public interface FunctionOverrideBlock {
 		void invoke(Generator generator, LoadableValue source_reference,
 				LoadableValue context, LoadableValue self,
-				LoadableValue container, LoadableValue original) throws Exception;
+				LoadableValue container, LoadableValue original)
+				throws Exception;
 	}
 
 	Set<String> externals = new HashSet<String>();
@@ -47,13 +48,14 @@ public abstract class CompilationUnit<T> {
 
 	/**
 	 * Create a new function, and use the provided block to fill it with code.
-	 * @throws Exception 
+	 * 
+	 * @throws Exception
 	 */
 	DelegateValue createFunction(AstNode node, String syntax_id,
 			FunctionBlock block, String root_prefix, Set<String> owner_externals)
 			throws Exception {
 		generateId(node);
-		String name = root_prefix + "Function" + id_gen.get(node) + syntax_id;
+		String name = root_prefix + "$Function" + id_gen.get(node) + syntax_id;
 		if (functions.containsKey(name)) {
 			return functions.get(name);
 		}
@@ -76,7 +78,7 @@ public abstract class CompilationUnit<T> {
 		ClassVisitor type_builder = defineClass(Opcodes.ACC_FINAL, name,
 				Computation.class);
 		type_builder.visitSource(node.getFileName(), null);
-		return new Generator(node, this, type_builder, has_original,
+		return new Generator(node, this, type_builder, has_original, name,
 				root_prefix, owner_externals);
 	}
 
@@ -84,7 +86,7 @@ public abstract class CompilationUnit<T> {
 			FunctionOverrideBlock block, String root_prefix,
 			Set<String> owner_externals) throws Exception {
 		generateId(node);
-		String name = root_prefix + "Override" + id_gen.get(node) + syntax_id;
+		String name = root_prefix + "$Override" + id_gen.get(node) + syntax_id;
 		if (functions.containsKey(name)) {
 			return functions.get(name);
 		}

@@ -15,14 +15,14 @@ class RevCons<T> {
 	}
 
 	private void assign(List<T> array) {
-		array.set(index, head);
+		array.add(index, head);
 		if (tail != null) {
 			tail.assign(array);
 		}
 	}
 
 	List<T> toList() {
-		List<T> array = new ArrayList<T>();
+		List<T> array = new ArrayList<T>(index + 1);
 		assign(array);
 		return array;
 	}

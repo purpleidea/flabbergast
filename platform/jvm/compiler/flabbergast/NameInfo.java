@@ -35,8 +35,8 @@ abstract class NameInfo {
 	protected LoadableValue generateLookupField(Generator generator,
 			LoadableValue source_reference, LoadableValue context)
 			throws Exception {
-		FieldValue lookup_result = generator.makeField("lookup_" + getName(),
-				Object.class);
+		FieldValue lookup_result = generator.makeField("lookup_"
+				+ getName().replace('.', '$'), Object.class);
 		generator.loadTaskMaster();
 		MethodVisitor builder = generator.getBuilder();
 		builder.visitTypeInsn(Opcodes.NEW, getInternalName(Lookup.class));
@@ -54,16 +54,16 @@ abstract class NameInfo {
 		}
 		context.load(generator);
 		builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
-				getInternalName(Lookup.class), "<int>", org.objectweb.asm.Type
+				getInternalName(Lookup.class), "<init>", org.objectweb.asm.Type
 						.getConstructorDescriptor(Lookup.class
 								.getConstructors()[0]), false);
 		builder.visitInsn(Opcodes.DUP);
 		generator.generateConsumeResult(lookup_result);
 		builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
-				getInternalName(Lookup.class), "Notify",
+				getInternalName(Lookup.class), "listen",
 				Generator.makeSignature(null, ConsumeResult.class), false);
 		builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
-				getInternalName(TaskMaster.class), "Slot",
+				getInternalName(TaskMaster.class), "slot",
 				Generator.makeSignature(null, Computation.class), false);
 		return lookup_result;
 	}

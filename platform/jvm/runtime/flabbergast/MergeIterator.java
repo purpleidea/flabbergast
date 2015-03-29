@@ -60,7 +60,7 @@ public class MergeIterator {
 		return position;
 	}
 
-	public int Next() {
+	public int next() {
 		if (iterator == null) {
 			iterator = dispatchers.entrySet().iterator();
 		}

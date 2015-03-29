@@ -129,7 +129,7 @@ class Environment implements CodeRegion {
 			}
 			context.load(generator);
 			builder.visitMethodInsn(Opcodes.INVOKESTATIC,
-					getInternalName(Context.class), "Prepend", Generator
+					getInternalName(Context.class), "prepend", Generator
 							.makeSignature(Context.class, Frame.class,
 									Context.class), false);
 			child_context.store(builder);
@@ -180,16 +180,8 @@ class Environment implements CodeRegion {
 							context));
 				}
 			}
-			int state = generator.defineState();
-			generator.setState(state);
-			generator.decrementInterlock(builder);
-			Label end_label = new Label();
-			builder.visitJumpInsn(Opcodes.IFEQ, end_label);
-			builder.visitInsn(Opcodes.ICONST_0);
-			builder.visitInsn(Opcodes.IRETURN);
-			builder.visitLabel(end_label);
-			generator.jumpToState(state);
-			generator.markState(state);
+			generator.stopInterlock();
+			builder = generator.getBuilder();
 		}
 		for (LoadableCache lookup_result : lookup_results) {
 			if (!lookup_result.getDirectCopy())
@@ -206,8 +198,8 @@ class Environment implements CodeRegion {
 							.getTypes().get(0)));
 			Label label = new Label();
 			lookup_result.getValue().load(generator);
-			builder.visitTypeInsn(Opcodes.INSTANCEOF,
-					getInternalName(lookup_result.getTypes().get(0)));
+			builder.visitTypeInsn(Opcodes.INSTANCEOF, getInternalName(Generator
+					.getBoxedType(lookup_result.getTypes().get(0))));
 			builder.visitJumpInsn(Opcodes.IFNE, label);
 			generator.emitTypeError(source_reference, String.format(
 					"Expected type %s for “%s”, but got %s.", lookup_result
@@ -250,8 +242,10 @@ class Environment implements CodeRegion {
 		for (int it = 0; it < labels.length; it++) {
 			labels[it] = new Label();
 			values.get(index).getValue().load(generator);
-			generator.getBuilder().visitTypeInsn(Opcodes.INSTANCEOF,
-					getInternalName(values.get(index).getTypes().get(it)));
+			generator.getBuilder().visitTypeInsn(
+					Opcodes.INSTANCEOF,
+					getInternalName(Generator.getBoxedType(values.get(index)
+							.getTypes().get(it))));
 			generator.getBuilder().visitJumpInsn(Opcodes.IFNE, labels[it]);
 		}
 		StringBuilder error_message = new StringBuilder();
@@ -263,7 +257,7 @@ class Environment implements CodeRegion {
 			error_message.append(values.get(index).getTypes().get(type_it)
 					.getSimpleName());
 		}
-		error_message.append("%s for “");
+		error_message.append(" for “");
 		error_message.append(values.get(index).getNameInfo().getName());
 		error_message.append("”, but got %s.");
 		generator.emitTypeError(source_reference, error_message.toString(),

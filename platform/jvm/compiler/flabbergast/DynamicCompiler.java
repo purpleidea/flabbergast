@@ -3,15 +3,18 @@ package flabbergast;
 import static org.objectweb.asm.Type.getInternalName;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
-
-import sun.invoke.anon.AnonymousClassLoader;
-import sun.misc.Unsafe;
 
 public class DynamicCompiler extends LoadLibraries {
 
@@ -37,17 +40,43 @@ public class DynamicCompiler extends LoadLibraries {
 		@Override
 		public void visitEnd() {
 			super.visitEnd();
-			cache.put(class_name, (Class<? extends Computation>) class_loader
-					.loadClass(writer.toByteArray()));
+			byte[] x = writer.toByteArray();
+			try {
+				Files.write(Paths.get("/tmp/fail.class"), x,
+						StandardOpenOption.CREATE);
+			} catch (IOException f) {
+			}
+			try {
+				Class<?> loaded = class_loader.hotload(class_name, x);
+				if (Computation.class.isAssignableFrom(loaded)) {
+					cache.put(class_name, (Class<? extends Computation>) loaded);
+				} else {
+					other_cache.put(class_name, loaded);
+				}
+			} catch (Exception e) {
+				throw e;
+			}
 		}
 
 	}
 
+	static class ClassLoader extends URLClassLoader {
+
+		public ClassLoader() {
+			super(new URL[0]);
+		}
+
+		public Class<?> hotload(String name, byte[] class_file) {
+			return defineClass(name, class_file, 0, class_file.length);
+		}
+	}
+
 	private Map<String, Class<? extends Computation>> cache = new HashMap<String, Class<? extends Computation>>();
-	private final AnonymousClassLoader class_loader = AnonymousClassLoader
-			.make(Unsafe.getUnsafe(), DynamicCompiler.class);
+	private final ClassLoader class_loader = new ClassLoader();
 
 	private final ErrorCollector collector;
+
+	private Map<String, Class<?>> other_cache = new HashMap<String, Class<?>>();
 
 	private CompilationUnit<Class<? extends Computation>> unit = new CompilationUnit<Class<? extends Computation>>() {
 
@@ -55,13 +84,13 @@ public class DynamicCompiler extends LoadLibraries {
 		public ClassVisitor defineClass(int access, String class_name,
 				Class<?> superclass, Class<?>... interfaces) {
 			ClassVisitor visitor = new AutoLoaderClassVisitor(new ClassWriter(
-					ClassWriter.COMPUTE_MAXS));
+					ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES));
 			String[] interface_names = new String[interfaces.length];
 			for (int it = 0; it < interfaces.length; it++) {
 				interface_names[it] = getInternalName(interfaces[it]);
 			}
-			visitor.visit(Opcodes.V1_6, access, class_name,
-					getInternalName(superclass), null, interface_names);
+			visitor.visit(Opcodes.V1_7, access, class_name, null,
+					getInternalName(superclass), interface_names);
 			return visitor;
 		}
 
@@ -87,12 +116,12 @@ public class DynamicCompiler extends LoadLibraries {
 	@Override
 	public Class<? extends Computation> resolveUri(String uri, Ptr<Boolean> stop) {
 		stop.set(false);
-		if (cache.containsKey(uri))
+		if (cache.containsKey(uri)) {
 			return cache.get(uri);
+		}
 		if (!uri.startsWith("lib:"))
 			return null;
-		String type_name = "flabbergast.library."
-				+ uri.substring(4).replace('/', '.');
+		String type_name = "flabbergast/library/" + uri.substring(4);
 		for (String path : paths) {
 			try {
 				File f = new File(path + File.separator + uri.substring(4)
@@ -104,7 +133,7 @@ public class DynamicCompiler extends LoadLibraries {
 						collector, unit, type_name);
 				stop.set(result == null);
 				cache.put(uri, result);
-				return result;
+				return (Class<? extends Computation>) result;
 			} catch (Exception e) {
 				System.err.println(e.getMessage());
 			}

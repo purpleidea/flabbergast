@@ -13,7 +13,7 @@ class JunkInfo extends NameInfo {
 	@Override
 	public TypeSet ensureType(ErrorCollector collector, TypeSet type,
 			Ptr<Boolean> success, boolean must_unbox) {
-		return new TypeSet();
+		return new TypeSet(TypeSet.ALL);
 	}
 
 	@Override

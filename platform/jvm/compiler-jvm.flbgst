@@ -703,7 +703,7 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 		value :
 			"\(indent)TypeSet \(Id) = new TypeSet(\(parent_type));" &
 			"\(indent)TypeSet \(Id)_restrict = new TypeSet(\(type_bits));" &
-			"\(indent)if (\(Id).restrict(\(Id)_restrict)) {" &
+			"\(indent)if (!\(Id).restrict(\(Id)_restrict)) {" &
 			"\(indent)\t_success.set(false); " &
 			"\(indent)\t_collector.reportExpressionTypeError(\(class_name).this, \(Id)_restrict, \(parent_type));" &
 			"\(indent)}" &
@@ -835,7 +835,7 @@ kws : compiler_lib.kws_tmpl {
 					"\(sum_indent)\(parameters.source_reference.storage_name).load(\(generator));" &
 					"\(sum_indent)\(message.storage_name).load(\(generator));" &
 					"\(sum_indent)\(generator).visitMethod(Stringish.class.getMethod(\"toString\"));" &
-					"\(sum_indent)\(generator).visitMethod(TaskMaster.class.getMethod(\"ReportOtherError\", SourceReference.class, String.class));" &
+					"\(sum_indent)\(generator).visitMethod(TaskMaster.class.getMethod(\"reportOtherError\", SourceReference.class, String.class));" &
 					"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.ICONST_0);" &
 					"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.IRETURN);"
 				)
@@ -907,27 +907,27 @@ kws : compiler_lib.kws_tmpl {
 		emit_method : "visitInsn"
 	}
 	int_to_bool +: {
-		opcode : "Integer.class.getMethod(\"compare\", int.class, int.class)"
+		opcode : "Long.class.getMethod(\"compare\", long.class, long.class)"
 		emit_method : Null
 		gen_gen +: {
 			extra_emit :
 				If number == 0
-					Then "\(builder).visitInsn(org.objectweb.asm.Opcodes.ICONST_0);"
+					Then "\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.LCONST_0);"
 				Else If number == 1
-					Then "\(builder).visitInsn(org.objectweb.asm.Opcodes.ICONST_1);"
+					Then "\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.LCONST_1);"
 				Else If number == -1
-					Then "\(builder).visitInsn(org.objectweb.asm.Opcodes.ICONST_M1);"
+					Then "\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.LCONST_1);\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.LNEG);"
 				Else
-					"\(builder).visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(number));"
+					"\(sum_indent)\(builder).visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(number));\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.I2L);"
 
 			extra_post :
 				"\(sum_indent)org.objectweb.asm.Label \(Id)_end = new org.objectweb.asm.Label();" &
 				"\(sum_indent)org.objectweb.asm.Label \(Id)_branch = new org.objectweb.asm.Label();" &
 				"\(sum_indent)\(builder).visitJumpInsn(org.objectweb.asm.Opcodes.\(If invert Then "IFEQ" Else "IFNE"), \(Id)_branch);" &
-				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.ICONST_0);" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.ICONST_1);" &
 				"\(sum_indent)\(builder).visitJumpInsn(org.objectweb.asm.Opcodes.GOTO, \(Id)_end);" &
 				"\(sum_indent)\(builder).visitLabel(\(Id)_branch);" &
-				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.ICONST_1);" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.ICONST_0);" &
 				"\(sum_indent)\(builder).visitLabel(\(Id)_end);"
 		}
 	}
@@ -991,7 +991,7 @@ kws : compiler_lib.kws_tmpl {
 				"\(sum_indent)\(end.storage_name).load(\(generator));" &
 				"\(sum_indent)\(context.storage_name).load(\(generator));" &
 				"\(sum_indent)\(container.storage_name).load(\(generator));" &
-				"\(sum_indent)\(generator).visitMethod(Frame.class.getMethod(\"Through\", TaskMaster.class, long.class, SourceReference.class, long.class, long.class, Context.class, Frame.class));" &
+				"\(sum_indent)\(generator).visitMethod(Frame.class.getMethod(\"through\", TaskMaster.class, long.class, SourceReference.class, long.class, long.class, Context.class, Frame.class));" &
 				"\(sum_indent)\(storage_name).store(\(generator));" &
 				code
 			value : container.gen_gen(
@@ -1034,7 +1034,7 @@ kws : compiler_lib.kws_tmpl {
 		emit_method : Null
 	}
 	list_append +: {
-		opcode : "Context.class.getMethod(\"Append\", Context.class, Context.class)"
+		opcode : "Context.class.getMethod(\"append\", Context.class, Context.class)"
 		emit_method : Null
 	}
 	lookup_tmpl +: {
@@ -1059,8 +1059,8 @@ kws : compiler_lib.kws_tmpl {
 						"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
 						"\(sum_indent)final FieldValue \(storage_name) = \(generator).makeField(\"lookup\", Object.class);" &
 						"\(sum_indent)\(generator).generateConsumeResult(\(storage_name));" &
-						"\(sum_indent)\(generator).visitMethod(Lookup.class.getMethod(\"Notify\", ConsumeResult.class));" &
-						"\(sum_indent)\(generator).visitMethod(TaskMaster.class.getMethod(\"Slot\", Computation.class));" &
+						"\(sum_indent)\(generator).visitMethod(Lookup.class.getMethod(\"listen\", ConsumeResult.class));" &
+						"\(sum_indent)\(generator).visitMethod(TaskMaster.class.getMethod(\"slot\", Computation.class));" &
 						"\(sum_indent)\(generator).stopInterlock();" &
 						code
 					)
@@ -1471,10 +1471,11 @@ kws : compiler_lib.kws_tmpl {
 				# Create new fields for all the bits of stuff we need.
 				"\(sum_indent)final FieldValue \(iterator_instance) = \(generator).makeField(\"\(rule_name)_iterator\", MergeIterator.class);" &
 				"\(sum_indent)@SuppressWarnings(\"unused\")\n" &
-				"\(sum_indent)final LoadableValue \(iterator_key) = new MethodValue(\(iterator_instance), MergeIterator.class.getMethod(\"get_Currentish\"));" &
+				"\(sum_indent)final LoadableValue \(iterator_key) = new MethodValue(\(iterator_instance), MergeIterator.class.getMethod(\"getCurrentish\"));" &
 				"\(sum_indent)@SuppressWarnings(\"unused\")\n" &
-				"\(sum_indent)final LoadableValue \(iterator_ordinal) = new MethodValue(\(iterator_instance), MergeIterator.class.getMethod(\"get_Position\"));" &
+				"\(sum_indent)final LoadableValue \(iterator_ordinal) = new MethodValue(\(iterator_instance), MergeIterator.class.getMethod(\"getPosition\"));" &
 				"\(sum_indent)\(generator).getBuilder().visitVarInsn(org.objectweb.asm.Opcodes.ALOAD, 0);" &
+				"\(sum_indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(MergeIterator.class));" &
 				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
 				"\(sum_indent)\(input.array).load(\(generator));" &
 				"\(sum_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(iterator_dispatchers)[1]);" &
@@ -1489,7 +1490,6 @@ kws : compiler_lib.kws_tmpl {
 				"\(sum_indent)final int \(iterator_next) = \(generator).defineState();" &
 				"\(sum_indent)\(generator).jumpToState(\(iterator_next));" &
 				"\(sum_indent)\(generator).markState(\(iterator_next));" &
-				"\(sum_indent)\(generator).getBuilder().visitVarInsn(org.objectweb.asm.Opcodes.ALOAD, 0);" &
 				"\(sum_indent)\(iterator_instance).load(\(generator));" &
 				"\(sum_indent)\(generator).visitMethod(MergeIterator.class.getMethod(\"next\"));" &
 				(If modify_source_reference
@@ -1837,6 +1837,7 @@ codegen : compiler_lib.codegen_tmpl {
 				"\(indent)\t\(field).get(\(Id)_index).generate(\(argument_list)new Generator.ParameterisedBlock<LoadableValue>() { public void invoke(final LoadableValue \(Id)_result) throws java.lang.Exception {" &
 				"\(indent)\t\t\(storage_name).load(\(generator));" &
 				"\(indent)\t\t\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(Id)_next + 1);" &
+				"\(indent)\t\t\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.I2L);" &
 				"\(indent)\t\t\(generator).visitMethod(TaskMaster.class.getMethod(\"ordinalNameStr\", long.class));" &
 				"\(indent)\t\t\(generator).loadReboxed(\(Id)_result, Object.class);" &
 				"\(indent)\t\t\(generator).visitMethod(Frame.class.getMethod(\"set\", String.class, Object.class));" &
@@ -2156,7 +2157,7 @@ compiler : compiler_lib.language_tmpl {
 	syntax_element +: {
 		class_extra : ""
 		indent : "\n\t\t"
-		class_name : group_name & rule_name
+		class_name : group_name & "$" & rule_name
 		parser_gen :
 			"\tstatic boolean parseRule_\(rule_name)(Ptr<Parser.Position> _position, Ptr<\(group_name)> _result) {\n" &
 			"\t\tif (_position.get().checkCache(_result, \(class_name).class)) return _result.get() != null;\n" &
@@ -2267,7 +2268,7 @@ compiler : compiler_lib.language_tmpl {
 					"\t\tif (parseRule_\(rule_name)(slave_position, result)) {\n" &
 					"\t\t\tposition.set(slave_position.get());\n" &
 					"\t\t\tposition.get().traceExit(\"\(group_name)\", true);\n" &
-					"\t\t\tposition.get().cache(\"\(group_name)\", start_index, result);\n" &
+					"\t\t\tposition.get().cache(\"\(group_name)\", start_index, result.get());\n" &
 					"\t\t\treturn true;\n\t\t}\n"
 				With acc : "") &
 			"\t\tresult.set(null);\n" &
@@ -2287,7 +2288,7 @@ compiler : compiler_lib.language_tmpl {
 						"(slave_position, result)) {\n" &
 						"\t\t\tposition.set(slave_position.get());\n" &
 						"\t\t\tposition.get().traceExit(\"\(group_name):\(alternate_name)\", true);\n" &
-						"\t\t\tposition.get().cache(\"\(group_name).\(alternate_name)\", start_index, result);\n" &
+						"\t\t\tposition.get().cache(\"\(group_name).\(alternate_name)\", start_index, result.get());\n" &
 						"\t\t\treturn true;\n\t\t}\n"
 		}
 

@@ -80,16 +80,16 @@ class Generator {
 	}
 
 	static void visitMethod(Constructor<?> method, MethodVisitor builder) {
-		builder.visitMethodInsn(Opcodes.INVOKESPECIAL, "<init>",
-				getInternalName(method.getDeclaringClass()),
+		builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
+				getInternalName(method.getDeclaringClass()), "<init>",
 				Type.getConstructorDescriptor(method), false);
 	}
 
 	static void visitMethod(Method method, MethodVisitor builder) {
 		builder.visitMethodInsn(
 				Modifier.isStatic(method.getModifiers()) ? Opcodes.INVOKESTATIC
-						: Opcodes.INVOKEVIRTUAL, method.getName(),
-				getInternalName(method.getDeclaringClass()), Type
+						: Opcodes.INVOKEVIRTUAL, getInternalName(method
+						.getDeclaringClass()), method.getName(), Type
 						.getMethodDescriptor(method), false);
 	}
 
@@ -136,24 +136,27 @@ class Generator {
 	 */
 	private int result_consumer;
 
+	private String root_prefix;
+
 	private final FieldValue task_master;
 
 	private ClassVisitor type_builder;
 
 	Generator(AstNode node, CompilationUnit<?> owner,
 			ClassVisitor type_builder, boolean has_original, String class_name,
-			Set<String> owner_externals) throws NoSuchMethodException,
-			SecurityException {
+			String root_prefix, Set<String> owner_externals)
+			throws NoSuchMethodException, SecurityException {
 		this.owner = owner;
 		this.type_builder = type_builder;
 		paths = 1;
 		this.owner_externals = owner_externals;
 		this.class_name = class_name;
+		this.root_prefix = root_prefix;
 
 		type_builder.visitField(Opcodes.ACC_PRIVATE, "state",
-				getDescriptor(int.class), null, null);
+				getDescriptor(int.class), null, null).visitEnd();
 		type_builder.visitField(0, "interlock",
-				getDescriptor(AtomicInteger.class), null, null);
+				getDescriptor(AtomicInteger.class), null, null).visitEnd();
 		task_master = makeField("task_master", TaskMaster.class);
 		initial_source_reference = makeField("source_reference",
 				SourceReference.class);
@@ -193,7 +196,18 @@ class Generator {
 		ctor_builder.visitInsn(Opcodes.ICONST_0);
 		ctor_builder.visitFieldInsn(Opcodes.PUTFIELD, class_name, "state",
 				getDescriptor(int.class));
+
+		ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
+		ctor_builder.visitTypeInsn(Opcodes.NEW,
+				getInternalName(AtomicInteger.class));
+		ctor_builder.visitInsn(Opcodes.DUP);
+		visitMethod(AtomicInteger.class.getConstructor(), ctor_builder);
+		ctor_builder.visitFieldInsn(Opcodes.PUTFIELD, class_name, "interlock",
+				getDescriptor(AtomicInteger.class));
+
 		ctor_builder.visitInsn(Opcodes.RETURN);
+		ctor_builder.visitEnd();
+		ctor_builder.visitMaxs(0, 0);
 
 		String init_name = class_name + "$Initialiser";
 		ClassVisitor init_class = owner.defineClass(Opcodes.ACC_PUBLIC,
@@ -247,6 +261,7 @@ class Generator {
 		init_builder.visitInsn(Opcodes.ARETURN);
 		init_builder.visitEnd();
 		init_builder.visitMaxs(0, 0);
+		init_class.visitEnd();
 
 		// Label for load externals
 		defineState();
@@ -261,9 +276,9 @@ class Generator {
 			initial_original = makeField("initial_original", Object.class);
 			builder.visitInsn(Opcodes.DUP);
 			generateConsumeResult(initial_original);
-			visitMethod(Computation.class.getMethod("Notify",
+			visitMethod(Computation.class.getMethod("listen",
 					ConsumeResult.class));
-			visitMethod(TaskMaster.class.getMethod("Slot", Computation.class));
+			visitMethod(TaskMaster.class.getMethod("slot", Computation.class));
 			stopInterlock();
 		} else {
 			initial_original = null;
@@ -276,11 +291,12 @@ class Generator {
 		this.type_builder = type_builder;
 		this.paths = 1;
 		this.class_name = class_name;
+		this.root_prefix = class_name;
 		owner_externals = new HashSet<String>();
 		type_builder.visitField(Opcodes.ACC_PRIVATE, "state",
-				getDescriptor(int.class), null, null);
+				getDescriptor(int.class), null, null).visitEnd();
 		type_builder.visitField(0, "interlock",
-				getDescriptor(AtomicInteger.class), null, null);
+				getDescriptor(AtomicInteger.class), null, null).visitEnd();
 		task_master = makeField("task_master", TaskMaster.class);
 
 		MethodVisitor ctor_builder = type_builder.visitMethod(
@@ -338,8 +354,6 @@ class Generator {
 			source_reference.load(builder);
 			source_template.load(builder);
 			visitMethod(Template.class.getMethod("getSourceReference"));
-			builder.visitTypeInsn(Opcodes.NEW,
-					getInternalName(JunctionReference.class));
 			builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
 					getInternalName(JunctionReference.class), "<init>", Type
 							.getConstructorDescriptor(JunctionReference.class
@@ -449,32 +463,37 @@ class Generator {
 
 	DelegateValue createFunction(AstNode instance, String syntax_id,
 			CompilationUnit.FunctionBlock block) throws Exception {
-		return owner.createFunction(instance, syntax_id, block, class_name,
+		return owner.createFunction(instance, syntax_id, block, root_prefix,
 				owner_externals);
 	}
 
 	DelegateValue createFunctionOverride(AstNode instance, String syntax_id,
 			CompilationUnit.FunctionOverrideBlock block) throws Exception {
 		return owner.createFunctionOverride(instance, syntax_id, block,
-				class_name, owner_externals);
+				root_prefix, owner_externals);
 	}
 
 	/**
 	 * Insert debugging information based on an AST node.
 	 */
 	public void debugPosition(CodeRegion node) {
-		last_node = node;
-		Label label = new Label();
-		builder.visitLabel(label);
-		builder.visitLineNumber(node.getStartRow(), label);
+		last_node = node;/*
+						 * Label label = new Label(); builder.visitLabel(label);
+						 * builder.visitLineNumber(node.getStartRow(), label);
+						 */
 	}
 
 	public void decrementInterlock(MethodVisitor builder)
 			throws NoSuchMethodException, SecurityException {
 		builder.visitVarInsn(Opcodes.ALOAD, 0);
+		decrementInterlockRaw(builder);
+	}
+
+	public void decrementInterlockRaw(MethodVisitor builder)
+			throws NoSuchMethodException, SecurityException {
 		builder.visitFieldInsn(Opcodes.GETFIELD, class_name, "interlock",
 				getDescriptor(AtomicInteger.class));
-		visitMethod(AtomicInteger.class.getMethod("decrementAndGet"));
+		visitMethod(AtomicInteger.class.getMethod("decrementAndGet"), builder);
 	}
 
 	/**
@@ -511,7 +530,7 @@ class Generator {
 			} else {
 				result.load(builder);
 			}
-			visitMethod(Frame.class.getMethod("Slot"));
+			visitMethod(Frame.class.getMethod("slot"));
 			builder.visitLabel(end);
 		}
 		copyField(result, "result", Object.class);
@@ -562,7 +581,7 @@ class Generator {
 			Label label = new Label();
 			original.load(builder);
 			builder.visitTypeInsn(Opcodes.INSTANCEOF,
-					getInternalName(types.get(it)));
+					getInternalName(getBoxedType(types.get(it))));
 			builder.visitJumpInsn(Opcodes.IFEQ, label);
 			MethodVisitor old_builder = builder;
 			block.invoke(new AutoUnboxValue(original, types.get(it)));
@@ -586,8 +605,8 @@ class Generator {
 		for (int it = 0; it < data.length; it++) {
 			builder.visitInsn(Opcodes.DUP);
 			builder.visitIntInsn(Opcodes.BIPUSH, it);
-			data[it].load(builder);
 			if (data[it].getBackingType() == Object.class) {
+				data[it].load(builder);
 				visitMethod(Object.class.getMethod("getClass"));
 				visitMethod(Stringish.class.getMethod("hideImplementation",
 						Class.class));
@@ -599,7 +618,7 @@ class Generator {
 			builder.visitInsn(Opcodes.AASTORE);
 		}
 		visitMethod(String.class.getMethod("format", String.class,
-				String.class, Object[].class));
+				Object[].class));
 		visitMethod(TaskMaster.class.getMethod("reportOtherError",
 				SourceReference.class, String.class));
 		builder.visitInsn(Opcodes.ICONST_0);
@@ -648,14 +667,13 @@ class Generator {
 				+ result_consumer++;
 		ClassVisitor getter_class = owner.defineClass(0, getter_class_name,
 				Object.class, ConsumeResult.class);
-
-		getter_class.visitField(Opcodes.ACC_PRIVATE, "instance", "L"
-				+ class_name + ";", null, null);
 		getter_class.visitField(Opcodes.ACC_PRIVATE, "task_master",
-				getDescriptor(TaskMaster.class), null, null);
+				getDescriptor(TaskMaster.class), null, null).visitEnd();
+		getter_class.visitField(Opcodes.ACC_PRIVATE, "instance",
+				"L" + class_name + ";", null, null).visitEnd();
 
-		String ctor_signature = String.format("(%s%s)V", class_name,
-				getInternalName(TaskMaster.class));
+		String ctor_signature = String.format("(L%s;%s)V", class_name,
+				getDescriptor(TaskMaster.class));
 		MethodVisitor ctor_builder = getter_class.visitMethod(0, "<init>",
 				ctor_signature, null, null);
 		ctor_builder.visitCode();
@@ -680,20 +698,21 @@ class Generator {
 		consume_builder.visitCode();
 		consume_builder.visitVarInsn(Opcodes.ALOAD, 0);
 		consume_builder.visitFieldInsn(Opcodes.GETFIELD, getter_class_name,
-				"instance", class_name);
+				"instance", "L" + class_name + ";");
+		consume_builder.visitInsn(Opcodes.DUP);
 		consume_builder.visitVarInsn(Opcodes.ALOAD, 1);
 		result_target.store(consume_builder);
 		Label return_label = new Label();
 
-		decrementInterlock(consume_builder);
+		decrementInterlockRaw(consume_builder);
 		consume_builder.visitJumpInsn(Opcodes.IFNE, return_label);
 
 		consume_builder.visitVarInsn(Opcodes.ALOAD, 0);
 		consume_builder.visitFieldInsn(Opcodes.GETFIELD, getter_class_name,
-				"task_master", getDescriptor(Object.class));
+				"task_master", getDescriptor(TaskMaster.class));
 		consume_builder.visitVarInsn(Opcodes.ALOAD, 0);
 		consume_builder.visitFieldInsn(Opcodes.GETFIELD, getter_class_name,
-				"instance", getDescriptor(Object.class));
+				"instance", "L" + class_name + ";");
 		consume_builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
 				getInternalName(TaskMaster.class), "slot",
 				makeSignature(null, Computation.class), false);
@@ -702,7 +721,10 @@ class Generator {
 		consume_builder.visitEnd();
 		consume_builder.visitMaxs(0, 0);
 
+		getter_class.visitEnd();
+
 		builder.visitTypeInsn(Opcodes.NEW, getter_class_name);
+		builder.visitInsn(Opcodes.DUP);
 		builder.visitVarInsn(Opcodes.ALOAD, 0);
 		loadTaskMaster();
 		builder.visitMethodInsn(Opcodes.INVOKESPECIAL, getter_class_name,
@@ -765,8 +787,8 @@ class Generator {
 		run_builder.visitFieldInsn(Opcodes.GETFIELD, class_name, "state",
 				getDescriptor(int.class));
 		run_builder.visitLabel(continue_label);
-		run_builder.visitTableSwitchInsn(0, call_labels.length, error_label,
-				call_labels);
+		run_builder.visitTableSwitchInsn(0, call_labels.length - 1,
+				error_label, call_labels);
 		run_builder.visitLabel(error_label);
 		run_builder.visitTypeInsn(Opcodes.NEW,
 				getInternalName(IllegalStateException.class));
@@ -778,7 +800,7 @@ class Generator {
 			run_builder.visitLabel(call_labels[it]);
 			run_builder.visitVarInsn(Opcodes.ALOAD, 0);
 			run_builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL, class_name,
-					"run" + it, makeSignature(int.class), false);
+					"run_" + it, makeSignature(int.class), false);
 			run_builder.visitJumpInsn(Opcodes.GOTO, end_label);
 		}
 		run_builder.visitLabel(end_label);
@@ -816,7 +838,7 @@ class Generator {
 	 * A static method capable of creating a new instance of the class.
 	 */
 	public DelegateValue getInitialiser() {
-		return new DelegateValue(class_name,
+		return new DelegateValue(class_name + "$Initialiser",
 				initial_original == null ? ComputeValue.class
 						: ComputeOverride.class);
 	}
@@ -1079,7 +1101,7 @@ class Generator {
 	public FieldValue makeField(String name, Class<?> type) {
 		String n = name + "$" + (num_fields++);
 		type_builder.visitField(Opcodes.ACC_PUBLIC, n, getDescriptor(type),
-				null, null);
+				null, null).visitEnd();
 		return new FieldValue(class_name, n, type);
 	}
 
@@ -1101,9 +1123,7 @@ class Generator {
 	public LoadableValue pushIteratorSourceReference(AstNode node,
 			LoadableValue iterator, LoadableValue original_reference)
 			throws Exception {
-		FieldValue reference = makeField("source_reference",
-				SourceReference.class);
-		builder.visitVarInsn(Opcodes.ALOAD, 0);
+		pushSourceReferenceStart();
 		builder.visitLdcInsn("fricassée iteration {0}: {1}");
 		builder.visitInsn(Opcodes.ICONST_2);
 		builder.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(Object.class));
@@ -1112,24 +1132,20 @@ class Generator {
 		iterator.load(builder);
 		visitMethod(MergeIterator.class.getMethod("getPosition"));
 		visitMethod(Long.class.getMethod("toString", long.class));
-		builder.visitInsn(Opcodes.ASTORE);
+		builder.visitInsn(Opcodes.AASTORE);
 		builder.visitInsn(Opcodes.DUP);
 		builder.visitInsn(Opcodes.ICONST_1);
 		iterator.load(builder);
 		visitMethod(MergeIterator.class.getMethod("getCurrent"));
-		builder.visitInsn(Opcodes.ASTORE);
+		builder.visitInsn(Opcodes.AASTORE);
 		visitMethod(String.class.getMethod("format", String.class,
 				Object[].class));
-		pushSourceReferenceHelper(node, original_reference);
-		reference.store(builder);
-		return reference;
+		return pushSourceReferenceEnd(node, original_reference);
 	}
 
 	public LoadableValue pushSourceReference(AstNode node,
 			LoadableValue original_reference) throws Exception {
-		FieldValue reference = makeField("source_reference",
-				SourceReference.class);
-		builder.visitVarInsn(Opcodes.ALOAD, 0);
+		pushSourceReferenceStart();
 		if (node instanceof attribute) {
 			builder.visitLdcInsn(String.format("%s: %s", node.getPrettyName(),
 					((attribute) node).name));
@@ -1139,15 +1155,13 @@ class Generator {
 		} else {
 			builder.visitLdcInsn(node.getPrettyName());
 		}
-		pushSourceReferenceHelper(node, original_reference);
-		reference.store(builder);
-		return reference;
+		return pushSourceReferenceEnd(node, original_reference);
 	}
 
-	private void pushSourceReferenceHelper(AstNode node,
+	private LoadableValue pushSourceReferenceEnd(AstNode node,
 			LoadableValue original_reference) throws Exception {
-		builder.visitTypeInsn(Opcodes.NEW,
-				getInternalName(SourceReference.class));
+		FieldValue reference = makeField("source_reference",
+				SourceReference.class);
 		builder.visitLdcInsn(node.getFileName());
 		builder.visitLdcInsn(node.getStartRow());
 		builder.visitLdcInsn(node.getStartColumn());
@@ -1162,6 +1176,15 @@ class Generator {
 				getInternalName(SourceReference.class), "<init>", Type
 						.getConstructorDescriptor(SourceReference.class
 								.getConstructors()[0]), false);
+		reference.store(builder);
+		return reference;
+	}
+
+	private void pushSourceReferenceStart() {
+		builder.visitVarInsn(Opcodes.ALOAD, 0);
+		builder.visitTypeInsn(Opcodes.NEW,
+				getInternalName(SourceReference.class));
+		builder.visitInsn(Opcodes.DUP);
 	}
 
 	public LoadableValue resolveUri(String uri) {

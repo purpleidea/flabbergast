@@ -22,7 +22,8 @@ class AutoUnboxValue extends LoadableValue {
 	@Override
 	public void load(MethodVisitor generator) throws Exception {
 		backing_value.load(generator);
-		generator.visitTypeInsn(Opcodes.CHECKCAST, getInternalName(unbox_type));
+		generator.visitTypeInsn(Opcodes.CHECKCAST,
+				getInternalName(Generator.getBoxedType(unbox_type)));
 		if (unbox_type.isPrimitive()) {
 			generator.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
 					getInternalName(Generator.getBoxedType(unbox_type)),

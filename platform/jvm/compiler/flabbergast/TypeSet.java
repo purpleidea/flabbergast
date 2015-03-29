@@ -6,6 +6,17 @@ import java.util.List;
 public class TypeSet {
 	public static TypeSet ALL = new TypeSet(127);
 	public static final TypeSet EMPTY = new TypeSet(0);
+
+	public static TypeSet fromNative(Class<?> type) {
+		if (type == Object.class)
+			return ALL;
+		Type t = Type.fromNative(type);
+		if (t == null) {
+			return EMPTY;
+		}
+		return new TypeSet(t);
+	}
+
 	private int flags = 0;
 
 	private TypeSet(int flags) {
@@ -74,6 +85,8 @@ public class TypeSet {
 
 	@Override
 	public String toString() {
+		if (flags == 0)
+			return "<none>";
 		StringBuilder sb = new StringBuilder();
 		boolean first = true;
 		for (Type type : Type.values()) {
@@ -82,13 +95,10 @@ public class TypeSet {
 			if (first) {
 				first = false;
 			} else {
-				sb.append(type.name());
+				sb.append(" or ");
 			}
-			sb.append(" or ");
 			sb.append(type.name());
 		}
-		if (first)
-			return "<none>";
 		return sb.toString();
 	}
 

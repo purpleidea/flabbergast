@@ -3,7 +3,7 @@ package flabbergast;
 class BoundNameInfo extends RestrictableType {
 	private Environment environment;
 	private boolean must_unbox = false;
-	private TypeSet restricted_type = new TypeSet();
+	private TypeSet restricted_type = new TypeSet(TypeSet.ALL);
 
 	private TypeableElement target;
 

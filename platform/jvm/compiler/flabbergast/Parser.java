@@ -20,7 +20,7 @@ public class Parser {
 	class Memory {
 		int column;
 		int index;
-		Object result;
+		AstNode result;
 		int row;
 	}
 
@@ -68,7 +68,8 @@ public class Parser {
 		 * @param result
 		 *            The result to cache, or null if parsing failed.
 		 */
-		public <T> void cache(String name, int start_index, T result) {
+		public <T extends AstNode> void cache(String name, int start_index,
+				T result) {
 			if (!alternate_cache.containsKey(start_index)) {
 				alternate_cache.put(start_index,
 						new HashMap<String, Parser.Memory>());
@@ -86,7 +87,8 @@ public class Parser {
 		 * of the rule.
 		 */
 		@SuppressWarnings("unchecked")
-		<U, T extends U> boolean checkCache(Ptr<U> result, Class<T> clazz) {
+		<U extends AstNode, T extends U> boolean checkCache(Ptr<U> result,
+				Class<T> clazz) {
 			if (cache.containsKey(index) && cache.get(index).containsKey(clazz)) {
 				Memory memory = cache.get(index).get(clazz);
 				result.set((U) memory.result);
@@ -112,7 +114,7 @@ public class Parser {
 		 * of the rule.
 		 */
 		@SuppressWarnings("unchecked")
-		<T> boolean checkCache(String name, Ptr<T> result) {
+		<T extends AstNode> boolean checkCache(String name, Ptr<T> result) {
 			if (alternate_cache.containsKey(index)
 					&& alternate_cache.get(index).containsKey(name)) {
 				Memory memory = alternate_cache.get(index).get(name);
@@ -149,12 +151,12 @@ public class Parser {
 			return Parser.this.file_name;
 		}
 
-		Parser getParser() {
-			return Parser.this;
-		}
-
 		int getIndex() {
 			return index;
+		}
+
+		Parser getParser() {
+			return Parser.this;
 		}
 
 		int getRow() {

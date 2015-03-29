@@ -3,7 +3,7 @@ package flabbergast;
 class CopyFromParentInfo extends NameInfo {
 	private Environment environment;
 	boolean force_back;
-	TypeSet mask = new TypeSet();
+	TypeSet mask = new TypeSet(TypeSet.ALL);
 	private boolean must_unbox = false;
 	private NameInfo source;
 
@@ -19,8 +19,9 @@ class CopyFromParentInfo extends NameInfo {
 	public String checkValidNarrowing(LookupCache next, LookupCache current) {
 		if (current.has(source)) {
 			LoadableValue parent_value = current.get(source);
-			Type union_type = Type.fromNative(parent_value.getBackingType());
-			if (mask.contains(union_type)) {
+			TypeSet union_type = TypeSet.fromNative(parent_value
+					.getBackingType());
+			if (mask.intersect(union_type).isEmpty()) {
 				return String.format(
 						"Value for “%s” must be to %s, but it is %s.", name,
 						mask, union_type);
