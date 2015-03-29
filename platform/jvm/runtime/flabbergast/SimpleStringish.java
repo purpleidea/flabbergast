@@ -3,6 +3,8 @@ package flabbergast;
 import java.util.Iterator;
 import java.util.Stack;
 
+import javax.management.openmbean.InvalidOpenTypeException;
+
 import flabbergast.RamblingIterator.GetNext;
 
 public class SimpleStringish extends Stringish {
@@ -24,8 +26,25 @@ public class SimpleStringish extends Stringish {
 
 	@Override
 	public Iterator<String> iterator() {
-		// TODO Auto-generated method stub
-		return null;
+		return new Iterator<String>() {
+			boolean state = true;
+
+			@Override
+			public boolean hasNext() {
+				return state;
+			}
+
+			@Override
+			public String next() {
+				state = false;
+				return str;
+			}
+
+			@Override
+			public void remove() {
+				throw new InvalidOpenTypeException();
+			}
+		};
 	}
 
 	@Override
