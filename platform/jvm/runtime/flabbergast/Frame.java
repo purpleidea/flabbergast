@@ -105,6 +105,10 @@ public class Frame implements Iterable<String> {
 		boolean is_pending = pending.containsKey(name);
 		return is_pending || attributes.containsKey(name);
 	}
+	
+	public boolean has(Stringish name) {
+		return has(name.toString());
+	}
 
 	@Override
 	public Iterator<String> iterator() {
