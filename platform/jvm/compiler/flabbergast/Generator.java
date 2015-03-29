@@ -164,11 +164,11 @@ class Generator {
 		initial_self = makeField("self", Frame.class);
 		initial_container = makeField("container", Frame.class);
 		FieldValue original = has_original ? makeField("original",
-				ComputeValue.class) : null;
+				Computation.class) : null;
 
 		Class<?>[] construct_params = new Class<?>[] { TaskMaster.class,
 				SourceReference.class, Context.class, Frame.class, Frame.class,
-				has_original ? ComputeValue.class : null };
+				has_original ? Computation.class : null };
 		FieldValue[] initial_information = new FieldValue[] { task_master,
 				initial_source_reference, initial_context, initial_self,
 				initial_container, original };
@@ -270,9 +270,7 @@ class Generator {
 		if (has_original) {
 			startInterlock(1);
 			loadTaskMaster();
-			builder.visitVarInsn(Opcodes.ALOAD, 0);
-			builder.visitFieldInsn(Opcodes.GETFIELD, class_name, "original",
-					getDescriptor(Computation.class));
+			original.load(builder);
 			initial_original = makeField("initial_original", Object.class);
 			builder.visitInsn(Opcodes.DUP);
 			generateConsumeResult(initial_original);

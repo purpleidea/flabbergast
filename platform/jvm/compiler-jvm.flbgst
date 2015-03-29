@@ -1111,7 +1111,7 @@ kws : compiler_lib.kws_tmpl {
 		}
 	}
 	apply_override +: {
-		opcode : "Computation.class.getMethod(\"PerformOverride\", String.class, int.class, int.class, int.class, int.class, ComputeOverride.class, ComputeValue.class)"
+		opcode : "Computation.class.getMethod(\"performOverride\", String.class, int.class, int.class, int.class, int.class, ComputeOverride.class, ComputeValue.class)"
 		emit_method : Null
 		gen_gen +: {
 			extra_load :
