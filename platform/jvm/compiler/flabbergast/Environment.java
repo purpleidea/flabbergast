@@ -80,7 +80,7 @@ class Environment implements CodeRegion {
 		if (intrinsics.containsKey(node)) {
 			Entry<TypeSet, Boolean> intrinsic = intrinsics.get(node);
 			TypeSet original_type = intrinsic.getKey();
-			if (original_type.restrict(type)) {
+			if (!original_type.restrict(type)) {
 				success.set(false);
 				collector.reportExpressionTypeError(node, original_type, type);
 			}
@@ -341,8 +341,9 @@ class Environment implements CodeRegion {
 			Label next_label = new Label();
 			original.load(generator);
 			MethodVisitor builder = generator.getBuilder();
-			builder.visitTypeInsn(Opcodes.INSTANCEOF, getInternalName(type));
-			builder.visitJumpInsn(Opcodes.IFNE, next_label);
+			builder.visitTypeInsn(Opcodes.INSTANCEOF,
+					getInternalName(Generator.getBoxedType(type)));
+			builder.visitJumpInsn(Opcodes.IFEQ, next_label);
 			block.invoke(new AutoUnboxValue(original, type));
 			generator.setBuilder(builder);
 			builder.visitLabel(next_label);
