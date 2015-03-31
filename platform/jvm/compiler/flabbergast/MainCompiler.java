@@ -57,9 +57,11 @@ public class MainCompiler {
 		Options options = new Options();
 		options.addOption("t", "trace-parsing", false,
 				"Produce a trace of the parse process.");
+		options.addOption("F", "no-frames", false,
+				"Do not compute frames. This class will not work. For debugging the compiler.");
 		options.addOption("h", "help", false, "Show this message and exit");
 		CommandLineParser cl_parser = new GnuParser();
-		CommandLine result;
+		final CommandLine result;
 
 		try {
 			result = cl_parser.parse(options, args);
@@ -92,7 +94,8 @@ public class MainCompiler {
 					Class<?> superclass, Class<?>... interfaces) {
 				ClassVisitor visitor = new AutoWriteClassVisitor(
 						new ClassWriter(ClassWriter.COMPUTE_MAXS
-								| ClassWriter.COMPUTE_FRAMES));
+								| (result.hasOption('F') ? 0
+										: ClassWriter.COMPUTE_FRAMES)));
 				String[] interface_names = new String[interfaces.length];
 				for (int it = 0; it < interfaces.length; it++) {
 					interface_names[it] = getInternalName(interfaces[it]);
