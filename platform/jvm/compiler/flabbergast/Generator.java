@@ -583,7 +583,7 @@ class Generator {
 			builder.visitJumpInsn(Opcodes.IFEQ, label);
 			MethodVisitor old_builder = builder;
 			block.invoke(new AutoUnboxValue(original, types.get(it)));
-			builder = old_builder;
+			setBuilder(old_builder);
 			builder.visitLabel(label);
 		}
 		emitTypeError(source_reference, error_message.toString(), original);
@@ -768,8 +768,10 @@ class Generator {
 		} else {
 			jumpToState(1);
 		}
-		builder.visitEnd();
-		builder.visitMaxs(0, 0);
+		for (MethodVisitor entry_point : entry_points) {
+			entry_point.visitMaxs(0, 0);
+			entry_point.visitEnd();
+		}
 
 		MethodVisitor run_builder = type_builder.visitMethod(
 				Opcodes.ACC_PROTECTED, "run", makeSignature(null), null, null);
@@ -1107,10 +1109,6 @@ class Generator {
 	 * Mark the current code position as the entry point for a state.
 	 */
 	public void markState(int id) {
-		if (builder != null) {
-			builder.visitEnd();
-			builder.visitMaxs(0, 0);
-		}
 		builder = entry_points.get(id);
 		builder.visitCode();
 		if (last_node != null) {
