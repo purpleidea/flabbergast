@@ -206,8 +206,8 @@ class Generator {
 				getDescriptor(AtomicInteger.class));
 
 		ctor_builder.visitInsn(Opcodes.RETURN);
-		ctor_builder.visitEnd();
 		ctor_builder.visitMaxs(0, 0);
+		ctor_builder.visitEnd();
 
 		String init_name = class_name + "$Initialiser";
 		ClassVisitor init_class = owner.defineClass(Opcodes.ACC_PUBLIC,
@@ -220,8 +220,8 @@ class Generator {
 		init_ctor.visitMethodInsn(Opcodes.INVOKESPECIAL,
 				getInternalName(Object.class), "<init>", "()V", false);
 		init_ctor.visitInsn(Opcodes.RETURN);
-		init_ctor.visitEnd();
 		init_ctor.visitMaxs(0, 0);
+		init_ctor.visitEnd();
 
 		// Create a static method that wraps the constructor. This is needed to
 		// create a delegate.
@@ -259,8 +259,8 @@ class Generator {
 				"<init>", makeSignature(null, construct_params), false);
 
 		init_builder.visitInsn(Opcodes.ARETURN);
-		init_builder.visitEnd();
 		init_builder.visitMaxs(0, 0);
+		init_builder.visitEnd();
 		init_class.visitEnd();
 
 		// Label for load externals
@@ -313,8 +313,8 @@ class Generator {
 		ctor_builder.visitFieldInsn(Opcodes.PUTFIELD, class_name, "state",
 				getDescriptor(int.class));
 		ctor_builder.visitInsn(Opcodes.RETURN);
-		ctor_builder.visitEnd();
 		ctor_builder.visitMaxs(0, 0);
+		ctor_builder.visitEnd();
 
 		initial_container = null;
 		initial_context = null;
@@ -687,8 +687,8 @@ class Generator {
 		ctor_builder.visitFieldInsn(Opcodes.PUTFIELD, getter_class_name,
 				"task_master", getDescriptor(TaskMaster.class));
 		ctor_builder.visitInsn(Opcodes.RETURN);
-		ctor_builder.visitEnd();
 		ctor_builder.visitMaxs(0, 0);
+		ctor_builder.visitEnd();
 
 		MethodVisitor consume_builder = getter_class.visitMethod(
 				Opcodes.ACC_PUBLIC, "consume",
@@ -716,8 +716,8 @@ class Generator {
 				makeSignature(null, Computation.class), false);
 		consume_builder.visitLabel(return_label);
 		consume_builder.visitInsn(Opcodes.RETURN);
-		consume_builder.visitEnd();
 		consume_builder.visitMaxs(0, 0);
+		consume_builder.visitEnd();
 
 		getter_class.visitEnd();
 
@@ -806,8 +806,8 @@ class Generator {
 		run_builder.visitJumpInsn(Opcodes.IFNE, continue_label);
 		run_builder.visitInsn(Opcodes.POP);
 		run_builder.visitInsn(Opcodes.RETURN);
-		run_builder.visitEnd();
 		run_builder.visitMaxs(0, 0);
+		run_builder.visitEnd();
 		type_builder.visitEnd();
 	}
 
