@@ -788,9 +788,12 @@ class Generator {
 		run_builder.visitFieldInsn(Opcodes.GETFIELD, class_name, "state",
 				getDescriptor(int.class));
 		run_builder.visitLabel(continue_label);
+		run_builder.visitVarInsn(Opcodes.ALOAD, 0);
+		run_builder.visitInsn(Opcodes.SWAP);
 		run_builder.visitTableSwitchInsn(0, call_labels.length - 1,
 				error_label, call_labels);
 		run_builder.visitLabel(error_label);
+		run_builder.visitInsn(Opcodes.POP);
 		run_builder.visitTypeInsn(Opcodes.NEW,
 				getInternalName(IllegalStateException.class));
 		run_builder.visitInsn(Opcodes.DUP);
@@ -801,7 +804,6 @@ class Generator {
 		run_builder.visitInsn(Opcodes.ATHROW);
 		for (int it = 0; it < entry_points.size(); it++) {
 			run_builder.visitLabel(call_labels[it]);
-			run_builder.visitVarInsn(Opcodes.ALOAD, 0);
 			run_builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL, class_name,
 					"run_" + it, makeSignature(int.class), false);
 			run_builder.visitJumpInsn(Opcodes.GOTO, end_label);
