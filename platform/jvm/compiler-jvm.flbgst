@@ -1834,9 +1834,10 @@ codegen : compiler_lib.codegen_tmpl {
 				"\(indent)\(generator).markState(\(Id)_start);" &
 				"\(indent)for (int \(Id)_index = 0; \(Id)_index < \(field).size(); \(Id)_index++) {" &
 				"\(indent)\tfinal int \(Id)_next = \(generator).defineState();" &
+				"\(indent)\tfinal int \(Id)_index_final = \(Id)_index;" &
 				"\(indent)\t\(field).get(\(Id)_index).generate(\(argument_list)new Generator.ParameterisedBlock<LoadableValue>() { public void invoke(final LoadableValue \(Id)_result) throws java.lang.Exception {" &
 				"\(indent)\t\t\(storage_name).load(\(generator));" &
-				"\(indent)\t\t\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(Id)_next + 1);" &
+				"\(indent)\t\t\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(Id)_index_final + 1);" &
 				"\(indent)\t\t\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.I2L);" &
 				"\(indent)\t\t\(generator).visitMethod(TaskMaster.class.getMethod(\"ordinalNameStr\", long.class));" &
 				"\(indent)\t\t\(generator).loadReboxed(\(Id)_result, Object.class);" &
