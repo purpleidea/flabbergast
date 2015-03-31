@@ -1634,7 +1634,7 @@ kws : compiler_lib.kws_tmpl {
 				value :
 					"\(indent)\(loop_tab)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
 					"\(indent)\(loop_tab)\(generator).getBuilder().visitLdcInsn(\(name_str));" &
-					"\(indent)\(loop_tab)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.BIPUSH, \(iterator_dispatchers)[\(position)++]);" &
+					"\(indent)\(loop_tab)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(iterator_dispatchers)[\(position)++]);" &
 					"\(indent)\(loop_tab)\(generator).visitMethod(MergeIterator.class.getMethod(\"addDispatcher\", String.class, int.class));"
 			}
 			gen_gen : Template {
