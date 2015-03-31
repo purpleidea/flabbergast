@@ -10,7 +10,7 @@ import java.util.Map;
  */
 public class Frame implements Iterable<String> {
 
-	public static Frame Through(TaskMaster task_master, long id,
+	public static Frame through(TaskMaster task_master, long id,
 			SourceReference source_ref, long start, long end, Context context,
 			Frame container) {
 		Frame result = new Frame(task_master, id, source_ref, context,
@@ -105,7 +105,7 @@ public class Frame implements Iterable<String> {
 		boolean is_pending = pending.containsKey(name);
 		return is_pending || attributes.containsKey(name);
 	}
-	
+
 	public boolean has(Stringish name) {
 		return has(name.toString());
 	}
