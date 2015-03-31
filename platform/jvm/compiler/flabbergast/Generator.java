@@ -792,10 +792,12 @@ class Generator {
 		run_builder.visitLabel(error_label);
 		run_builder.visitTypeInsn(Opcodes.NEW,
 				getInternalName(IllegalStateException.class));
+		run_builder.visitInsn(Opcodes.DUP);
 		run_builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
 				getInternalName(IllegalStateException.class), "<init>", Type
 						.getConstructorDescriptor(IllegalStateException.class
 								.getConstructor()), false);
+		run_builder.visitInsn(Opcodes.ATHROW);
 		for (int it = 0; it < entry_points.size(); it++) {
 			run_builder.visitLabel(call_labels[it]);
 			run_builder.visitVarInsn(Opcodes.ALOAD, 0);
