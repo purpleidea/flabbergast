@@ -235,7 +235,6 @@ class Environment implements CodeRegion {
 			Block block) throws Exception {
 		if (index >= values.size()) {
 			block.invoke(context, cache);
-			generator.debugPosition(this);
 			return;
 		}
 		Label[] labels = new Label[values.get(index).getTypes().size()];
@@ -264,6 +263,7 @@ class Environment implements CodeRegion {
 				values.get(index).getValue());
 		for (int it = 0; it < labels.length; it++) {
 			generator.getBuilder().visitLabel(labels[it]);
+			generator.debugPosition(this);
 			LookupCache sub_cache = new LookupCache(cache);
 			sub_cache.set(values.get(index).getNameInfo(), new AutoUnboxValue(
 					values.get(index).getValue(), values.get(index).getTypes()
