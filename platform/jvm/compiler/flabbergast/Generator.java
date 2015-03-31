@@ -475,10 +475,11 @@ class Generator {
 	 * Insert debugging information based on an AST node.
 	 */
 	public void debugPosition(CodeRegion node) {
-		last_node = node;/*
-						 * Label label = new Label(); builder.visitLabel(label);
-						 * builder.visitLineNumber(node.getStartRow(), label);
-						 */
+		last_node = node;
+		Label label = new Label();
+		builder.visitLabel(label);
+		builder.visitLineNumber(node.getStartRow(), label);
+
 	}
 
 	public void decrementInterlock(MethodVisitor builder)
