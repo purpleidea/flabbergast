@@ -949,7 +949,7 @@ kws : compiler_lib.kws_tmpl {
 		emit_method : Null
 	}
 	verify_symbol +: {
-		opcode : "TaskMaster.class.getMethod(\"VerifySymbol\", SourceReference.class, Stringish.class)"
+		opcode : "TaskMaster.class.getMethod(\"verifySymbol\", SourceReference.class, Stringish.class)"
 		emit_method : Null
 		gen_gen +: {
 			extra_load :
