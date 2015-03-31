@@ -1277,7 +1277,7 @@ class Generator {
 			Label end = new Label();
 			builder.visitVarInsn(Opcodes.ALOAD, 0);
 			source.load(builder);
-			visitMethod(Stringish.class.getMethod("FromObject", Object.class));
+			visitMethod(Stringish.class.getMethod("fromObject", Object.class));
 			field.store(builder);
 			field.load(builder);
 			builder.visitJumpInsn(Opcodes.IFNONNULL, end);
