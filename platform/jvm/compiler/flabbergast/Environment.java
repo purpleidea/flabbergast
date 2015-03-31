@@ -219,7 +219,7 @@ class Environment implements CodeRegion {
 		generator.setPaths(paths);
 		if (generator.getPaths() > 200 && !combinatorial_explosion) {
 			System.err
-					.printf("%s:%d:%d-%d:%d: There are %d type-derived flows in the generated code. This will be slow to compile.",
+					.printf("%s:%d:%d-%d:%d: There are %d type-derived flows in the generated code. This will be slow to compile.\n",
 							file_name, start_row, start_column, end_row,
 							end_column, generator.getPaths());
 			combinatorial_explosion = true;
