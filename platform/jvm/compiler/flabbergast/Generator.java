@@ -789,6 +789,9 @@ class Generator {
 					Opcodes.ACC_PROTECTED, (dispatch == 0) ? "run"
 							: ("run_dispatch_" + dispatch),
 					makeSignature(io_type, io_type), null, null);
+			if (dispatch > 0) {
+				run_builder.visitParameter("temp_state", 0);
+			}
 			run_builder.visitCode();
 
 			Label[] call_labels = new Label[(entry_points.size() - dispatch
@@ -822,13 +825,19 @@ class Generator {
 				run_builder.visitTypeInsn(Opcodes.NEW,
 						getInternalName(IllegalStateException.class));
 				run_builder.visitInsn(Opcodes.DUP);
+				run_builder.visitVarInsn(Opcodes.ILOAD, 1);
+				visitMethod(Integer.class.getMethod("toString", int.class),
+						run_builder);
+				run_builder.visitLdcInsn(" of " + entry_points.size());
+				visitMethod(String.class.getMethod("concat", String.class),
+						run_builder);
 				run_builder
 						.visitMethodInsn(
 								Opcodes.INVOKESPECIAL,
 								getInternalName(IllegalStateException.class),
 								"<init>",
 								Type.getConstructorDescriptor(IllegalStateException.class
-										.getConstructor()), false);
+										.getConstructor(String.class)), false);
 				run_builder.visitInsn(Opcodes.ATHROW);
 			} else {
 				run_builder.visitVarInsn(Opcodes.ILOAD, 1);
