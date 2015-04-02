@@ -4,6 +4,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 
+import flabbergast.TaskMaster.LibraryFailure;
+
 public class LoadPrecompiledLibraries extends LoadLibraries {
 	private URLClassLoader class_loader = null;
 
@@ -17,7 +19,8 @@ public class LoadPrecompiledLibraries extends LoadLibraries {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Class<? extends Computation> resolveUri(String uri, Ptr<Boolean> stop) {
+	public Class<? extends Computation> resolveUri(String uri,
+			Ptr<LibraryFailure> reason) {
 		if (class_loader == null) {
 			URL[] urls = new URL[paths.size()];
 			for (int it = 0; it < urls.length; it++) {
@@ -30,7 +33,6 @@ public class LoadPrecompiledLibraries extends LoadLibraries {
 			}
 			class_loader = new URLClassLoader(urls);
 		}
-		stop.set(false);
 		if (!uri.startsWith("lib:"))
 			return null;
 
@@ -40,6 +42,7 @@ public class LoadPrecompiledLibraries extends LoadLibraries {
 			return (Class<? extends Computation>) class_loader
 					.loadClass(type_name);
 		} catch (ClassNotFoundException e) {
+			reason.set(LibraryFailure.MISSING);
 			return null;
 		}
 	}

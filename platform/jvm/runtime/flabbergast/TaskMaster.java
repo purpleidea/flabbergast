@@ -1,6 +1,5 @@
 package flabbergast;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,6 +14,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Scheduler for computations.
  */
 public abstract class TaskMaster implements Iterable<Computation> {
+	public enum LibraryFailure {
+		BAD_NAME, CORRUPT, MISSING
+	}
+
 	private static char[] symbols = createOrdinalSymbols();
 
 	private static char[] createOrdinalSymbols() {
@@ -76,23 +79,23 @@ public abstract class TaskMaster implements Iterable<Computation> {
 		}
 		if (uri.startsWith("lib:")) {
 			if (uri.length() < 5) {
-				reportExternalError(uri);
+				reportExternalError(uri, LibraryFailure.BAD_NAME);
 				return;
 			}
 			for (int it = 5; it < uri.length(); it++) {
 				if (uri.charAt(it) != '/'
 						&& !Character.isLetterOrDigit(uri.charAt(it))) {
-					reportExternalError(uri);
+					reportExternalError(uri, LibraryFailure.BAD_NAME);
 					return;
 				}
 			}
 		}
 
 		for (UriHandler handler : handlers) {
-			Ptr<Boolean> stop = new Ptr<Boolean>(false);
-			Class<? extends Computation> t = handler.resolveUri(uri, stop);
-			if (stop.get()) {
-				reportExternalError(uri);
+			Ptr<LibraryFailure> reason = new Ptr<LibraryFailure>();
+			Class<? extends Computation> t = handler.resolveUri(uri, reason);
+			if (reason.get() != null && reason.get() != LibraryFailure.MISSING) {
+				reportExternalError(uri, reason.get());
 				return;
 			}
 			if (t == null) {
@@ -108,15 +111,12 @@ public abstract class TaskMaster implements Iterable<Computation> {
 				slot(computation);
 
 				return;
-			} catch (InstantiationException e) {
-			} catch (IllegalAccessException e) {
-			} catch (IllegalArgumentException e) {
-			} catch (InvocationTargetException e) {
-			} catch (NoSuchMethodException e) {
-			} catch (SecurityException e) {
+			} catch (Exception e) {
+				reportExternalError(uri, LibraryFailure.CORRUPT);
+				return;
 			}
 		}
-		reportExternalError(uri);
+		reportExternalError(uri, LibraryFailure.MISSING);
 	}
 
 	@Override
@@ -128,7 +128,7 @@ public abstract class TaskMaster implements Iterable<Computation> {
 		return next_id.getAndIncrement();
 	}
 
-	public abstract void reportExternalError(String uri);
+	public abstract void reportExternalError(String uri, LibraryFailure reason);
 
 	/**
 	 * Report an error during lookup.

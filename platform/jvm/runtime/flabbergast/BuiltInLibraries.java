@@ -1,5 +1,7 @@
 package flabbergast;
 
+import flabbergast.TaskMaster.LibraryFailure;
+
 public class BuiltInLibraries implements UriHandler {
 	public static final BuiltInLibraries INSTANCE = new BuiltInLibraries();
 
@@ -13,8 +15,7 @@ public class BuiltInLibraries implements UriHandler {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Class<? extends Computation> resolveUri(String uri, Ptr<Boolean> stop) {
-		stop.set(false);
+	public Class<? extends Computation> resolveUri(String uri, Ptr<LibraryFailure> failure) {
 		if (!uri.startsWith("lib:"))
 			return null;
 		String type_name = "flabbergast.library."
@@ -22,6 +23,7 @@ public class BuiltInLibraries implements UriHandler {
 		try {
 			return (Class<? extends Computation>) Class.forName(type_name);
 		} catch (ClassNotFoundException e) {
+			failure.set(LibraryFailure.MISSING);
 			return null;
 		}
 	}

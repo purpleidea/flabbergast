@@ -16,6 +16,8 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 
+import flabbergast.TaskMaster.LibraryFailure;
+
 public class DynamicCompiler extends LoadLibraries {
 
 	class AutoLoaderClassVisitor extends ClassVisitor {
@@ -67,7 +69,7 @@ public class DynamicCompiler extends LoadLibraries {
 		}
 
 		public Class<?> hotload(String name, byte[] class_file) {
-			return defineClass(name, class_file, 0, class_file.length);
+			return defineClass(name.replace('/', '.'), class_file, 0, class_file.length);
 		}
 	}
 
@@ -114,8 +116,8 @@ public class DynamicCompiler extends LoadLibraries {
 	}
 
 	@Override
-	public Class<? extends Computation> resolveUri(String uri, Ptr<Boolean> stop) {
-		stop.set(false);
+	public Class<? extends Computation> resolveUri(String uri,
+			Ptr<LibraryFailure> reason) {
 		if (cache.containsKey(uri)) {
 			return cache.get(uri);
 		}
@@ -131,13 +133,14 @@ public class DynamicCompiler extends LoadLibraries {
 				Parser parser = Parser.open(f.getAbsolutePath());
 				Class<? extends Computation> result = parser.parseFile(
 						collector, unit, type_name);
-				stop.set(result == null);
+				reason.set(result == null ? LibraryFailure.CORRUPT : null);
 				cache.put(uri, result);
 				return (Class<? extends Computation>) result;
 			} catch (Exception e) {
 				System.err.println(e.getMessage());
 			}
 		}
+		reason.set(LibraryFailure.MISSING);
 		return null;
 	}
 
