@@ -1165,7 +1165,7 @@ class Generator {
 			LoadableValue iterator, LoadableValue original_reference)
 			throws Exception {
 		pushSourceReferenceStart();
-		builder.visitLdcInsn("fricassée iteration {0}: {1}");
+		builder.visitLdcInsn("fricassée iteration %s: %s");
 		builder.visitInsn(Opcodes.ICONST_2);
 		builder.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(Object.class));
 		builder.visitInsn(Opcodes.DUP);
