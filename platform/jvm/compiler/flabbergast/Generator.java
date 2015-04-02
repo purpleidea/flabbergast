@@ -806,13 +806,16 @@ class Generator {
 				run_builder.visitFieldInsn(Opcodes.GETFIELD, class_name,
 						"state", getDescriptor(int.class));
 				run_builder.visitLabel(continue_label);
+				run_builder.visitInsn(Opcodes.DUP);
+				run_builder.visitVarInsn(Opcodes.ISTORE, 1);
 			} else {
-				run_builder.visitVarInsn(Opcodes.ALOAD, 0);
+				run_builder.visitVarInsn(Opcodes.ILOAD, 1);
 			}
 			run_builder.visitVarInsn(Opcodes.ALOAD, 0);
 			run_builder.visitInsn(Opcodes.SWAP);
 			run_builder.visitTableSwitchInsn(dispatch * MAX_DISPATCHES,
-					call_labels.length - 1, error_label, call_labels);
+					dispatch * MAX_DISPATCHES + call_labels.length - 1,
+					error_label, call_labels);
 			run_builder.visitLabel(error_label);
 			if (dispatch == num_dispatch_routines) {
 				run_builder.visitInsn(Opcodes.POP);
@@ -828,10 +831,14 @@ class Generator {
 										.getConstructor()), false);
 				run_builder.visitInsn(Opcodes.ATHROW);
 			} else {
-				run_builder.visitVarInsn(Opcodes.ALOAD, 0);
+				run_builder.visitVarInsn(Opcodes.ILOAD, 1);
 				run_builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL, class_name,
 						"run_dispatch_" + (dispatch + 1), "(I)I", false);
-				run_builder.visitInsn(Opcodes.IRETURN);
+				if (end_label == null) {
+					run_builder.visitInsn(Opcodes.IRETURN);
+				} else {
+					run_builder.visitJumpInsn(Opcodes.GOTO, end_label);
+				}
 			}
 
 			for (int it = 0; it < call_labels.length; it++) {
@@ -847,6 +854,8 @@ class Generator {
 			}
 			if (end_label != null) {
 				run_builder.visitLabel(end_label);
+				run_builder.visitLocalVariable("temp_state", "I", null,
+						continue_label, end_label, 1);
 				run_builder.visitInsn(Opcodes.DUP);
 				run_builder.visitJumpInsn(Opcodes.IFNE, continue_label);
 				run_builder.visitInsn(Opcodes.POP);
