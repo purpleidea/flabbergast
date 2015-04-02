@@ -199,13 +199,7 @@ class Generator {
 		ctor_builder.visitFieldInsn(Opcodes.PUTFIELD, class_name, "state",
 				getDescriptor(int.class));
 
-		ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
-		ctor_builder.visitTypeInsn(Opcodes.NEW,
-				getInternalName(AtomicInteger.class));
-		ctor_builder.visitInsn(Opcodes.DUP);
-		visitMethod(AtomicInteger.class.getConstructor(), ctor_builder);
-		ctor_builder.visitFieldInsn(Opcodes.PUTFIELD, class_name, "interlock",
-				getDescriptor(AtomicInteger.class));
+		createInterlock(ctor_builder);
 
 		ctor_builder.visitInsn(Opcodes.RETURN);
 		ctor_builder.visitMaxs(0, 0);
@@ -286,7 +280,8 @@ class Generator {
 	}
 
 	Generator(AstNode node, CompilationUnit<?> owner,
-			ClassVisitor type_builder, String class_name) {
+			ClassVisitor type_builder, String class_name)
+			throws NoSuchMethodException {
 		this.owner = owner;
 		this.type_builder = type_builder;
 		this.paths = 1;
@@ -314,6 +309,7 @@ class Generator {
 		ctor_builder.visitInsn(Opcodes.ICONST_0);
 		ctor_builder.visitFieldInsn(Opcodes.PUTFIELD, class_name, "state",
 				getDescriptor(int.class));
+		createInterlock(ctor_builder);
 		ctor_builder.visitInsn(Opcodes.RETURN);
 		ctor_builder.visitMaxs(0, 0);
 		ctor_builder.visitEnd();
@@ -471,6 +467,17 @@ class Generator {
 			CompilationUnit.FunctionOverrideBlock block) throws Exception {
 		return owner.createFunctionOverride(instance, syntax_id, block,
 				root_prefix, owner_externals);
+	}
+
+	private void createInterlock(MethodVisitor ctor_builder)
+			throws NoSuchMethodException {
+		ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
+		ctor_builder.visitTypeInsn(Opcodes.NEW,
+				getInternalName(AtomicInteger.class));
+		ctor_builder.visitInsn(Opcodes.DUP);
+		visitMethod(AtomicInteger.class.getConstructor(), ctor_builder);
+		ctor_builder.visitFieldInsn(Opcodes.PUTFIELD, class_name, "interlock",
+				getDescriptor(AtomicInteger.class));
 	}
 
 	/**
