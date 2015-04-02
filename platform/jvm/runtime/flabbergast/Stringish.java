@@ -47,7 +47,7 @@ public abstract class Stringish implements Comparable<Stringish>,
 			boolean this_empty = updateIterator(this_stream, this_offset,
 					this_current, first);
 			boolean other_empty = updateIterator(other_stream, other_offset,
-					this_current, first);
+					other_current, first);
 			first = false;
 			if (this_empty) {
 				return other_empty ? 0 : -1;
@@ -97,13 +97,14 @@ public abstract class Stringish implements Comparable<Stringish>,
 			Ptr<Integer> offset, Ptr<String> current, boolean first) {
 		// This is in a loop to consume any empty strings at the end of input.
 		while (first || offset.get() >= current.get().length()) {
-			if (!iterator.hasNext())
-				return false;
+			if (!iterator.hasNext()) {
+				return true;
+			}
 			current.set(iterator.next());
 			offset.set(0);
 			first = false;
 		}
-		return true;
+		return false;
 	}
 
 	public final void write(Writer writer) throws IOException {

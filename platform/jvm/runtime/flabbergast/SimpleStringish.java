@@ -3,8 +3,6 @@ package flabbergast;
 import java.util.Iterator;
 import java.util.Stack;
 
-import javax.management.openmbean.InvalidOpenTypeException;
-
 import flabbergast.RamblingIterator.GetNext;
 
 public class SimpleStringish extends Stringish {
@@ -42,7 +40,7 @@ public class SimpleStringish extends Stringish {
 
 			@Override
 			public void remove() {
-				throw new InvalidOpenTypeException();
+				throw new UnsupportedOperationException();
 			}
 		};
 	}
