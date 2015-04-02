@@ -1906,7 +1906,7 @@ codegen : compiler_lib.codegen_tmpl {
 		}
 	}
 	prepare_lookup_cache +: {
-		extra_indent : in.extra_indent & specials.extra_indent & "\t"
+		extra_indent : in.extra_indent & "\t"
 		storage_name : in.storage_name
 		parent_context : Lookup parameters.context In Container
 		parent_lookup_cache : Lookup lookup_cache In Container
@@ -1919,23 +1919,16 @@ codegen : compiler_lib.codegen_tmpl {
 		lookup_cache : Id & "_cache"
 		new_context : Id & "_context"
 		gen_gen +: {
-			sum_indent : indent & specials.extra_indent
 			value :
-				specials.gen_gen(
-					indent : indent,
-					code :
-						"\(sum_indent)\(name ?? generation_environment).generateLookupCache(\(generator), \(specials.raw_material), \(parent_lookup_cache), \(parameters.source_reference.storage_name), \(parent_context.storage_name), \(parameters.self_frame.storage_name), new Environment.Block() { public void invoke(final LoadableValue \(new_context), final LookupCache \(lookup_cache)) throws java.lang.Exception {" &
-						"\(sum_indent)\t\(generator).debugPosition(\(class_name).this);" &
-						in.gen_gen(indent : sum_indent & "\t", code : code) &
-						"\(sum_indent)} });"
-					)
+				"\(indent)\(name ?? generation_environment).generateLookupCache(\(generator), \(specials.raw_material(indent : indent)), \(parent_lookup_cache), \(parameters.source_reference.storage_name), \(parent_context.storage_name), \(parameters.self_frame.storage_name), new Environment.Block() { public void invoke(final LoadableValue \(new_context), final LookupCache \(lookup_cache)) throws java.lang.Exception {" &
+				"\(indent)\t\(generator).debugPosition(\(class_name).this);" &
+				in.gen_gen(indent : indent & "\t", code : code) &
+				"\(indent)} });"
 		}
 		lookup_special_tmpl +: {
-			extra_indent : ""
-			raw_material ?:
-			gen_gen : Template {
-				code ?:
+			raw_material : Template {
 				indent ?:
+				value ?:
 			}
 
 			# This is here so that our call to the generate of the named elements
@@ -1945,35 +1938,27 @@ codegen : compiler_lib.codegen_tmpl {
 			lookup_cache : parent_lookup_cache
 		}
 		no_specials +: {
-			raw_material : "null"
-			gen_gen +: {
-				value : code
+			raw_material +: {
+				value : "null, null"
 			}
 		}
 		specials_from_definitions +: {
-			extra_indent : "\t"
-			raw_material : Id
 			argument_list : "\(generator), " &
 				(If target_flavour.non_accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
 				(target_flavour.non_accumulate_flavour.call_site {}).value
 
-			gen_gen +: {
-				value :
-					"\(indent)\(generator).fold((RevCons<java.util.Map.Entry<String, LoadableCache>>) null, \(field), new Generator.FoldBlock<named_definition, RevCons<java.util.Map.Entry<String, LoadableCache>>>() { public void invoke(final int \(Id)_index, final named_definition \(Id)_item, final RevCons<java.util.Map.Entry<String, LoadableCache>> \(Id)_revcons, final Generator.ParameterisedBlock<RevCons<java.util.Map.Entry<String, LoadableCache>>> \(Id)_block) throws java.lang.Exception {" &
-					"\(indent)\t\(Id)_item.generate(\(argument_list)new Generator.ParameterisedBlock<LoadableValue>() { public void invoke(final LoadableValue \(Id)_result) throws java.lang.Exception {" &
-					"\(indent)\t\t\(generator).debugPosition(\(class_name).this);" &
-					"\(indent)\t\t\(Id)_block.invoke(new RevCons<java.util.Map.Entry<String, LoadableCache>>(new java.util.AbstractMap.SimpleImmutableEntry<String, LoadableCache>(\(Id)_item.name.toString(), new LoadableCache(\(Id)_result, \(Id)_item._bound_info)), null));" &
-					"\(indent)} }); } }, new Generator.ParameterisedBlock<RevCons<java.util.Map.Entry<String, LoadableCache>>>() { public void invoke(final RevCons<java.util.Map.Entry<String, LoadableCache>>\(raw_material)) throws java.lang.Exception {" &
-					code &
-					"\(indent)} });"
+			raw_material +: {
+				value : "\(field), new Environment.SpecialGenerate<named_definition>() { public void invoke(named_definition \(Id)_item, Generator.ParameterisedBlock<LoadableValue> \(Id)_result_handler) throws java.lang.Exception { \(Id)_item.generate(\(argument_list)\(Id)_result_handler); } public RestrictableType getRestrictableType(named_definition \(Id)_item) { return \(Id)_item._bound_info; } }"
 			}
 		}
 		special_from_expression +: {
-			extra_indent : is.extra_indent
-			raw_material : "new RevCons<java.util.Map.Entry<String, LoadableCache>>(new java.util.AbstractMap.SimpleImmutableEntry<String, LoadableCache>(\(field).toString(), new LoadableCache(\(is.storage_name), \(type_storage))), null)"
-			gen_gen +: {
-				sum_indent : indent & is.extra_indent
-				value : is.gen_gen(indent : indent, code : code)
+			argument_list : "\(generator), " &
+				(If target_flavour.non_accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
+				(target_flavour.non_accumulate_flavour.call_site {}).value
+
+			raw_material +: {
+				base_code : is.gen_gen(indent : indent, code : "\(indent)\(is.extra_indent)\(Id)_result_handler.invoke(\(is.storage_name));")
+				value : "java.util.Arrays.asList(0), new Environment.SpecialGenerate<Integer>() { public void invoke(Integer \(Id)_item, final Generator.ParameterisedBlock<LoadableValue> \(Id)_result_handler) throws java.lang.Exception { \(base_code) } public RestrictableType getRestrictableType(Integer \(Id)_item) { return \(type_storage); } }"
 			}
 		}
 	}

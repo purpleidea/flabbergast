@@ -36,6 +36,10 @@ public class TypeSet {
 		}
 	}
 
+	public void add(TypeSet other) {
+		flags |= other.flags;
+	}
+
 	public boolean contains(Type type) {
 		return (type.get() & flags) != 0;
 	}

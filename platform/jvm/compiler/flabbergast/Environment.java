@@ -15,6 +15,14 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 class Environment implements CodeRegion {
+	public interface SpecialGenerate<T> {
+		void invoke(T item,
+				Generator.ParameterisedBlock<LoadableValue> result_handler)
+				throws Exception;
+
+		RestrictableType getRestrictableType(T item);
+	}
+
 	public interface Block {
 		void invoke(LoadableValue context, LookupCache cache) throws Exception;
 	}
@@ -93,17 +101,18 @@ class Environment implements CodeRegion {
 		}
 	}
 
-	void generateLookupCache(Generator generator,
-			RevCons<Entry<String, LoadableCache>> specials,
-			LookupCache current, LoadableValue source_reference,
-			LoadableValue context, LoadableValue self_frame, Block block)
-			throws Exception {
+	<T> void generateLookupCache(final Generator generator, List<T> specials,
+			SpecialGenerate<T> special_transform, LookupCache current,
+			LoadableValue source_reference, LoadableValue context,
+			LoadableValue self_frame, Block block) throws Exception {
 		generator.debugPosition(this);
 		MethodVisitor builder = generator.getBuilder();
 		List<LoadableCache> lookup_results = new ArrayList<LoadableCache>();
 		if (specials != null) {
-			FieldValue child_context = generator.makeField("anon_frame",
+			FieldValue child_context = generator.makeField("anon_ctxt",
 					Context.class);
+			final FieldValue child_frame = generator.makeField("anon_frame",
+					Frame.class);
 			builder.visitVarInsn(Opcodes.ALOAD, 0);
 			builder.visitTypeInsn(Opcodes.NEW, getInternalName(Frame.class));
 			builder.visitInsn(Opcodes.DUP);
@@ -116,25 +125,51 @@ class Environment implements CodeRegion {
 					getInternalName(Frame.class), "<init>",
 					org.objectweb.asm.Type.getConstructorDescriptor(Frame.class
 							.getConstructors()[0]), false);
-			for (Entry<String, LoadableCache> entry : specials.toList()) {
-				builder.visitInsn(Opcodes.DUP);
-				builder.visitLdcInsn(entry.getKey());
-				generator
-						.loadReboxed(entry.getValue().getValue(), Object.class);
-				builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
-						getInternalName(Frame.class), "set",
-						Generator.makeSignature(null, String.class,
-								Object.class), false);
-				lookup_results.add(entry.getValue());
-			}
+			child_frame.store(builder);
+
+			builder.visitVarInsn(Opcodes.ALOAD, 0);
+			child_frame.load(generator);
 			context.load(generator);
 			builder.visitMethodInsn(Opcodes.INVOKESTATIC,
 					getInternalName(Context.class), "prepend", Generator
 							.makeSignature(Context.class, Frame.class,
 									Context.class), false);
-			child_context.store(builder);
+			child_context.store(generator);
 			// Promote the context with the specials to proper status
 			context = child_context;
+
+			for (T entry : specials) {
+				final int next = generator.defineState();
+				final RestrictableType restrictable = special_transform
+						.getRestrictableType(entry);
+				final FieldValue field = generator.makeField("special$"
+						+ restrictable.getName(), Object.class);
+				// The types that we might allow are a superset of the ones we
+				// might actually see. So, build a set of the ones we see.
+				final TypeSet known_types = new TypeSet(TypeSet.EMPTY);
+				special_transform.invoke(entry,
+						new Generator.ParameterisedBlock<LoadableValue>() {
+
+							@Override
+							public void invoke(LoadableValue result)
+									throws Exception {
+								child_frame.load(generator);
+								generator.getBuilder().visitLdcInsn(
+										restrictable.getName());
+								generator.loadReboxed(result, Object.class);
+								generator.visitMethod(Frame.class.getMethod(
+										"set", String.class, Object.class));
+								generator.copyField(result, field);
+								generator.jumpToState(next);
+								known_types.add(TypeSet.fromNative(result
+										.getBackingType()));
+							}
+						});
+				generator.markState(next);
+				lookup_results.add(new LoadableCache(field, restrictable
+						.getRestrictedType().intersect(known_types),
+						restrictable, restrictable.mustUnbox()));
+			}
 		}
 
 		LookupCache base_lookup_cache = new LookupCache(current);
@@ -233,6 +268,9 @@ class Environment implements CodeRegion {
 			LoadableValue context, LookupCache cache, int index,
 			List<LoadableCache> values, LoadableValue source_reference,
 			Block block) throws Exception {
+		int state = generator.defineState();
+		generator.jumpToState(state);
+		generator.markState(state);
 		if (index >= values.size()) {
 			block.invoke(context, cache);
 			return;
@@ -344,6 +382,9 @@ class Environment implements CodeRegion {
 			builder.visitTypeInsn(Opcodes.INSTANCEOF,
 					getInternalName(Generator.getBoxedType(type)));
 			builder.visitJumpInsn(Opcodes.IFEQ, next_label);
+			int state = generator.defineState();
+			generator.jumpToState(state);
+			generator.markState(state);
 			block.invoke(new AutoUnboxValue(original, type));
 			generator.setBuilder(builder);
 			builder.visitLabel(next_label);
