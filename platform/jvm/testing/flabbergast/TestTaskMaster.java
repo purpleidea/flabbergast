@@ -2,7 +2,7 @@ package flabbergast;
 
 public class TestTaskMaster extends TaskMaster {
 	@Override
-	public void reportExternalError(String uri) {
+	public void reportExternalError(String uri, LibraryFailure failure) {
 	}
 
 	@Override

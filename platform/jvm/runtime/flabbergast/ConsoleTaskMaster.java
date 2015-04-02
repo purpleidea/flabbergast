@@ -13,8 +13,20 @@ public class ConsoleTaskMaster extends TaskMaster {
 	}
 
 	@Override
-	public void reportExternalError(String uri) {
-		System.err.printf("The URI “%s” could not be resolved.\n", uri);
+	public void reportExternalError(String uri, LibraryFailure reason) {
+		switch (reason) {
+		case BAD_NAME:
+			System.err.printf("The URI “%s” is not a valid name.\n", uri);
+			break;
+		case CORRUPT:
+			System.err.printf("The URI “%s” could not be loaded.\n", uri);
+			break;
+		case MISSING:
+			System.err.printf("The URI “%s” could not be found.\n", uri);
+			break;
+		default:
+			break;
+		}
 	}
 
 	@Override
