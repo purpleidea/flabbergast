@@ -49,6 +49,8 @@ class Generator {
 		void invoke(R result) throws Exception;
 	}
 
+	private static final int MAX_DISPATCHES = 6 * 1024;
+
 	static Class<?> getBoxedType(Class<?> type) {
 		if (type == boolean.class)
 			return Boolean.class;
@@ -773,48 +775,79 @@ class Generator {
 			entry_point.visitMaxs(0, 0);
 			entry_point.visitEnd();
 		}
+		int num_dispatch_routines = entry_points.size() / MAX_DISPATCHES;
+		for (int dispatch = 0; dispatch <= num_dispatch_routines; dispatch++) {
+			Class<?> io_type = (dispatch == 0) ? null : int.class;
+			MethodVisitor run_builder = type_builder.visitMethod(
+					Opcodes.ACC_PROTECTED, (dispatch == 0) ? "run"
+							: ("run_dispatch_" + dispatch),
+					makeSignature(io_type, io_type), null, null);
+			run_builder.visitCode();
 
-		MethodVisitor run_builder = type_builder.visitMethod(
-				Opcodes.ACC_PROTECTED, "run", makeSignature(null), null, null);
-		run_builder.visitCode();
-		Label[] call_labels = new Label[entry_points.size()];
-		for (int it = 0; it < call_labels.length; it++) {
-			call_labels[it] = new Label();
+			Label[] call_labels = new Label[(entry_points.size() - dispatch
+					* MAX_DISPATCHES)
+					% MAX_DISPATCHES];
+			for (int it = 0; it < call_labels.length; it++) {
+				call_labels[it] = new Label();
+			}
+
+			Label error_label = new Label();
+			Label end_label = dispatch == 0 ? new Label() : null;
+			Label continue_label = dispatch == 0 ? new Label() : null;
+			if (dispatch == 0) {
+				run_builder.visitVarInsn(Opcodes.ALOAD, 0);
+				run_builder.visitFieldInsn(Opcodes.GETFIELD, class_name,
+						"state", getDescriptor(int.class));
+				run_builder.visitLabel(continue_label);
+			} else {
+				run_builder.visitVarInsn(Opcodes.ALOAD, 0);
+			}
+			run_builder.visitVarInsn(Opcodes.ALOAD, 0);
+			run_builder.visitInsn(Opcodes.SWAP);
+			run_builder.visitTableSwitchInsn(dispatch * MAX_DISPATCHES,
+					call_labels.length - 1, error_label, call_labels);
+			run_builder.visitLabel(error_label);
+			if (dispatch == num_dispatch_routines) {
+				run_builder.visitInsn(Opcodes.POP);
+				run_builder.visitTypeInsn(Opcodes.NEW,
+						getInternalName(IllegalStateException.class));
+				run_builder.visitInsn(Opcodes.DUP);
+				run_builder
+						.visitMethodInsn(
+								Opcodes.INVOKESPECIAL,
+								getInternalName(IllegalStateException.class),
+								"<init>",
+								Type.getConstructorDescriptor(IllegalStateException.class
+										.getConstructor()), false);
+				run_builder.visitInsn(Opcodes.ATHROW);
+			} else {
+				run_builder.visitVarInsn(Opcodes.ALOAD, 0);
+				run_builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL, class_name,
+						"run_dispatch_" + (dispatch + 1), "(I)I", false);
+				run_builder.visitInsn(Opcodes.IRETURN);
+			}
+
+			for (int it = 0; it < call_labels.length; it++) {
+				run_builder.visitLabel(call_labels[it]);
+				run_builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL, class_name,
+						"run_" + (it + dispatch * MAX_DISPATCHES),
+						makeSignature(int.class), false);
+				if (end_label == null) {
+					run_builder.visitInsn(Opcodes.IRETURN);
+				} else {
+					run_builder.visitJumpInsn(Opcodes.GOTO, end_label);
+				}
+			}
+			if (end_label != null) {
+				run_builder.visitLabel(end_label);
+				run_builder.visitInsn(Opcodes.DUP);
+				run_builder.visitJumpInsn(Opcodes.IFNE, continue_label);
+				run_builder.visitInsn(Opcodes.POP);
+				run_builder.visitInsn(Opcodes.RETURN);
+			}
+			run_builder.visitMaxs(0, 0);
+			run_builder.visitEnd();
 		}
-		Label error_label = new Label();
-		Label end_label = new Label();
-		Label continue_label = new Label();
-		run_builder.visitVarInsn(Opcodes.ALOAD, 0);
-		run_builder.visitFieldInsn(Opcodes.GETFIELD, class_name, "state",
-				getDescriptor(int.class));
-		run_builder.visitLabel(continue_label);
-		run_builder.visitVarInsn(Opcodes.ALOAD, 0);
-		run_builder.visitInsn(Opcodes.SWAP);
-		run_builder.visitTableSwitchInsn(0, call_labels.length - 1,
-				error_label, call_labels);
-		run_builder.visitLabel(error_label);
-		run_builder.visitInsn(Opcodes.POP);
-		run_builder.visitTypeInsn(Opcodes.NEW,
-				getInternalName(IllegalStateException.class));
-		run_builder.visitInsn(Opcodes.DUP);
-		run_builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
-				getInternalName(IllegalStateException.class), "<init>", Type
-						.getConstructorDescriptor(IllegalStateException.class
-								.getConstructor()), false);
-		run_builder.visitInsn(Opcodes.ATHROW);
-		for (int it = 0; it < entry_points.size(); it++) {
-			run_builder.visitLabel(call_labels[it]);
-			run_builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL, class_name,
-					"run_" + it, makeSignature(int.class), false);
-			run_builder.visitJumpInsn(Opcodes.GOTO, end_label);
-		}
-		run_builder.visitLabel(end_label);
-		run_builder.visitInsn(Opcodes.DUP);
-		run_builder.visitJumpInsn(Opcodes.IFNE, continue_label);
-		run_builder.visitInsn(Opcodes.POP);
-		run_builder.visitInsn(Opcodes.RETURN);
-		run_builder.visitMaxs(0, 0);
-		run_builder.visitEnd();
 		type_builder.visitEnd();
 	}
 
