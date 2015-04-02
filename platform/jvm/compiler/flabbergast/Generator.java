@@ -1254,7 +1254,7 @@ class Generator {
 
 	void setState(int state, MethodVisitor builder) {
 		builder.visitVarInsn(Opcodes.ALOAD, 0);
-		builder.visitIntInsn(Opcodes.BIPUSH, state);
+		builder.visitIntInsn(Opcodes.SIPUSH, state);
 		builder.visitFieldInsn(Opcodes.PUTFIELD, class_name, "state",
 				getDescriptor(int.class));
 	}
