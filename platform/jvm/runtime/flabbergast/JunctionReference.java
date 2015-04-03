@@ -2,6 +2,7 @@ package flabbergast;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Set;
 
 /**
  * A stack element that bifurcates.
@@ -29,14 +30,29 @@ public class JunctionReference extends SourceReference {
 	}
 
 	@Override
-	public void write(Writer writer, String prefix) throws IOException {
+	public void write(Writer writer, String prefix, Set<SourceReference> seen)
+			throws IOException {
 		writer.write(prefix);
 		writer.write(this.caller == null ? "└─┬ " : "├─┬ ");
 		writeMessage(writer);
+		boolean before = seen.contains(this);
+		if (before) {
+			writer.write(" (previously mentioned)");
+		} else {
+			seen.add(this);
+		}
+		writer.write("\n");
 
-		junction.write(writer, prefix + (caller == null ? "  " : "│ "));
-		if (caller != null)
-			caller.write(writer, prefix);
+		if (before) {
+			writer.write(prefix);
+			writer.write(caller == null ? "  " : "┊ ");
+			writer.write("┊\n");
+		} else {
+			junction.write(writer, prefix + (caller == null ? "  " : "│ "),
+					seen);
+			if (caller != null) {
+				caller.write(writer, prefix, seen);
+			}
+		}
 	}
-
 }

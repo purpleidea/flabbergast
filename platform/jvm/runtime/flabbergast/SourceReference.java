@@ -2,6 +2,8 @@ package flabbergast;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Description of the current Flabbergast stack.
@@ -64,25 +66,42 @@ public class SourceReference {
 	 * Write the current stack trace.
 	 */
 	public void write(Writer writer, String prefix) throws IOException {
+		write(writer, prefix, new HashSet<SourceReference>());
+	}
+
+	public void write(Writer writer, String prefix, Set<SourceReference> seen)
+			throws IOException {
 		writer.write(prefix);
 		writer.write(caller == null ? "└ " : "├ ");
 		writeMessage(writer);
-		if (caller != null)
-			caller.write(writer, prefix);
+		boolean before = seen.contains(this);
+		if (before) {
+			writer.write(" (previously mentioned)");
+		} else {
+			seen.add(this);
+		}
+		writer.write("\n");
+		if (caller != null) {
+			if (before) {
+				writer.write(prefix);
+				writer.write("┊\n");
+			} else {
+				caller.write(writer, prefix, seen);
+			}
+		}
 	}
 
 	protected void writeMessage(Writer writer) throws IOException {
 		writer.write(file_name);
 		writer.write(": ");
-		writer.write(start_line);
+		writer.write(Integer.toString(start_line));
 		writer.write(":");
-		writer.write(start_column);
+		writer.write(Integer.toString(start_column));
 		writer.write("-");
-		writer.write(end_line);
+		writer.write(Integer.toString(end_line));
 		writer.write(":");
-		writer.write(end_column);
+		writer.write(Integer.toString(end_column));
 		writer.write(": ");
 		writer.write(message);
-		writer.write("\n");
 	}
 }

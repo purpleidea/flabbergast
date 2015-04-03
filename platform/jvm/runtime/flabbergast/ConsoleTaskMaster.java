@@ -2,8 +2,9 @@ package flabbergast;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Writer;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,15 +33,14 @@ public class ConsoleTaskMaster extends TaskMaster {
 	@Override
 	public void reportLookupError(Lookup lookup, Class<?> fail_type) {
 		try {
-			Writer output = new PrintWriter(System.err);
+			PrintWriter output = new PrintWriter(System.err);
 			if (fail_type == null) {
-				System.err.printf(
-						"Undefined name “%s”. Lookup was as follows:\n",
+				output.printf("Undefined name “%s”. Lookup was as follows:\n",
 						lookup.getName());
 			} else {
-				System.err
-						.printf("Non-frame type %s while resolving name “%s”. Lookup was as follows:\n",
-								fail_type, lookup.getName());
+				output.printf(
+						"Non-frame type %s while resolving name “%s”. Lookup was as follows:\n",
+						fail_type, lookup.getName());
 			}
 			int col_width = Math.max(
 					(int) Math.log10(lookup.getFrameCount()) + 1, 3);
@@ -49,18 +49,24 @@ public class ConsoleTaskMaster extends TaskMaster {
 						.length());
 			}
 			for (int name_it = 0; name_it < lookup.getNameCount(); name_it++) {
-				System.err.printf("| %s",
-						pad(lookup.getName(name_it), col_width));
+				output.printf("│ %s", pad(lookup.getName(name_it), col_width));
 			}
-			System.err.println("|");
+			output.println("│");
+			for (int name_it = 0; name_it < lookup.getNameCount(); name_it++) {
+				output.print(name_it == 0 ? "├" : "┼");
+				for (int s = 0; s <= col_width; s++) {
+					output.print("─");
+				}
+			}
+			output.println("┤");
 			Map<Frame, String> known_frames = new HashMap<Frame, String>();
 			java.util.List<Frame> frame_list = new ArrayList<Frame>();
-			String null_text = pad("| ", col_width + 2);
+			String null_text = pad("│ ", col_width + 2);
 			for (int frame_it = 0; frame_it < lookup.getFrameCount(); frame_it++) {
 				for (int name_it = 0; name_it < lookup.getNameCount(); name_it++) {
 					Frame frame = lookup.get(name_it, frame_it);
 					if (frame == null) {
-						System.err.print(null_text);
+						output.print(null_text);
 						continue;
 					}
 					if (!known_frames.containsKey(frame)) {
@@ -70,16 +76,19 @@ public class ConsoleTaskMaster extends TaskMaster {
 								pad(Integer.toString(frame_list.size()),
 										col_width));
 					}
-					System.err.printf("| %s", known_frames.get(frame));
+					output.printf("│ %s", known_frames.get(frame));
 				}
-				System.err.println("|");
+				output.println("│");
 			}
+			Set<SourceReference> seen = new HashSet<SourceReference>();
+			output.println("Lookup happened here:");
+			lookup.getSourceReference().write(output, "  ", seen);
 			for (int it = 0; it < frame_list.size(); it++) {
-				System.err.printf("Frame %s defined:\n", it + 1);
-				frame_list.get(it).getSourceReference().write(output, "  ");
+				output.printf("Frame %s defined:\n", it + 1);
+				frame_list.get(it).getSourceReference()
+						.write(output, "  ", seen);
 			}
-			System.err.println("Lookup happened here:");
-			lookup.getSourceReference().write(output, "  ");
+			output.flush();
 		} catch (IOException e) {
 		}
 	}
