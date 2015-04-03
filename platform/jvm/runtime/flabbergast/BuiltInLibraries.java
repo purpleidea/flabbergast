@@ -15,7 +15,8 @@ public class BuiltInLibraries implements UriHandler {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Class<? extends Computation> resolveUri(String uri, Ptr<LibraryFailure> failure) {
+	public Class<? extends Computation> resolveUri(String uri,
+			Ptr<LibraryFailure> failure) {
 		if (!uri.startsWith("lib:"))
 			return null;
 		String type_name = "flabbergast.library."
