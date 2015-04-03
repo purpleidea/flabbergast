@@ -2420,7 +2420,7 @@ compiler : compiler_lib.language_tmpl {
 			super_class_extra : "\tabstract Type getTypeId();\n\tabstract TypeSet getCastableFrom();\n\tabstract boolean getUnbox();\n"
 			type_element +: {
 				castable_from_type_bits : For t : castable_from Reduce acc & ", " & t.union_type With acc : type.union_type
-				class_extra : "\tType getTypeId() { return \(type.union_type); }\n\tTypeSet getCastableFrom() { return new TypeSet(\(castable_from_type_bits)); }\n\tboolean getUnbox() { return \(type.unbox); }\n"
+				class_extra : "\tType getTypeId() { return \(type.union_type); }\n\tTypeSet getCastableFrom() { return new TypeSet(\(castable_from_type_bits)); }\n\tboolean getUnbox() { return \(If type.unbox Then "true" Else "false"); }\n"
 			}
 		}
 		expression +: {
