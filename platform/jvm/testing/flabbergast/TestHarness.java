@@ -38,13 +38,13 @@ public class TestHarness {
 			int test_id = id.get();
 			id.set(test_id + 1);
 			try {
-			parser.parseFile(collector, compiler.getCompilationUnit(), "Test"
-					+ test_id);
+				parser.parseFile(collector, compiler.getCompilationUnit(),
+						"Test" + test_id);
 			} catch (Exception e) {
 			}
-			System.err.printf("%s %s %s %s\n",
-					collector.isParseDirty() ? "----" : "FAIL", "M", type,
-					file.getName());
+			System.err.printf("%s %s %s %s\n", collector.isParseDirty()
+					? "----"
+					: "FAIL", "M", type, file.getName());
 			all_succeeded &= collector.isParseDirty();
 		}
 		TaskMaster task_master = new TestTaskMaster();
@@ -112,9 +112,9 @@ public class TestHarness {
 
 			Ptr<Integer> id = new Ptr<Integer>(0);
 			boolean success = true;
-			success &= doTests(combine(path, "..", "..", "..", "..", "tests"),
-					"*", id);
-			success &= doTests(combine(path, "..", "..", "tests"), "I", id);
+			success &= doTests(combine(path, "..", "..", "..", "tests"), "*",
+					id);
+			success &= doTests(combine(path, "..", "tests"), "I", id);
 			System.exit(success ? 0 : 1);
 		} catch (Exception e) {
 			e.printStackTrace();
