@@ -69,7 +69,8 @@ public class DynamicCompiler extends LoadLibraries {
 		}
 
 		public Class<?> hotload(String name, byte[] class_file) {
-			return defineClass(name.replace('/', '.'), class_file, 0, class_file.length);
+			return defineClass(name.replace('/', '.'), class_file, 0,
+					class_file.length);
 		}
 	}
 

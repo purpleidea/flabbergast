@@ -17,7 +17,7 @@ class BooleanStringish extends LoadableValue {
 	}
 
 	@Override
-	public void load(MethodVisitor generator) throws Exception{
+	public void load(MethodVisitor generator) throws Exception {
 		generator.visitFieldInsn(Opcodes.GETSTATIC,
 				Type.getInternalName(Stringish.class), "BOOLEANS",
 				Type.getDescriptor(Stringish[].class));
