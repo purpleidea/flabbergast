@@ -1,1 +1,4 @@
+*.manifest
+build
 compiler-jvm.java
+flabbergast-*.jar
