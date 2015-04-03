@@ -136,9 +136,13 @@ public class DynamicCompiler extends LoadLibraries {
 						collector, unit, type_name);
 				reason.set(result == null ? LibraryFailure.CORRUPT : null);
 				cache.put(uri, result);
+				parser = null;
+				System.gc();
 				return (Class<? extends Computation>) result;
 			} catch (Exception e) {
 				System.err.println(e.getMessage());
+				reason.set(LibraryFailure.CORRUPT);
+				return null;
 			}
 		}
 		reason.set(LibraryFailure.MISSING);
