@@ -1,9 +1,9 @@
 package flabbergast;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 /**
  * A Frame in the Flabbergast language.
@@ -23,11 +23,10 @@ public class Frame implements Iterable<String> {
 		return result;
 	}
 
-	private Map<String, Object> attributes = new HashMap<String, Object>();
+	private TreeMap<String, Object> attributes = new TreeMap<String, Object>();
 	private Frame container;
 	private Context context;
 	private Stringish id;
-	private Map<String, Computation> pending = new HashMap<String, Computation>();
 	private SourceReference source_reference;
 	private TaskMaster task_master;
 
@@ -80,15 +79,17 @@ public class Frame implements Iterable<String> {
 		// be slotted.
 		slot();
 
-		if (pending.containsKey(name)) {
-			pending.get(name).listen(consumer);
-			return true;
+		Entry<String, Object> attribute_entry = attributes.ceilingEntry(name);
+		if (attribute_entry == null || !attribute_entry.getKey().equals(name)) {
+			return false;
 		}
-		if (attributes.containsKey(name)) {
-			consumer.consume(attributes.get(name));
-			return true;
+		if (attribute_entry.getValue() instanceof Computation) {
+			((Computation) attribute_entry.getValue()).listen(consumer);
+		} else {
+
+			consumer.consume(attribute_entry.getValue());
 		}
-		return false;
+		return true;
 	}
 
 	/**
@@ -102,8 +103,7 @@ public class Frame implements Iterable<String> {
 	 * Check if an attribute name is present in the frame.
 	 */
 	public boolean has(String name) {
-		boolean is_pending = pending.containsKey(name);
-		return is_pending || attributes.containsKey(name);
+		return attributes.containsKey(name);
 	}
 
 	public boolean has(Stringish name) {
@@ -112,22 +112,21 @@ public class Frame implements Iterable<String> {
 
 	@Override
 	public Iterator<String> iterator() {
-		return new ConcatIterator<String>(attributes.keySet().iterator(),
-				pending.keySet().iterator());
+		return attributes.keySet().iterator();
 	}
 
 	public void set(final String name, Object value) {
 		if (value == null) {
 			return;
 		}
-		if (pending.containsKey(name) || attributes.containsKey(name)) {
+		if (attributes.containsKey(name)) {
 			throw new IllegalStateException("Redefinition of attribute " + name
 					+ ".");
 		}
 		if (value instanceof ComputeValue) {
 			Computation computation = ((ComputeValue) value).invoke(
 					task_master, source_reference, context, this, container);
-			pending.put(name, computation);
+			attributes.put(name, computation);
 			/*
 			 * When this computation has completed, replace its value in the
 			 * frame.
@@ -136,7 +135,6 @@ public class Frame implements Iterable<String> {
 				@Override
 				public void consume(Object result) {
 					attributes.put(name, result);
-					pending.remove(name);
 				}
 			});
 			/*
