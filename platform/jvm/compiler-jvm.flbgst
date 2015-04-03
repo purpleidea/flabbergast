@@ -1493,7 +1493,13 @@ kws : compiler_lib.kws_tmpl {
 				"\(sum_indent)\(iterator_instance).load(\(generator));" &
 				"\(sum_indent)\(generator).visitMethod(MergeIterator.class.getMethod(\"next\"));" &
 				(If modify_source_reference
-					Then "\(sum_indent)\(GenerateId parameters.source_reference).set(\(generator).pushIteratorSourceReference(\(class_name).this, \(iterator_instance), \(parent_source_reference.storage_name)));"
+					Then
+						"\(sum_indent)org.objectweb.asm.Label \(Id)_reset = new org.objectweb.asm.Label();" &
+						"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+						"\(sum_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(iterator_dispatchers)[0]);" &
+						"\(sum_indent)\(generator).getBuilder().visitJumpInsn(org.objectweb.asm.Opcodes.IF_ICMPEQ, \(Id)_reset);" &
+						"\(sum_indent)\(GenerateId parameters.source_reference).set(\(generator).pushIteratorSourceReference(\(class_name).this, \(iterator_instance), \(parent_source_reference.storage_name)));" &
+						"\(sum_indent)\(generator).getBuilder().visitLabel(\(Id)_reset);"
 					Else "") &
 				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.IRETURN);"
 
