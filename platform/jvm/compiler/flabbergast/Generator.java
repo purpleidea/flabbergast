@@ -794,9 +794,8 @@ class Generator {
 			}
 			run_builder.visitCode();
 
-			Label[] call_labels = new Label[(entry_points.size() - dispatch
-					* MAX_DISPATCHES)
-					% MAX_DISPATCHES];
+			Label[] call_labels = new Label[dispatch == num_dispatch_routines ? (entry_points
+					.size() % MAX_DISPATCHES) : MAX_DISPATCHES];
 			for (int it = 0; it < call_labels.length; it++) {
 				call_labels[it] = new Label();
 			}
