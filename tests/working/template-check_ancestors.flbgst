@@ -1,0 +1,13 @@
+y : {
+	k : True
+	z : {
+		t : Template {
+			a : k
+		}
+	}
+}
+x : {
+	t : Template y.z.t { }
+}
+
+value : (x.t {}).a
