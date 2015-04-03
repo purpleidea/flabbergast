@@ -2158,6 +2158,7 @@ language_tmpl : Template {
 						input : input_merge { field : $inputs }
 						cases : []
 						initial : kws.frame_new {
+							creation_method : "fricassée merge"
 							container : parameters.self_frame
 							context : parameters.context
 						}
@@ -2587,6 +2588,7 @@ language_tmpl : Template {
 					}
 					code_value : fricassee_iterator {
 						start : Template kws.frame_new {
+							creation_method : pretty_name
 							container : parameters.self_frame
 							context : parameters.context
 						}
@@ -2646,6 +2648,7 @@ language_tmpl : Template {
 					}
 					code_value : fricassee_iterator {
 						start : Template kws.frame_new {
+							creation_method : pretty_name
 							container : parameters.self_frame
 							context : parameters.context
 						}
@@ -3387,6 +3390,7 @@ language_tmpl : Template {
 					code_value : perform_overrides {
 						accumulator_type : known_types.frame
 						new_item : Template kws.frame_new {
+							creation_method : "instantiated"
 							container : parameters.self_frame
 						}
 						source_template : codegen.other_code { field : $source }
