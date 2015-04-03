@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Scheduler for computations.
  */
-public abstract class TaskMaster implements Iterable<Computation> {
+public abstract class TaskMaster implements Iterable<Lookup> {
 	public enum LibraryFailure {
 		BAD_NAME, CORRUPT, MISSING
 	}
@@ -61,7 +61,7 @@ public abstract class TaskMaster implements Iterable<Computation> {
 	/**
 	 * These are computations that have not completed.
 	 */
-	private Set<Computation> inflight = new HashSet<Computation>();
+	private Set<Lookup> inflight = new HashSet<Lookup>();
 
 	private AtomicInteger next_id = new AtomicInteger();
 
@@ -120,7 +120,7 @@ public abstract class TaskMaster implements Iterable<Computation> {
 	}
 
 	@Override
-	public Iterator<Computation> iterator() {
+	public Iterator<Lookup> iterator() {
 		return inflight.iterator();
 	}
 
@@ -168,7 +168,7 @@ public abstract class TaskMaster implements Iterable<Computation> {
 	 * Add a computation to be executed.
 	 */
 	public void slot(final Computation computation) {
-		if (!inflight.contains(computation)) {
+		if (inflight instanceof Lookup && !inflight.contains(computation)) {
 			computation.listen(new ConsumeResult() {
 
 				@Override
