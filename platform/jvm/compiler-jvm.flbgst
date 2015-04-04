@@ -770,8 +770,9 @@ kws : compiler_lib.kws_tmpl {
 		opcode ?:
 		emit_method ?:
 		storage_name : If return_type Is Null Then "null" Else Id
+		cached : False
 
-		extra_indent : For arg : arguments Reduce arg.value.extra_indent & acc With acc : "\t\t"
+		extra_indent : For arg : arguments Reduce arg.value.extra_indent & acc With acc : If cached Then "" Else "\t\t"
 		arg_indents : For arg_name : Name, arg : arguments, arg_pos : Ordinal
 			Select arg_name :
 				(For prev_arg : arguments, prev_arg_pos : Ordinal
@@ -781,7 +782,7 @@ kws : compiler_lib.kws_tmpl {
 
 		gen_gen +: {
 			sum_indent : indent & extra_indent
-			builder : Id & "_builder"
+			builder : If cached Then generator & ".getBuilder()" Else (Id & "_builder")
 
 			extra_load : ""
 			extra_emit : ""
@@ -796,9 +797,15 @@ kws : compiler_lib.kws_tmpl {
 						acc
 						With acc : ""
 			base_code :
-				"\(sum_indent)final LoadableValue \(storage_name) = new LoadableValue() {" &
-				"\(sum_indent)\tpublic Class<?> getBackingType() { return \(return_type.real_type).class; }" &
-				"\(sum_indent)\tpublic void load(org.objectweb.asm.MethodVisitor \(builder)) throws java.lang.Exception {" &
+				(If cached
+					Then
+						"\(sum_indent)final FieldValue \(storage_name) = \(generator).makeField(\"\(rule_name)\", \(return_type.real_type).class);" &
+						"\(sum_indent)\(builder).visitVarInsn(org.objectweb.asm.Opcodes.ALOAD, 0);"
+					Else
+						"\(sum_indent)final LoadableValue \(storage_name) = new LoadableValue() {" &
+						"\(sum_indent)\tpublic Class<?> getBackingType() { return \(return_type.real_type).class; }" &
+						"\(sum_indent)\tpublic void load(org.objectweb.asm.MethodVisitor \(builder)) throws java.lang.Exception {"
+				) &
 				extra_load &
 				load_args &
 				(If emit_method Is Null
@@ -807,7 +814,10 @@ kws : compiler_lib.kws_tmpl {
 					Else
 						"\(sum_indent)\(builder).\(emit_method)(org.objectweb.asm.Opcodes.\(opcode)\(extra_emit));") &
 				extra_post &
-				"\(sum_indent)\t}\(sum_indent)};" &
+				(If cached
+					Then "\(sum_indent)\(storage_name).store(\(generator));"
+					Else "\(sum_indent)\t}\(sum_indent)};"
+				) &
 				code
 
 			value :
@@ -1030,10 +1040,12 @@ kws : compiler_lib.kws_tmpl {
 		storage_name : "LoadableValue.NULL_LIST"
 	}
 	list_prepend +: {
+		cached : True
 		opcode : "Context.class.getMethod(\"prepend\", Frame.class, Context.class)"
 		emit_method : Null
 	}
 	list_append +: {
+		cached : True
 		opcode : "Context.class.getMethod(\"append\", Context.class, Context.class)"
 		emit_method : Null
 	}
