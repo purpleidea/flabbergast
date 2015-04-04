@@ -56,10 +56,8 @@ public abstract class Computation {
 			if (result == null) {
 				return;
 			}
-			for (ConsumeResult cr : consumer)
-				cr.consume(result);
+			wakeupListeners();
 		}
-		consumer.clear();
 	}
 
 	/**
@@ -80,4 +78,10 @@ public abstract class Computation {
 	 * the computation needs to wait another value.
 	 */
 	protected abstract void run();
+
+	protected void wakeupListeners() {
+		for (ConsumeResult cr : consumer)
+			cr.consume(result);
+		consumer.clear();
+	}
 }

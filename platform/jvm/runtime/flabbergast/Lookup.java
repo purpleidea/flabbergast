@@ -1,72 +1,98 @@
 package flabbergast;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Do lookup by creating a grid of contexts where the value might reside and all
  * the needed names.
  */
-public class Lookup extends Computation implements ConsumeResult {
-	/**
-	 * The current context in the grid being considered.
-	 */
-	private int frame = 0;
-	private TaskMaster master;
+public class Lookup extends Computation {
+	private class Attempt implements ConsumeResult {
+		int frame;
+		int name;
+		Frame result_frame;
 
-	/**
-	 * The current name in the current context being considered.
-	 */
-	private int name = 0;
+		public Attempt(int name, int frame) {
+			this.name = name;
+			this.frame = frame;
+		}
+
+		@Override
+		public void consume(Object return_value) {
+			if (name == names.length - 1) {
+				result = return_value;
+				wakeupListeners();
+			} else if (return_value instanceof Frame) {
+				result_frame = ((Frame) return_value);
+				Attempt next = new Attempt(name + 1, frame);
+				known_attempts.add(next);
+				if (result_frame.getOrSubscribe(names[name + 1], next)) {
+					return;
+				}
+				activateNext();
+			} else {
+				master.reportLookupError(Lookup.this, return_value.getClass());
+				return;
+			}
+		}
+
+	}
+
+	private int frame_index = 0;
+
+	private final Frame[] frames;
+
+	private List<Attempt> known_attempts = new LinkedList<Attempt>();
+	private TaskMaster master;
 
 	/**
 	 * The name components in the lookup expression.
 	 */
 	private String[] names;
-	private AtomicInteger outstanding = new AtomicInteger();
 	private SourceReference source_reference;
-
-	/**
-	 * The dynamic programming grid. The first dimension is the context and the
-	 * second is the name.
-	 */
-	private Object[][] values;
 
 	public Lookup(TaskMaster master, SourceReference source_ref,
 			String[] names, Context context) {
 		this.master = master;
 		this.source_reference = source_ref;
 		this.names = names;
-		/* Create grid where the first entry is the frame under consideration. */
-		values = new Object[context.getLength()][];
-		int index = 0;
+		frames = new Frame[context.getLength()];
+		int frame_index = 0;
 		for (Frame frame : context) {
-			values[index] = new Object[names.length + 1];
-			values[index][0] = frame;
-			index++;
+			frames[frame_index] = frame;
+			frame_index++;
 		}
 	}
 
-	/**
-	 * This is the callback used by GetOrSubscribe. It will be called when a
-	 * value is available.
-	 * 
-	 * If that was not immediately, then delayed will be true, so we slot
-	 * ourselves for further evaluation.
-	 */
-	@Override
-	public void consume(Object return_value) {
-		values[frame][++name] = return_value;
-		if (outstanding.decrementAndGet() == 0) {
-			master.slot(this);
+	private void activateNext() {
+		while (frame_index < frames.length) {
+			int index = frame_index++;
+			Attempt root_attempt = new Attempt(0, index);
+			known_attempts.add(root_attempt);
+			if (frames[index].getOrSubscribe(names[0], root_attempt)) {
+				return;
+			}
 		}
+		master.reportLookupError(this, null);
 	}
 
 	public Frame get(int name, int frame) {
-		return (Frame) values[frame][name];
+		for (int index = 0; index < known_attempts.size(); index++) {
+			Attempt current = known_attempts.get(index);
+			if (current.frame == frame && current.name > name
+					|| current.frame > frame) {
+				return null;
+			}
+			if (current.frame == frame && current.name == name) {
+				return current.result_frame;
+			}
+		}
+		return null;
 	}
 
 	public int getFrameCount() {
-		return values.length;
+		return frames.length;
 	}
 
 	public String getName() {
@@ -93,36 +119,8 @@ public class Lookup extends Computation implements ConsumeResult {
 
 	@Override
 	protected void run() {
-		while (frame < values.length && name < values[0].length) {
-			// If we have reached the end of a list of names for the current
-			// frame, then we have an answer!
-			if (name == values[0].length - 1) {
+		activateNext();
 
-				result = values[frame][name];
-				return;
-			}
-
-			// If this is not a frame, but there are still more names, then this
-			// is an error.
-			if (!(values[frame][name] instanceof Frame)) {
-				master.reportLookupError(this, values[frame][name].getClass());
-				return;
-			}
-
-			// Otherwise, try to get the current value for the current name
-			outstanding.set(2);
-			if (((Frame) values[frame][name]).getOrSubscribe(names[name], this)) {
-				if (outstanding.decrementAndGet() > 0) {
-					return;
-				}
-			} else {
-				name = 0;
-				frame++;
-			}
-		}
-		// The name is undefined.
-		master.reportLookupError(this, null);
-		return;
 	}
 
 }
