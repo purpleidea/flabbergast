@@ -737,6 +737,7 @@ kws : compiler_lib.kws_tmpl {
 	# expands their `gen_gen` templates in a fold operation, finally loading all
 	# the results, inserting the opcodes, then storing the result in a field.
 	base_tmpl +: {
+		cached : False
 		opcode ?:
 		storage_name : If return_type Is Null Then "null" Else Id
 
@@ -750,7 +751,7 @@ kws : compiler_lib.kws_tmpl {
 
 		gen_gen +: {
 			sum_indent : indent & extra_indent
-			builder : Id & "_builder"
+			builder : If cached Then generator & ".Builder" Else (Id & "_builder")
 
 			extra_load : ""
 			extra_emit : ""
@@ -765,12 +766,23 @@ kws : compiler_lib.kws_tmpl {
 						acc
 						With acc : ""
 			base_code :
-				"\(sum_indent)var \(storage_name) = new GeneratedValue(typeof(\(return_type.real_type)), (\(builder)) => {" &
+				(If cached
+					Then
+						"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_\(opcode)\", typeof(\(return_type.real_type)));" &
+						"\(sum_indent)\(builder).Emit(System.Reflection.Emit.OpCodes.Ldarg_0);"
+					Else
+						"\(sum_indent)var \(storage_name) = new GeneratedValue(typeof(\(return_type.real_type)), (\(builder)) => {"
+				) &
 				extra_load &
 				load_args &
 				"\(sum_indent)\(builder).Emit(System.Reflection.Emit.OpCodes.\(opcode)\(extra_emit));" &
 				extra_post &
-				"\(sum_indent)});" &
+				(If cached
+					Then
+						"\(sum_indent)\(builder).Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);"
+					Else
+						"\(sum_indent)});"
+				) &
 				code
 
 			value :
@@ -943,12 +955,14 @@ kws : compiler_lib.kws_tmpl {
 		storage_name : "LoadableValue.NULL_LIST"
 	}
 	list_prepend +: {
+		cached : True
 		opcode : "Call"
 		gen_gen +: {
 			extra_emit : ", typeof(Context).GetMethod(\"Prepend\", new System.Type[] { typeof(Frame), typeof(Context) })"
 		}
 	}
 	list_append +: {
+		cached : True
 		opcode : "Call"
 		gen_gen +: {
 			extra_emit : ", typeof(Context).GetMethod(\"Append\", new System.Type[] { typeof(Context), typeof(Context) })"
@@ -1823,7 +1837,7 @@ codegen : compiler_lib.codegen_tmpl {
 		}
 	}
 	prepare_lookup_cache +: {
-		extra_indent : in.extra_indent & specials.extra_indent & "\t"
+		extra_indent : in.extra_indent
 		storage_name : in.storage_name
 		parent_context : Lookup parameters.context In Container
 		parent_lookup_cache : Lookup lookup_cache In Container
@@ -1836,23 +1850,16 @@ codegen : compiler_lib.codegen_tmpl {
 		lookup_cache : Id & "_cache"
 		new_context : Id & "_context"
 		gen_gen +: {
-			sum_indent : indent & specials.extra_indent
 			value :
-				specials.gen_gen(
-					indent : indent,
-					code :
-						"\(sum_indent)\(name ?? "Environment").GenerateLookupCache(\(generator), \(specials.raw_material), \(parent_lookup_cache), \(parameters.source_reference.storage_name), \(parent_context.storage_name), \(parameters.self_frame.storage_name), (\(new_context), \(lookup_cache)) => {" &
-						"\(sum_indent)\t\(generator).DebugPosition(this);" &
-						in.gen_gen(indent : sum_indent & "\t", code : code) &
-						"\(sum_indent)});"
-					)
+				"\(indent)\(name ?? "Environment").GenerateLookupCache(\(generator), \(specials.raw_material(indent : indent)), \(parent_lookup_cache), \(parameters.source_reference.storage_name), \(parent_context.storage_name), \(parameters.self_frame.storage_name), (\(new_context), \(lookup_cache)) => {" &
+					"\(indent)\t\(generator).DebugPosition(this);" &
+					in.gen_gen(indent : indent & "\t", code : code) &
+					"\(indent)});"
 		}
 		lookup_special_tmpl +: {
-			extra_indent : ""
-			raw_material ?:
-			gen_gen : Template {
-				code ?:
+			raw_material : Template {
 				indent ?:
+				value ?:
 			}
 
 			# This is here so that our call to the generate of the named elements
@@ -1862,35 +1869,26 @@ codegen : compiler_lib.codegen_tmpl {
 			lookup_cache : parent_lookup_cache
 		}
 		no_specials +: {
-			raw_material : "null"
-			gen_gen +: {
-				value : code
+			raw_material +: {
+				value : "null"
 			}
 		}
 		specials_from_definitions +: {
-			extra_indent : "\t"
-			raw_material : Id
 			argument_list : "\(generator), " &
 				(If target_flavour.non_accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
 				(target_flavour.non_accumulate_flavour.call_site {}).value
 
-			gen_gen +: {
+			raw_material +: {
 				value :
-					"\(indent)\(generator).Fold((RevCons<System.Tuple<string, LoadableCache>>) null, \(field), (\(Id)_index, \(Id)_item, \(Id)_revcons, \(Id)_block) =>" &
-					"\(indent)\t\(Id)_item.Generate(\(argument_list)(\(Id)_result) => {" &
-					"\(indent)\t\t\(generator).DebugPosition(this);" &
-					"\(indent)\t\t\(Id)_block(new RevCons<System.Tuple<string, LoadableCache>>(new System.Tuple<string, LoadableCache>(\(Id)_item.name.ToString(), new LoadableCache(\(Id)_result, \(Id)_item.BoundInfo)), null));" &
-					"\(indent)}), (\(raw_material)) => {" &
-					code &
-					"\(indent)});"
+					"\(field).Select(\(Id)_item => new System.Tuple<RestrictableType, Generator.ParameterisedBlock<Generator.ParameterisedBlock<LoadableValue>>(\(Id)_item.BoundInfo, \(Id)_block => \(Id)_item.Generate(\(argument_list)(\(Id)_block))))"
 			}
 		}
 		special_from_expression +: {
-			extra_indent : is.extra_indent
-			raw_material : "new RevCons<System.Tuple<string, LoadableCache>>(new System.Tuple<string, LoadableCache>(\(field).ToString(), new LoadableCache(\(is.storage_name), \(type_storage))), null)"
-			gen_gen +: {
-				sum_indent : indent & is.extra_indent
-				value : is.gen_gen(indent : indent, code : code)
+			raw_material +: {
+				value :
+					"new[] { new System.Tuple<RestrictableType, Generator.ParameterisedBlock<Generator.ParameterisedBlock<LoadableValue>>>(\(type_storage), \(Id)_block => {" &
+					is.gen_gen(indent : indent & "\t", code : "\(indent)\t\(Id)_block(\(is.storage_name));") &
+					"})}"
 			}
 		}
 	}
@@ -2419,5 +2417,8 @@ compiler : compiler_lib.language_tmpl {
 		}
 	}
 	value : "using System.Linq;\nnamespace Flabbergast {\n" & (For group : expanded_groups Reduce acc & group.value With acc : "") & "}"
+
+	#TODO This is due to a bug in the bootstrap interpreter, remove it
+	needs_unbox : True
 }
 value : compiler.value

@@ -35,11 +35,17 @@ namespace Flabbergast {
 			if (new_tail == null) {
 				return original;
 			}
-			var list = new List<Frame>();
-			list.AddRange(original.frames);
+			int filter = 0;
+			var list = new List<Frame>(original.Length + new_tail.Length);
+			foreach (var frame in original.frames) {
+				list.Add(frame);
+				filter |= frame.GetHashCode();
+			}
 			foreach (var frame in new_tail.frames) {
-				if (!list.Contains(frame)) {
+				int hash = frame.GetHashCode();
+				if ((hash & filter) != hash || !list.Contains(frame)) {
 					list.Add(frame);
+					filter |= hash;
 				}
 			}
 			return new Context(list);
@@ -53,7 +59,8 @@ namespace Flabbergast {
 			if (head == null) {
 				throw new InvalidOperationException("Cannot prepend a null frame to a context.");
 			}
-			var list = new List<Frame> {head};
+			var list = new List<Frame>(tail == null ? 1 : (tail.Length + 1));
+			list.Add(head);
 			if (tail != null) {
 				list.AddRange(tail.frames.Where(frame => head != frame));
 			}
@@ -166,18 +173,17 @@ namespace Flabbergast {
 				if (value == null) {
 					return;
 				}
-				if (pending.ContainsKey(name) || attributes.ContainsKey(name)) {
+				if (attributes.ContainsKey(name)) {
 					throw new InvalidOperationException("Redefinition of attribute " + name + ".");
 				}
 				if (value is ComputeValue) {
 					var computation = ((ComputeValue) value)(task_master, SourceReference, Context, this, Container);
-					pending[name] = computation;
+					attributes[name] = computation;
 					/*
 				 * When this computation has completed, replace its value in the frame.
 				 */
 					computation.Notify(result => {
 						attributes[name] = result;
-						pending.Remove(name);
 					});
 					/*
 				 * If the value is a computation, it cannot be slotted for execution
@@ -208,7 +214,6 @@ namespace Flabbergast {
 	 */
 		public SourceReference SourceReference { get; private set; }
 		private readonly IDictionary<string, Object> attributes = new SortedDictionary<string, Object>();
-		private readonly IDictionary<string, Computation> pending = new SortedDictionary<string, Computation>();
 		private readonly TaskMaster task_master;
 		private List<Computation> unslotted = new List<Computation>();
 
@@ -221,7 +226,7 @@ namespace Flabbergast {
 		}
 
 		public IEnumerable<string> GetAttributeNames() {
-			return attributes.Keys.Concat(pending.Keys);
+			return attributes.Keys;
 		}
 
 		public override IEnumerable<string> GetDynamicMemberNames() {
@@ -237,13 +242,13 @@ namespace Flabbergast {
 			// If this frame is being looked at, then all its pending attributes should
 			// be slotted.
 			Slot();
-
-			if (pending.ContainsKey(name)) {
-				pending[name].Notify(consumer);
-				return true;
-			}
-			if (attributes.ContainsKey(name)) {
-				consumer(attributes[name]);
+			object value;
+			if (attributes.TryGetValue(name, out value)) {
+				if (value is Computation) {
+					((Computation) value).Notify(consumer);
+				} else {
+					consumer(value);
+				}
 				return true;
 			}
 			return false;
@@ -252,15 +257,12 @@ namespace Flabbergast {
 		/**
 	 * Check if an attribute name is present in the frame.
 	 */
-
-		public bool Has(string name, out bool is_pending) {
-			is_pending = pending.ContainsKey(name);
-			return is_pending || attributes.ContainsKey(name);
+		public bool Has(string name) {
+			return attributes.ContainsKey(name);
 		}
 
 		public bool Has(Stringish name) {
-			bool junk;
-			return Has(name.ToString(), out junk);
+			return Has(name.ToString());
 		}
 
 		/**
@@ -300,9 +302,6 @@ namespace Flabbergast {
 			var name = binder.Name;
 			if (binder.IgnoreCase && char.IsUpper(name, 0)) {
 				name = char.ToLower(name[0]) + name.Substring(1);
-			}
-			if (pending.ContainsKey(name)) {
-				throw new InvalidOperationException("Incomplete evaluation.");
 			}
 			return attributes.TryGetValue(name, out result);
 		}

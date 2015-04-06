@@ -2548,7 +2548,10 @@ language_tmpl : Template {
 							name : $inner_environment
 						}
 					]
-					ensure_type_is : ensure_type.propagate { fields : [ $expression ] }
+					ensure_type_is : ensure_type.propagate {
+						fields : [ $expression ]
+						needs_unbox : False
+					}
 					type_demand : ensure_type.propagate_all {
 						field : $definitions
 					}

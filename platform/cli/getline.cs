@@ -552,7 +552,7 @@ namespace Mono.Terminal {
 			Console.Write(shown_prompt);
 			Console.Write(rendered_text);
 
-			var max = Math.Max(rendered_text.Length + shown_prompt.Length, max_rendered);
+			var max = System.Math.Max(rendered_text.Length + shown_prompt.Length, max_rendered);
 
 			for (var i = rendered_text.Length + shown_prompt.Length; i < max_rendered; i++)
 				Console.Write(' ');

@@ -33,20 +33,19 @@ namespace Flabbergast {
 	 * This should be assigned by the subclass.
 	 */
 		protected object result;
+
+		public Computation() {
+		}
 		/**
 	 * Called by the TaskMaster to start or continue computation.
 	 */
-
 		internal void Compute() {
 			if (result == null && Run()) {
 				if (result == null) {
 					throw new InvalidOperationException("The computation " + GetType() +
 					                                    " did not return a value. This is a bug.");
 				}
-				if (consumer != null) {
-					consumer(result);
-					consumer = null;
-				}
+				WakeupListeners();
 			}
 		}
 
@@ -87,6 +86,13 @@ namespace Flabbergast {
 	 * the computation needs to wait another value.
 	 */
 		protected abstract bool Run();
+
+		protected void WakeupListeners() {
+			if (consumer != null) {
+				consumer(result);
+				consumer = null;
+			}
+		}
 	}
 
 	public interface UriHandler {
@@ -285,12 +291,53 @@ namespace Flabbergast {
  */
 
 	public class Lookup : Computation {
+		private class Attempt {
+			public int frame;
+			public int name;
+			public Frame result_frame;
+			Lookup owner;
+
+			public Attempt(Lookup owner, int name, int frame) {
+				this.owner = owner;
+				this.name = name;
+				this.frame = frame;
+			}
+
+			public void Consume(object return_value) {
+				if (name == owner.names.Length - 1) {
+					owner.result = return_value;
+					owner.WakeupListeners();
+				} else if (return_value is Frame) {
+					result_frame = ((Frame) return_value);
+					var next = new Attempt(owner, name + 1, frame);
+					owner.known_attempts.AddLast(next);
+					if (result_frame.GetOrSubscribe(owner.names[name + 1], next.Consume)) {
+						return;
+					}
+					owner.ActivateNext();
+				} else {
+					owner.master.ReportLookupError(owner, return_value.GetType());
+					return;
+				}
+			}
+		}
 		public int FrameCount {
-			get { return values.GetLength(0); }
+			get { return frames.Length; }
 		}
 
 		public Frame this[int name, int frame] {
-			get { return values[frame, name] as Frame; }
+			get {
+				foreach(var current in known_attempts) {
+					if (current.frame == frame && current.name > name
+							|| current.frame > frame) {
+						return null;
+					}
+					if (current.frame == frame && current.name == name) {
+						return current.result_frame;
+					}
+				}
+				return null;
+			}
 		}
 
 		public string Name {
@@ -305,21 +352,17 @@ namespace Flabbergast {
 		/**
 	 * The current context in the grid being considered.
 	 */
-		private int frame;
-		private int interlock;
+		private int frame_index = 0;
+
+		private readonly Frame[] frames;
+
+		private LinkedList<Attempt> known_attempts = new LinkedList<Attempt>();
+
 		private readonly TaskMaster master;
-		/**
-	 * The current name in the current context being considered.
-	 */
-		private int name;
 		/**
 	 * The name components in the lookup expression.
 	 */
 		private readonly string[] names;
-		/**
-	 * The dynamic programming grid. The first dimension is the context and the second is the name.
-	 */
-		private readonly object[,] values;
 
 		public Lookup(TaskMaster master, SourceReference source_ref, string[] names, Context context) {
 			this.master = master;
@@ -327,24 +370,23 @@ namespace Flabbergast {
 			this.names = names;
 
 			/* Create  grid where the first entry is the frame under consideration. */
-			values = new object[context.Length, names.Length + 1];
+			frames = new Frame[context.Length];
 			var index = 0;
 			foreach (var frame in context.Fill()) {
-				values[index++, 0] = frame;
+				frames[index++] = frame;
 			}
 		}
 
-		/**
-	 * This is the callback used by GetOrSubscribe. It will be called when a value is available.
-	 *
-	 * If that was not immediately, then delayed will be true, so we slot outselves for further evaluation.
-	 */
-
-		private void ConsumeResult(object return_value) {
-			values[frame, ++name] = return_value;
-			if (Interlocked.Decrement(ref interlock) == 0) {
-				master.Slot(this);
+		private void ActivateNext() {
+			while (frame_index < frames.Length) {
+				int index = frame_index++;
+				var root_attempt = new Attempt(this, 0, index);
+				known_attempts.AddLast(root_attempt);
+				if (frames[index].GetOrSubscribe(names[0], root_attempt.Consume)) {
+					return;
+				}
 			}
+			master.ReportLookupError(this, null);
 		}
 
 		public string GetName(int index) {
@@ -352,32 +394,7 @@ namespace Flabbergast {
 		}
 
 		protected override bool Run() {
-			while (frame < values.GetLength(0) && name < values.GetLength(1)) {
-				// If we have reached the end of a list of names for the current frame, then we have an answer!
-				if (name == values.GetLength(1) - 1) {
-					result = values[frame, name];
-					return true;
-				}
-
-				// If this is not a frame, but there are still more names, then this is an error.
-				if (!(values[frame, name] is Frame)) {
-					master.ReportLookupError(this, values[frame, name].GetType());
-					return false;
-				}
-
-				// Otherwise, try to get the current value for the current name
-				interlock = 2;
-				if (((Frame) values[frame, name]).GetOrSubscribe(names[name], ConsumeResult)) {
-					if (Interlocked.Decrement(ref interlock) > 0) {
-						return false;
-					}
-				} else {
-					name = 0;
-					frame++;
-				}
-			}
-			// The name is undefined.
-			master.ReportLookupError(this, null);
+			ActivateNext();
 			return false;
 		}
 	}

@@ -440,11 +440,12 @@ internal class Environment : CodeRegion {
 		Children[name] = null;
 	}
 	public delegate void Block(LoadableValue context, LookupCache cache);
-	internal void GenerateLookupCache(Generator generator, RevCons<Tuple<string, LoadableCache>> specials, LookupCache current, LoadableValue source_reference, LoadableValue context, LoadableValue self_frame, Block block) {
+	internal void GenerateLookupCache(Generator generator, IEnumerable<Tuple<RestrictableType, Generator.ParameterisedBlock<Generator.ParameterisedBlock<LoadableValue>>>> specials, LookupCache current, LoadableValue source_reference, LoadableValue context, LoadableValue self_frame, Block block) {
 		generator.DebugPosition(this);
 		var lookup_results = new List<LoadableCache>();
 		if (specials != null) {
-			var child_context = generator.MakeField("anon_frame", typeof(Context));
+			var child_context = generator.MakeField("anon_ctxt", typeof(Context));
+			var child_frame = generator.MakeField("anon_frame", typeof(Frame));
 			generator.Builder.Emit(OpCodes.Ldarg_0);
 			generator.LoadTaskMaster();
 			generator.GenerateNextId();
@@ -452,18 +453,34 @@ internal class Environment : CodeRegion {
 			context.Load(generator);
 			self_frame.Load(generator);
 			generator.Builder.Emit(OpCodes.Newobj, typeof(Frame).GetConstructors()[0]);
-			foreach (var entry in specials.ToArray()) {
-				generator.Builder.Emit(OpCodes.Dup);
-				generator.Builder.Emit(OpCodes.Ldstr, entry.Item1);
-				generator.LoadReboxed(entry.Item2.Value, typeof(object));
-				generator.Builder.Emit(OpCodes.Call, typeof(Frame).GetMethod("set_Item", new[] { typeof(string), typeof(object) }));
-				lookup_results.Add(entry.Item2);
-			}
-			context.Load(generator);
+			generator.Builder.Emit(OpCodes.Stfld, child_frame.Field);
+
+			generator.Builder.Emit(OpCodes.Ldarg_0);
+			child_frame.Load(generator.Builder);
+			context.Load(generator.Builder);
 			generator.Builder.Emit(OpCodes.Call, typeof(Context).GetMethod("Prepend", new[] { typeof(Frame), typeof(Context) }));
 			generator.Builder.Emit(OpCodes.Stfld, child_context.Field);
 			// Promote the context with the specials to proper status
 			context = child_context;
+
+			foreach (var entry in specials) {
+				var next = generator.DefineState();
+				var field = generator.MakeField("special$" + entry.Item1.Name, typeof(object));
+
+				// The types that we might allow are a superset of the ones we
+				// might actually see. So, build a set of the ones we see.
+				Type known_types = 0;
+				entry.Item2(result => {
+					child_frame.Load(generator.Builder);
+					generator.Builder.Emit(OpCodes.Ldstr, entry.Item1.Name);
+					generator.LoadReboxed(result, typeof(object));
+					generator.Builder.Emit(OpCodes.Call, typeof(Frame).GetMethod("set_Item", new[] { typeof(string), typeof(object) }));
+					generator.JumpToState(next);
+					known_types |= AstTypeableNode.TypeFromClrType(result.BackingType);
+				});
+				generator.MarkState(next);
+				lookup_results.Add(new LoadableCache(field, entry.Item1.RestrictedType & known_types, entry.Item1, entry.Item1.MustUnbox));
+			}
 		}
 
 		var base_lookup_cache = new LookupCache(current);
