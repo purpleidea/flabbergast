@@ -104,17 +104,17 @@ namespace Flabbergast {
  * Scheduler for computations.
  */
 
-	public abstract class TaskMaster : IEnumerable<Computation> {
+	public abstract class TaskMaster : IEnumerable<Lookup> {
 		private readonly Queue<Computation> computations = new Queue<Computation>();
 		private readonly Dictionary<string, Computation> external_cache = new Dictionary<string, Computation>();
 		private readonly List<UriHandler> handlers = new List<UriHandler>();
 		/**
 	 * These are computations that have not completed.
 	 */
-		private readonly Dictionary<Computation, bool> inflight = new Dictionary<Computation, bool>();
+		private readonly Dictionary<Lookup, bool> inflight = new Dictionary<Lookup, bool>();
 		private long next_id;
 
-		public IEnumerator<Computation> GetEnumerator() {
+		public IEnumerator<Lookup> GetEnumerator() {
 			return inflight.Keys.GetEnumerator();
 		}
 
@@ -238,8 +238,10 @@ namespace Flabbergast {
 	 */
 
 		public void Slot(Computation computation) {
-			if (!inflight.ContainsKey(computation)) {
-				computation.Notify(x => inflight.Remove(computation));
+			if (computation is Lookup) {
+				var lookup = (Lookup) computation;
+				computation.Notify(x => inflight.Remove(lookup));
+				inflight[lookup] = true;
 			}
 			computations.Enqueue(computation);
 		}
