@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -eux
+
+test -d "$1"
+rm -rf .build
+mkdir .build
+${JAVAC-javac} -g -sourcepath "$1" -d .build $(find "$1" -name '*.java')
+${JAR-jar} cfm "flabbergast-${1}-${2}.jar" "${1}.manifest" -C .build .
+rm -rf .build

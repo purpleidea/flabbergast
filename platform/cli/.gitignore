@@ -7,3 +7,4 @@
 bin
 compiler-cli.cs
 obj
+xdb.s

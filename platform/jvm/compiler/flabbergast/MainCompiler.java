@@ -24,7 +24,7 @@ class AutoWriteClassVisitor extends ClassVisitor {
 	private ClassWriter writer;
 
 	public AutoWriteClassVisitor(ClassWriter writer) {
-		super(Opcodes.ASM5, writer);
+		super(Opcodes.ASM4, writer);
 		this.writer = writer;
 	}
 

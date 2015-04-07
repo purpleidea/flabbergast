@@ -22,6 +22,6 @@ class DelegateValue extends LoadableValue {
 		generator.visitTypeInsn(Opcodes.NEW, clazz);
 		generator.visitInsn(Opcodes.DUP);
 		generator.visitMethodInsn(Opcodes.INVOKESPECIAL, clazz, "<init>",
-				Generator.makeSignature(null), false);
+				Generator.makeSignature(null));
 	}
 }

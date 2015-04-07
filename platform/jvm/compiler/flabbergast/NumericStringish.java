@@ -28,10 +28,10 @@ class NumericStringish extends LoadableValue {
 						getInternalName(Generator.getBoxedType(source
 								.getBackingType())), "toString", Generator
 								.makeSignature(String.class,
-										source.getBackingType()), false);
+										source.getBackingType()));
 
 		generator.visitMethodInsn(Opcodes.INVOKESPECIAL,
 				getInternalName(SimpleStringish.class), "<init>",
-				Generator.makeSignature(null, String.class), false);
+				Generator.makeSignature(null, String.class));
 	}
 }

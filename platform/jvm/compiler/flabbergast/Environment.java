@@ -124,7 +124,7 @@ class Environment implements CodeRegion {
 			builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
 					getInternalName(Frame.class), "<init>",
 					org.objectweb.asm.Type.getConstructorDescriptor(Frame.class
-							.getConstructors()[0]), false);
+							.getConstructors()[0]));
 			child_frame.store(builder);
 
 			builder.visitVarInsn(Opcodes.ALOAD, 0);
@@ -133,7 +133,7 @@ class Environment implements CodeRegion {
 			builder.visitMethodInsn(Opcodes.INVOKESTATIC,
 					getInternalName(Context.class), "prepend", Generator
 							.makeSignature(Context.class, Frame.class,
-									Context.class), false);
+									Context.class));
 			child_context.store(generator);
 			// Promote the context with the specials to proper status
 			context = child_context;
@@ -198,7 +198,7 @@ class Environment implements CodeRegion {
 			builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
 					getInternalName(TaskMaster.class), "ReportOtherError",
 					Generator.makeSignature(null, SourceReference.class,
-							String.class), false);
+							String.class));
 			builder.visitInsn(Opcodes.ICONST_0);
 			builder.visitInsn(Opcodes.IRETURN);
 			return;

@@ -28,7 +28,7 @@ class AutoUnboxValue extends LoadableValue {
 			generator.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
 					getInternalName(Generator.getBoxedType(unbox_type)),
 					unbox_type.getName() + "Value",
-					Generator.makeSignature(unbox_type), false);
+					Generator.makeSignature(unbox_type));
 		}
 	}
 }

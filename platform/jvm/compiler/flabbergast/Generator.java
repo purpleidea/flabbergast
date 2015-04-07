@@ -84,7 +84,7 @@ class Generator {
 	static void visitMethod(Constructor<?> method, MethodVisitor builder) {
 		builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
 				getInternalName(method.getDeclaringClass()), "<init>",
-				Type.getConstructorDescriptor(method), false);
+				Type.getConstructorDescriptor(method));
 	}
 
 	static void visitMethod(Method method, MethodVisitor builder) {
@@ -92,7 +92,7 @@ class Generator {
 				Modifier.isStatic(method.getModifiers()) ? Opcodes.INVOKESTATIC
 						: Opcodes.INVOKEVIRTUAL, getInternalName(method
 						.getDeclaringClass()), method.getName(), Type
-						.getMethodDescriptor(method), false);
+						.getMethodDescriptor(method));
 	}
 
 	private MethodVisitor builder;
@@ -186,7 +186,7 @@ class Generator {
 		ctor_builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
 				getInternalName(Computation.class), "<init>", Type
 						.getConstructorDescriptor(Computation.class
-								.getConstructors()[0]), false);
+								.getConstructors()[0]));
 		for (int it = 0; it < initial_information.length; it++) {
 			if (initial_information[it] == null)
 				continue;
@@ -214,7 +214,7 @@ class Generator {
 		init_ctor.visitCode();
 		init_ctor.visitVarInsn(Opcodes.ALOAD, 0);
 		init_ctor.visitMethodInsn(Opcodes.INVOKESPECIAL,
-				getInternalName(Object.class), "<init>", "()V", false);
+				getInternalName(Object.class), "<init>", "()V");
 		init_ctor.visitInsn(Opcodes.RETURN);
 		init_ctor.visitMaxs(0, 0);
 		init_ctor.visitEnd();
@@ -239,7 +239,7 @@ class Generator {
 					getInternalName(TaskMaster.class), "reportOtherError", Type
 							.getMethodDescriptor(TaskMaster.class.getMethod(
 									"reportOtherError", SourceReference.class,
-									String.class)), false);
+									String.class)));
 			init_builder.visitInsn(Opcodes.ACONST_NULL);
 			init_builder.visitInsn(Opcodes.ARETURN);
 			init_builder.visitLabel(has_instance);
@@ -252,7 +252,7 @@ class Generator {
 			init_builder.visitVarInsn(Opcodes.ALOAD, it + 1);
 		}
 		init_builder.visitMethodInsn(Opcodes.INVOKESPECIAL, class_name,
-				"<init>", makeSignature(null, construct_params), false);
+				"<init>", makeSignature(null, construct_params));
 
 		init_builder.visitInsn(Opcodes.ARETURN);
 		init_builder.visitMaxs(0, 0);
@@ -300,7 +300,7 @@ class Generator {
 		ctor_builder.visitCode();
 		ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
 		ctor_builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
-				getInternalName(Computation.class), "<init>", "()V", false);
+				getInternalName(Computation.class), "<init>", "()V");
 		ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
 		ctor_builder.visitVarInsn(Opcodes.ALOAD, 1);
 		task_master.store(ctor_builder);
@@ -353,7 +353,7 @@ class Generator {
 			builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
 					getInternalName(JunctionReference.class), "<init>", Type
 							.getConstructorDescriptor(JunctionReference.class
-									.getConstructors()[0]), false);
+									.getConstructors()[0]));
 		}
 	}
 
@@ -687,7 +687,7 @@ class Generator {
 		ctor_builder.visitCode();
 		ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
 		ctor_builder.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object",
-				"<init>", "()V", false);
+				"<init>", "()V");
 		ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
 		ctor_builder.visitVarInsn(Opcodes.ALOAD, 1);
 		ctor_builder.visitFieldInsn(Opcodes.PUTFIELD, getter_class_name,
@@ -723,7 +723,7 @@ class Generator {
 				"instance", "L" + class_name + ";");
 		consume_builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
 				getInternalName(TaskMaster.class), "slot",
-				makeSignature(null, Computation.class), false);
+				makeSignature(null, Computation.class));
 		consume_builder.visitLabel(return_label);
 		consume_builder.visitInsn(Opcodes.RETURN);
 		consume_builder.visitMaxs(0, 0);
@@ -736,7 +736,7 @@ class Generator {
 		builder.visitVarInsn(Opcodes.ALOAD, 0);
 		loadTaskMaster();
 		builder.visitMethodInsn(Opcodes.INVOKESPECIAL, getter_class_name,
-				"<init>", ctor_signature, false);
+				"<init>", ctor_signature);
 	}
 
 	public void generateNextId() throws NoSuchMethodException,
@@ -789,9 +789,6 @@ class Generator {
 					Opcodes.ACC_PROTECTED, (dispatch == 0) ? "run"
 							: ("run_dispatch_" + dispatch),
 					makeSignature(io_type, io_type), null, null);
-			if (dispatch > 0) {
-				run_builder.visitParameter("temp_state", 0);
-			}
 			run_builder.visitCode();
 
 			Label[] call_labels = new Label[dispatch == num_dispatch_routines ? (entry_points
@@ -836,12 +833,12 @@ class Generator {
 								getInternalName(IllegalStateException.class),
 								"<init>",
 								Type.getConstructorDescriptor(IllegalStateException.class
-										.getConstructor(String.class)), false);
+										.getConstructor(String.class)));
 				run_builder.visitInsn(Opcodes.ATHROW);
 			} else {
 				run_builder.visitVarInsn(Opcodes.ILOAD, 1);
 				run_builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL, class_name,
-						"run_dispatch_" + (dispatch + 1), "(I)I", false);
+						"run_dispatch_" + (dispatch + 1), "(I)I");
 				if (end_label == null) {
 					run_builder.visitInsn(Opcodes.IRETURN);
 				} else {
@@ -853,7 +850,7 @@ class Generator {
 				run_builder.visitLabel(call_labels[it]);
 				run_builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL, class_name,
 						"run_" + (it + dispatch * MAX_DISPATCHES),
-						makeSignature(int.class), false);
+						makeSignature(int.class));
 				if (end_label == null) {
 					run_builder.visitInsn(Opcodes.IRETURN);
 				} else {
@@ -1018,8 +1015,7 @@ class Generator {
 					}
 					builder.visitMethodInsn(Opcodes.INVOKESTATIC,
 							getInternalName(method_arguments[it]), "valueOf",
-							makeSignature(method_arguments[it], intermediate),
-							false);
+							makeSignature(method_arguments[it], intermediate));
 				} else if (method_arguments[it] == float.class) {
 					builder.visitInsn(Opcodes.D2F);
 				} else if (method_arguments[it] == String.class) {
@@ -1051,7 +1047,7 @@ class Generator {
 				builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
 						getInternalName(SimpleStringish.class), "<init>", Type
 								.getConstructorDescriptor(SimpleStringish.class
-										.getConstructors()[0]), false);
+										.getConstructors()[0]));
 			} else {
 				throw new IllegalArgumentException(String.format(
 						"No conversation from %s to %s while invoking %s.%s.",
@@ -1122,7 +1118,7 @@ class Generator {
 							"valueOf",
 							makeSignature(
 									getBoxedType(source.getBackingType()),
-									source.getBackingType()), false);
+									source.getBackingType()));
 				}
 			} else {
 				if (source.getBackingType() == boolean.class
@@ -1134,7 +1130,7 @@ class Generator {
 							getInternalName(getBoxedType(source
 									.getBackingType())),
 							target_type.getSimpleName() + "Value",
-							makeSignature(target_type), false);
+							makeSignature(target_type));
 				} else {
 					builder.visitTypeInsn(Opcodes.CHECKCAST,
 							getInternalName(target_type));
@@ -1233,7 +1229,7 @@ class Generator {
 		builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
 				getInternalName(SourceReference.class), "<init>", Type
 						.getConstructorDescriptor(SourceReference.class
-								.getConstructors()[0]), false);
+								.getConstructors()[0]));
 		reference.store(builder);
 		return reference;
 	}

@@ -56,15 +56,15 @@ abstract class NameInfo {
 		builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
 				getInternalName(Lookup.class), "<init>", org.objectweb.asm.Type
 						.getConstructorDescriptor(Lookup.class
-								.getConstructors()[0]), false);
+								.getConstructors()[0]));
 		builder.visitInsn(Opcodes.DUP);
 		generator.generateConsumeResult(lookup_result);
 		builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
 				getInternalName(Lookup.class), "listen",
-				Generator.makeSignature(null, ConsumeResult.class), false);
+				Generator.makeSignature(null, ConsumeResult.class));
 		builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
 				getInternalName(TaskMaster.class), "slot",
-				Generator.makeSignature(null, Computation.class), false);
+				Generator.makeSignature(null, Computation.class));
 		return lookup_result;
 	}
 

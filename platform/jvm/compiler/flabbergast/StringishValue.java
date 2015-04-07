@@ -25,6 +25,6 @@ class StringishValue extends LoadableValue {
 		generator.visitLdcInsn(str);
 		generator.visitMethodInsn(Opcodes.INVOKESPECIAL,
 				getInternalName(SimpleStringish.class), "<init>",
-				Generator.makeSignature(null, String.class), false);
+				Generator.makeSignature(null, String.class));
 	}
 }

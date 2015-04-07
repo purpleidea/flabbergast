@@ -26,7 +26,7 @@ public class DynamicCompiler extends LoadLibraries {
 		private ClassWriter writer;
 
 		public AutoLoaderClassVisitor(ClassWriter writer) {
-			super(Opcodes.ASM5, writer);
+			super(Opcodes.ASM4, writer);
 			this.writer = writer;
 		}
 

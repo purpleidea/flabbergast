@@ -40,17 +40,15 @@ class CompareValue extends LoadableValue {
 									int.class,
 									Generator.isNumeric(left.getBackingType()) ? left
 											.getBackingType() : null, right
-											.getBackingType()), false);
+											.getBackingType()));
 			generator.visitInsn(Opcodes.ICONST_1);
 			generator.visitMethodInsn(Opcodes.INVOKESTATIC,
 					getInternalName(Math.class), "min",
-					Generator.makeSignature(int.class, int.class, int.class),
-					false);
+					Generator.makeSignature(int.class, int.class, int.class));
 			generator.visitInsn(Opcodes.ICONST_M1);
 			generator.visitMethodInsn(Opcodes.INVOKESTATIC,
 					getInternalName(Math.class), "max",
-					Generator.makeSignature(int.class, int.class, int.class),
-					false);
+					Generator.makeSignature(int.class, int.class, int.class));
 		}
 		generator.visitInsn(Opcodes.I2L);
 	}
