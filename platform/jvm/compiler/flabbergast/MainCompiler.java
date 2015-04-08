@@ -1,11 +1,8 @@
 package flabbergast;
 
-import static org.objectweb.asm.Type.getInternalName;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
 import org.apache.commons.cli.CommandLine;
@@ -19,9 +16,10 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 
 class AutoWriteClassVisitor extends ClassVisitor {
-	private String class_name;
 
 	private ClassWriter writer;
+
+	File target;
 
 	public AutoWriteClassVisitor(ClassWriter writer) {
 		super(Opcodes.ASM4, writer);
@@ -31,7 +29,8 @@ class AutoWriteClassVisitor extends ClassVisitor {
 	@Override
 	public void visit(int version, int access, String class_name,
 			String signature, String super_name, String[] interfaces) {
-		this.class_name = class_name;
+		String path = class_name.replace('/', File.separatorChar) + ".class";
+		target = new File(path);
 		super.visit(version, access, class_name, signature, super_name,
 				interfaces);
 	}
@@ -40,10 +39,8 @@ class AutoWriteClassVisitor extends ClassVisitor {
 	public void visitEnd() {
 		super.visitEnd();
 		try {
-			String path = class_name.replace('/', File.separatorChar)
-					+ ".class";
-			new File(path).getParentFile().mkdirs();
-			Files.write(Paths.get(path), writer.toByteArray(),
+			target.getParentFile().mkdirs();
+			Files.write(target.toPath(), writer.toByteArray(),
 					StandardOpenOption.CREATE);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -87,34 +84,13 @@ public class MainCompiler {
 			return;
 		}
 		ErrorCollector collector = new ConsoleCollector();
-		CompilationUnit<Boolean> unit = new CompilationUnit<Boolean>() {
-
-			@Override
-			public ClassVisitor defineClass(int access, String class_name,
-					Class<?> superclass, Class<?>... interfaces) {
-				ClassVisitor visitor = new AutoWriteClassVisitor(
-						new ClassWriter(ClassWriter.COMPUTE_MAXS
-								| (result.hasOption('F') ? 0
-										: ClassWriter.COMPUTE_FRAMES)));
-				String[] interface_names = new String[interfaces.length];
-				for (int it = 0; it < interfaces.length; it++) {
-					interface_names[it] = getInternalName(interfaces[it]);
-				}
-				visitor.visit(Opcodes.V1_7, access, class_name, null,
-						getInternalName(superclass), interface_names);
-				return visitor;
-			}
-
-			@Override
-			protected Boolean doMagic(String name) {
-				return true;
-			}
-		};
+		CompilationUnit<Boolean> unit = new WriterCompilationUnit(
+				result.hasOption('F'));
 		for (String filename : files) {
 			try {
 				Parser parser = Parser.open(filename);
 				parser.setTrace(result.hasOption('t'));
-				String file_root = ("flabbergast/library." + (filename
+				String file_root = ("flabbergast/library/" + (filename
 						.endsWith(".flbgst") ? filename.substring(0,
 						filename.length() - ".flbgst".length()) : filename))
 						.replace(File.separatorChar, '/')

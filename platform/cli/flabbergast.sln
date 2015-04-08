@@ -1,5 +1,4 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
+﻿Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flabbergast-compilerservices", "flabbergast-compilerservices.csproj", "{349DC095-A2A2-4245-862A-9C348D994656}"
 EndProject
@@ -12,6 +11,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flabbergast-repl", "flabbergast-repl.csproj", "{10FB14E5-1FA7-4C7E-9028-237B7794C270}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flabbergast-printer", "flabbergast-printer.csproj", "{D1D4485E-9CD6-4E06-B1D3-60BEF67AAB0B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flabbergast-build", "flabbergast-build.csproj", "{1A561574-9CEA-4E88-AC51-7BACE3F27DAB}"
+
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -43,5 +44,9 @@ Global
 		{D1D4485E-9CD6-4E06-B1D3-60BEF67AAB0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D1D4485E-9CD6-4E06-B1D3-60BEF67AAB0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D1D4485E-9CD6-4E06-B1D3-60BEF67AAB0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A561574-9CEA-4E88-AC51-7BACE3F27DAB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A561574-9CEA-4E88-AC51-7BACE3F27DAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A561574-9CEA-4E88-AC51-7BACE3F27DAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A561574-9CEA-4E88-AC51-7BACE3F27DAB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

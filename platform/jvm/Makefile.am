@@ -6,7 +6,7 @@ bin_SCRIPTS = \
 	$(NULL)
 
 compilerdir = $(libdir)/flabbergast-compiler
-compiler_DATA = jvm.makefile
+compiler_SCRIPTS = jvm-build-cache
 
 javadir = $(datadir)/java
 java_DATA = \
@@ -40,8 +40,8 @@ runtime.manifest: Makefile
 compiler.manifest: Makefile
 	echo "Manifest-Version: 1.0\nClass-Path: $(addprefix $(javadir), $(JAVA_COMPILER_DEPS) flabbergast-runtime-$(VERSION).jar)\nCreated-By: $(VERSION) (The Flabbergast Project)" > $@
 
-jvm.makefile: Makefile
-	echo "EXTS += class\n%.class: %.flbgst\n\trm -f $< $*\\$$*\n\t$(JAVAC) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)flabbergast-runtime-$(VERSION).jar:$(javadir)flabbergast-compiler-$(VERSION).jar flabbergast.MainCompiler $$<" > $@
+jvm-build-cache: Makefile
+	echo "#!/bin/sh\ncd \"$$1\"\nexec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)flabbergast-runtime-$(VERSION).jar:$(javadir)flabbergast-compiler-$(VERSION).jar flabbergast.MainBuildCache" > $@
 
 jflabbergast: Makefile
 	echo "#!/bin/sh\nexec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)flabbergast-runtime-$(VERSION).jar:$(javadir)flabbergast-compiler-$(VERSION).jar flabbergast.MainPrinter \"$$@\"" > $@

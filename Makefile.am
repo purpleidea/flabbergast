@@ -21,10 +21,6 @@ man7_MANS = \
 	flabbergast_language.7 \
 	$(NULL)
 
-pkgdata_DATA = \
-	update.makefile \
-	$(NULL)
-
 install-data-hook:
 	@for f in $$(find lib -name '*.flbgst' -type f -printf '%P\n'); do \
 		$(mkinstalldirs) $(DESTDIR)$(pkglibdir)/$$(dirname $$f); \

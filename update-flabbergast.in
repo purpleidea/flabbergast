@@ -31,7 +31,10 @@ do
 		true
 	elif [ -d "$DIRECTORY" -a -w "$DIRECTORY" ]
 	then
-		make -C "$DIRECTORY" -f "$pkgdatadir/update.makefile" -s -k || EXIT_CODE="1"
+		for COMPILER in "${libdir}"/flabbergast-compiler/*
+		then
+			"$COMPILER" "$DIRECTORY" || EXIT_CODE="1"
+		fi
 	elif [ -e "$DIRECTORY" ]
 	then
 		echo "$DIRECTORY: cannot update" 1>&2
