@@ -5,6 +5,11 @@ bin_SCRIPTS = \
 	nflabbergast-repl \
 	$(NULL)
 
+man1_MANS = \
+	nflabbergast.1 \
+	nflabbergast-repl.1 \
+	$(NULL)
+
 clidir = $(libdir)/flabbergast-cli
 cli_DATA = \
 	bin/Debug/Flabbergast.Compiler.dll \

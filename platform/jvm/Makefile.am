@@ -5,6 +5,11 @@ bin_SCRIPTS = \
 	jflabbergast-repl \
 	$(NULL)
 
+man1_MANS = \
+	jflabbergast.1 \
+	jflabbergast-repl.1 \
+	$(NULL)
+
 compilerdir = $(libdir)/flabbergast-compiler
 compiler_SCRIPTS = jvm-build-cache
 

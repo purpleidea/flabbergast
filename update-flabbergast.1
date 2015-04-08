@@ -1,0 +1,20 @@
+.\" Authors: Andre Masella
+.TH flabbergast 1 "April 2015" "1.0" "USER COMMANDS"
+.SH NAME 
+update-flabbergast \- Update cached Flabbergast binaries
+.SH SYNOPSIS
+.B update-flabbergast
+[
+.I path
+]
+.SH DESCRIPTION
+This precompiles Flabbergast libraries into binaries that can be quickly loaded while running scripts. It is automatically invoked for system paths when new packages are installed.
+
+.SH OPTIONS
+.TP
+path
+The path to update. If unspecified, the standard system paths are updated, if executed as root, and the user's private directory in
+.B $HOME/.local/lib/flabbergast
+.SH SEE ALSO
+.BR flabbergast_language (7),
+.BR flabbergast (1).

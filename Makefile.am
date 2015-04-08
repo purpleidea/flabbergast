@@ -17,6 +17,10 @@ bin_SCRIPTS = \
 	update-flabbergast \
 	$(NULL)
 
+man1_MANS = \
+	update-flabbergast.1 \
+	$(NULL)
+
 man7_MANS = \
 	flabbergast_language.7 \
 	$(NULL)

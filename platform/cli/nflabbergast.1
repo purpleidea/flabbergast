@@ -1,0 +1,33 @@
+.\" Authors: Andre Masella
+.TH flabbergast 1 "April 2015" "0.0" "USER COMMANDS"
+.SH NAME 
+nflabbergast \- Render a Flabbergast file using the Common Language Infrastructure
+.SH SYNOPSIS
+.B nflabbergast
+.I input.flbgst
+[
+.B \-o
+.I output.txt
+] [
+.B \-t 
+]
+.SH DESCRIPTION
+Runs the Flabbergast interpreter on the provided file and writes the \fBvalue\fR attribute to standard output, or a specified file.
+
+.SH OPTIONS
+.TP
+\-o
+A file to overwrite with the output instead of writing to standard output.
+.TP
+\-t
+Print the traversal of the parser. This is a lot of useless information.
+.SH ENVIRONMENT VARIABLES
+.TP
+FLABBERGAST_PATH
+A list of directories to search for included libraries (\fBFrom lib:\fR). If precompiled libraries are found, they are used. If not, the libraries are dynamically compiled. These can be refereshed using
+.BR update-flabbergast (1).
+
+.SH SEE ALSO
+.BR flabbergast_language (7),
+.BR jflabbergast (1),
+.BR nflabbergast-repl (1).
