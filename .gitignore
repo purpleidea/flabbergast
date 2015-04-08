@@ -22,7 +22,7 @@ config.log
 config.status
 configure
 libtool
-platform/*/*.makefile
+platform/*/*-build-cache
 platform/*/?flabbergast
 platform/*/?flabbergast-repl
 update-flabbergast
