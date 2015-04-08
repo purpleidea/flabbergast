@@ -1,8 +1,11 @@
 '\" t
 .\" Authors: Andre Masella
+.TH flabbergast 7 "Jan 2015" "1.0" "MISCELLANEOUS"
+.SH NAME
+flabbergast_language \- The definition of the Flabbergast language
 .ds < \v'0.4m'\x'\\n(0x=0*0.2m'\s-3
 .ds > \s0\v'-0.4m'
-.TH flabbergast 7 "Jan 2015" "1.0" "MISCELLANEOUS"
+.SH SYNOPSIS
 Flabbergast is a language for creating configuration structures that can be rendered to a final configuration. Each expression is side-effect free. It has unusual look-up semantics, explained below.
 
 This document is the formal specification for the language. Fundamentally, there are three important types of values in the language: frames, key-value pairs; templates, key-template pairs; and scalar values. There is an import mechanism that functions are the foreign function interface of the language. Each frame and template has an associated lookup environment, which is an ordered list of frames.
@@ -294,11 +297,21 @@ Compares operands for ordering. It returns the integer -1 (left is before right)
 tab(;);
 al;e.
 \fBOperand Types;Behaviour\fR
-Both str;Collated the strings using Unicode Technical Standard 10.
-Both bool;Compare where \fBFalse\fR < \fBTrue\fR.
-Both float;Compare numerically. If either value is NaN, raise an error.
-Both int;Compare numerically.
-One int, one float;Upgrade the integer to a float and compare as two floats.
+Both str;T{
+Collated the strings using Unicode Technical Standard 10.
+T}
+Both bool;T{
+Compare where \fBFalse\fR < \fBTrue\fR.
+T}
+Both float;T{
+Compare numerically. If either value is NaN, raise an error.
+T}
+Both int;T{
+Compare numerically.
+T}
+One int, one float;T{
+Upgrade the integer to a float and compare as floats.
+T}
 .TE
 
 Note that string comparison is locale-dependent.
