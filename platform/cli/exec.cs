@@ -240,8 +240,8 @@ namespace Flabbergast {
 		public void Slot(Computation computation) {
 			if (computation is Lookup) {
 				var lookup = (Lookup) computation;
-				computation.Notify(x => inflight.Remove(lookup));
 				inflight[lookup] = true;
+				computation.Notify(x => inflight.Remove(lookup));
 			}
 			computations.Enqueue(computation);
 		}
@@ -319,7 +319,6 @@ namespace Flabbergast {
 					owner.master.Slot(owner);
 				} else {
 					owner.master.ReportLookupError(owner, return_value.GetType());
-					return;
 				}
 			}
 		}

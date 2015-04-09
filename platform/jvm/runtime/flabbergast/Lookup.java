@@ -33,7 +33,6 @@ public class Lookup extends Computation {
 				activateNext();
 			} else {
 				master.reportLookupError(Lookup.this, return_value.getClass());
-				return;
 			}
 		}
 
