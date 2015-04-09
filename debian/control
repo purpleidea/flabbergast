@@ -2,11 +2,32 @@ Source: flabbergast
 Section: devel
 Priority: optional
 Maintainer: Andre Masella <andre@masella.name>
-Build-Depends: debhelper (>= 9.0.0)
+Build-Depends: debhelper (>= 9.0.0), autotools-dev, mono-xbuild, mono-mcs, cli-common-dev (>= 0.8~), javahelper, java7-jdk, libasm4-java, libcommons-cli-java, libjline-java
 Standards-Version: 3.9.5
 Homepage: https://github.com/apmasell/flabbergast/
 Vcs-Git: git://github.com/apmasell/flabbergast/
 Vcs-Browser: https://github.com/apmasell/flabbergast/
+
+Package: flabbergast-java
+Architecture: all
+Depends: ${misc:Depends}, ${java:Depends}, flabbergast-common (= ${binary:Version})
+Recommends: ${java:Recommends}
+Provides: flabbergast
+Description: Flabbergast Configuration Langauge - JVM Edition
+ Run Flabbergast programs using the Java Virtual Machine.
+
+Package: flabbergast-cil
+Architecture: all
+Depends: ${misc:Depends}, ${cli:Depends}, flabbergast-common (= ${binary:Version})
+Provides: flabbergast
+Description: Flabbergast Configuration Langauge - CLI Edition
+ Run Flabbergast programs using the Common Language Infrastructure.
+
+Package: flabbergast-common
+Architecture: all
+Depends: ${misc:Depends}
+Description: Flabbergast Configuration Langauge - Common Infrastructure
+ Core libraries and tools for Flabbergast.
 
 Package: vim-flabbergast
 Architecture: all
