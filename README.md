@@ -26,6 +26,30 @@ The self-hosting compiler is rather strange, as it is not really self-hosting. T
 
 Each platform also contains an implementation of the runtime library and non-portable pieces of each library.
 
+## Installation
+For Ubuntu and Debian systems, Flabbergast can be easily installed by:
+
+    apt-add-repository ppa:flabbergast/ppa && apt-get update && apt-get install flabbergast-java flabbergast-cil
+
+There are two editions of the language: one which uses the Java Virtual Machine (`flabbergast-java`) and one which uses the Common Language Infrastructure (`flabbergast-cil`). You need only install one. You can then get started by running `flabbergast` to process a file or `flabbergast-repl` to start an interactive session. If you want to run a specific edition when both are installed, use `jflabbergast` or `nflabbergast` for the JVM and CLI versions, respectively.
+
+For efficiency, Flabbergast allows pre-compilation of libraries. This can be done using `update-flabbergast`. It can only update directories writable by the user; but it is automatically trigged upon installation of new packages containing Flabbergast code. You may wish to keep a set of your own libraries in `~/.local/share/flabbergast/lib`, and it will manage those too.
+
+## Building
+To build Flabbergast, you will need to have an existing copy of Flabbergast or obtain the generated compiler sources directly. You will need GNU AutoTools, Flabbergast, Make, and the preqrequistes to build one of either the JVM edition or the CLI edition. For the JVM edition, you will need the JVM 1.7 or later, [ObjectWeb ASM](http://asm.ow2.org), [JLine](http://jline.sourceforge.net/), and [Commons CLI](https://commons.apache.org/cli/). If you are building the CLI edition, you will need either Mono or the Common Language Runtime, the C# compiler, and either MSBuild or XBuild.
+
+To install all these packages on Ubuntu/Debian, do:
+
+    sudo apt-get install java7-jdk autotools-dev libasm4-java libjline-java libcommons-cli-java mono-xbuild mono-mcs
+
+To build the compiler, run the bootstrap step:
+
+    ./bootstrap
+
+Then perform a normal AutoTools install:
+
+    ./configure && make && sudo make install
+
 ## Patches
 Patches are welcome and patches are preferred to whining. For details, see [Conduct unbecoming of a hacker](http://sealedabstract.com/rants/conduct-unbecoming-of-a-hacker/). In general, the rules are as follows:
 
