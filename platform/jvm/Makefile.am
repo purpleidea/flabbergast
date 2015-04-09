@@ -50,10 +50,14 @@ flabbergast-testing-$(VERSION).jar: testing.manifest $(TESTING_INPUTS) flabberga
 	CLASSPATH=$(TESTING_CLASSPATH) ./jarc testing $(VERSION)
 
 runtime.manifest: Makefile
-	echo "Manifest-Version: 1.0\nClass-Path: $(addprefix $(javadir), $(JAVA_RUNTIME_DEPS))\nCreated-By: $(VERSION) (The Flabbergast Project)" > $@
+	@echo "Manifest-Version: 1.0" > $@
+	@echo "Class-Path: $(JAVA_RUNTIME_DEPS)" >> $@
+	@echo "Created-By: $(VERSION) (The Flabbergast Project)" >> $@
 
 compiler.manifest: Makefile
-	echo "Manifest-Version: 1.0\nClass-Path: $(addprefix $(javadir), $(JAVA_COMPILER_DEPS) flabbergast-runtime-$(VERSION).jar)\nCreated-By: $(VERSION) (The Flabbergast Project)" > $@
+	@echo "Manifest-Version: 1.0" > $@
+	@echo "Class-Path: $(javadir)/flabbergast-runtime-$(VERSION).jar $(JAVA_COMPILER_DEPS)" >> $@
+	@echo "Created-By: $(VERSION) (The Flabbergast Project)" >> $@
 
 testing.manifest: Makefile
 	@echo "Manifest-Version: 1.0" > $@
@@ -61,13 +65,17 @@ testing.manifest: Makefile
 	@echo "Created-By: $(VERSION) (The Flabbergast Project)" >> $@
 
 jvm-build-cache: Makefile
-	echo "#!/bin/sh\ncd \"$$1\"\nexec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)flabbergast-runtime-$(VERSION).jar:$(javadir)flabbergast-compiler-$(VERSION).jar flabbergast.MainBuildCache" > $@
+	@echo "#!/bin/sh" > $@
+	@echo "cd \"$$1\"" >> $@
+	@echo "exec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)/flabbergast-runtime-$(VERSION).jar:$(javadir)/flabbergast-compiler-$(VERSION).jar flabbergast.MainBuildCache" >> $@
 
 jflabbergast: Makefile
-	echo "#!/bin/sh\nexec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)flabbergast-runtime-$(VERSION).jar:$(javadir)flabbergast-compiler-$(VERSION).jar flabbergast.MainPrinter \"$$@\"" > $@
+	@echo "#!/bin/sh" > $@
+	@echo "exec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)/flabbergast-runtime-$(VERSION).jar:$(javadir)/flabbergast-compiler-$(VERSION).jar flabbergast.MainPrinter \"$$@\"" >> $@
 
 jflabbergast-repl: Makefile
-	echo "#!/bin/sh\nexec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)flabbergast-runtime-$(VERSION).jar:$(javadir)flabbergast-compiler-$(VERSION).jar flabbergast.MainREPL \"$$@\"" > $@
+	@echo "#!/bin/sh" > $@
+	@echo "exec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)/flabbergast-runtime-$(VERSION).jar:$(javadir)/flabbergast-compiler-$(VERSION).jar flabbergast.MainREPL \"$$@\"" >> $@
 
 install-data-hook:
 	$(LN_S) -f flabbergast-runtime-$(VERSION).jar $(DESTDIR)$(datadir)/java/flabbergast-runtime.jar

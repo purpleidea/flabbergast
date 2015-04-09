@@ -31,13 +31,16 @@ $(cli_DATA) $(TEST): $(wildcard *.cs *.sln *.csproj)
 	$(XBUILD) /verbosity:quiet flabbergast.sln
 
 cli-build-cache: Makefile
-	echo "#!/bin/sh\nexec env cli $(clidir)/flabbergast-build.exe \"$$@\"" > $@
+	@echo "#!/bin/sh" > $@
+	@echo "exec env cli $(clidir)/flabbergast-build.exe \"$$@\"" >> $@
 
 nflabbergast: Makefile
-	echo "#!/bin/sh\nexec env cli $(clidir)/flabbergast.exe \"$$@\"" > $@
+	@echo "#!/bin/sh" > $@
+	@echo "exec env cli $(clidir)/flabbergast.exe \"$$@\"" >> $@
 
 nflabbergast-repl: Makefile
-	echo "#!/bin/sh\nexec env cli $(clidir)/flabbergast-repl.exe \"$$@\"" > $@
+	@echo "#!/bin/sh" > $@
+	@echo "exec env cli $(clidir)/flabbergast-repl.exe \"$$@\"" >> $@
 
 clean-local:
 	$(XBUILD) /verbosity:quiet /target:Clean flabbergast.sln
