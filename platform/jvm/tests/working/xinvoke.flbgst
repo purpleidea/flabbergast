@@ -1,0 +1,1 @@
+value : XInvoke java.lang.String endsWith ("foo", "o")

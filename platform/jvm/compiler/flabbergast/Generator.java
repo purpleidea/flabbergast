@@ -1019,7 +1019,7 @@ class Generator {
 				} else if (method_arguments[it] == float.class) {
 					builder.visitInsn(Opcodes.D2F);
 				} else if (method_arguments[it] == String.class) {
-					visitMethod(Stringish.class.getMethod("ToString"));
+					visitMethod(Stringish.class.getMethod("toString"));
 				} else {
 					throw new IllegalArgumentException(
 							String.format(
