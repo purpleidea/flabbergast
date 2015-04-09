@@ -14,16 +14,24 @@ public abstract class LoadLibraries implements UriHandler {
 				paths.add(new File(path).getAbsolutePath());
 			}
 		}
+		boolean isntWindows = !System.getProperty("os.name").startsWith(
+				"Windows");
+		if (isntWindows) {
+			paths.add(System.getProperty("user.home") + File.separator
+					+ ".local" + File.separator + "share" + File.separator
+					+ "flabbergast" + File.separator + "lib");
+		}
 		try {
 			String path = Frame.class.getProtectionDomain().getCodeSource()
 					.getLocation().toURI().getPath();
-			paths.add(path + File.separator + ".." + File.separator + "lib"
+			paths.add(path + File.separator + ".." + File.separator + ".."
+					+ File.separator + "flabbergast" + File.separator + "lib"
 					+ File.separator + "flabbergast");
 		} catch (URISyntaxException e) {
 		}
-		if (!System.getProperty("os.name").startsWith("Windows")) {
-			paths.add("/usr/lib/flabbergast");
-			paths.add("/usr/local/lib/flabbergast");
+		if (isntWindows) {
+			paths.add("/usr/share/flabbergast/lib");
+			paths.add("/usr/local/lib/flabbergast/lib");
 		}
 		return paths;
 	}

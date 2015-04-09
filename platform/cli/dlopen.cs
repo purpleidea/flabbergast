@@ -37,12 +37,13 @@ namespace Flabbergast {
 			if (env_var != null) {
 				paths.AddRange(env_var.Split(Path.PathSeparator).Select(Path.GetFullPath));
 			}
+			paths.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "flabbergast", "lib"));
 			var full_path = Assembly.GetAssembly(typeof(Frame)).Location;
 			var directory = Path.GetDirectoryName(full_path);
-			paths.Add(Path.Combine(directory, "..", "lib", "flabbergast"));
+			paths.Add(Path.Combine(directory, "..", "lib"));
 			if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX) {
-				paths.Add("/usr/lib/flabbergast");
-				paths.Add("/usr/local/lib/flabbergast");
+				paths.Add("/usr/share/flabbergast/lib");
+				paths.Add("/usr/local/share/flabbergast/lib");
 			}
 			return paths;
 		}

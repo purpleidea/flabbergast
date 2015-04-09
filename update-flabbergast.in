@@ -13,16 +13,13 @@
 set -eu
 
 prefix="@prefix@"
-exec_prefix="@exec_prefix@"
-libexecdir="${exec_prefix}/libexec"
-libdir="${exec_prefix}/lib"
 datarootdir="@datarootdir@"
 datadir="@datadir@"
 pkgdatadir="${datadir}/@PACKAGE@"
 
 EXIT_CODE="0"
 IFS=":"
-DIRECTORIES="${FLABBERGAST_PATH:-}:${libdir}/flabbergast:/usr/lib/flabbergast:/usr/local/lib/flabbergast:$HOME/.local/lib/flabbergast"
+DIRECTORIES="${FLABBERGAST_PATH:-}:${pkgdatadir}/lib:/usr/share/flabbergast/lib:/usr/local/flabbergast/lib:$HOME/.local/share/flabbergast/lib"
 for DIRECTORY in ${@:-$DIRECTORIES}
 do
 	if [ "x$DIRECTORY" = x ]
@@ -31,10 +28,11 @@ do
 		true
 	elif [ -d "$DIRECTORY" -a -w "$DIRECTORY" ]
 	then
-		for COMPILER in "${libdir}"/flabbergast-compiler/*
-		then
+		for COMPILER in $(ls "${pkgdatadir}/builder")
+		do
 			"$COMPILER" "$DIRECTORY" || EXIT_CODE="1"
-		fi
+		done
+		find "$DIRECTORY" -type d -a -empty -exec rmdir {} \;
 	elif [ -e "$DIRECTORY" ]
 	then
 		echo "$DIRECTORY: cannot update" 1>&2

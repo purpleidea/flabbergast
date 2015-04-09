@@ -10,7 +10,7 @@ man1_MANS = \
 	nflabbergast-repl.1 \
 	$(NULL)
 
-clidir = $(libdir)/flabbergast-cli
+clidir = $(pkgdatadir)/cli
 cli_DATA = \
 	bin/Debug/Flabbergast.Compiler.dll \
 	bin/Debug/Flabbergast.Runtime.dll \
@@ -20,7 +20,7 @@ cli_DATA = \
 	bin/Debug/flabbergast.exe \
 	$(NULL)
 
-compilerdir = $(libdir)/flabbergast-compiler
+compilerdir = $(pkgdatadir)/compiler
 compiler_SCRIPTS = cli-build-cache
 
 $(cli_DATA): $(wildcard *.cs *.sln *.csproj)
@@ -39,7 +39,7 @@ clean-local:
 	$(XBUILD) /verbosity:quiet /target:Clean flabbergast.sln
 
 CLEANFILES = \
-	cli.makefile \
+	cli-build-cache \
 	nflabbergast \
 	nflabbergast-repl \
 	$(NULL)

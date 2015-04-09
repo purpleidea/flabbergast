@@ -10,7 +10,7 @@ man1_MANS = \
 	jflabbergast-repl.1 \
 	$(NULL)
 
-compilerdir = $(libdir)/flabbergast-compiler
+compilerdir = $(pkgdatadir)/compiler
 compiler_SCRIPTS = jvm-build-cache
 
 javadir = $(datadir)/java
@@ -59,7 +59,7 @@ install-data-hook:
 	$(LN_S) -f flabbergast-compiler-$(VERSION).jar $(DESTDIR)$(datadir)/java/flabbergast-compiler.jar
 
 CLEANFILES = \
-	jvm.makefile \
+	jvm-build-cache \
 	jflabbergast \
 	jflabbergast-repl \
 	$(NULL)

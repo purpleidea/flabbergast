@@ -3,10 +3,10 @@ package flabbergast;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class ConsoleTaskMaster extends TaskMaster {
 	private String pad(String str, int length) {

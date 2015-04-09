@@ -26,7 +26,7 @@ man7_MANS = \
 	$(NULL)
 
 install-data-hook:
-	@for f in $$(find lib -name '*.flbgst' -type f -printf '%P\n'); do \
-		$(mkinstalldirs) $(DESTDIR)$(pkglibdir)/$$(dirname $$f); \
-		$(INSTALL_DATA) $(srcdir)/lib/$$f $(DESTDIR)$(pkglibdir)/$$f; \
+	@for f in $$(find lib -name '*.flbgst' -type f); do \
+		$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/$$(dirname $$f); \
+		$(INSTALL_DATA) $(srcdir)/$$f $(DESTDIR)$(pkgdatadir)/$$f; \
 	done	
