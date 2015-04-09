@@ -316,7 +316,7 @@ namespace Flabbergast {
 					if (result_frame.GetOrSubscribe(owner.names[name + 1], next.Consume)) {
 						return;
 					}
-					owner.ActivateNext();
+					owner.master.Slot(owner);
 				} else {
 					owner.master.ReportLookupError(owner, return_value.GetType());
 					return;
@@ -379,24 +379,20 @@ namespace Flabbergast {
 			}
 		}
 
-		private void ActivateNext() {
-			while (frame_index < frames.Length) {
-				int index = frame_index++;
-				var root_attempt = new Attempt(this, 0, index);
-				known_attempts.AddLast(root_attempt);
-				if (frames[index].GetOrSubscribe(names[0], root_attempt.Consume)) {
-					return;
-				}
-			}
-			master.ReportLookupError(this, null);
-		}
-
 		public string GetName(int index) {
 			return names[index];
 		}
 
 		protected override bool Run() {
-			ActivateNext();
+			while (frame_index < frames.Length) {
+				int index = frame_index++;
+				var root_attempt = new Attempt(this, 0, index);
+				known_attempts.AddLast(root_attempt);
+				if (frames[index].GetOrSubscribe(names[0], root_attempt.Consume)) {
+					return false;
+				}
+			}
+			master.ReportLookupError(this, null);
 			return false;
 		}
 	}
