@@ -1,0 +1,3 @@
+#!/bin/sh
+
+exec java -cp "$1:$2" flabbergast.TestHarness
