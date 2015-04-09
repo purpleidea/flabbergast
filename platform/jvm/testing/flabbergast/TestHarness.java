@@ -106,15 +106,10 @@ public class TestHarness {
 
 	public static void main(String[] args) {
 		try {
-			String path;
-			path = TestHarness.class.getProtectionDomain().getCodeSource()
-					.getLocation().toURI().getPath();
-
 			Ptr<Integer> id = new Ptr<Integer>(0);
 			boolean success = true;
-			success &= doTests(combine(path, "..", "..", "..", "tests"), "*",
-					id);
-			success &= doTests(combine(path, "..", "tests"), "I", id);
+			success &= doTests(combine("..", "..", "tests"), "*", id);
+			success &= doTests(combine("tests"), "I", id);
 			System.exit(success ? 0 : 1);
 		} catch (Exception e) {
 			e.printStackTrace();

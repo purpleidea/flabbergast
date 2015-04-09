@@ -23,7 +23,11 @@ cli_DATA = \
 compilerdir = $(pkgdatadir)/compiler
 compiler_SCRIPTS = cli-build-cache
 
-$(cli_DATA): $(wildcard *.cs *.sln *.csproj)
+TESTS = bin/Debug/flabbergast-test.exe
+TEST_EXTENSIONS = .exe
+EXE_LOG_COMPILER = cli
+
+$(cli_DATA) $(TEST): $(wildcard *.cs *.sln *.csproj)
 	$(XBUILD) /verbosity:quiet flabbergast.sln
 
 cli-build-cache: Makefile

@@ -28,8 +28,15 @@ JAVA_COMPILER_DEPS = \
 	$(COMMONS_CLI_JAR) \
 	$(NULL)
 
+TESTS = flabbergast-testing-$(VERSION).jar
+TEST_EXTENSIONS = .jar
+JAR_LOG_COMPILER = ./run_test
+AM_JAR_LOG_FLAGS = "$(TESTING_CLASSPATH)"
+TESTING_CLASSPATH = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):flabbergast-runtime-$(VERSION).jar:flabbergast-compiler-$(VERSION).jar
+
 RUNTIME_INPUTS = $(wildcard runtime/flabbergast/*.java)
 COMPILER_INPUTS = $(wildcard compiler/flabbergast/*.java)
+TESTING_INPUTS = $(wildcard testing/flabbergast/*.java)
 
 SPACE = $(NULL) $(NULL)
 
@@ -39,11 +46,19 @@ flabbergast-runtime-$(VERSION).jar: runtime.manifest $(RUNTIME_INPUTS)
 flabbergast-compiler-$(VERSION).jar: compiler.manifest $(COMPILER_INPUTS) flabbergast-runtime-$(VERSION).jar
 	CLASSPATH=$(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):flabbergast-runtime-$(VERSION).jar ./jarc compiler $(VERSION)
 
+flabbergast-testing-$(VERSION).jar: testing.manifest $(TESTING_INPUTS) flabbergast-compiler-$(VERSION).jar
+	CLASSPATH=$(TESTING_CLASSPATH) ./jarc testing $(VERSION)
+
 runtime.manifest: Makefile
 	echo "Manifest-Version: 1.0\nClass-Path: $(addprefix $(javadir), $(JAVA_RUNTIME_DEPS))\nCreated-By: $(VERSION) (The Flabbergast Project)" > $@
 
 compiler.manifest: Makefile
 	echo "Manifest-Version: 1.0\nClass-Path: $(addprefix $(javadir), $(JAVA_COMPILER_DEPS) flabbergast-runtime-$(VERSION).jar)\nCreated-By: $(VERSION) (The Flabbergast Project)" > $@
+
+testing.manifest: Makefile
+	@echo "Manifest-Version: 1.0" > $@
+	@echo "Main-Class: flabbergast.TestHarness" >> $@
+	@echo "Created-By: $(VERSION) (The Flabbergast Project)" >> $@
 
 jvm-build-cache: Makefile
 	echo "#!/bin/sh\ncd \"$$1\"\nexec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)flabbergast-runtime-$(VERSION).jar:$(javadir)flabbergast-compiler-$(VERSION).jar flabbergast.MainBuildCache" > $@
