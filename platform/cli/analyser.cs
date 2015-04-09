@@ -475,6 +475,7 @@ internal class Environment : CodeRegion {
 					generator.Builder.Emit(OpCodes.Ldstr, entry.Item1.Name);
 					generator.LoadReboxed(result, typeof(object));
 					generator.Builder.Emit(OpCodes.Call, typeof(Frame).GetMethod("set_Item", new[] { typeof(string), typeof(object) }));
+					generator.CopyField(result, field);
 					generator.JumpToState(next);
 					known_types |= AstTypeableNode.TypeFromClrType(result.BackingType);
 				});
