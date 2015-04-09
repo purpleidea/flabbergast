@@ -85,4 +85,9 @@ CLEANFILES = \
 	jvm-build-cache \
 	jflabbergast \
 	jflabbergast-repl \
+	compiler.manifest \
+	runtime.manifest \
+	testing.manifest \
+	$(java_DATA) \
+	$(TESTS) \
 	$(NULL)
