@@ -570,7 +570,7 @@ Indeed, this could be translated into Flabbergast as follows:
 
     strs : For item : items
       Reduce "\(acc)name: \(item.name) country: \(item.country)\n"
-			With acc : ""
+      With acc : ""
 
 However, it is often simpler to make items self-rendering:
 
@@ -581,7 +581,7 @@ However, it is often simpler to make items self-rendering:
     }
     strs : For item : items
       Reduce acc & item.value
-			With acc : ""
+      With acc : ""
 
 This has two advantages: the rendering logic can be overridden and the interface is simpler. As a disadvantage, there is now an inheritance implication for the values of `items`. However, because the template `item_tmpl` can be overridden and replaced, the inheritance implication is flexible. In fact, it would be reasonable to have:
 
@@ -813,22 +813,22 @@ So, the following would produce correctly indented, if not pointless, Python:
                 ]
             }
         ]
-		}
+    }
     pycode : python_group {
         statements : [
             python_block {
                 line : "def foo(x):"
                 statements : [
                     python_stmt { line : "return 3 * x" }
-								]
-						},
+                ]
+            },
             python_block {
                 line : "def foo2(x):"
                 statements : [
                     transform_var { var : "x" },
                     python_stmt { line : "return 3 * x" }
-								]
-						}
+                ]
+             }
          ]
      }
 
@@ -883,18 +883,18 @@ Consider something like:
         # Explicitly define our minimums to be passed up.
         min_width : 5  min_height : 1
         preferred_width : 10
-				# Here, our preferred height (which we pass up) is defined in terms of
-				# our width, which is passed down. This might result in circular
-				# evaluation depending on the implementation of our container.
-				preferred_height : Length text * 1.5 / width
+        # Here, our preferred height (which we pass up) is defined in terms of
+        # our width, which is passed down. This might result in circular
+        # evaluation depending on the implementation of our container.
+        preferred_height : Length text * 1.5 / width
         value : # Render output using width and height
     }
     fancy_border : Template {
         child ?:
         width ?:
         height ?:
-				# We enforce what our parent forced on us onto our child widget. (Down)
-				exp_child : child {
+        # We enforce what our parent forced on us onto our child widget. (Down)
+        exp_child : child {
             width : Lookup width In Container - 1
             height : Lookup height In Container - 1
         }
@@ -903,7 +903,7 @@ Consider something like:
         min_height : exp_child.min_height + 1
         preferred_width : exp_child.preferred_width + 1
         preferred_height : exp_child.preferred_height + 1
-				value : # Render output using width, height, and exp_child.value
+        value : # Render output using width, height, and exp_child.value
     }
     vertical_box : Template {
         children ?:
