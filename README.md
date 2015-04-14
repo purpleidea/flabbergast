@@ -20,9 +20,9 @@ The manual describes the syntax is broader strokes and a more prosaic explanatio
 The language can be compiled to a virtual machine simpler to implement than the full language spec and a self-hosting compiler is provided. The VM is documented in the [KWS VM](kws-vm.md) document, which does not include formal semantics because they are largely implied by the language spec.
 
 ## Implementation
-There are not two implementations of Flabbergast. Presently, there is a bootstrap interpreter, written in Vala, which implements most of Flabbergast. It lacks some of the less crucial features and the parser does not support comments There is also work being done on the self-hosting version, which is not yet complete.
+There are two implementations of Flabbergast. The self-hosting version targets the JVM and the CLR.
 
-The self-hosting compiler is rather strange, as it is not really self-hosting. The self-hosting compiler is actually a Flabbergast program that, with added syntax templates, generates a compiler for a Flabbergast compiler in a target programming language. This generated compiler is capable of producing KWS VM bytecodes that can be run on one of the VMs targeted for various platforms.
+The self-hosting compiler is rather strange, as it is not really self-hosting. The self-hosting compiler is actually a Flabbergast program that, with added syntax templates, generates a compiler for a Flabbergast compiler in a target programming language. This generated compiler reduces Flabbergast syntax to KWS VM bytecode, which are then reduced to the native VM's bytecode. This is conceptually easier to understand and allows more code re-use.
 
 Each platform also contains an implementation of the runtime library and non-portable pieces of each library.
 
