@@ -5,8 +5,22 @@ using System.Text;
 
 namespace Flabbergast {
 	public class ConsoleTaskMaster : TaskMaster {
-		public override void ReportExternalError(string uri) {
-			Console.Error.WriteLine("The URI “{0}” could not be resolved.", uri);
+		public override void ReportExternalError(string uri, LibraryFailure reason) {
+			Dirty = true;
+			switch (reason) {
+			case LibraryFailure.BadName:
+				Console.Error.WriteLine("The URI “{0}” is not a valid name.", uri);
+				break;
+			case LibraryFailure.Corrupt:
+				Console.Error.WriteLine("The URI “{0}” could not be loaded.", uri);
+				break;
+			case LibraryFailure.Missing:
+				Console.Error.WriteLine("The URI “{0}” could not be found.", uri);
+				break;
+			default:
+				Console.Error.WriteLine("The URI “{0}” could not be resolved.", uri);
+				break;
+			}
 		}
 
 		public override void ReportLookupError(Lookup lookup, Type fail_type) {

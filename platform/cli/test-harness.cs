@@ -84,7 +84,7 @@ namespace Flabbergast
         {
         }
 
-        public override void ReportExternalError(string uri)
+        public override void ReportExternalError(string uri, LibraryFailure reason)
         {
         }
     }

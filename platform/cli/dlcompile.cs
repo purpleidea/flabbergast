@@ -19,12 +19,11 @@ namespace Flabbergast {
 			var module_builder = assembly_builder.DefineDynamicModule(name, true);
 			unit = new CompilationUnit(module_builder, true);
 		}
-		public override System.Type ResolveUri(string uri, out bool stop) {
+		public override System.Type ResolveUri(string uri, out LibraryFailure reason) {
 			if (cache.ContainsKey(uri)) {
-				stop = cache[uri] == null;
+				reason = cache[uri] == null ? LibraryFailure.Missing : LibraryFailure.None;
 				return cache[uri];
 			}
-			stop = false;
 			var base_name = uri.Substring(4);
 			var type_name = "Flabbergast.Library." + base_name.Replace('/', '.');
 			foreach (var path in paths) {
@@ -34,10 +33,12 @@ namespace Flabbergast {
 				}
 				var parser = Parser.Open(src_file);
  				var type = parser.ParseFile(collector, unit, type_name);
-				stop = type == null;
+				reason = type == null ? LibraryFailure.Corrupt : LibraryFailure.None;
 				cache[uri] = type;
 				return type;
 			}
+			cache[uri] = null;
+			reason = LibraryFailure.Missing;
 			return null;
 		}
 	}

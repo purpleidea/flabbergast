@@ -97,7 +97,7 @@ namespace Flabbergast {
 
 	public interface UriHandler {
 		string UriName { get; }
-		Type ResolveUri(string uri, out bool stop);
+		Type ResolveUri(string uri, out LibraryFailure reason);
 	}
 
 /**
@@ -145,26 +145,26 @@ namespace Flabbergast {
 			}
 			if (uri.StartsWith("lib:")) {
 				if (uri.Length < 5) {
-					ReportExternalError(uri);
+					ReportExternalError(uri, LibraryFailure.BadName);
 					return;
 				}
 				for (var it = 5; it < uri.Length; it++) {
 					if (uri[it] != '/' && !char.IsLetterOrDigit(uri[it])) {
-						ReportExternalError(uri);
+						ReportExternalError(uri, LibraryFailure.BadName);
 						return;
 					}
 				}
 			}
 
 			foreach (var handler in handlers) {
-				bool stop;
-				var t = handler.ResolveUri(uri, out stop);
-				if (stop) {
-					ReportExternalError(uri);
-					return;
-				}
-				if (t == null) {
+				LibraryFailure reason;
+				var t = handler.ResolveUri(uri, out reason);
+				if (reason == LibraryFailure.Missing) {
 					continue;
+				}
+				if (reason != LibraryFailure.None || t == null) {
+					ReportExternalError(uri, reason);
+					return;
 				}
 				if (!typeof(Computation).IsAssignableFrom(t)) {
 					throw new InvalidCastException(String.Format(
@@ -176,7 +176,7 @@ namespace Flabbergast {
 				Slot(computation);
 				return;
 			}
-			ReportExternalError(uri);
+			ReportExternalError(uri, LibraryFailure.Missing);
 		}
 
 		public long NextId() {
@@ -202,7 +202,7 @@ namespace Flabbergast {
 			return new string(id_str);
 		}
 
-		public abstract void ReportExternalError(string uri);
+		public abstract void ReportExternalError(string uri, LibraryFailure reason);
 		/**
 	 * Report an error during lookup.
 	 */

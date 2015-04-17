@@ -5,6 +5,12 @@ using System.Linq;
 using System.Reflection;
 
 namespace Flabbergast {
+	public enum LibraryFailure {
+		None,
+		Missing,
+		Corrupt,
+		BadName
+	}
 	public class BuiltInLibraries : UriHandler {
 		public static readonly BuiltInLibraries INSTANCE = new BuiltInLibraries();
 		private BuiltInLibraries() {}
@@ -13,19 +19,25 @@ namespace Flabbergast {
 			get { return "built-in libraries"; }
 		}
 
-		public Type ResolveUri(string uri, out bool stop) {
-			stop = false;
+		public Type ResolveUri(string uri, out LibraryFailure reason) {
+			reason = LibraryFailure.None;
 			if (!uri.StartsWith("lib:"))
 				return null;
 			var type_name = "Flabbergast.Library." + uri.Substring(4).Replace('/', '.');
-			return Type.GetType(type_name, false);
+			var result = Type.GetType(type_name, false);
+			if (result == null) {
+				reason = LibraryFailure.Missing;
+				return null;
+			} else {
+				return result;
+			}
 		}
 	}
 
 	public abstract class LoadLibraries : UriHandler {
 		protected readonly List<string> paths = GenerateDefaultPaths();
 		public abstract string UriName { get; }
-		public abstract Type ResolveUri(string uri, out bool stop);
+		public abstract Type ResolveUri(string uri, out LibraryFailure reason);
 
 		public void AppendPath(string path) {
 			paths.Add(path);
@@ -58,8 +70,7 @@ namespace Flabbergast {
 			get { return "pre-compiled libraries"; }
 		}
 
-		public override Type ResolveUri(string uri, out bool stop) {
-			stop = false;
+		public override Type ResolveUri(string uri, out LibraryFailure reason) {
 			var base_name = uri.Substring(4).Replace('/', '.');
 			var type_name = "Flabbergast.Library." + base_name;
 			var dll_name = base_name + ".dll";
@@ -70,13 +81,18 @@ namespace Flabbergast {
 				}
 				var assembly = Assembly.LoadFrom(dll_file);
 				if (assembly == null) {
-					continue;
+					reason = LibraryFailure.Corrupt;
+					return null;
 				}
 				var type = assembly.GetType(type_name, false);
-				if (type != null) {
-					return type;
+				if (type == null) {
+					reason = LibraryFailure.Corrupt;
+					return null;
 				}
+				reason = LibraryFailure.None;
+				return type;
 			}
+			reason = LibraryFailure.Missing;
 			return null;
 		}
 	}
