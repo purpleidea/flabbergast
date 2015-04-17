@@ -84,6 +84,7 @@ namespace Flabbergast {
 					computation.Notify(r => result = r);
 					task_master.Slot(computation);
 					task_master.Run();
+					task_master.ReportCircularEvaluation();
 					if (result != null) {
 						HandleResult(result);
 					}

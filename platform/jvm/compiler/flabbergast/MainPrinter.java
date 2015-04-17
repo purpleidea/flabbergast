@@ -42,7 +42,7 @@ public class MainPrinter {
 
 		ErrorCollector collector = new ConsoleCollector();
 		DynamicCompiler compiler = new DynamicCompiler(collector);
-		TaskMaster task_master = new ConsoleTaskMaster();
+		ConsoleTaskMaster task_master = new ConsoleTaskMaster();
 		task_master.addUriHandler(BuiltInLibraries.INSTANCE);
 		task_master.addUriHandler(new LoadPrecompiledLibraries());
 		task_master.addUriHandler(compiler);
@@ -58,6 +58,7 @@ public class MainPrinter {
 						computation, result.getOptionValue('o'));
 				task_master.slot(filewriter);
 				task_master.run();
+				task_master.reportCircularEvaluation();
 				System.exit(filewriter.getSuccess() ? 0 : 1);
 			}
 		} catch (Exception e) {

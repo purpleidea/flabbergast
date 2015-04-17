@@ -57,6 +57,7 @@ public class Printer {
 			var filewriter = new PrintResult(task_master, computation, output_filename);
 			task_master.Slot(filewriter);
 			task_master.Run();
+			task_master.ReportCircularEvaluation();
 			return filewriter.Success ? 0 : 1;
 		}
 		return 1;

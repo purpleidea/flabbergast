@@ -119,6 +119,10 @@ public abstract class TaskMaster implements Iterable<Lookup> {
 		reportExternalError(uri, LibraryFailure.MISSING);
 	}
 
+	public boolean hasInflightLookups() {
+		return inflight.size() > 0;
+	}
+
 	@Override
 	public Iterator<Lookup> iterator() {
 		return inflight.iterator();
@@ -168,7 +172,7 @@ public abstract class TaskMaster implements Iterable<Lookup> {
 	 * Add a computation to be executed.
 	 */
 	public void slot(final Computation computation) {
-		if (inflight instanceof Lookup && !inflight.contains(computation)) {
+		if (computation instanceof Lookup && !inflight.contains(computation)) {
 			inflight.add((Lookup) computation);
 			computation.listen(new ConsumeResult() {
 

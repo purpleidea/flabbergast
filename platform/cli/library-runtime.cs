@@ -5,6 +5,7 @@ using System.Text;
 
 namespace Flabbergast {
 	public class ConsoleTaskMaster : TaskMaster {
+		private bool Dirty = false;
 		public override void ReportExternalError(string uri, LibraryFailure reason) {
 			Dirty = true;
 			switch (reason) {
@@ -22,8 +23,22 @@ namespace Flabbergast {
 				break;
 			}
 		}
+		public void ReportCircularEvaluation() {
+			if (!HasInflightLookups || Dirty) {
+				return;
+			}
+			var seen = new Dictionary<SourceReference, bool>();
+			Console.Error.WriteLine("Circular evaluation detected.");
+			foreach (var lookup in this) {
+				Console.Error.WriteLine("Lookup for “{0}” blocked. Lookup initiated at:", lookup.Name);
+				lookup.SourceReference.Write(Console.Error, "  ", seen);
+				Console.Error.WriteLine(" is waiting for “{0}” in frame defined at:", lookup.LastName);
+				lookup.LastFrame.SourceReference.Write(Console.Error, "  ", seen);
+			}
+		}
 
 		public override void ReportLookupError(Lookup lookup, Type fail_type) {
+			Dirty = true;
 			if (fail_type == null) {
 				Console.Error.WriteLine("Undefined name “{0}”. Lookup was as follows:", lookup.Name);
 			} else {
@@ -66,6 +81,7 @@ namespace Flabbergast {
 		}
 
 		public override void ReportOtherError(SourceReference reference, string message) {
+			Dirty = true;
 			Console.Error.WriteLine(message);
 			var seen = new Dictionary<SourceReference, bool>();
 			reference.Write(Console.Error, "  ", seen);
@@ -100,7 +116,7 @@ namespace Flabbergast {
 		private void HandleFrameResult(object result) {
 			var frame = result as Frame;
 			if (frame != null) {
-				var lookup = new Lookup(task_master, null, new[] {"value"}, frame.Context);
+				var lookup = new Lookup(task_master, new SourceReference("printer", "<native>", 0, 0, 0, 0, null), new[] {"value"}, frame.Context);
 				lookup.Notify(HandleFinalResult);
 				task_master.Slot(lookup);
 			} else {

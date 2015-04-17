@@ -12,10 +12,12 @@ public class Lookup extends Computation {
 		int frame;
 		int name;
 		Frame result_frame;
+		Frame source_frame;
 
-		public Attempt(int name, int frame) {
+		public Attempt(int name, int frame, Frame source_frame) {
 			this.name = name;
 			this.frame = frame;
+			this.source_frame = source_frame;
 		}
 
 		@Override
@@ -25,7 +27,7 @@ public class Lookup extends Computation {
 				wakeupListeners();
 			} else if (return_value instanceof Frame) {
 				result_frame = ((Frame) return_value);
-				Attempt next = new Attempt(name + 1, frame);
+				Attempt next = new Attempt(name + 1, frame, result_frame);
 				known_attempts.add(next);
 				if (result_frame.getOrSubscribe(names[name + 1], next)) {
 					return;
@@ -42,7 +44,7 @@ public class Lookup extends Computation {
 
 	private final Frame[] frames;
 
-	private List<Attempt> known_attempts = new LinkedList<Attempt>();
+	private LinkedList<Attempt> known_attempts = new LinkedList<Attempt>();
 	private TaskMaster master;
 
 	/**
@@ -67,7 +69,7 @@ public class Lookup extends Computation {
 	private void activateNext() {
 		while (frame_index < frames.length) {
 			int index = frame_index++;
-			Attempt root_attempt = new Attempt(0, index);
+			Attempt root_attempt = new Attempt(0, index, frames[index]);
 			known_attempts.add(root_attempt);
 			if (frames[index].getOrSubscribe(names[0], root_attempt)) {
 				return;
@@ -92,6 +94,14 @@ public class Lookup extends Computation {
 
 	public int getFrameCount() {
 		return frames.length;
+	}
+
+	public Frame getLastFrame() {
+		return known_attempts.getLast().source_frame;
+	}
+
+	public String getLastName() {
+		return names[known_attempts.getLast().name];
 	}
 
 	public String getName() {

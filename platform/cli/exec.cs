@@ -114,6 +114,10 @@ namespace Flabbergast {
 		private readonly Dictionary<Lookup, bool> inflight = new Dictionary<Lookup, bool>();
 		private long next_id;
 
+		public bool HasInflightLookups {
+			get { return inflight.Count > 0; }
+		}
+
 		public IEnumerator<Lookup> GetEnumerator() {
 			return inflight.Keys.GetEnumerator();
 		}
@@ -297,12 +301,14 @@ namespace Flabbergast {
 			public int frame;
 			public int name;
 			public Frame result_frame;
+			public Frame source_frame;
 			Lookup owner;
 
-			public Attempt(Lookup owner, int name, int frame) {
+			public Attempt(Lookup owner, int name, int frame, Frame source_frame) {
 				this.owner = owner;
 				this.name = name;
 				this.frame = frame;
+				this.source_frame = source_frame;
 			}
 
 			public void Consume(object return_value) {
@@ -311,7 +317,7 @@ namespace Flabbergast {
 					owner.WakeupListeners();
 				} else if (return_value is Frame) {
 					result_frame = ((Frame) return_value);
-					var next = new Attempt(owner, name + 1, frame);
+					var next = new Attempt(owner, name + 1, frame, result_frame);
 					owner.known_attempts.AddLast(next);
 					if (result_frame.GetOrSubscribe(owner.names[name + 1], next.Consume)) {
 						return;
@@ -339,6 +345,14 @@ namespace Flabbergast {
 				}
 				return null;
 			}
+		}
+
+		public Frame LastFrame {
+			get { return known_attempts.Last.Value.source_frame; }
+		}
+
+		public string LastName {
+			get { return names[known_attempts.Last.Value.name]; }
 		}
 
 		public string Name {
@@ -385,7 +399,7 @@ namespace Flabbergast {
 		protected override bool Run() {
 			while (frame_index < frames.Length) {
 				int index = frame_index++;
-				var root_attempt = new Attempt(this, 0, index);
+				var root_attempt = new Attempt(this, 0, index, frames[index]);
 				known_attempts.AddLast(root_attempt);
 				if (frames[index].GetOrSubscribe(names[0], root_attempt.Consume)) {
 					return false;

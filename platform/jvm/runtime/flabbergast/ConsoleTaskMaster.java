@@ -9,12 +9,31 @@ import java.util.Map;
 import java.util.Set;
 
 public class ConsoleTaskMaster extends TaskMaster {
+	boolean dirty = false;
+
 	private String pad(String str, int length) {
 		return String.format("%1$-" + length + "s", str);
 	}
 
+	public void reportCircularEvaluation() throws IOException {
+		if (!hasInflightLookups() || dirty) {
+			return;
+		}
+		PrintWriter output = new PrintWriter(System.err);
+		Set<SourceReference> seen = new HashSet<SourceReference>();
+		output.println("Circular evaluation detected.");
+		for (Lookup lookup : this) {
+			output.printf("Lookup for “%s” blocked. Lookup initiated at:\n", lookup.getName());
+			lookup.getSourceReference().write(output, "  ", seen);
+			output.printf(" is waiting for “%s” in frame defined at:\n", lookup.getLastName());
+			lookup.getLastFrame().getSourceReference().write(output, "  ", seen);
+		}
+		output.flush();
+	}
+
 	@Override
 	public void reportExternalError(String uri, LibraryFailure reason) {
+		dirty = true;
 		switch (reason) {
 		case BAD_NAME:
 			System.err.printf("The URI “%s” is not a valid name.\n", uri);
@@ -32,6 +51,7 @@ public class ConsoleTaskMaster extends TaskMaster {
 
 	@Override
 	public void reportLookupError(Lookup lookup, Class<?> fail_type) {
+		dirty = true;
 		try {
 			PrintWriter output = new PrintWriter(System.err);
 			if (fail_type == null) {
@@ -95,6 +115,7 @@ public class ConsoleTaskMaster extends TaskMaster {
 
 	@Override
 	public void reportOtherError(SourceReference reference, String message) {
+		dirty = true;
 		System.err.println(message);
 		try {
 			reference.write(new PrintWriter(System.err), "  ");
