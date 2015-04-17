@@ -27,8 +27,9 @@ namespace Flabbergast {
 	public class REPL {
 		private static void HandleResult(object result) {
 			var seen = new Dictionary<Frame, int>();
+			var seen_srcref = new Dictionary<SourceReference, bool>();
 			var counter = 1;
-			Print(result, "", seen, ref counter);
+			Print(result, "", seen, seen_srcref, ref counter);
 		}
 
 		public static int Main(string[] args) {
@@ -92,7 +93,7 @@ namespace Flabbergast {
 			return 0;
 		}
 
-		private static void Print(object result, string prefix, Dictionary<Frame, int> seen, ref int counter) {
+		private static void Print(object result, string prefix, Dictionary<Frame, int> seen, Dictionary<SourceReference, bool> seen_srcref, ref int counter) {
 			if (result == null) {
 				Console.WriteLine("∅");
 			} else if (result is Frame) {
@@ -105,7 +106,7 @@ namespace Flabbergast {
 					seen[f] = counter++;
 					foreach (var name in f.GetAttributeNames()) {
 						Console.Write("{0}{1} : ", prefix, name);
-						Print(f[name], prefix + "  ", seen, ref counter);
+						Print(f[name], prefix + "  ", seen, seen_srcref, ref counter);
 					}
 					Console.Write(prefix);
 					Console.WriteLine("}");
@@ -120,7 +121,7 @@ namespace Flabbergast {
 					Console.Write(name);
 				}
 				Console.WriteLine();
-				t.SourceReference.Write(Console.Out, prefix);
+				t.SourceReference.Write(Console.Out, prefix, seen_srcref);
 			} else {
 				Console.WriteLine(result);
 			}

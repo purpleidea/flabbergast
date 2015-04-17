@@ -38,6 +38,7 @@ namespace Flabbergast {
 				Console.Error.Write("| {0}", lookup.GetName(name_it).PadRight(col_width, ' '));
 			}
 			Console.Error.WriteLine("|");
+			var seen = new Dictionary<SourceReference, bool>();
 			var known_frames = new Dictionary<Frame, string>();
 			var frame_list = new List<Frame>();
 			var null_text = "| ".PadRight(col_width + 2, ' ');
@@ -58,15 +59,16 @@ namespace Flabbergast {
 			}
 			for (var it = 0; it < frame_list.Count; it++) {
 				Console.Error.WriteLine("Frame {0} defined:", it + 1);
-				frame_list[it].SourceReference.Write(Console.Error, "  ");
+				frame_list[it].SourceReference.Write(Console.Error, "  ", seen);
 			}
 			Console.Error.WriteLine("Lookup happened here:");
-			lookup.SourceReference.Write(Console.Error, "  ");
+			lookup.SourceReference.Write(Console.Error, "  ", seen);
 		}
 
 		public override void ReportOtherError(SourceReference reference, string message) {
 			Console.Error.WriteLine(message);
-			reference.Write(Console.Error, "  ");
+			var seen = new Dictionary<SourceReference, bool>();
+			reference.Write(Console.Error, "  ", seen);
 		}
 	}
 

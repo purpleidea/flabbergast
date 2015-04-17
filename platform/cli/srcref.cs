@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 
 namespace Flabbergast {
@@ -33,12 +34,25 @@ namespace Flabbergast {
 	 * Write the current stack trace.
 	 */
 
-		public virtual void Write(TextWriter writer, string prefix) {
+		public virtual void Write(TextWriter writer, string prefix, Dictionary<SourceReference, bool> seen) {
 			writer.Write(prefix);
 			writer.Write(Caller == null ? "└ " : "├ ");
 			WriteMessage(writer);
-			if (Caller != null)
-				Caller.Write(writer, prefix);
+			bool before = seen.ContainsKey(this);
+			if (before) {
+				writer.Write(" (previously mentioned)");
+			} else {
+				seen[this] = true;
+			}
+			writer.Write("\n");
+			if (Caller != null) {
+				if (before) {
+					writer.Write(prefix);
+					writer.Write("┊\n");
+				} else {
+					Caller.Write(writer, prefix, seen);
+				}
+			}
 		}
 
 		protected void WriteMessage(TextWriter writer) {
@@ -53,7 +67,6 @@ namespace Flabbergast {
 			writer.Write(EndColumn);
 			writer.Write(": ");
 			writer.Write(Message);
-			writer.Write("\n");
 		}
 	}
 
@@ -76,14 +89,26 @@ namespace Flabbergast {
 			Junction = junction;
 		}
 
-		public override void Write(TextWriter writer, string prefix) {
+		public override void Write(TextWriter writer, string prefix, Dictionary<SourceReference, bool> seen) {
 			writer.Write(prefix);
 			writer.Write(Caller == null ? "└─┬ " : "├─┬ ");
 			WriteMessage(writer);
-
-			Junction.Write(writer, prefix + (Caller == null ? "  " : "│ "));
-			if (Caller != null)
-				Caller.Write(writer, prefix);
+			bool before = seen.ContainsKey(this);
+			if (before) {
+				writer.Write(" (previously mentioned)");
+			} else {
+				seen[this] = true;
+			}
+			writer.Write("\n");
+			if (before) {
+				writer.Write(prefix);
+				writer.Write(Caller == null ? "  " : "┊ ");
+				writer.Write("┊\n");
+			} else {
+				Junction.Write(writer, prefix + (Caller == null ? "  " : "│ "), seen);
+				if (Caller != null)
+					Caller.Write(writer, prefix, seen);
+			}
 		}
 	}
 }
