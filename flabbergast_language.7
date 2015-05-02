@@ -607,14 +607,14 @@ Call template with arguments
 
 ∀ nameexpr : Γ ⊢ nameexpr ↓ v\*<nameexpr\*>,
 
-Γ ⊢ \fB(\fR fn \fB{ args : [\fR v\*<arg\*>, ... \fB ] \fR name \fB:\fR v\*<nameexpr\*>, ... }).value\fR ↓ t
+Γ ⊢ \fB(\fR fn \fB{ args : [\fR v\*<arg\*>, ... \fB ] \fR name \fB:\fR v\*<nameexpr\*>, ... \fB}).value\fR ↓ t
 .SEME
 
 .SEM Γ ⊢ fn:E\*<+\*> \fB(name:I \fB:\fR nameexpr:E\*<0\*> (\fB,\fR name:I \fB:\fR nameexpr:E\*<0\*> )*\fB)\fR
 
 ∀ nameexpr : Γ ⊢ nameexpr ↓ v\*<nameexpr\*>,
 
-Γ ⊢ \fB(\fR fn \fB{ args : [] \fR name \fB:\fR v\*<nameexpr\*>, ... }).value\fR ↓ t
+Γ ⊢ \fB(\fR fn \fB{ args : [] \fR name \fB:\fR v\*<nameexpr\*>, ... \fB}).value\fR ↓ t
 .SEME
 
 Unlike normal template evaluation, all expressions are captured in the current context, instead of the context of the instantiation.
@@ -625,7 +625,7 @@ Access external data
 
 .HP
 .B Definition:
-\fBFrom\fR ([\fBA\fR-\fBZa\fR-\fBz0\fR-\fB9.+-]+\fB:\fR[\fBA\fR-\fBZa\fR-\fBz0\fR-\fB9~!*'();@&=+$,/?%#[].+-\fR]+)
+\fBFrom\fR ([\fBA\fR-\fBZa\fR-\fBz0\fR-\fB9.+-\fR]+\fB:\fR[\fBA\fR-\fBZa\fR-\fBz0\fR-\fB9~!*'();@&=+$,/?%#[].+-\fR]+)
 
 This expression returns data external to the program, described by the URI provided. This expression access as library access, input of user data, and a foreign data interface. The exact semantics of the command are implementation-defined, however, the same URI must yield the same data during the execution of the program and the current context must be irrelevant to the import mechanism (i.e., the return value must not depend lookup expressions, however, it can return a template which does).
 
