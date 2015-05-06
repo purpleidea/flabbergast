@@ -1030,8 +1030,9 @@ language_tmpl : Template {
 				(For alternative_name : Name, acc_value : acc, rule_value : rule.alternatives
 				Select alternative_name : Null)
 			With acc : {}
+		rule_templates : rules {}
 		expanded_rules :
-			For rule_tmpl : rules {}, static_rule : static_rules, rule_name : Name
+			For rule_tmpl : rule_templates, static_rule : static_rules, rule_name : Name
 			Select rule_name : static_rule ?? (rule_tmpl {})
 		expanded_common : For common_tmpl : common {}, field_name : Name
 			Select field_name : common_tmpl {}
@@ -1932,7 +1933,7 @@ language_tmpl : Template {
 						}
 					}
 				}
-				informative_attribute_new : Template (rules {}).informative_attribute {
+				informative_attribute_new : Template rule_templates.informative_attribute {
 					alternatives : { new_tmpl_attributes : Null }
 					code_value : parameters.target
 				}
