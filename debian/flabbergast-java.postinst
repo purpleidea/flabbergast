@@ -5,7 +5,7 @@ case "$1" in
 		update-alternatives --quiet --install /usr/bin/flabbergast flabbergast /usr/bin/jflabbergast 50 \
 			--slave /usr/bin/flabbergast-repl flabbergast-repl /usr/bin/jflabbergast-repl \
 			--slave /usr/share/man/man1/flabbergast.1.gz flabbergast.1.gz /usr/share/man/man1/jflabbergast.1.gz \
-			--slave /usr/share/man/man1/flabbergast-repl.1.gz flabbergast.1.gz /usr/share/man/man1/jflabbergast-repl.1.gz
+			--slave /usr/share/man/man1/flabbergast-repl.1.gz flabbergast-repl.1.gz /usr/share/man/man1/jflabbergast-repl.1.gz
 		update-alternatives --quiet --auto flabbergast
 		;;
 	abort-upgrade|abort-remove|abort-deconfigure)
