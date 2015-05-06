@@ -30,7 +30,7 @@ do
 	then
 		for COMPILER in $(ls "${pkgdatadir}/compiler")
 		do
-			"$COMPILER" "$DIRECTORY" || EXIT_CODE="1"
+			"${pkgdatadir}/compiler/$COMPILER" "$DIRECTORY" || EXIT_CODE="1"
 		done
 		find "$DIRECTORY" -type d -a -empty -exec rmdir {} \;
 	elif [ -e "$DIRECTORY" ]
