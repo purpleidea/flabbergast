@@ -32,7 +32,7 @@ namespace Flabbergast {
 			if (original == null) {
 				throw new InvalidOperationException("Cannot append to null context.");
 			}
-			if (new_tail == null) {
+			if (new_tail == null || original == new_tail) {
 				return original;
 			}
 			int filter = 0;

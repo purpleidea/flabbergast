@@ -16,7 +16,7 @@ public class Context implements Iterable<Frame> {
 		if (original == null) {
 			throw new IllegalArgumentException("Cannot append to null context.");
 		}
-		if (new_tail == null) {
+		if (new_tail == null || original == new_tail) {
 			return original;
 		}
 		int filter = 0;
