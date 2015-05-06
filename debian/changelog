@@ -1,3 +1,14 @@
+flabbergast (0.1~ppa0) trusty; urgency=medium
+
+  * Fix run wrapper script generation so that /usr/bin/* works
+  * Change update script to look in correct compiler directory
+  * Fix bad update-alternatives line
+  * Fix bug causing recursive template expansion in compiler
+  * Provide useful error message when circular evaluation occurs
+  * Backport features from JVM to CLR
+
+ -- Andre Masella <andre@masella.name>  Wed, 06 May 2015 07:39:41 -0400
+
 flabbergast (0.0~ppa0) trusty; urgency=medium
 
   * First release, full of bugs and incomplete features
