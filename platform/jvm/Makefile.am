@@ -71,11 +71,11 @@ jvm-build-cache: Makefile
 
 jflabbergast: Makefile
 	@echo '#!/bin/sh' > $@
-	@echo 'exec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)/flabbergast-runtime-$(VERSION).jar:$(javadir)/flabbergast-compiler-$(VERSION).jar flabbergast.MainPrinter \"$$@\"' >> $@
+	@echo 'exec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)/flabbergast-runtime-$(VERSION).jar:$(javadir)/flabbergast-compiler-$(VERSION).jar flabbergast.MainPrinter "$$@"' >> $@
 
 jflabbergast-repl: Makefile
 	@echo '#!/bin/sh' > $@
-	@echo 'exec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)/flabbergast-runtime-$(VERSION).jar:$(javadir)/flabbergast-compiler-$(VERSION).jar flabbergast.MainREPL \"$$@\"' >> $@
+	@echo 'exec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)/flabbergast-runtime-$(VERSION).jar:$(javadir)/flabbergast-compiler-$(VERSION).jar flabbergast.MainREPL "$$@"' >> $@
 
 install-data-hook:
 	$(LN_S) -f flabbergast-runtime-$(VERSION).jar $(DESTDIR)$(datadir)/java/flabbergast-runtime.jar

@@ -32,15 +32,15 @@ $(cli_DATA) $(TEST): $(wildcard *.cs *.sln *.csproj)
 
 cli-build-cache: Makefile
 	@echo '#!/bin/sh' > $@
-	@echo 'exec env cli $(clidir)/flabbergast-build.exe \"$$@\"' >> $@
+	@echo 'exec env cli $(clidir)/flabbergast-build.exe "$$@"' >> $@
 
 nflabbergast: Makefile
 	@echo '#!/bin/sh' > $@
-	@echo 'exec env cli $(clidir)/flabbergast.exe \"$$@\"' >> $@
+	@echo 'exec env cli $(clidir)/flabbergast.exe "$$@"' >> $@
 
 nflabbergast-repl: Makefile
 	@echo '#!/bin/sh' > $@
-	@echo 'exec env cli $(clidir)/flabbergast-repl.exe \"$$@\"' >> $@
+	@echo 'exec env cli $(clidir)/flabbergast-repl.exe "$$@"' >> $@
 
 clean-local:
 	$(XBUILD) /verbosity:quiet /target:Clean flabbergast.sln
