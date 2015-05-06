@@ -2,7 +2,7 @@
 set -e
 case "$1" in
 	configure|triggered)
-		update-flabbergast
+		update-flabbergast || true
 		;;
 	abort-upgrade|abort-remove|abort-deconfigure)
 		;;
