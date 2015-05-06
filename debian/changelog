@@ -1,3 +1,10 @@
+flabbergast (0.2~ppa0) trusty; urgency=medium
+
+  * Use full path to compiler during update
+  * Don't block the package manager if update fails
+
+ -- Andre Masella <andre@masella.name>  Wed, 06 May 2015 08:58:16 -0400
+
 flabbergast (0.1~ppa0) trusty; urgency=medium
 
   * Fix run wrapper script generation so that /usr/bin/* works
