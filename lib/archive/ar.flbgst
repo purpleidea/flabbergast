@@ -46,12 +46,14 @@ file_tmpl : Template {
 	# If the file name is more than 16 characters, use the BSD `ar` encoding.
 	file_header : If file_name_length > 16 Then "#1/" & file_name_length Else file_name
 	header_suffix : If file_name_length > 16 Then file_name Else ""
+	header_perms :
+		pad_string(length : 6, input : uid) &
+		pad_string(length : 6, input : gid) &
+		pad_string(length : 8, input : user & group & other)
 	value :
 		pad_string(length : 16, input : file_header) &
 		pad_string(length : 12, input : mtime) &
-		pad_string(length : 6, input : uid) &
-		pad_string(length : 6, input : gid) &
-		pad_string(length : 8, input : user & group & other) &
+		header_perms &
 		pad_string(length : 10, input : Length contents + Length header_suffix) &
 		"`\n" & header_suffix & contents
 }
