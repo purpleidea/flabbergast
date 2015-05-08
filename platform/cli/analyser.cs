@@ -266,7 +266,7 @@ internal class OverrideNameInfo : RestrictableType {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
 	}
 	public override LoadableCache Load(Generator generator, LoadableValue source_reference, LoadableValue context) {
-		return new LoadableCache(generator.InitialOriginal, RealType, this, must_unbox);
+		return new LoadableCache(((FunctionGenerator) generator).InitialOriginal, RealType, this, must_unbox);
 	}
 }
 internal class JunkInfo : NameInfo {

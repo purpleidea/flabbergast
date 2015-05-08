@@ -90,14 +90,14 @@ public class CompilationUnit {
 		return generator.Initialiser;
 	}
 
-	private Generator CreateFunctionGenerator(AstNode node, string name, bool has_original, string root_prefix, Dictionary<string, bool> owner_externals) {
+	private FunctionGenerator CreateFunctionGenerator(AstNode node, string name, bool has_original, string root_prefix, Dictionary<string, bool> owner_externals) {
 		var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.NotPublic | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
-		return new Generator(node, this, type_builder, has_original, root_prefix, owner_externals);
+		return new FunctionGenerator(node, this, type_builder, has_original, root_prefix, owner_externals);
 	}
 
 	internal System.Type CreateRootGenerator(AstNode node, string name, Generator.Block block) {
 		var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
-		var generator = new Generator(node, this, type_builder, name);
+		var generator = new RootGenerator(node, this, type_builder, name);
 		block(generator);
 		generator.GenerateSwitchBlock(true);
 		return type_builder.CreateType();
@@ -107,7 +107,7 @@ public class CompilationUnit {
 /**
  * Helper to generate code for a particular function or override function.
  */
-internal class Generator {
+internal abstract class Generator {
 	/**
 	 * Generate code with no input.
 	 */
@@ -134,30 +134,6 @@ internal class Generator {
 	 */
 	public ILGenerator Builder { get; set; }
 	/**
-	 * A static method capable of creating a new instance of the class.
-	 */
-	public MethodBuilder Initialiser { get; private set; }
-	/**
-	 * The source reference of the caller of this function.
-	 */
-	public FieldValue InitialSourceReference { get; private set; }
-	/**
-	 * The lookup context provided by the caller.
-	 */
-	public FieldValue InitialContext { get; private set; }
-	/**
-	 * The “This” frame provided by the caller.
-	 */
-	public FieldValue InitialSelfFrame { get; private set; }
-	/**
-	 * The “Container” provided by from the caller.
-	 */
-	public FieldValue InitialContainerFrame { get; private set; }
-	/**
-	 * The original value to an override function, null otherwise.
-	 */
-	public FieldValue InitialOriginal { get; private set; }
-	/**
 	 * The current number of environment-induced bifurcation points;
 	 */
 	public int Paths { get; set; }
@@ -173,11 +149,11 @@ internal class Generator {
 	/**
 	 * A reference count to control mutual exclusion.
 	 */
-	private readonly FieldInfo interlock_field;
+	protected readonly FieldInfo interlock_field;
 	/**
 	 * The field containing the task master.
 	 */
-	private readonly FieldInfo task_master;
+	protected readonly FieldInfo task_master;
 	/**
 	 * The labels in the code where the function may enter into a particular
 	 * state. The index is the state number.
@@ -210,132 +186,22 @@ internal class Generator {
 		return type == typeof(double) || type == typeof(long);
 	}
 
-	internal Generator(AstNode node, CompilationUnit owner, TypeBuilder type_builder, string root_prefix) {
+	internal Generator(AstNode node, CompilationUnit owner, TypeBuilder type_builder, string root_prefix, Dictionary<string, bool> owner_externals) {
 		this.node = node;
 		Owner = owner;
 		TypeBuilder = type_builder;
 		Paths = 1;
 		this.root_prefix = root_prefix + "__";
 		SymbolDocument = Owner.Debuggable ? Owner.ModuleBuilder.DefineDocument(node.FileName, System.Diagnostics.SymbolStore.SymDocumentType.Text, CompilationUnit.Language, CompilationUnit.Vendor) : null;
-		owner_externals = new Dictionary<string, bool>();
-		StateField = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
-		interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
-		task_master = TypeBuilder.DefineField("task_master", typeof(TaskMaster), FieldAttributes.Private);
-		var ctor = type_builder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new[] { typeof(TaskMaster) });
-		var ctor_builder = ctor.GetILGenerator();
-		ctor_builder.Emit(OpCodes.Ldarg_0);
-		ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
-		ctor_builder.Emit(OpCodes.Ldarg_0);
-		ctor_builder.Emit(OpCodes.Ldarg_1);
-		ctor_builder.Emit(OpCodes.Stfld, task_master);
-		ctor_builder.Emit(OpCodes.Ldarg_0);
-		ctor_builder.Emit(OpCodes.Ldc_I4_0);
-		ctor_builder.Emit(OpCodes.Stfld, StateField);
-		ctor_builder.Emit(OpCodes.Ret);
-
-		// Label for load externals
-		DefineState();
-		// Label for main body
-		MarkState(DefineState());
-	}
-	internal Generator(AstNode node, CompilationUnit owner, TypeBuilder type_builder, bool has_original, string root_prefix, Dictionary<string, bool> owner_externals) {
-		this.node = node;
-		Owner = owner;
-		TypeBuilder = type_builder;
-		Paths = 1;
 		this.owner_externals = owner_externals;
-		this.root_prefix = root_prefix;
-		SymbolDocument = Owner.Debuggable ? Owner.ModuleBuilder.DefineDocument(node.FileName, System.Diagnostics.SymbolStore.SymDocumentType.Text, CompilationUnit.Language, CompilationUnit.Vendor) : null;
-		// Create fields for all information provided by the caller.
 		StateField = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
 		interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
 		task_master = TypeBuilder.DefineField("task_master", typeof(TaskMaster), FieldAttributes.Private);
-		InitialSourceReference = new FieldValue(TypeBuilder.DefineField("source_reference", typeof(SourceReference), FieldAttributes.Private));
-		InitialContext = new FieldValue(TypeBuilder.DefineField("context", typeof(Context), FieldAttributes.Private));
-		InitialSelfFrame = new FieldValue(TypeBuilder.DefineField("self", typeof(Frame), FieldAttributes.Private));
-		InitialContainerFrame = new FieldValue(TypeBuilder.DefineField("container", typeof(Frame), FieldAttributes.Private));
-		var construct_params = new[] { typeof(TaskMaster), typeof(SourceReference), typeof(Context), typeof(Frame), typeof(Frame) };
-		var initial_information = new[] { task_master, InitialSourceReference.Field, InitialContext.Field, InitialSelfFrame.Field, InitialContainerFrame.Field };
-
-		// Create a constructor the takes all the state information provided by the
-		// caller and stores it in appropriate fields.
-		var ctor = type_builder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, construct_params);
-		var ctor_builder = ctor.GetILGenerator();
-		ctor_builder.Emit(OpCodes.Ldarg_0);
-		ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
-		for(var it = 0; it < initial_information.Length; it++) {
-			ctor_builder.Emit(OpCodes.Ldarg_0);
-			ctor_builder.Emit(OpCodes.Ldarg, it + 1);
-			ctor_builder.Emit(OpCodes.Stfld, initial_information[it]);
-		}
-		ctor_builder.Emit(OpCodes.Ldarg_0);
-		ctor_builder.Emit(OpCodes.Ldc_I4_0);
-		ctor_builder.Emit(OpCodes.Stfld, StateField);
-		ctor_builder.Emit(OpCodes.Ret);
-
-		System.Type[] init_params;
-		if (has_original) {
-			init_params = new System.Type[construct_params.Length + 1];
-			for (var it = 0; it < construct_params.Length; it++) {
-				init_params[it] = construct_params[it];
-			}
-			init_params[init_params.Length - 1] = typeof(Computation);
-		} else {
-			init_params = construct_params;
-		}
-		// Create a static method that wraps the constructor. This is needed to create a delegate.
-		Initialiser = type_builder.DefineMethod("Init", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, typeof(Computation), init_params);
-		var init_builder = Initialiser.GetILGenerator();
-		if (has_original) {
-			// If the thing we are overriding is null, create an error and give up.
-			var has_instance = init_builder.DefineLabel();
-			init_builder.Emit(OpCodes.Ldarg, init_params.Length - 1);
-			init_builder.Emit(OpCodes.Brtrue, has_instance);
-			init_builder.Emit(OpCodes.Ldarg_0);
-			init_builder.Emit(OpCodes.Ldarg_1);
-			init_builder.Emit(OpCodes.Ldstr, "Cannot perform override. No value in source tuple to override!");
-			init_builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new[] { typeof(SourceReference), typeof(string) }));
-			init_builder.Emit(OpCodes.Ldnull);
-			init_builder.Emit(OpCodes.Ret);
-			init_builder.MarkLabel(has_instance);
-		}
-		for (var it = 0; it < initial_information.Length; it++) {
-			init_builder.Emit(OpCodes.Ldarg, it);
-		}
-		init_builder.Emit(OpCodes.Newobj, ctor);
-
-		// If overriding, attach the overriding function to the original computation.
-		FieldInfo original_computation = null;
-		if (has_original) {
-			InitialOriginal = new FieldValue(TypeBuilder.DefineField("original", typeof(object), FieldAttributes.Private));
-			original_computation = TypeBuilder.DefineField("original_computation", typeof(Computation), FieldAttributes.Private);
-			init_builder.Emit(OpCodes.Dup);
-			init_builder.Emit(OpCodes.Ldarg, initial_information.Length);
-			init_builder.Emit(OpCodes.Stfld, original_computation);
-		}
-
-		init_builder.Emit(OpCodes.Ret);
-
 		// Label for load externals
 		DefineState();
 		// Label for main body
 		MarkState(DefineState());
-		if (has_original) {
-			var state = DefineState();
-			SetState(state);
-			LoadTaskMaster();
-			Builder.Emit(OpCodes.Ldarg_0);
-			Builder.Emit(OpCodes.Ldfld, original_computation);
-			Builder.Emit(OpCodes.Dup);
-			GenerateConsumeResult(InitialOriginal, false);
-			Builder.Emit(OpCodes.Callvirt, typeof(Computation).GetMethod("Notify", new[] { typeof(ConsumeResult) }));
-			Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new[] { typeof(Computation) }));
-			Builder.Emit(OpCodes.Ldc_I4_0);
-			Builder.Emit(OpCodes.Ret);
-			MarkState(state);
-		}
 	}
-
 	/**
 	 * Create a new source reference based on an existing one, updated to reflect
 	 * entry into a new AST node.
@@ -909,6 +775,131 @@ internal class Generator {
 			result = ToStringishHelper(source);
 		}
 		return result;
+	}
+}
+internal class FunctionGenerator : Generator {
+	/**
+	 * A static method capable of creating a new instance of the class.
+	 */
+	public MethodBuilder Initialiser { get; private set; }
+	/**
+	 * The source reference of the caller of this function.
+	 */
+	public FieldValue InitialSourceReference { get; private set; }
+	/**
+	 * The lookup context provided by the caller.
+	 */
+	public FieldValue InitialContext { get; private set; }
+	/**
+	 * The “This” frame provided by the caller.
+	 */
+	public FieldValue InitialSelfFrame { get; private set; }
+	/**
+	 * The “Container” provided by from the caller.
+	 */
+	public FieldValue InitialContainerFrame { get; private set; }
+	/**
+	 * The original value to an override function, null otherwise.
+	 */
+	public FieldValue InitialOriginal { get; private set; }
+
+	internal FunctionGenerator(AstNode node, CompilationUnit owner, TypeBuilder type_builder, bool has_original, string root_prefix, Dictionary<string, bool> owner_externals) : base(node, owner, type_builder, root_prefix, owner_externals) {
+		// Create fields for all information provided by the caller.
+		InitialSourceReference = new FieldValue(TypeBuilder.DefineField("source_reference", typeof(SourceReference), FieldAttributes.Private));
+		InitialContext = new FieldValue(TypeBuilder.DefineField("context", typeof(Context), FieldAttributes.Private));
+		InitialSelfFrame = new FieldValue(TypeBuilder.DefineField("self", typeof(Frame), FieldAttributes.Private));
+		InitialContainerFrame = new FieldValue(TypeBuilder.DefineField("container", typeof(Frame), FieldAttributes.Private));
+		var construct_params = new[] { typeof(TaskMaster), typeof(SourceReference), typeof(Context), typeof(Frame), typeof(Frame) };
+		var initial_information = new[] { task_master, InitialSourceReference.Field, InitialContext.Field, InitialSelfFrame.Field, InitialContainerFrame.Field };
+
+		// Create a constructor the takes all the state information provided by the
+		// caller and stores it in appropriate fields.
+		var ctor = type_builder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, construct_params);
+		var ctor_builder = ctor.GetILGenerator();
+		ctor_builder.Emit(OpCodes.Ldarg_0);
+		ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
+		for(var it = 0; it < initial_information.Length; it++) {
+			ctor_builder.Emit(OpCodes.Ldarg_0);
+			ctor_builder.Emit(OpCodes.Ldarg, it + 1);
+			ctor_builder.Emit(OpCodes.Stfld, initial_information[it]);
+		}
+		ctor_builder.Emit(OpCodes.Ldarg_0);
+		ctor_builder.Emit(OpCodes.Ldc_I4_0);
+		ctor_builder.Emit(OpCodes.Stfld, StateField);
+		ctor_builder.Emit(OpCodes.Ret);
+
+		System.Type[] init_params;
+		if (has_original) {
+			init_params = new System.Type[construct_params.Length + 1];
+			for (var it = 0; it < construct_params.Length; it++) {
+				init_params[it] = construct_params[it];
+			}
+			init_params[init_params.Length - 1] = typeof(Computation);
+		} else {
+			init_params = construct_params;
+		}
+		// Create a static method that wraps the constructor. This is needed to create a delegate.
+		Initialiser = type_builder.DefineMethod("Init", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, typeof(Computation), init_params);
+		var init_builder = Initialiser.GetILGenerator();
+		if (has_original) {
+			// If the thing we are overriding is null, create an error and give up.
+			var has_instance = init_builder.DefineLabel();
+			init_builder.Emit(OpCodes.Ldarg, init_params.Length - 1);
+			init_builder.Emit(OpCodes.Brtrue, has_instance);
+			init_builder.Emit(OpCodes.Ldarg_0);
+			init_builder.Emit(OpCodes.Ldarg_1);
+			init_builder.Emit(OpCodes.Ldstr, "Cannot perform override. No value in source tuple to override!");
+			init_builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new[] { typeof(SourceReference), typeof(string) }));
+			init_builder.Emit(OpCodes.Ldnull);
+			init_builder.Emit(OpCodes.Ret);
+			init_builder.MarkLabel(has_instance);
+		}
+		for (var it = 0; it < initial_information.Length; it++) {
+			init_builder.Emit(OpCodes.Ldarg, it);
+		}
+		init_builder.Emit(OpCodes.Newobj, ctor);
+
+		// If overriding, attach the overriding function to the original computation.
+		FieldInfo original_computation = null;
+		if (has_original) {
+			InitialOriginal = new FieldValue(TypeBuilder.DefineField("original", typeof(object), FieldAttributes.Private));
+			original_computation = TypeBuilder.DefineField("original_computation", typeof(Computation), FieldAttributes.Private);
+			init_builder.Emit(OpCodes.Dup);
+			init_builder.Emit(OpCodes.Ldarg, initial_information.Length);
+			init_builder.Emit(OpCodes.Stfld, original_computation);
+		}
+
+		init_builder.Emit(OpCodes.Ret);
+
+		if (has_original) {
+			var state = DefineState();
+			SetState(state);
+			LoadTaskMaster();
+			Builder.Emit(OpCodes.Ldarg_0);
+			Builder.Emit(OpCodes.Ldfld, original_computation);
+			Builder.Emit(OpCodes.Dup);
+			GenerateConsumeResult(InitialOriginal, false);
+			Builder.Emit(OpCodes.Callvirt, typeof(Computation).GetMethod("Notify", new[] { typeof(ConsumeResult) }));
+			Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new[] { typeof(Computation) }));
+			Builder.Emit(OpCodes.Ldc_I4_0);
+			Builder.Emit(OpCodes.Ret);
+			MarkState(state);
+		}
+	}
+}
+internal class RootGenerator : Generator {
+	internal RootGenerator(AstNode node, CompilationUnit owner, TypeBuilder type_builder, string root_prefix) : base(node, owner, type_builder, root_prefix, new Dictionary<string, bool>()) {
+		var ctor = type_builder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new[] { typeof(TaskMaster) });
+		var ctor_builder = ctor.GetILGenerator();
+		ctor_builder.Emit(OpCodes.Ldarg_0);
+		ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
+		ctor_builder.Emit(OpCodes.Ldarg_0);
+		ctor_builder.Emit(OpCodes.Ldarg_1);
+		ctor_builder.Emit(OpCodes.Stfld, task_master);
+		ctor_builder.Emit(OpCodes.Ldarg_0);
+		ctor_builder.Emit(OpCodes.Ldc_I4_0);
+		ctor_builder.Emit(OpCodes.Stfld, StateField);
+		ctor_builder.Emit(OpCodes.Ret);
 	}
 }
 internal class LookupCache {

@@ -59,8 +59,8 @@ public abstract class CompilationUnit<T> {
 		if (functions.containsKey(name)) {
 			return functions.get(name);
 		}
-		Generator generator = createFunctionGenerator(node, name, false,
-				root_prefix, owner_externals);
+		FunctionGenerator generator = createFunctionGenerator(node, name,
+				false, root_prefix, owner_externals);
 		block.invoke(generator, generator.getInitialContainerFrame(),
 				generator.getInitialContext(), generator.getInitialSelfFrame(),
 				generator.getInitialSourceReference());
@@ -71,15 +71,15 @@ public abstract class CompilationUnit<T> {
 		return initialiser;
 	}
 
-	private Generator createFunctionGenerator(AstNode node, String name,
-			boolean has_original, String root_prefix,
+	private FunctionGenerator createFunctionGenerator(AstNode node,
+			String name, boolean has_original, String root_prefix,
 			Set<String> owner_externals) throws NoSuchMethodException,
 			SecurityException {
 		ClassVisitor type_builder = defineClass(Opcodes.ACC_FINAL, name,
 				Computation.class);
 		type_builder.visitSource(node.getFileName(), null);
-		return new Generator(node, this, type_builder, has_original, name,
-				root_prefix, owner_externals);
+		return new FunctionGenerator(node, this, type_builder, has_original,
+				name, root_prefix, owner_externals);
 	}
 
 	DelegateValue createFunctionOverride(AstNode node, String syntax_id,
@@ -90,7 +90,7 @@ public abstract class CompilationUnit<T> {
 		if (functions.containsKey(name)) {
 			return functions.get(name);
 		}
-		Generator generator = createFunctionGenerator(node, name, true,
+		FunctionGenerator generator = createFunctionGenerator(node, name, true,
 				root_prefix, owner_externals);
 		block.invoke(generator, generator.getInitialContainerFrame(),
 				generator.getInitialContext(), generator.getInitialOriginal(),
@@ -108,7 +108,8 @@ public abstract class CompilationUnit<T> {
 		ClassVisitor type_builder = defineClass(Opcodes.ACC_FINAL
 				| Opcodes.ACC_PUBLIC, name, Computation.class);
 		type_builder.visitSource(node.getFileName(), null);
-		Generator generator = new Generator(node, this, type_builder, name);
+		RootGenerator generator = new RootGenerator(node, this, type_builder,
+				name);
 		block.invoke(generator);
 		generator.generateSwitchBlock(true);
 		return doMagic(name);

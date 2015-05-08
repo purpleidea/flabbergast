@@ -35,8 +35,9 @@ class OverrideNameInfo extends RestrictableType {
 	@Override
 	public LoadableCache load(Generator generator,
 			LoadableValue source_reference, LoadableValue context) {
-		return new LoadableCache(generator.getInitialOriginal(), real_type,
-				this, must_unbox);
+		return new LoadableCache(
+				((FunctionGenerator) generator).getInitialOriginal(),
+				real_type, this, must_unbox);
 	}
 
 	@Override
