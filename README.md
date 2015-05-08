@@ -63,5 +63,17 @@ The Flabbergast language would not be possible without the help of [Kyle](https:
 
 The logo is the worst symbolic representation of contextual lookup, previously called inside-out lookup.
 
+At every point, I made design decisions that were what I thought are the “best”. Some of them are going to seem wrong to you; some of them are going to seem wrong to me. I will happily tell you the reason or goal for a decision, but I will never defend it. Experience always changes our views on things, but one cannot regret decisions where one's past self failed to be clairvoyant–that is unrealistic. Even if a feature achieves its goal, you might disagree with the goal. My goals, in no particular order, are:
+
+- Do not be truthy.
+- Use words for complicated or unusual operations in preference to symbols. The symbols we have so far are mathematics and logical operators, string join, null coalescence, and the attribute definitions. I slightly regret attribute definitions, but they are so common, using words would be very cumbersome.
+- Fail in the most helpful way possible (i.e., fail as early and explicitly as possible).
+- Avoid magic names. Current, there are `args`, `value`, and the ones generated automatically in lists. I am strongly opposed to users knowing about the one in lists; in future, they might be randomised on startup.
+- Avoid strings as messengers for structured data. This is part of the reason for lacking an evaluation operator.
+- Do not dictate policy to the user. For instance, the predecessor to Flabbergast had a frame merge operator and it had control over how conflicting attributes were merged. The fricassée expressions give that control to the user. This is also why schema validation is unlikely; it will always be a subset of what the user really needs. This serves the “do not be truthy” goal.
+- Efficiency is not as important as creating comprehensible, uniform code. Flabbergast programs should never be on a serving path, so having them be very efficient is not critical. In making decisions, doing something that uses the existing nature of the language is preferable to doing it efficiently. Efficiency is something that the compiler can worry about, not something use user should.
+- Don't circumvent lookup. The lookup semantics are complicated, but powerful. Use them whenever possible, and avoid creating new semantics. Once the user has learnt them, they should never have to learn new ones, or make the mode switch to new lookup semantics.
+- Don't circumvent overriding. Again, the override and definition semantics are complicated. A user should not have to switch through multiple modes of override semantics.
+
 ## Alternatives
 You may be interested in [Jsonnet](http://google.github.io/jsonnet/doc/), which is inspired by the same forces, but takes design decisions in very different ways.
