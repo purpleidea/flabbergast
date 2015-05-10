@@ -66,7 +66,7 @@ testing.manifest: Makefile
 
 jvm-build-cache: Makefile
 	@echo '#!/bin/sh' > $@
-	@echo 'cd \"$$1\"' >> $@
+	@echo 'cd "$$1"' >> $@
 	@echo 'exec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)/flabbergast-runtime-$(VERSION).jar:$(javadir)/flabbergast-compiler-$(VERSION).jar flabbergast.MainBuildCache' >> $@
 
 jflabbergast: Makefile
