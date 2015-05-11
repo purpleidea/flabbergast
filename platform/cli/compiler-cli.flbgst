@@ -2333,7 +2333,7 @@ compiler : compiler_lib.language_tmpl {
 			super_class_extra : "\tinternal abstract Type TypeId { get; }\n\tinternal abstract Type CastableFrom { get; }\n\tinternal abstract bool Unbox { get; }\n"
 			type_element +: {
 				castable_from_type_bits : For t : castable_from Reduce acc & " | " & t.union_type With acc : type.union_type
-				class_extra : "\tinternal override Type TypeId { get { return \(type.union_type); } }\n\tinternal override Type CastableFrom { get { return \(castable_from_type_bits); }}\n\tinternal override bool Unbox { get { return \(type.unbox); }}\n"
+				class_extra : "\tinternal override Type TypeId { get { return \(type.union_type); } }\n\tinternal override Type CastableFrom { get { return \(castable_from_type_bits); }}\n\tinternal override bool Unbox { get { return \(If type.unbox Then "true" Else "false"); }}\n"
 			}
 		}
 		expression +: {
