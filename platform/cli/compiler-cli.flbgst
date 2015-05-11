@@ -1886,7 +1886,7 @@ codegen : compiler_lib.codegen_tmpl {
 
 			raw_material +: {
 				value :
-					"\(field).Select(\(Id)_item => new System.Tuple<RestrictableType, Generator.ParameterisedBlock<Generator.ParameterisedBlock<LoadableValue>>(\(Id)_item.BoundInfo, \(Id)_block => \(Id)_item.Generate(\(argument_list)(\(Id)_block))))"
+					"\(field).Select(\(Id)_item => new System.Tuple<RestrictableType, Generator.ParameterisedBlock<Generator.ParameterisedBlock<LoadableValue>>>(\(Id)_item.BoundInfo, \(Id)_block => \(Id)_item.Generate(\(argument_list)(\(Id)_block))))"
 			}
 		}
 		special_from_expression +: {
