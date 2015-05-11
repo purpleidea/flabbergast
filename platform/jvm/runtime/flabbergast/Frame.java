@@ -37,7 +37,7 @@ public class Frame implements Iterable<String> {
 		this.task_master = task_master;
 		this.source_reference = source_ref;
 		this.context = Context.prepend(this, context);
-		this.container = container;
+		this.container = container == null ? this : container;
 		this.id = TaskMaster.ordinalName(id);
 	}
 

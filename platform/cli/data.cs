@@ -221,7 +221,7 @@ namespace Flabbergast {
 			this.task_master = task_master;
 			SourceReference = source_ref;
 			Context = Context.Prepend(this, context);
-			Container = container;
+			Container = container ?? this;
 			Id = TaskMaster.OrdinalName(id);
 		}
 
