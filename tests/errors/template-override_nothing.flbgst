@@ -1,0 +1,5 @@
+x : Template {  }
+y : Template x { a +: { k : 3 } }
+yy : y {}
+aa : yy.a {}
+value : aa.k
