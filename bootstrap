@@ -6,10 +6,10 @@ FLABBERGAST_PATH = lib
 all: platform/jvm/compiler/flabbergast/compiler-jvm.java platform/cli/compiler-cli.cs
 
 platform/jvm/compiler/flabbergast/compiler-jvm.java: platform/jvm/compiler-jvm.flbgst lib/compiler.flbgst
-	flabbergast -o $@ $(firstword $^)
+	FLABBERGAST_PATH=$(FLABBERGAST_PATH) flabbergast -o $@ $(firstword $^)
 
 platform/cli/compiler-cli.cs: platform/cli/compiler-cli.flbgst lib/compiler.flbgst
-	flabbergast -o $@ $(firstword $^)
+	FLABBERGAST_PATH=$(FLABBERGAST_PATH) flabbergast -o $@ $(firstword $^)
 
 almost-clean:
 	git clean -f -x -e platform/cli/compiler-cli.cs -e platform/jvm/compiler/flabbergast/compiler-jvm.java
