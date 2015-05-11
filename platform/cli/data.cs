@@ -298,6 +298,13 @@ namespace Flabbergast {
 			return false;
 		}
 
+		public Stringish RenderTrace(Stringish prefix) {
+			var writer = new System.IO.StringWriter();
+			var seen = new Dictionary<SourceReference, bool>();
+			SourceReference.Write(writer, prefix.ToString(), seen);
+			return new SimpleStringish(writer.ToString());
+		}
+
 		public override bool TryGetMember(GetMemberBinder binder, out Object result) {
 			var name = binder.Name;
 			if (binder.IgnoreCase && char.IsUpper(name, 0)) {

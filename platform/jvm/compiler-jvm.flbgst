@@ -1039,6 +1039,10 @@ kws : compiler_lib.kws_tmpl {
 		opcode : "Frame.class.getMethod(\"has\", Stringish.class)"
 		emit_method : Null
 	}
+	frame_trace +: {
+		opcode : "Frame.class.getMethod(\"renderTrace\", Stringish.class)"
+		emit_method : Null
+	}
 	list_null +: {
 		extra_indent : ""
 		storage_name : "LoadableValue.NULL_LIST"

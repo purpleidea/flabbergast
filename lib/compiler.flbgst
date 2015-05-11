@@ -552,6 +552,15 @@ kws_tmpl : Template {
 		]
 		return_type : known_types.bool
 	}
+	frame_trace : Template base_tmpl {
+		source ?:
+		prefix ?:
+		arguments : [
+			{ value : source  type : known_types.frame },
+			{ value : prefix  type : known_types.str }
+		]
+		return_type : known_types.str
+	}
 	list_null : Template codegen.gen_tmpl {}
 	list_prepend : Template base_tmpl {
 		frame ?:

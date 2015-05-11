@@ -1,7 +1,9 @@
 package flabbergast;
 
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -113,6 +115,17 @@ public class Frame implements Iterable<String> {
 	@Override
 	public Iterator<String> iterator() {
 		return attributes.keySet().iterator();
+	}
+
+	public Stringish renderTrace(Stringish prefix) {
+		StringWriter writer = new StringWriter();
+		HashSet<SourceReference> seen = new HashSet<SourceReference>();
+		try {
+			source_reference.write(writer, prefix.toString(), seen);
+		} catch (IOException e) {
+			// This should be impossible with StringWriter.
+		}
+		return new SimpleStringish(writer.toString());
 	}
 
 	public void set(final String name, Object value) {
