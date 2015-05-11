@@ -118,7 +118,9 @@ public class ConsoleTaskMaster extends TaskMaster {
 		dirty = true;
 		System.err.println(message);
 		try {
-			reference.write(new PrintWriter(System.err), "  ");
+			PrintWriter output = new PrintWriter(System.err);
+			reference.write(output, "  ");
+			output.flush();
 		} catch (IOException e) {
 		}
 
