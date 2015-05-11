@@ -72,6 +72,11 @@ namespace Flabbergast {
 
 		public static ComputeValue PerformOverride(string filename, int start_line, int start_column, int end_line,
 			int end_column, ComputeOverride wrapper, ComputeValue original) {
+			if (original == null) {
+				return (task_master, reference, context, self, container) =>
+					new FailureComputation(task_master, new SourceReference("used by override", filename,
+						start_line, start_column, end_line, end_column, reference), "override of non-existant attribute");
+			}
 			return
 				(task_master, reference, context, self, container) =>
 					wrapper(task_master, reference, context, self, container,
@@ -92,6 +97,22 @@ namespace Flabbergast {
 				consumer(result);
 				consumer = null;
 			}
+		}
+	}
+
+	public class FailureComputation : Computation {
+		private TaskMaster task_master;
+		private string message;
+		private SourceReference source_reference;
+		public FailureComputation(TaskMaster task_master, SourceReference reference, string message) {
+			this.task_master = task_master;
+			this.source_reference = reference;
+			this.message = message;
+		}
+
+		protected override bool Run() {
+			task_master.ReportOtherError(source_reference, message);
+			return false;
 		}
 	}
 
