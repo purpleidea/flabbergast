@@ -1027,6 +1027,10 @@ kws : compiler_lib.kws_tmpl {
 		opcode : "Frame.class.getMethod(\"getId\")"
 		emit_method : Null
 	}
+	frame_container +: {
+		opcode : "Frame.class.getMethod(\"getContainer\")"
+		emit_method : Null
+	}
 	frame_context +: {
 		opcode : "Frame.class.getMethod(\"getContext\")"
 		emit_method : Null

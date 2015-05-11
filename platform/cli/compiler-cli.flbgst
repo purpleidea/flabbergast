@@ -944,6 +944,12 @@ kws : compiler_lib.kws_tmpl {
 			extra_emit : ", typeof(Frame).GetMethod(\"get_Context\")"
 		}
 	}
+	frame_container +: {
+		opcode : "Call"
+		gen_gen +: {
+			extra_emit : ", typeof(Frame).GetMethod(\"get_Container\")"
+		}
+	}
 	frame_has +: {
 		opcode : "Call"
 		gen_gen +: {
