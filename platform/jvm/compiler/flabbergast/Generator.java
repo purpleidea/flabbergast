@@ -1132,7 +1132,7 @@ abstract class Generator {
 			field.load(builder);
 			builder.visitJumpInsn(Opcodes.IFNONNULL, end);
 			emitTypeError(source_reference,
-					"Cannot convert type {0} to String.", source);
+					"Cannot convert type %s to String.", source);
 			builder.visitLabel(end);
 			result = field;
 		} else {
@@ -1151,7 +1151,7 @@ abstract class Generator {
 			return source;
 		} else {
 			throw new IllegalArgumentException(
-					String.format("Cannot convert {0} to Stringish.",
+					String.format("Cannot convert %s to Stringish.",
 							source.getBackingType()));
 		}
 	}
