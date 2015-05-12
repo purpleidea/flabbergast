@@ -3386,10 +3386,15 @@ language_tmpl : Template {
 								type : $attribute
 								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
-									of : parser.other {
-										type : $attribute
-										field : Null
-										alternate : $instantiate_tmpl_attributes
+									of : parser.sequence {
+										of : [
+											pure_space {},
+											parser.other {
+												type : $attribute
+												field : Null
+												alternate : $instantiate_tmpl_attributes
+											}
+										]
 									}
 								}
 							},
