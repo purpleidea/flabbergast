@@ -66,12 +66,12 @@ Strings support the usual C-style escape sequences, and Unicode escape sequences
     d : "a" & "b" # Yields "ab"
     e : "a" < "b" # Yields True
 
-The embedded expression must have converted an integer to a string; this is done using the `To` operator, which coerces from one type to another, though it happens implicitly for embedded expressions and string concatenation. There is also an `Is` operator that checks the type of its operand. Finally, there is an `As` operator, which checks the type of its operand, and causes an error if it is not correct.
+The embedded expression must have converted an integer to a string; this is done using the `To` operator, which coerces from one type to another, though it happens implicitly for embedded expressions and string concatenation. There is also an `Is` operator that checks the type of its operand. Finally, there is an `Enforce` operator, which checks the type of its operand, and causes an error if it is not correct.
 
     a : 5 To Str # Yields "5"
     b : 3.0 Is Int # Yields False
-    c : 3 As Int # Yields 3
-    d : "Hi" As Int # Error
+    c : 3 Enforce Int # Yields 3
+    d : "Hi" Enforce Int # Error
     e : 3.5 To Int # Yields 3
 
 On to frames, the core data structure of the language. Frames are arranged in a hierarchy: one frame nested inside another, this is called _containment_. Attributes in containing frames are available to contained frames:
@@ -297,10 +297,10 @@ The `To` operator can be used to coerce values to other types. Integral and floa
 
 The `Is` operator checks whether a value is a particular type and returns the result as a Boolean value.
 
-The `As` operator ensures that a value is of a particular type, if not, an error occurs.
+The `Enforce` operator ensures that a value is of a particular type, if not, an error occurs.
 
-    v : "3" As Str # "3"
-    w : 3 As Str # Error
+    v : "3" Enforce Str # "3"
+    w : 3 Enforce Str # Error
     x : 3 To Str # "3"
     y : 4 Is Int # True
     z : 4.5 Is Int # False
@@ -557,7 +557,7 @@ The most important feature of Flabbergast is overriding. When starting out with 
 ### Interfaces
 In object-oriented languages, there is typically some convention surround how to tell if an object is consumable in a particular situation. Statically-typed object-oriented languages typically have “interfaces”, in the Java or C# sense. These are functions of the type system: since each expression needs a type and multiple inheritance is not permitted, an interface provides a type that any object can fulfill outside of the inheritance hierarchy. Dynamically-typed object-oriented languages, particularly Python, JavaScript, and Ruby, eschew this and proudly extol the benefits of “duck” typing: that is, simply call a method and expect it to work.
 
-Flabbergast is necessarily dynamically-typed by virtually of being dynamically-scoped. Therefore, interfaces are definitely of the duck-typing variety. Since methods aren't present, the interface is still simpler: it is just the attributes that a frame is expected to have and, possibly, expected types for those attributes. Using the `As` operator is a polite way of insisting that certain types are provided from an interface.
+Flabbergast is necessarily dynamically-typed by virtually of being dynamically-scoped. Therefore, interfaces are definitely of the duck-typing variety. Since methods aren't present, the interface is still simpler: it is just the attributes that a frame is expected to have and, possibly, expected types for those attributes. Using the `Enforce` operator is a polite way of insisting that certain types are provided from an interface.
 
 Often, the caller has some driver to convert code. For instance, this is a completely reasonable block of Python:
 

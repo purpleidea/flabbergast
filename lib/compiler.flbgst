@@ -310,7 +310,7 @@ ensure_type_tmpl : Template {
 		# See `propagate.extra_types`.
 		extra_types : []
 	}
-	# Restrict the type based on an AST node containing a type literal (e.g., `As` operator).
+	# Restrict the type based on an AST node containing a type literal (e.g., `Enforce` operator).
 	dynamic : Template {
 		# The field containing the type AST node.
 		field ?:
@@ -3148,7 +3148,7 @@ language_tmpl : Template {
 				enforce : Template type_operator {
 					pretty_name : "type enforcement"
 					level : 11
-					operator : "As"
+					operator : "Enforce"
 					ensure_type_is : ensure_type.dynamic {
 						field : $right
 						ensure_type_of : ensure_type.propagate { fields : [ $left ] }
