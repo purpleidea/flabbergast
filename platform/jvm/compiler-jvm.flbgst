@@ -1935,7 +1935,7 @@ codegen : compiler_lib.codegen_tmpl {
 		extra_indent : in.extra_indent & "\t"
 		storage_name : in.storage_name
 		parent_context : Lookup parameters.context In Container
-		parent_lookup_cache : Lookup lookup_cache In Container
+		parent_lookup_cache : If inherit Then Lookup lookup_cache In Container Else "null"
 		parameters : {
 			context : codegen.gen_tmpl {
 				extra_indent : ""

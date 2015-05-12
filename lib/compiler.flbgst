@@ -887,6 +887,7 @@ codegen_tmpl : Template {
 	prepare_lookup_cache : Template gen_tmpl {
 		in ?:
 		name ?:
+		inherit : True
 		specials : no_specials {}
 		lookup_special_tmpl : Template {}
 		specials_from_definitions : Template lookup_special_tmpl {
