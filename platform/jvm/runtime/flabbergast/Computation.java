@@ -21,15 +21,17 @@ public abstract class Computation {
 			public Computation invoke(TaskMaster task_master,
 					SourceReference reference, Context context, Frame self,
 					Frame container) {
-				SourceReference inner_reference = new SourceReference("used by override",
-					filename, start_line, start_column, end_line, end_column, reference);
+				SourceReference inner_reference = new SourceReference(
+						"used by override", filename, start_line, start_column,
+						end_line, end_column, reference);
 				if (original == null) {
-					return new FailureComputation(task_master, inner_reference, "override of non-existant attribute");
+					return new FailureComputation(task_master, inner_reference,
+							"override of non-existant attribute");
 				}
 
 				return wrapper.invoke(task_master, reference, context, self,
-						container, original.invoke(task_master, inner_reference,
-								context, self, container));
+						container, original.invoke(task_master,
+								inner_reference, context, self, container));
 			}
 
 		};

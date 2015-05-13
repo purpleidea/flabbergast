@@ -7,10 +7,13 @@ import java.text.Collator;
 import java.util.Iterator;
 import java.util.Stack;
 
-public abstract class Stringish implements Comparable<Stringish>,
-		Iterable<String>, RamblingIterator.GetNext<String> {
-	public static Stringish[] BOOLEANS = new Stringish[] {
-			new SimpleStringish("False"), new SimpleStringish("True") };
+public abstract class Stringish
+		implements
+			Comparable<Stringish>,
+			Iterable<String>,
+			RamblingIterator.GetNext<String> {
+	public static Stringish[] BOOLEANS = new Stringish[]{
+			new SimpleStringish("False"), new SimpleStringish("True")};
 
 	public static Stringish fromObject(Object o) {
 		if (Stringish.class.isAssignableFrom(o.getClass())) {

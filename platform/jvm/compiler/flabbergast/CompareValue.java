@@ -28,19 +28,18 @@ class CompareValue extends LoadableValue {
 		} else {
 			left.load(generator);
 			right.load(generator);
-			generator
-					.visitMethodInsn(
-							Generator.isNumeric(left.getBackingType()) ? Opcodes.INVOKESTATIC
-									: Opcodes.INVOKEVIRTUAL,
-							getInternalName(Generator.getBoxedType(left
-									.getBackingType())),
-							Generator.isNumeric(left.getBackingType()) ? "compare"
-									: "compareTo",
-							Generator.makeSignature(
-									int.class,
-									Generator.isNumeric(left.getBackingType()) ? left
-											.getBackingType() : null, right
-											.getBackingType()));
+			generator.visitMethodInsn(
+					Generator.isNumeric(left.getBackingType())
+							? Opcodes.INVOKESTATIC
+							: Opcodes.INVOKEVIRTUAL, getInternalName(Generator
+							.getBoxedType(left.getBackingType())), Generator
+							.isNumeric(left.getBackingType())
+							? "compare"
+							: "compareTo", Generator.makeSignature(
+							int.class,
+							Generator.isNumeric(left.getBackingType()) ? left
+									.getBackingType() : null, right
+									.getBackingType()));
 			generator.visitInsn(Opcodes.ICONST_1);
 			generator.visitMethodInsn(Opcodes.INVOKESTATIC,
 					getInternalName(Math.class), "min",

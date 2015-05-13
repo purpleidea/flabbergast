@@ -23,7 +23,8 @@ class RevCons<T> {
 	}
 
 	List<T> toList() {
-		List<T> array = new ArrayList<T>(Collections.nCopies(index + 1, (T) null));
+		List<T> array = new ArrayList<T>(Collections.nCopies(index + 1,
+				(T) null));
 		assign(array);
 		return array;
 	}

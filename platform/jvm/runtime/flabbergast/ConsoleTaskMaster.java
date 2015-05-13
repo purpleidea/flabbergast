@@ -23,10 +23,13 @@ public class ConsoleTaskMaster extends TaskMaster {
 		Set<SourceReference> seen = new HashSet<SourceReference>();
 		output.println("Circular evaluation detected.");
 		for (Lookup lookup : this) {
-			output.printf("Lookup for “%s” blocked. Lookup initiated at:\n", lookup.getName());
+			output.printf("Lookup for “%s” blocked. Lookup initiated at:\n",
+					lookup.getName());
 			lookup.getSourceReference().write(output, "  ", seen);
-			output.printf(" is waiting for “%s” in frame defined at:\n", lookup.getLastName());
-			lookup.getLastFrame().getSourceReference().write(output, "  ", seen);
+			output.printf(" is waiting for “%s” in frame defined at:\n",
+					lookup.getLastName());
+			lookup.getLastFrame().getSourceReference()
+					.write(output, "  ", seen);
 		}
 		output.flush();
 	}
@@ -35,17 +38,17 @@ public class ConsoleTaskMaster extends TaskMaster {
 	public void reportExternalError(String uri, LibraryFailure reason) {
 		dirty = true;
 		switch (reason) {
-		case BAD_NAME:
-			System.err.printf("The URI “%s” is not a valid name.\n", uri);
-			break;
-		case CORRUPT:
-			System.err.printf("The URI “%s” could not be loaded.\n", uri);
-			break;
-		case MISSING:
-			System.err.printf("The URI “%s” could not be found.\n", uri);
-			break;
-		default:
-			break;
+			case BAD_NAME :
+				System.err.printf("The URI “%s” is not a valid name.\n", uri);
+				break;
+			case CORRUPT :
+				System.err.printf("The URI “%s” could not be loaded.\n", uri);
+				break;
+			case MISSING :
+				System.err.printf("The URI “%s” could not be found.\n", uri);
+				break;
+			default :
+				break;
 		}
 	}
 

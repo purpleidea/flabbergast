@@ -195,37 +195,37 @@ public abstract class TaskMaster implements Iterable<Lookup> {
 			return false;
 		}
 		switch (Character.getType(str.charAt(0))) {
-		case Character.LOWERCASE_LETTER:
-		case Character.OTHER_LETTER:
-			break;
-		default:
-			reportOtherError(
-					source_reference,
-					String.format(
-							"The name “%s” is unbecoming of an attribute; it cannot start with “%s”.",
-							str, str.charAt(0)));
-			return false;
+			case Character.LOWERCASE_LETTER :
+			case Character.OTHER_LETTER :
+				break;
+			default :
+				reportOtherError(
+						source_reference,
+						String.format(
+								"The name “%s” is unbecoming of an attribute; it cannot start with “%s”.",
+								str, str.charAt(0)));
+				return false;
 		}
 		for (int it = 1; it < str.length(); it++) {
 			if (str.charAt(it) == '_') {
 				continue;
 			}
 			switch (Character.getType(str.charAt(it))) {
-			case Character.DECIMAL_DIGIT_NUMBER:
-			case Character.LETTER_NUMBER:
-			case Character.LOWERCASE_LETTER:
-			case Character.OTHER_LETTER:
-			case Character.OTHER_NUMBER:
-			case Character.TITLECASE_LETTER:
-			case Character.UPPERCASE_LETTER:
-				continue;
-			default:
-				reportOtherError(
-						source_reference,
-						String.format(
-								"The name “%s” is unbecoming of an attribute; it cannot contain “%s”.",
-								str, str.charAt(it)));
-				return false;
+				case Character.DECIMAL_DIGIT_NUMBER :
+				case Character.LETTER_NUMBER :
+				case Character.LOWERCASE_LETTER :
+				case Character.OTHER_LETTER :
+				case Character.OTHER_NUMBER :
+				case Character.TITLECASE_LETTER :
+				case Character.UPPERCASE_LETTER :
+					continue;
+				default :
+					reportOtherError(
+							source_reference,
+							String.format(
+									"The name “%s” is unbecoming of an attribute; it cannot contain “%s”.",
+									str, str.charAt(it)));
+					return false;
 			}
 		}
 		return true;

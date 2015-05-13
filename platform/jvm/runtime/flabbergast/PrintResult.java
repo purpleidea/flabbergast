@@ -31,8 +31,9 @@ public class PrintResult extends Computation {
 				if (result instanceof Frame) {
 					Frame frame = (Frame) result;
 					Lookup lookup = new Lookup(task_master,
-							new SourceReference("printer", "<native>", 0, 0, 0, 0, null),
-							new String[] { "value" }, frame.getContext());
+							new SourceReference("printer", "<native>", 0, 0, 0,
+									0, null), new String[]{"value"}, frame
+									.getContext());
 					lookup.listen(new ConsumeResult() {
 
 						@Override
@@ -46,9 +47,9 @@ public class PrintResult extends Computation {
 									if (result instanceof Stringish) {
 										System.out.print(result);
 									} else if (result instanceof Boolean) {
-										System.out
-												.println((Boolean) result ? "True"
-														: "False");
+										System.out.println((Boolean) result
+												? "True"
+												: "False");
 									} else {
 										System.out.println(result);
 									}

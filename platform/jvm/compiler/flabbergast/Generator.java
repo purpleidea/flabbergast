@@ -1156,9 +1156,8 @@ abstract class Generator {
 		} else if (source.getBackingType() == Stringish.class) {
 			return source;
 		} else {
-			throw new IllegalArgumentException(
-					String.format("Cannot convert %s to Stringish.",
-							source.getBackingType()));
+			throw new IllegalArgumentException(String.format(
+					"Cannot convert %s to Stringish.", source.getBackingType()));
 		}
 	}
 

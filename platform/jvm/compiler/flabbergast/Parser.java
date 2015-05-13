@@ -250,7 +250,8 @@ public class Parser {
 				for (int it = 1; it < trace_depth; it++) {
 					System.out.print(" ");
 				}
-				System.out.printf("%d:%s <%s %s\n", row, column, (success ? "+"
+				System.out.printf("%d:%s <%s %s\n", row, column, (success
+						? "+"
 						: "-"), rule);
 			}
 		}

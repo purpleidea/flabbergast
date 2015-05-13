@@ -41,7 +41,8 @@ public class Context implements Iterable<Frame> {
 			throw new IllegalArgumentException(
 					"Cannot prepend a null frame to a context.");
 		}
-		List<Frame> list = new ArrayList<Frame>(tail == null ? 1
+		List<Frame> list = new ArrayList<Frame>(tail == null
+				? 1
 				: (tail.getLength() + 1));
 		list.add(head);
 		if (tail != null) {

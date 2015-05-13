@@ -43,10 +43,10 @@ abstract class AstTypeableNode extends AstNode {
 		for (int it = 0; it < arguments.size(); it++) {
 			TypeSet candidate_parameter_type = TypeSet.EMPTY;
 			for (Method method : methods) {
-				Class<?> param_type = Modifier.isStatic(method.getModifiers()) ? method
-						.getParameterTypes()[it] : (it == 0 ? method
-						.getDeclaringClass()
-						: method.getParameterTypes()[it - 1]);
+				Class<?> param_type = Modifier.isStatic(method.getModifiers())
+						? method.getParameterTypes()[it]
+						: (it == 0 ? method.getDeclaringClass() : method
+								.getParameterTypes()[it - 1]);
 				candidate_parameter_type = candidate_parameter_type.union(Type
 						.fromNative(param_type));
 			}

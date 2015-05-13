@@ -27,7 +27,7 @@ public class CheckResult extends Computation {
 				public void consume(Object result) {
 					if (result instanceof Frame) {
 						Lookup lookup = new Lookup(task_master, null,
-								new String[] { "value" }, ((Frame) result)
+								new String[]{"value"}, ((Frame) result)
 										.getContext());
 						lookup.listen(new ConsumeResult() {
 
