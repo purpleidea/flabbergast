@@ -2070,6 +2070,15 @@ codegen : compiler_lib.codegen_tmpl {
 		accumulate_flavour : flavour_attribute_accumulate
 		non_accumulate_flavour : flavour_attribute
 	}
+	flavour_repl : flavour_complex_tmpl {
+		has_cache : False
+		parameter_names : [ $root, $current, $update_current, $escape_value, $print_value ]
+		call_site +: {
+			parameter_lookups : [ parameters.root, parameters.current, parameters.update_current, parameters.escape_value, parameters.print_value ]
+		}
+		accumulate_flavour : Null
+		non_accumulate_flavour : flavour_repl
+	}
 }
 
 # The compiler!

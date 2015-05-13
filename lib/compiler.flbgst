@@ -958,6 +958,8 @@ codegen_tmpl : Template {
 	# Generate code for an attibute. Attributes do not have any context, but do
 	# have a source template and a target frame/template being generated.
 	flavour_attribute ?:
+	# For use in the REPL. There is a root frame and a current frame.
+	flavour_repl ?:
 }
 # The syntax of the Flabbergast language
 language_tmpl : Template {
