@@ -28,6 +28,54 @@ public class MainREPL {
 
 	}
 
+	static class RawPrint implements ConsumeResult {
+		private ConsoleReader reader;
+
+		public RawPrint(ConsoleReader reader) {
+			this.reader = reader;
+		}
+
+		@Override
+		public void consume(Object result) {
+			try {
+				reader.printString(result.toString());
+				reader.printNewline();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	static class CurrentFrame implements ConsumeResult {
+		private Frame current;
+		public CurrentFrame(Frame initial) {
+			current = initial;
+		}
+		public Frame get() {
+			return current;
+		}
+		@Override
+		public void consume(Object result) {
+			if (result != null && result instanceof Frame) {
+				current = (Frame) result;
+			}
+		}
+	}
+
+	static class KeepRunning implements ConsumeResult {
+		private boolean keep_running = true;
+
+		boolean allowed() {
+			return keep_running;
+		}
+		@Override
+		public void consume(Object result) {
+			if (result != null && result instanceof Boolean) {
+				keep_running = (Boolean) result;
+			}
+		}
+	}
+
 	public static void main(String[] args) {
 		Options options = new Options();
 		options.addOption("h", "help", false, "Show this message and exit");
@@ -87,33 +135,47 @@ public class MainREPL {
 			System.err.println(e.getMessage());
 			e.printStackTrace();
 		}
+		if (root.get() == null) {
+			root.set(new Frame(
+					task_master,
+					task_master.nextId(),
+					new SourceReference("<repl>", "<native>", 0, 0, 0, 0, null),
+					null, null));
+		}
+		CurrentFrame current = new CurrentFrame(root.get());
 
 		try {
 			ConsoleReader reader = new ConsoleReader();
-			reader.addCompletor(new SimpleCompletor(new String[] { "args",
-					"value", "Bool", "By", "Container", "Each", "Else", "Enforce",
-					"Error", "False", "Finite", "Float", "FloatMax",
+			reader.addCompletor(new SimpleCompletor(new String[]{"args",
+					"value", "Bool", "By", "Container", "Each", "Else",
+					"Enforce", "Error", "False", "Finite", "Float", "FloatMax",
 					"FloatMin", "For", "Frame", "From", "GenerateId", "Id",
 					"If", "In", "Infinity", "Int", "IntMax", "IntMin", "Is",
 					"Length", "Let", "Lookup", "NaN", "Name", "Null", "Order",
 					"Ordinal", "Reduce", "Reverse", "Select", "Str",
 					"Template", "Then", "This", "Through", "To", "True",
-					"Where", "With" }));
+					"Where", "With"}));
 			reader.setDefaultPrompt("‽ ");
 			reader.setUseHistory(true);
 			reader.setUsePagination(true);
 			String line;
 			int id = 0;
 			ElaboratePrinter printer = new PrintToConsole(reader);
-			while ((line = reader.readLine()) != null) {
+			RawPrint raw_printer = new RawPrint(reader);
+			KeepRunning keep_running = new KeepRunning();
+			while (keep_running.allowed() && (line = reader.readLine()) != null) {
 				Parser parser = new Parser("<console>", line);
-				Class<? extends Computation> run_type = parser.parseFile(
+				Class<? extends Computation> run_type = parser.parseRepl(
 						collector, compiler.getCompilationUnit(),
-						"flabbergast.interactive.Line" + (id++));
+						"flabbergast/interactive/Line" + (id++));
 				if (run_type != null) {
 					Computation computation = run_type.getConstructor(
-							TaskMaster.class).newInstance(task_master);
-					computation.listen(printer);
+							TaskMaster.class, Frame.class, Frame.class,
+							ConsumeResult.class, ConsumeResult.class,
+							ConsumeResult.class).newInstance(task_master,
+							root.get(), current.get(), current, printer,
+							raw_printer);
+					computation.listen(keep_running);
 					task_master.slot(computation);
 					task_master.run();
 				}

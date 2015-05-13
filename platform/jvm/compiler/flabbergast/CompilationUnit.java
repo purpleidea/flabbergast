@@ -103,6 +103,20 @@ public abstract class CompilationUnit<T> {
 		return initialiser;
 	}
 
+	T createReplGenerator(AstNode node, String name, ReplGenerator.Block block)
+			throws Exception {
+		ClassVisitor type_builder = defineClass(Opcodes.ACC_FINAL
+				| Opcodes.ACC_PUBLIC, name, Computation.class);
+		type_builder.visitSource(node.getFileName(), null);
+		ReplGenerator generator = new ReplGenerator(node, this, type_builder,
+				name);
+		block.invoke(generator, generator.getRootFrame(),
+				generator.getCurrentFrame(), generator.getUpdateCurrent(),
+				generator.getEscapeValue(), generator.getPrintValue());
+		generator.generateSwitchBlock(true);
+		return doMagic(name);
+	}
+
 	T createRootGenerator(AstNode node, String name, Generator.Block block)
 			throws Exception {
 		ClassVisitor type_builder = defineClass(Opcodes.ACC_FINAL

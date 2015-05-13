@@ -88,11 +88,17 @@ abstract class Generator {
 	}
 
 	static void visitMethod(Method method, MethodVisitor builder) {
-		builder.visitMethodInsn(Modifier.isStatic(method.getModifiers())
-				? Opcodes.INVOKESTATIC
-				: Opcodes.INVOKEVIRTUAL, getInternalName(method
-				.getDeclaringClass()), method.getName(), Type
-				.getMethodDescriptor(method));
+		int opcode;
+		if (method.getDeclaringClass().isInterface()) {
+			opcode = Opcodes.INVOKEINTERFACE;
+		} else {
+			opcode = Modifier.isStatic(method.getModifiers())
+					? Opcodes.INVOKESTATIC
+					: Opcodes.INVOKEVIRTUAL;
+		}
+		builder.visitMethodInsn(opcode,
+				getInternalName(method.getDeclaringClass()), method.getName(),
+				Type.getMethodDescriptor(method));
 	}
 
 	protected MethodVisitor builder;

@@ -10,7 +10,33 @@ jflabbergast-repl \- Interactive Flabbergast session using the Java Virtual Mach
 .SH DESCRIPTION
 Allows entering Flabbergast expressions interactively. If a file is provided, the file can be browsed and inspected.
 
-.B "THIS DOES NOT WORK YET"
+.SH COMMANDS
+All commands are executed relative to the current frame; that is, lookups start as if they were done in the current frame.
+
+.TP
+\fIexpr\fR
+Evaluate the expression \fIexpr\fR and display the result. The result will be shown on the console.
+.TP
+\fBGo \fIexpr\fR
+Change the current frame (\fBThis\fR) to some other frame, specified by \fIexpr\fR. The expression must result in a frame.
+.TP
+.B Help
+List the known commands.
+.TP
+.B Home
+Change the current frame (\fBThis\fR) to the original frame. If a file was specified, this changes it to the file-level frame. Otherwise, it changes it to an empty frame.
+.TP
+.B Ls
+List the names of the attributes in the current frame (\fBThis\fR). Unlike displaying the current frame by using \fBThis\fR), this only prints the attribute names; not their values.
+.TP
+.B Quit
+Exit the interpreter.
+.TP
+.B Trace
+Print the stack trace for the current frame (\fBThis\fR).
+.TP
+.B Up
+Change the current frame (\fBThis\fR) to the containing frame (\fBContainer\fR). If the current frame is a file-level frame, this has no effect. Note that repeated \fBUp\fR is not necessarily the same as \fBHome\fR since file-level frames created by \fBFrom\fR have separate top-level scopes.
 
 .SH ENVIRONMENT VARIABLES
 .TP

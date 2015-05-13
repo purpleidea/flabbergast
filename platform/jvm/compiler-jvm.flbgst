@@ -760,7 +760,7 @@ default_indent : "\n\t\t"
 # The compiler makes heavy use of “private scope” fields, which are essentially
 # anonymous fields. Each instruction stores its results in a field defined by
 # `storage_name`.
-kws : compiler_lib.kws_tmpl {
+kws : compiler_lib.kws_repl_tmpl {
 	# The base template for most instructions. Since each instruction computes
 	# some values and then does one opcode, this is heavily applicable to most of
 	# the “normal” operations in the KWS VM. This template takes the arguments,
@@ -1712,6 +1712,37 @@ kws : compiler_lib.kws_tmpl {
 			storage_name : Lookup storage_name In Container
 		}
 	}
+	set_current +: {
+		extra_indent : to.extra_indent
+		storage_name : "(new BoolConstant(true))"
+		gen_gen +: {
+			sum_indent : indent & extra_indent
+			value : to.gen_gen(
+				indent : indent,
+				code :
+					"\(sum_indent)\(parameters.update_current.storage_name).load(\(generator));" &
+					"\(sum_indent)\(generator).loadReboxed(\(to.storage_name), Object.class);" &
+					"\(sum_indent)\(generator).visitMethod(ConsumeResult.class.getMethod(\"consume\", Object.class));" &
+					code
+			)
+		}
+	}
+	print +: {
+		extra_indent : item.extra_indent
+		storage_name : "(new BoolConstant(true))"
+		output_callback : If escape Then parameters.escape_value Else parameters.print_value
+		gen_gen +: {
+			sum_indent : indent & extra_indent
+			value : item.gen_gen(
+				indent : indent,
+				code :
+					"\(sum_indent)\(output_callback.storage_name).load(\(generator));" &
+					"\(sum_indent)\(generator).loadReboxed(\(item.storage_name), Object.class);" &
+					"\(sum_indent)\(generator).visitMethod(ConsumeResult.class.getMethod(\"consume\", Object.class));" &
+					code
+			)
+		}
+	}
 }
 # Generate hideously complicated flows in the compiler's code generation routines.
 codegen : compiler_lib.codegen_tmpl {
@@ -2163,6 +2194,7 @@ codegen : compiler_lib.codegen_tmpl {
 	flavour_repl : flavour_complex_tmpl {
 		has_cache : False
 		parameter_names : [ $root, $current, $update_current, $escape_value, $print_value ]
+		interface : "FlavourRepl"
 		call_site +: {
 			parameter_lookups : [ parameters.root, parameters.current, parameters.update_current, parameters.escape_value, parameters.print_value ]
 		}
@@ -2172,7 +2204,7 @@ codegen : compiler_lib.codegen_tmpl {
 }
 
 # The compiler!
-compiler : compiler_lib.language_tmpl {
+compiler : compiler_lib.language_with_repl_tmpl {
 	# Since each syntax element corresponds to a class, it should know how to
 	# generate a class with all the appropriate methods.
 	syntax_element +: {

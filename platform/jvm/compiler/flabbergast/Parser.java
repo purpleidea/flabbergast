@@ -398,6 +398,58 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * Parse in the “repl” context defined in the language specification.
+	 */
+	public <T> T parseRepl(ErrorCollector collector, CompilationUnit<T> unit,
+			String type_name) throws Exception {
+		final Ptr<repl> result = new Ptr<repl>();
+		Ptr<Position> position = new Ptr<Position>(new Position(collector));
+		if (repl.parseRule_Base(position, result)
+				&& position.get().isFinished()) {
+			if (result.get().analyse(collector)) {
+				return unit.createReplGenerator(result.get(), type_name,
+						new ReplGenerator.Block() {
+
+							@Override
+							public void invoke(final Generator generator,
+									LoadableValue root_frame,
+									LoadableValue current_frame,
+									LoadableValue update_current,
+									LoadableValue escape_value,
+									LoadableValue print_value
+
+							) throws Exception {
+								result.get()
+										.generate(
+												generator,
+												root_frame,
+												current_frame,
+												update_current,
+												escape_value,
+												print_value,
+												new ParameterisedBlock<LoadableValue>() {
+
+													@Override
+													public void invoke(
+															LoadableValue value)
+															throws Exception {
+														generator
+																.doReturn(value);
+
+													}
+
+												});
+
+							}
+						});
+			}
+		} else {
+			collector.reportParseError(file_name, index, row, column, message);
+		}
+		return null;
+	}
+
 	public void setTrace(boolean trace) {
 		this.trace = trace;
 	}
