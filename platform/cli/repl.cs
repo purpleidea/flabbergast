@@ -1,4 +1,6 @@
 ﻿using System;
+using System.CodeDom;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -123,6 +125,11 @@ namespace Flabbergast {
 				}
 				Console.WriteLine();
 				t.SourceReference.Write(Console.Out, prefix, seen_srcref);
+			} else if (result is Stringish) {
+				var provider = CodeDomProvider.CreateProvider("CSharp");
+				provider.GenerateCodeFromExpression(new CodePrimitiveExpression(result.ToString()), Console.Out, null);
+				Console.Out.Flush();
+				Console.WriteLine();
 			} else {
 				Console.WriteLine(result);
 			}
