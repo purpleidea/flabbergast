@@ -4060,3 +4060,217 @@ language_tmpl : Template {
 		}
 	}
 }
+
+kws_repl_tmpl : Template kws_tmpl {
+	set_current : Template codegen.gen_tmpl {
+		arguments : [ { value : to  type : known_types.frame } ]
+		return_type : known_types.frame
+		to ?:
+	}
+	print : Template codegen.gen_tmpl {
+		escape : False
+		item ?:
+	}
+}
+
+language_with_repl_tmpl : Template language_tmpl {
+	repl_tmpl : Template syntax_element {
+		pretty_name : keyword & " in REPL"
+		keyword ?:
+		help ?:
+	}
+	repl_simple_tmpl : Template repl_tmpl {
+		arg_help : ""
+		pattern : parser.sequence {
+			of : [
+				space {},
+				parser.exact { word : keyword },
+				space {}
+			]
+		}
+		apply_environment_to : []
+	}
+	repl_expr_tmpl : Template repl_tmpl {
+		arg_help : " <expr>"
+		pattern : parser.sequence {
+			of : [
+				space {},
+				parser.exact { word : keyword },
+				space {},
+				parser.other { type: $expression  alternate : $expression0 field : $expr },
+				space {}
+			]
+		}
+		apply_environment_to : [
+			environment.blank_environment {
+				apply_to : [ environment.other_elements { fields : [ $expr ] } ]
+				name : $blank
+			}
+		]
+		type_demand : ensure_type.frame { ensure_type_of : ensure_type.propagate { fields : [ $expr ] } }
+	}
+
+	adapt_repl_environment : Template codegen.push_source_reference {
+		for ?:
+		inherit : False
+		in : codegen.bind {
+			define : {
+				context : kws.frame_context { source : parameters.current }
+				self_frame : parameters.current
+				container_frame : kws.frame_container { source : parameters.current }
+			}
+			in : Template codegen.prepare_lookup_cache {
+				inherit : False
+				name : $blank
+				in : for { }
+			}
+		}
+	}
+	repl_do_and_continue : Template codegen.bind {
+		action ?:
+		define : {
+			junk : action
+		}
+		in : Template kws.numeric_constant {
+			type : known_types.bool
+			number : max
+		}
+	}
+
+	rule_groups +: {
+		repl : Template syntax_group {
+			environment_enabled : True
+			generation_flavour : codegen.flavour_repl
+			common +: {
+				comment : common_fields.str
+			}
+			rules +: {
+				quit : Template repl_simple_tmpl {
+					keyword : "Quit"
+					help : "Stop with the Flabbergast."
+					code_value : kws.numeric_constant {
+						type : known_types.bool
+						number : min
+					}
+				}
+				goto : Template repl_expr_tmpl {
+					keyword : "Go"
+					help : "Change the current frame (This) to some other frame."
+					code_value : repl_do_and_continue {
+						action : adapt_repl_environment {
+							for : Template kws.set_current {
+								to : codegen.other_code {
+									target_flavour : codegen.flavour_aware
+									field : $expr
+								}
+							}
+						}
+					}
+				}
+				ls : Template repl_simple_tmpl {
+					keyword : "Ls"
+					help : "List the names of the attributes in the current frame (This)."
+					apply_environment_to : [
+						environment.blank_environment {
+							apply_to : []
+							name : $blank
+						}
+					]
+					code_value : kws.print {
+						item : adapt_repl_environment {
+							for : Template kws.iterator {
+								input : input_list { items : [ parameters.current ] }
+								initial : kws.string_constant { str : "Attributes:" }
+								default_case : kws.string_concatenate {
+									first : current_accumulator
+									second : kws.string_concatenate {
+										first : kws.string_constant { str : "\t" }
+										second : current_name
+									}
+								}
+								cases : []
+								accumulator_type : known_types.str
+							}
+						}
+					}
+				}
+				up : Template repl_simple_tmpl {
+					keyword : "Up"
+					help : "Change the current frame (This) to the containing frame (Container)."
+					code_value : repl_do_and_continue {
+						action : kws.set_current {
+							to : kws.frame_container {
+								source : parameters.current
+							}
+						}
+					}
+				}
+				home : Template repl_simple_tmpl {
+					keyword : "Home"
+					help : "Change the current frame (This) to the file-level frame."
+					code_value : repl_do_and_continue {
+						action : kws.set_current {
+							to : kws.frame_container {
+								source : parameters.root
+							}
+						}
+					}
+				}
+				trace : Template repl_simple_tmpl {
+					keyword : "Trace"
+					help : "Print the stack trace for the current frame."
+					code_value : kws.print {
+						item : kws.frame_trace {
+							source : parameters.current
+							prefix : kws.string_constant { str : "" }
+						}
+					}
+				}
+				expr : Template syntax_element {
+					pretty_name : "Expression in REPL"
+					keyword : Null
+					help : Null
+					pattern : parser.sequence {
+						of : [
+							space {},
+							parser.other { type: $expression  alternate : $expression0 field : $expr },
+							space {}
+						]
+					}
+					code_value : kws.print {
+						escape : True
+						item : adapt_repl_environment {
+							for : Template codegen.other_code {
+								target_flavour : codegen.flavour_aware
+								field : $expr
+							}
+						}
+					}
+					apply_environment_to : [
+						environment.blank_environment {
+							apply_to : [ environment.other_elements { fields : [ $expr ] } ]
+							name : $blank
+						}
+					]
+					type_demand : ensure_type.propagate {
+						fields : [ $expr ]
+						needs_unbox : False
+					}
+				}
+				help : Template repl_simple_tmpl {
+					keyword : "Help"
+					help : "This dreck."
+					apply_environment_to : []
+					code_value : kws.print {
+						item : kws.string_constant {
+							str : For rule : expanded_rules
+								Where !(rule.keyword Is Null)
+								Reduce "\(acc)\\n\(rule.keyword)\(rule.arg_help)\t\(rule.help)"
+								With acc : "Interactive Shell Help\\n"
+						}
+					}
+				}
+			}
+		}
+	}
+}

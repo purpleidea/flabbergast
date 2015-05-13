@@ -64,32 +64,48 @@ namespace Flabbergast {
 				return 1;
 			}
 
+			Frame original = null;
+
 			var assembly_builder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("Repl"), AssemblyBuilderAccess.Run);
 			var module_builder = assembly_builder.DefineDynamicModule("ReplModule");
 			var unit = new CompilationUnit(module_builder, false);
-			var id = 0;
-
 			var task_master = new ConsoleTaskMaster();
 			var collector = new ConsoleCollector();
+
+			if (files.Count == 1) {
+				var parser = Parser.Open(files[0]);
+				var root_type = parser.ParseFile(collector, unit, "TestRoot");
+				if (root_type != null) {
+					var computation = (Computation) Activator.CreateInstance(root_type, task_master);
+					computation.Notify(r => original = r as Frame);
+					task_master.Slot(computation);
+					task_master.Run();
+					task_master.ReportCircularEvaluation();
+				}
+			}
+			if (original == null) {
+				original = new Frame(task_master, task_master.NextId(), new SourceReference("<repl>", "<native>", 0, 0, 0, 0, null), null, null);
+			}
+
+			var id = 0;
+			Frame current = original;
+			bool run = true;
+			ConsumeResult update_current = (x) => current = (x as Frame) ?? current;
+
 			var line_editor = new LineEditor("flabbergast");
 			var completables = new Completables();
 			line_editor.AutoCompleteEvent = completables.Handler;
 			string s;
-			var run = true;
 
 			while (run && (s = line_editor.Edit(id + "‽ ", "")) != null) {
 				var parser = new Parser("line" + id, s);
-				var run_type = parser.ParseFile(collector, unit, "Test" + id++); // TODO: change this to a REPL-specific element
+				var run_type = parser.ParseRepl(collector, unit, "Test" + id++);
 				if (run_type != null) {
-					object result = null;
-					var computation = (Computation) Activator.CreateInstance(run_type, task_master);
-					computation.Notify(r => result = r);
+					var computation = (Computation) Activator.CreateInstance(run_type, new object[] { task_master, original, current, update_current, (ConsumeResult) HandleResult, (ConsumeResult) Console.WriteLine });
+					computation.Notify(r => run = (r as bool?) ?? true);
 					task_master.Slot(computation);
 					task_master.Run();
 					task_master.ReportCircularEvaluation();
-					if (result != null) {
-						HandleResult(result);
-					}
 				}
 			}
 			line_editor.SaveHistory();

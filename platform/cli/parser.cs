@@ -103,6 +103,24 @@ public class Parser {
 		}
 		return null;
 	}
+	/**
+	 * Parse in the “repl” context defined in the language specification.
+	 */
+	public System.Type ParseRepl(ErrorCollector collector, CompilationUnit unit, string type_name) {
+		repl result;
+		var position = new ParserPosition(this, collector);
+		if (repl.ParseRule_Base(ref position, out result) && position.Finished) {
+			if (result.Analyse(collector)) {
+				return unit.CreateReplGenerator(result, type_name,
+					(generator, root, current, update_current, escape_value, print_value) =>
+						result.Generate(generator, root, current, update_current, escape_value, print_value,
+							 generator.Return));
+			}
+		} else {
+			collector.ReportParseError(FileName, Index, Row, Column, Message);
+		}
+		return null;
+	}
 }
 /**
  * The current position during parsing

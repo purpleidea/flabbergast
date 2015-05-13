@@ -18,6 +18,10 @@ public class CompilationUnit {
 	 * A call back that will populate a function with generated code.
 	 */
 	internal delegate void FunctionOverrideBlock(Generator generator, LoadableValue source_reference, LoadableValue context, LoadableValue self, LoadableValue container, LoadableValue original);
+	/**
+	 * A call back that will populate a REPL element.
+	 */
+	internal delegate void ReplBlock(Generator generator, LoadableValue root, LoadableValue current, LoadableValue update_current, LoadableValue escape_value, LoadableValue print_value);
 
 	public bool Debuggable { get; private set; }
 
@@ -99,6 +103,14 @@ public class CompilationUnit {
 		var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
 		var generator = new RootGenerator(node, this, type_builder, name);
 		block(generator);
+		generator.GenerateSwitchBlock(true);
+		return type_builder.CreateType();
+	}
+
+	internal System.Type CreateReplGenerator(AstNode node, string name, ReplBlock block) {
+		var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
+		var generator = new ReplGenerator(node, this, type_builder, name);
+		block(generator, generator.RootFrame, generator.CurrentFrame, generator.UpdateCurrent, generator.EscapeValue, generator.PrintValue);
 		generator.GenerateSwitchBlock(true);
 		return type_builder.CreateType();
 	}
@@ -885,6 +897,38 @@ internal class FunctionGenerator : Generator {
 			Builder.Emit(OpCodes.Ret);
 			MarkState(state);
 		}
+	}
+}
+class ReplGenerator : Generator {
+	internal FieldValue RootFrame { get; private set; }
+	internal FieldValue CurrentFrame { get; private set; }
+	internal FieldValue UpdateCurrent { get; private set; }
+	internal FieldValue EscapeValue { get; private set; }
+	internal FieldValue PrintValue { get; private set; }
+
+	internal ReplGenerator(AstNode node, CompilationUnit owner, TypeBuilder type_builder, string root_prefix) : base(node, owner, type_builder, root_prefix, new Dictionary<string, bool>()) {
+		// Create fields for all information provided by the caller.
+		RootFrame = new FieldValue(TypeBuilder.DefineField("root", typeof(Frame), FieldAttributes.Private));
+		CurrentFrame = new FieldValue(TypeBuilder.DefineField("current", typeof(Frame), FieldAttributes.Private));
+		UpdateCurrent = new FieldValue(TypeBuilder.DefineField("update_current", typeof(ConsumeResult), FieldAttributes.Private));
+		EscapeValue = new FieldValue(TypeBuilder.DefineField("escape_value", typeof(ConsumeResult), FieldAttributes.Private));
+		PrintValue = new FieldValue(TypeBuilder.DefineField("print_value", typeof(ConsumeResult), FieldAttributes.Private));
+		var construct_params = new[] { typeof(TaskMaster), typeof(Frame), typeof(Frame), typeof(ConsumeResult), typeof(ConsumeResult) , typeof(ConsumeResult) };
+		var initial_information = new[] { task_master, RootFrame.Field, CurrentFrame.Field, UpdateCurrent.Field, EscapeValue.Field, PrintValue.Field };
+
+		var ctor = type_builder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, construct_params);
+		var ctor_builder = ctor.GetILGenerator();
+		ctor_builder.Emit(OpCodes.Ldarg_0);
+		ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
+		for(var it = 0; it < initial_information.Length; it++) {
+			ctor_builder.Emit(OpCodes.Ldarg_0);
+			ctor_builder.Emit(OpCodes.Ldarg, it + 1);
+			ctor_builder.Emit(OpCodes.Stfld, initial_information[it]);
+		}
+		ctor_builder.Emit(OpCodes.Ldarg_0);
+		ctor_builder.Emit(OpCodes.Ldc_I4_0);
+		ctor_builder.Emit(OpCodes.Stfld, StateField);
+		ctor_builder.Emit(OpCodes.Ret);
 	}
 }
 internal class RootGenerator : Generator {
