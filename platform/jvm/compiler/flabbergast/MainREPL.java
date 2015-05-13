@@ -91,7 +91,7 @@ public class MainREPL {
 		try {
 			ConsoleReader reader = new ConsoleReader();
 			reader.addCompletor(new SimpleCompletor(new String[] { "args",
-					"value", "As", "Bool", "By", "Container", "Each", "Else",
+					"value", "Bool", "By", "Container", "Each", "Else", "Enforce",
 					"Error", "False", "Finite", "Float", "FloatMax",
 					"FloatMin", "For", "Frame", "From", "GenerateId", "Id",
 					"If", "In", "Infinity", "Int", "IntMax", "IntMin", "Is",
