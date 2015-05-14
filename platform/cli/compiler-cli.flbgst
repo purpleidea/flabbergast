@@ -1376,7 +1376,8 @@ kws : compiler_lib.kws_repl_tmpl {
 	dynamic_type_check_parsed +: {
 		reference_type : "\(field).TypeId"
 	}
-	iterator +: {
+	iterator_tmpl +: {
+		iterator_type ?:
 		extra_indent : ""
 
 		parent_source_reference : Lookup parameters.source_reference In Container
@@ -1388,27 +1389,16 @@ kws : compiler_lib.kws_repl_tmpl {
 		}
 
 		iterator_instance : Id & "_iterator"
-		iterator_next : Id & "_next"
-		iterator_dispatchers : Id & "_dispatchers"
 		iterator_key : Id & "_key"
 		iterator_ordinal : Id & "_ordinal"
 		iterator_start_block : Id & "_start_block"
-		position : Id & "_position"
-
 		gen_gen +: {
 			sum_indent : indent & extra_indent
 			value :
 				input.gen_gen(indent : indent) &
 				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_iterator_accumulator\", typeof(\(accumulator_type.real_type)));" &
 				create_initial &
-				define_dispatcher_states &
-				create_iterator &
-				iterator_trampoline &
-				# Create a block for the default dispatcher.
-				"\(sum_indent)\(generator).MarkState(\(iterator_dispatchers)[1]);" &
-				dispatch_code &
-				case_dispatchers &
-				"\(sum_indent)\(generator).MarkState(\(iterator_dispatchers)[0]);" &
+				custom_setup &
 				code
 
 			create_initial :
@@ -1424,75 +1414,13 @@ kws : compiler_lib.kws_repl_tmpl {
 					) &
 				"\(sum_indent)\(generator).MarkState(\(iterator_start_block));"
 
-			create_iterator :
-				# Create new fields for all the bits of stuff we need.
-				"\(sum_indent)var \(iterator_instance) = \(generator).MakeField(\"\(rule_name)_iterator\", typeof(MergeIterator));" &
+			create_fields :
+				"\(sum_indent)var \(iterator_instance) = \(generator).MakeField(\"\(rule_name)_iterator\", \(iterator_type));" &
 				"\(sum_indent)#pragma warning disable 219" &
-				"\(sum_indent)var \(iterator_key) = new MethodValue(\(iterator_instance), typeof(MergeIterator).GetMethod(\"get_Currentish\"));" &
-				"\(sum_indent)var \(iterator_ordinal) = new MethodValue(\(iterator_instance), typeof(MergeIterator).GetMethod(\"get_Position\"));" &
-				"\(sum_indent)#pragma warning restore 219" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
-				"\(sum_indent)\(input.array).Load(\(generator));" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(iterator_dispatchers)[1]);" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(iterator_dispatchers)[0]);" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(MergeIterator).GetConstructors()[0]);" &
-				# Load all the special dispatchers.
-				add_cases &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(iterator_instance).Field);"
-
-			iterator_trampoline :
-				# Create a re-entry point for the end of input (i.e., the iterator returning).
-				"\(sum_indent)var \(iterator_next) = \(generator).DefineState();" &
-				"\(sum_indent)\(generator).JumpToState(\(iterator_next));" &
-				"\(sum_indent)\(generator).MarkState(\(iterator_next));" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
-				"\(sum_indent)\(iterator_instance).Load(\(generator));" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(MergeIterator).GetMethod(\"Next\"));" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(generator).StateField);" &
-				(If modify_source_reference
-					Then "\(sum_indent)\(parameters.source_reference.storage_name) = \(generator).PushIteratorSourceReference(this, \(iterator_instance), \(parent_source_reference.storage_name));"
-					Else "") &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Tailcall);" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Callvirt, typeof(Computation).GetMethod(\"Run\", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);"
-
-			dispatch_code : default_case.gen_gen(
-				indent : sum_indent,
-				code :
-					"\(sum_indent)\(default_case.extra_indent)\(generator).CopyField(\(default_case.storage_name), \(storage_name));" &
-					"\(sum_indent)\(default_case.extra_indent)\(generator).JumpToState(\(iterator_next));"
-					)
-
-			num_cases :
-				For case : cases
-					Where !(case Is Null)
-					Reduce acc & case.count
-					With acc : "2"
-
-			define_dispatcher_states :
-				"\(sum_indent)var \(iterator_dispatchers) = new int[ \(num_cases) ];" &
-				"\(sum_indent)for(var \(Id)_it = 0; \(Id)_it < \(iterator_dispatchers).Length; \(Id)_it++) { \(iterator_dispatchers)[\(Id)_it] = \(generator).DefineState(); }"
-
-			add_cases :
-				For case : cases
-					Where !(case Is Null)
-					Reduce
-						acc & case.add(indent : sum_indent)
-					With acc :
-						"\(sum_indent)#pragma warning disable 219" &
-						"\(sum_indent)var \(position) = 2;" &
-						"\(sum_indent)#pragma warning restore 219"
-
-			case_dispatchers :
-				For case : cases
-					Where !(case Is Null)
-					Reduce
-						acc &
-						case.gen_gen(indent : sum_indent)
-					With acc : "\(sum_indent)\(position) = 2;"
+				"\(sum_indent)var \(iterator_key) = new MethodValue(\(iterator_instance), \(iterator_type).GetMethod(\"get_Currentish\"));" &
+				"\(sum_indent)var \(iterator_ordinal) = new MethodValue(\(iterator_instance), \(iterator_type).GetMethod(\"get_Position\"));" &
+				"\(sum_indent)#pragma warning restore 219"
 		}
-
 		input_tmpl +: {
 			array : Id
 			gen_gen : Template {
@@ -1581,6 +1509,100 @@ kws : compiler_lib.kws_repl_tmpl {
 			}
 		}
 
+		current_name : codegen.gen_tmpl {
+			extra_indent : ""
+			storage_name : iterator_key
+		}
+		current_ordinal : codegen.gen_tmpl {
+			extra_indent : ""
+			storage_name : iterator_ordinal
+		}
+		current_accumulator : codegen.gen_tmpl {
+			extra_indent : ""
+			storage_name : Lookup storage_name In Container
+		}
+	}
+	iterator +: {
+		iterator_type : "typeof(MergeIterator)"
+		iterator_dispatchers : Id & "_dispatchers"
+		iterator_next : Id & "_next"
+		position : Id & "_position"
+
+		gen_gen +: {
+			custom_setup :
+				define_dispatcher_states &
+				create_iterator &
+				iterator_trampoline &
+				# Create a block for the default dispatcher.
+				"\(sum_indent)\(generator).MarkState(\(iterator_dispatchers)[1]);" &
+				dispatch_code &
+				case_dispatchers &
+				"\(sum_indent)\(generator).MarkState(\(iterator_dispatchers)[0]);"
+			create_iterator :
+				# Create new fields for all the bits of stuff we need.
+				create_fields &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
+				"\(sum_indent)\(input.array).Load(\(generator));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(iterator_dispatchers)[1]);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(iterator_dispatchers)[0]);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(MergeIterator).GetConstructors()[0]);" &
+				# Load all the special dispatchers.
+				add_cases &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(iterator_instance).Field);"
+
+			iterator_trampoline :
+				# Create a re-entry point for the end of input (i.e., the iterator returning).
+				"\(sum_indent)var \(iterator_next) = \(generator).DefineState();" &
+				"\(sum_indent)\(generator).JumpToState(\(iterator_next));" &
+				"\(sum_indent)\(generator).MarkState(\(iterator_next));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
+				"\(sum_indent)\(iterator_instance).Load(\(generator));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(MergeIterator).GetMethod(\"Next\"));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(generator).StateField);" &
+				(If modify_source_reference
+					Then "\(sum_indent)\(parameters.source_reference.storage_name) = \(generator).PushIteratorSourceReference(this, \(iterator_instance), \(parent_source_reference.storage_name));"
+					Else "") &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Tailcall);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Callvirt, typeof(Computation).GetMethod(\"Run\", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);"
+
+			dispatch_code : default_case.gen_gen(
+				indent : sum_indent,
+				code :
+					"\(sum_indent)\(default_case.extra_indent)\(generator).CopyField(\(default_case.storage_name), \(storage_name));" &
+					"\(sum_indent)\(default_case.extra_indent)\(generator).JumpToState(\(iterator_next));"
+					)
+
+			num_cases :
+				For case : cases
+					Where !(case Is Null)
+					Reduce acc & case.count
+					With acc : "2"
+
+			define_dispatcher_states :
+				"\(sum_indent)var \(iterator_dispatchers) = new int[ \(num_cases) ];" &
+				"\(sum_indent)for(var \(Id)_it = 0; \(Id)_it < \(iterator_dispatchers).Length; \(Id)_it++) { \(iterator_dispatchers)[\(Id)_it] = \(generator).DefineState(); }"
+
+			add_cases :
+				For case : cases
+					Where !(case Is Null)
+					Reduce
+						acc & case.add(indent : sum_indent)
+					With acc :
+						"\(sum_indent)#pragma warning disable 219" &
+						"\(sum_indent)var \(position) = 2;" &
+						"\(sum_indent)#pragma warning restore 219"
+
+			case_dispatchers :
+				For case : cases
+					Where !(case Is Null)
+					Reduce
+						acc &
+						case.gen_gen(indent : sum_indent)
+					With acc : "\(sum_indent)\(position) = 2;"
+		}
+
 		base_case_tmpl +: {
 			name_str ?:
 			count : " + 1"
@@ -1629,17 +1651,6 @@ kws : compiler_lib.kws_repl_tmpl {
 			}
 		}
 
-		current_name : codegen.gen_tmpl {
-			extra_indent : ""
-			storage_name : iterator_key
-		}
-		current_ordinal : codegen.gen_tmpl {
-			extra_indent : ""
-			storage_name : iterator_ordinal
-		}
-		current_accumulator : codegen.gen_tmpl {
-			extra_indent : ""
-			storage_name : Lookup storage_name In Container
 		}
 	}
 	set_current +: {

@@ -985,13 +985,13 @@ abstract class Generator {
 		builder.visitInsn(Opcodes.DUP);
 		builder.visitInsn(Opcodes.ICONST_0);
 		iterator.load(builder);
-		visitMethod(MergeIterator.class.getMethod("getPosition"));
+		visitMethod(iterator.getBackingType().getMethod("getPosition"));
 		visitMethod(Long.class.getMethod("toString", long.class));
 		builder.visitInsn(Opcodes.AASTORE);
 		builder.visitInsn(Opcodes.DUP);
 		builder.visitInsn(Opcodes.ICONST_1);
 		iterator.load(builder);
-		visitMethod(MergeIterator.class.getMethod("getCurrent"));
+		visitMethod(iterator.getBackingType().getMethod("getCurrent"));
 		builder.visitInsn(Opcodes.AASTORE);
 		visitMethod(String.class.getMethod("format", String.class,
 				Object[].class));

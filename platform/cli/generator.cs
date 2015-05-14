@@ -663,13 +663,13 @@ internal abstract class Generator {
 		Builder.Emit(OpCodes.Ldarg_0);
 		Builder.Emit(OpCodes.Ldstr, "fricassée iteration {0}: {1}");
 		iterator.Load(Builder);
-		Builder.Emit(OpCodes.Call, typeof(MergeIterator).GetMethod("get_Position"));
+		Builder.Emit(OpCodes.Call, iterator.BackingType.GetMethod("get_Position"));
 		var local = Builder.DeclareLocal(typeof(long));
 		Builder.Emit(OpCodes.Stloc, local);
 		Builder.Emit(OpCodes.Ldloca, local);
 		Builder.Emit(OpCodes.Call, typeof(long).GetMethod("ToString", new System.Type[] { }));
 		iterator.Load(Builder);
-		Builder.Emit(OpCodes.Call, typeof(MergeIterator).GetMethod("get_Current"));
+		Builder.Emit(OpCodes.Call, iterator.BackingType.GetMethod("get_Current"));
 		Builder.Emit(OpCodes.Call, typeof(String).GetMethod("Format", new[] { typeof(string), typeof(object), typeof(object) }));
 		PushSourceReferenceHelper(node, original_reference);
 		Builder.Emit(OpCodes.Stfld, reference.Field);

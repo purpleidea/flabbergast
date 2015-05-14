@@ -744,19 +744,12 @@ kws_tmpl : Template {
 	dynamic_type_check_parsed : Template dynamic_type_check_tmpl {
 		field ?:
 	}
-	# Create a tuple merge loop using the provided values as inputs.
-	iterator : Template codegen.gen_tmpl {
+	iterator_tmpl : Template codegen.gen_tmpl {
 		# The code generation to produce frames and templates over which to be
 		# iterated.
 		input ?:
 		# The initial value for the accumulator of the iterator.
 		initial ?:
-		# The code to be invoked when the iterator has a value not covered in
-		# `cases`.
-		default_case ?:
-		# A list of the special cases of the iterator. The special cases will
-		# always be invoked, even if they are not present in the input.
-		cases ?:
 		# The type of the accumulator.
 		accumulator_type ?:
 		# Modify the current source reference to include the current iteration item.
@@ -779,6 +772,15 @@ kws_tmpl : Template {
 		input_merge : Template input_tmpl {
 			field ?:
 		}
+	}
+	# Create a frame merge loop using the provided values as inputs.
+	iterator : Template iterator_tmpl {
+		# A list of the special cases of the iterator. The special cases will
+		# always be invoked, even if they are not present in the input.
+		cases ?:
+		# The code to be invoked when the iterator has a value not covered in
+		# `cases`.
+		default_case ?:
 
 		# The base template for a “special case”. Not to be used directly.
 		base_case_tmpl : Template {

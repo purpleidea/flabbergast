@@ -1448,7 +1448,8 @@ kws : compiler_lib.kws_repl_tmpl {
 	dynamic_type_check_parsed +: {
 		reference_type : "\(field).getTypeId()"
 	}
-	iterator +: {
+	iterator_tmpl +: {
+		iterator_type ?:
 		extra_indent : ""
 
 		parent_source_reference : Lookup parameters.source_reference In Container
@@ -1460,12 +1461,9 @@ kws : compiler_lib.kws_repl_tmpl {
 		}
 
 		iterator_instance : Id & "_iterator"
-		iterator_next : Id & "_next"
-		iterator_dispatchers : Id & "_dispatchers"
 		iterator_key : Id & "_key"
 		iterator_ordinal : Id & "_ordinal"
 		iterator_start_block : Id & "_start_block"
-		position : Id & "_position"
 
 		gen_gen +: {
 			sum_indent : indent & extra_indent
@@ -1473,14 +1471,7 @@ kws : compiler_lib.kws_repl_tmpl {
 				input.gen_gen(indent : indent) &
 				"\(sum_indent)final FieldValue \(storage_name) = \(generator).makeField(\"\(rule_name)_iterator_accumulator\", \(accumulator_type.real_type).class);" &
 				create_initial &
-				define_dispatcher_states &
-				create_iterator &
-				iterator_trampoline &
-				# Create a block for the default dispatcher.
-				"\(sum_indent)\(generator).markState(\(iterator_dispatchers)[1]);" &
-				dispatch_code &
-				case_dispatchers &
-				"\(sum_indent)\(generator).markState(\(iterator_dispatchers)[0]);" &
+				custom_setup &
 				code
 
 			create_initial :
@@ -1496,75 +1487,12 @@ kws : compiler_lib.kws_repl_tmpl {
 					) &
 				"\(sum_indent)\(generator).markState(\(iterator_start_block));"
 
-			create_iterator :
-				# Create new fields for all the bits of stuff we need.
-				"\(sum_indent)final FieldValue \(iterator_instance) = \(generator).makeField(\"\(rule_name)_iterator\", MergeIterator.class);" &
+			create_fields :
+				"\(sum_indent)final FieldValue \(iterator_instance) = \(generator).makeField(\"\(rule_name)_iterator\", \(iterator_type));" &
 				"\(sum_indent)@SuppressWarnings(\"unused\")\n" &
-				"\(sum_indent)final LoadableValue \(iterator_key) = new MethodValue(\(iterator_instance), MergeIterator.class.getMethod(\"getCurrentish\"));" &
+				"\(sum_indent)final LoadableValue \(iterator_key) = new MethodValue(\(iterator_instance), \(iterator_type).getMethod(\"getCurrentish\"));" &
 				"\(sum_indent)@SuppressWarnings(\"unused\")\n" &
-				"\(sum_indent)final LoadableValue \(iterator_ordinal) = new MethodValue(\(iterator_instance), MergeIterator.class.getMethod(\"getPosition\"));" &
-				"\(sum_indent)\(generator).getBuilder().visitVarInsn(org.objectweb.asm.Opcodes.ALOAD, 0);" &
-				"\(sum_indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(MergeIterator.class));" &
-				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
-				"\(sum_indent)\(input.array).load(\(generator));" &
-				"\(sum_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(iterator_dispatchers)[1]);" &
-				"\(sum_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(iterator_dispatchers)[0]);" &
-				"\(sum_indent)\(generator).visitMethod(MergeIterator.class.getConstructors()[0]);" &
-				# load all the special dispatchers.
-				add_cases &
-				"\(sum_indent)\(iterator_instance).store(\(generator));"
-
-			iterator_trampoline :
-				# Create a re-entry point for the end of input (i.e., the iterator returning).
-				"\(sum_indent)final int \(iterator_next) = \(generator).defineState();" &
-				"\(sum_indent)\(generator).jumpToState(\(iterator_next));" &
-				"\(sum_indent)\(generator).markState(\(iterator_next));" &
-				"\(sum_indent)\(iterator_instance).load(\(generator));" &
-				"\(sum_indent)\(generator).visitMethod(MergeIterator.class.getMethod(\"next\"));" &
-				(If modify_source_reference
-					Then
-						"\(sum_indent)org.objectweb.asm.Label \(Id)_reset = new org.objectweb.asm.Label();" &
-						"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
-						"\(sum_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(iterator_dispatchers)[0]);" &
-						"\(sum_indent)\(generator).getBuilder().visitJumpInsn(org.objectweb.asm.Opcodes.IF_ICMPEQ, \(Id)_reset);" &
-						"\(sum_indent)\(GenerateId parameters.source_reference).set(\(generator).pushIteratorSourceReference(\(class_name).this, \(iterator_instance), \(parent_source_reference.storage_name)));" &
-						"\(sum_indent)\(generator).getBuilder().visitLabel(\(Id)_reset);"
-					Else "") &
-				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.IRETURN);"
-
-			dispatch_code : default_case.gen_gen(
-				indent : sum_indent,
-				code :
-					"\(sum_indent)\(default_case.extra_indent)\(generator).copyField(\(default_case.storage_name), \(storage_name));" &
-					"\(sum_indent)\(default_case.extra_indent)\(generator).jumpToState(\(iterator_next));"
-					)
-
-			num_cases :
-				For case : cases
-					Where !(case Is Null)
-					Reduce acc & case.count
-					With acc : "2"
-
-			define_dispatcher_states :
-				"\(sum_indent)final int[] \(iterator_dispatchers) = new int[ \(num_cases) ];" &
-				"\(sum_indent)for(int \(Id)_it = 0; \(Id)_it < \(iterator_dispatchers).length; \(Id)_it++) { \(iterator_dispatchers)[\(Id)_it] = \(generator).defineState(); }"
-
-			add_cases :
-				For case : cases
-					Where !(case Is Null)
-					Reduce
-						acc & case.add(indent : sum_indent)
-					With acc :
-						"\(sum_indent)@SuppressWarnings(\"unused\")\n" &
-						"\(sum_indent)int \(position) = 2;"
-
-			case_dispatchers :
-				For case : cases
-					Where !(case Is Null)
-					Reduce
-						acc &
-						case.gen_gen(indent : sum_indent)
-					With acc : "\(sum_indent)\(position) = 2;"
+				"\(sum_indent)final LoadableValue \(iterator_ordinal) = new MethodValue(\(iterator_instance), \(iterator_type).getMethod(\"getPosition\"));"
 		}
 
 		input_tmpl +: {
@@ -1660,6 +1588,103 @@ kws : compiler_lib.kws_repl_tmpl {
 			}
 		}
 
+		current_name : codegen.gen_tmpl {
+			extra_indent : ""
+			storage_name : iterator_key
+		}
+		current_ordinal : codegen.gen_tmpl {
+			extra_indent : ""
+			storage_name : iterator_ordinal
+		}
+		current_accumulator : codegen.gen_tmpl {
+			extra_indent : ""
+			storage_name : Lookup storage_name In Container
+		}
+	}
+	iterator +: {
+		iterator_type : "MergeIterator.class"
+		iterator_dispatchers : Id & "_dispatchers"
+		iterator_next : Id & "_next"
+		position : Id & "_position"
+
+		gen_gen +: {
+			custom_setup :
+				define_dispatcher_states &
+				create_iterator &
+				iterator_trampoline &
+				# Create a block for the default dispatcher.
+				"\(sum_indent)\(generator).markState(\(iterator_dispatchers)[1]);" &
+				dispatch_code &
+				case_dispatchers &
+				"\(sum_indent)\(generator).markState(\(iterator_dispatchers)[0]);"
+
+			create_iterator :
+				# Create new fields for all the bits of stuff we need.
+				create_fields &
+				"\(sum_indent)\(generator).getBuilder().visitVarInsn(org.objectweb.asm.Opcodes.ALOAD, 0);" &
+				"\(sum_indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(MergeIterator.class));" &
+				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+				"\(sum_indent)\(input.array).load(\(generator));" &
+				"\(sum_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(iterator_dispatchers)[1]);" &
+				"\(sum_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(iterator_dispatchers)[0]);" &
+				"\(sum_indent)\(generator).visitMethod(MergeIterator.class.getConstructors()[0]);" &
+				# load all the special dispatchers.
+				add_cases &
+				"\(sum_indent)\(iterator_instance).store(\(generator));"
+
+			iterator_trampoline :
+				# Create a re-entry point for the end of input (i.e., the iterator returning).
+				"\(sum_indent)final int \(iterator_next) = \(generator).defineState();" &
+				"\(sum_indent)\(generator).jumpToState(\(iterator_next));" &
+				"\(sum_indent)\(generator).markState(\(iterator_next));" &
+				"\(sum_indent)\(iterator_instance).load(\(generator));" &
+				"\(sum_indent)\(generator).visitMethod(MergeIterator.class.getMethod(\"next\"));" &
+				(If modify_source_reference
+					Then
+						"\(sum_indent)org.objectweb.asm.Label \(Id)_reset = new org.objectweb.asm.Label();" &
+						"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+						"\(sum_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(iterator_dispatchers)[0]);" &
+						"\(sum_indent)\(generator).getBuilder().visitJumpInsn(org.objectweb.asm.Opcodes.IF_ICMPEQ, \(Id)_reset);" &
+						"\(sum_indent)\(GenerateId parameters.source_reference).set(\(generator).pushIteratorSourceReference(\(class_name).this, \(iterator_instance), \(parent_source_reference.storage_name)));" &
+						"\(sum_indent)\(generator).getBuilder().visitLabel(\(Id)_reset);"
+					Else "") &
+				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.IRETURN);"
+
+			dispatch_code : default_case.gen_gen(
+				indent : sum_indent,
+				code :
+					"\(sum_indent)\(default_case.extra_indent)\(generator).copyField(\(default_case.storage_name), \(storage_name));" &
+					"\(sum_indent)\(default_case.extra_indent)\(generator).jumpToState(\(iterator_next));"
+					)
+
+			num_cases :
+				For case : cases
+					Where !(case Is Null)
+					Reduce acc & case.count
+					With acc : "2"
+
+			define_dispatcher_states :
+				"\(sum_indent)final int[] \(iterator_dispatchers) = new int[ \(num_cases) ];" &
+				"\(sum_indent)for(int \(Id)_it = 0; \(Id)_it < \(iterator_dispatchers).length; \(Id)_it++) { \(iterator_dispatchers)[\(Id)_it] = \(generator).defineState(); }"
+
+			add_cases :
+				For case : cases
+					Where !(case Is Null)
+					Reduce
+						acc & case.add(indent : sum_indent)
+					With acc :
+						"\(sum_indent)@SuppressWarnings(\"unused\")\n" &
+						"\(sum_indent)int \(position) = 2;"
+
+			case_dispatchers :
+				For case : cases
+					Where !(case Is Null)
+					Reduce
+						acc &
+						case.gen_gen(indent : sum_indent)
+					With acc : "\(sum_indent)\(position) = 2;"
+		}
+
 		base_case_tmpl +: {
 			name_str ?:
 			count : " + 1"
@@ -1708,17 +1733,6 @@ kws : compiler_lib.kws_repl_tmpl {
 			}
 		}
 
-		current_name : codegen.gen_tmpl {
-			extra_indent : ""
-			storage_name : iterator_key
-		}
-		current_ordinal : codegen.gen_tmpl {
-			extra_indent : ""
-			storage_name : iterator_ordinal
-		}
-		current_accumulator : codegen.gen_tmpl {
-			extra_indent : ""
-			storage_name : Lookup storage_name In Container
 		}
 	}
 	set_current +: {
