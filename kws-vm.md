@@ -423,6 +423,7 @@ Convert a value of an `Any` type into another type.
       [f : Float] { ... }
       [a : Frame] { ... }
       [i : Int] { ... }
+      [s : Str] { ... }
       [t : Template] { ... }
       [u : Unit] { ... }
 

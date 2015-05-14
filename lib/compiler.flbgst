@@ -3921,7 +3921,7 @@ language_tmpl : Template {
 					}
 				}
 				id : Template literal_tmpl {
-					pretty_name : "unique identifier for current tuple"
+					pretty_name : "unique identifier for current frame"
 					name : "Id"
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
 					code_value : kws.frame_id {
