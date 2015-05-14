@@ -11,7 +11,7 @@ public class Printer {
 		string output_filename = null;
 		var show_help = false;
 		var options = new OptionSet {
-			{"o:|output", "Write output to file instead of standard output.", v => output_filename = v},
+			{"o=|output", "Write output to file instead of standard output.", v => output_filename = v},
 			{"t|trace-parsing", "Produce a trace of the parse process.", v => trace = v != null},
 			{"h|help", "show this message and exit", v => show_help = v != null}
 		};
