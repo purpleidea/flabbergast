@@ -41,4 +41,9 @@ public class DirtyCollector implements ErrorCollector {
 	public void reportRawError(CodeRegion where, String message) {
 		analyse_dirty = true;
 	}
+
+	@Override
+	public void reportSingleTypeError(CodeRegion where, TypeSet type) {
+		analyse_dirty = true;
+	}
 }

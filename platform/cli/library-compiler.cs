@@ -16,6 +16,7 @@ namespace Flabbergast {
 		void ReportLookupTypeError(CodeRegion where, string name, Type new_type, Type existing_type);
 		void ReportParseError(string filename, int index, int row, int column, string message);
 		void ReportRawError(CodeRegion where, string message);
+		void ReportSingleTypeError(CodeRegion where, Type type);
 	}
 
 	public class ConsoleCollector : ErrorCollector {
@@ -45,6 +46,10 @@ namespace Flabbergast {
 
 		public void ReportRawError(CodeRegion where, string message) {
 			Console.Error.WriteLine("{0}:{1}:{2}-{3}:{4}: {5}", where.FileName, where.StartRow, where.StartColumn, where.EndRow, where.EndColumn, message);
+		}
+
+		public void ReportSingleTypeError(CodeRegion where, Type type) {
+			Console.Error.WriteLine("{0}:{1}:{2}-{3}:{4}: The expression has types {5}, but it must only have one.", where.FileName, where.StartRow, where.StartColumn, where.EndRow, where.EndColumn, type);
 		}
 	}
 }

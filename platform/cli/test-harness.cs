@@ -36,6 +36,11 @@ namespace Flabbergast
         {
             ParseDirty = true;
         }
+
+				public void ReportSingleTypeError(CodeRegion where, Type type)
+				{
+            AnalyseDirty = true;
+				}
     }
 
     public class CheckResult : Computation

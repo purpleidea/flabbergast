@@ -64,4 +64,13 @@ public class ConsoleCollector implements ErrorCollector {
 				where.getStartRow(), where.getStartColumn(), where.getEndRow(),
 				where.getEndColumn(), message);
 	}
+
+	@Override
+	public void reportSingleTypeError(CodeRegion where, TypeSet type) {
+		System.err
+				.printf("%s:%d:%d-%d:%d: The expression has types %s, but it must only have one.\n",
+						where.getFileName(), where.getStartRow(),
+						where.getStartColumn(), where.getEndRow(),
+						where.getEndColumn(), type);
+	}
 }

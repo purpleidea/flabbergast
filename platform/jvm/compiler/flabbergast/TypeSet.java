@@ -80,6 +80,10 @@ public class TypeSet {
 		return flags == 0;
 	}
 
+	public boolean isSingle() {
+		return (flags & (flags - 1)) == 0;
+	}
+
 	public boolean restrict(TypeSet other) {
 		int intersect = flags & other.flags;
 		if (intersect == 0) {

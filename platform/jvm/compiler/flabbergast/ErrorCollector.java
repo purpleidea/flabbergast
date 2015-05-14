@@ -13,4 +13,6 @@ public interface ErrorCollector {
 			String message);
 
 	void reportRawError(CodeRegion where, String message);
+
+	void reportSingleTypeError(CodeRegion where, TypeSet type);
 }

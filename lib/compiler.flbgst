@@ -335,6 +335,11 @@ ensure_type_tmpl : Template {
 	shared_fate : Template {
 		ensure_type_of ?:
 	}
+	# Ensure that a type is narrowed to a single type. That is, the union type
+	# has a cardinality of one.
+	single : Template {
+		ensure_type_of ?:
+	}
 	# Perform no further action.
 	stop : Template {}
 	# Perform multiple independent actions.

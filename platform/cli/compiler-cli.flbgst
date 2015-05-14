@@ -696,6 +696,15 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 		result : Id
 		value : "\(indent)var \(Id) = Environment.EnsureIntrinsic(_collector, this, \(current_type), \(If needs_unbox Then "true" Else current_unbox), ref _success);"
 	}
+	single +: {
+		result : ensure_type_of.result
+		value :
+			ensure_type_of.value &
+			"\(indent)if ((\(ensure_type_of.result) & (\(ensure_type_of.result) -1 )) != 0) {" &
+			"\(indent)\t_collector.ReportSingleTypeError(this, \(result));" &
+			"\(indent)\t_success = false;" &
+			"\(indent)}"
+	}
 	shared_fate +: {
 		current_type : Id
 		original_type : Lookup current_type In Container

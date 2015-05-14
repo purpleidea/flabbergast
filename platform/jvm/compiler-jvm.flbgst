@@ -739,6 +739,15 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 			"\(parent_indent)}"
 		result : Id
 	}
+	single +: {
+		result : ensure_type_of.result
+		value :
+			ensure_type_of.value &
+			"\(indent)if (!\(ensure_type_of.result).isSingle()) {" &
+			"\(indent)\t_collector.reportSingleTypeError(\(class_name).this, \(result));" &
+			"\(indent)\t_success.set(false);" &
+			"\(indent)}"
+	}
 	stop +: { value : ""  result : current_type }
 	multiple +: {
 		result : Id
