@@ -811,6 +811,13 @@ kws_tmpl : Template {
 			current_element ?:
 		}
 	}
+	# Create a frame merge loop using the provided values as inputs, reordered. The type of the ordering is inferred from the instrisic of the current syntax node.
+	ordered_iterator : Template iterator_tmpl {
+		# The action to perform that must return the ordering value for the current entry.
+		build_action ?:
+		# The action to perform once the correct order has been determined on each entry.
+		process_action ?:
+	}
 }
 # Supplemental code generation. These are more for controlling behaviour of the
 # code generator rather than generating code itself. None of these items

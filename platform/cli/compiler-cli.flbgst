@@ -1650,7 +1650,63 @@ kws : compiler_lib.kws_repl_tmpl {
 					"\(indent)}"
 			}
 		}
+	}
+	ordered_iterator +: {
+		iterator_type : "\(Id)_type"
+		order_type : "Environment.GetIntrinsicRealTypes(this)"
+		gen_gen +: {
+			custom_setup :
+				"\(sum_indent)var \(iterator_type) = typeof(OrderByIterator<>).MakeGenericType(\(order_type));" &
+				"\(sum_indent)var \(Id)_setup = \(generator).DefineState();" &
+				"\(sum_indent)var \(Id)_process = \(generator).DefineState();" &
+				"\(sum_indent)var \(Id)_end = \(generator).DefineState();" &
+				create_iterator &
+				"\(sum_indent)\(generator).JumpToState(\(Id)_setup);" &
+				"\(sum_indent)\(generator).MarkState(\(Id)_setup);" &
+				"\(sum_indent)\(iterator_instance).Load(\(generator));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, \(iterator_type).GetMethod(\"SetupNext\"));" &
+				"\(sum_indent)var \(Id)_build_label = \(generator).Builder.DefineLabel();" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Brtrue, \(Id)_build_label);" &
+				"\(sum_indent)\(generator).JumpToState(\(Id)_process);" &
+				"\(sum_indent)\(generator).Builder.MarkLabel(\(Id)_build_label);" &
+				build_action.gen_gen(
+					indent : sum_indent,
+					code :
+						"\(sum_indent)\(build_action.extra_indent)\(iterator_instance).Load(\(generator));" &
+						"\(sum_indent)\(build_action.extra_indent)\(build_action.storage_name).Load(\(generator));" &
+						"\(sum_indent)\(build_action.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, \(iterator_type).GetMethod(\"SetupReturn\", \(order_type)));" &
+						"\(sum_indent)\(build_action.extra_indent)\(generator).JumpToState(\(Id)_setup);"
+				) &
+				iterator_trampoline &
+				"\(sum_indent)\(generator).MarkState(\(Id)_end);"
 
+
+			create_iterator :
+				# Create new fields for all the bits of stuff we need.
+				create_fields &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
+				"\(sum_indent)\(input.array).Load(\(generator));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, \(iterator_type).GetConstructors()[0]);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(iterator_instance).Field);"
+
+			iterator_trampoline :
+				# Create a re-entry point for the end of input (i.e., the iterator returning).
+				"\(sum_indent)\(generator).MarkState(\(Id)_process);" &
+				"\(sum_indent)\(iterator_instance).Load(\(generator));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, \(iterator_type).GetMethod(\"Next\"));" &
+				"\(sum_indent)var \(Id)_cont = \(generator).Builder.DefineLabel();" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Brtrue, \(Id)_cont);" &
+				"\(sum_indent)\(generator).JumpToState(\(Id)_end);" &
+				"\(sum_indent)\(generator).Builder.MarkLabel(\(Id)_cont);" &
+				(If modify_source_reference
+					Then "\(sum_indent)\(parameters.source_reference.storage_name) = \(generator).PushIteratorSourceReference(this, \(iterator_instance), \(parent_source_reference.storage_name));"
+					Else "") &
+				process_action.gen_gen(
+					indent : indent,
+					code :
+						"\(indent)\(process_action.extra_indent)\(generator).CopyField(\(process_action.storage_name), \(storage_name));" &
+						"\(indent)\(process_action.extra_indent)\(generator).JumpToState(\(Id)_process);"
+				)
 		}
 	}
 	set_current +: {

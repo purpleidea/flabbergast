@@ -403,6 +403,13 @@ Dispatchers come in two flavours: a default dispatcher and zero or more special 
         ...
 				<nameM : Str>[accumulator : T, ord : Int] { ... }
 
+### Iterate with Custom Order
+Iterate over all the keys (attribute names) in a collection of frames and/or templates, in a user-specified order. The order is determined by the natural ordering of integers, floating pointer numbers or strings. Iteration proceeds in two phases: during the first phase, each item is converted into a value, of the right type, and then the iteration is performed a second time, in the correct sequence.
+
+    r : T = iterate_ordered<S : (Float|Int|Str)>(initial : T, item1 : (Frame|Template), ..., itemN : (Frame | Template))
+				[name : Str] { ... continue(v : S) }
+				[name : Str, accumulator : T, ord : Int] { ... continue(v : T) }
+
 ### Null Constant
 Set the result to be the null value. Note that since there are two null values, this should probably not be the target platform's null value.
 

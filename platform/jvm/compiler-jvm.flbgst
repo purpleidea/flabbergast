@@ -1732,7 +1732,65 @@ kws : compiler_lib.kws_repl_tmpl {
 					"\(indent)}"
 			}
 		}
+	}
+	ordered_iterator +: {
+		iterator_type : "OrderByIterator.class"
+		order_type : "environment.getIntrinsicRealTypes(\(class_name).this)"
+		gen_gen +: {
+			custom_setup :
+				"\(sum_indent)final int \(Id)_setup = \(generator).defineState();" &
+				"\(sum_indent)final int \(Id)_process = \(generator).defineState();" &
+				"\(sum_indent)final int \(Id)_end = \(generator).defineState();" &
+				create_iterator &
+				"\(sum_indent)\(generator).jumpToState(\(Id)_setup);" &
+				"\(sum_indent)\(generator).markState(\(Id)_setup);" &
+				"\(sum_indent)\(iterator_instance).load(\(generator));" &
+				"\(sum_indent)\(generator).visitMethod(\(iterator_type).getMethod(\"setupNext\"));" &
+				"\(sum_indent)org.objectweb.asm.Label \(Id)_build_label =  new org.objectweb.asm.Label();" &
+				"\(sum_indent)\(generator).getBuilder().visitJumpInsn(org.objectweb.asm.Opcodes.IFNE, \(Id)_build_label);" &
+				"\(sum_indent)\(generator).jumpToState(\(Id)_process);" &
+				"\(sum_indent)\(generator).getBuilder().visitLabel(\(Id)_build_label);" &
+				build_action.gen_gen(
+					indent : sum_indent,
+					code :
+						"\(sum_indent)\(build_action.extra_indent)\(iterator_instance).load(\(generator));" &
+						"\(sum_indent)\(build_action.extra_indent)\(generator).loadReboxed(\(build_action.storage_name), Object.class);" &
+						"\(sum_indent)\(build_action.extra_indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.CHECKCAST, org.objectweb.asm.Type.getInternalName(Comparable.class));" &
+						"\(sum_indent)\(build_action.extra_indent)\(generator).visitMethod(\(iterator_type).getMethod(\"setupReturn\", Comparable.class));" &
+						"\(sum_indent)\(build_action.extra_indent)\(generator).jumpToState(\(Id)_setup);"
+				) &
+				iterator_trampoline &
+				"\(sum_indent)\(generator).markState(\(Id)_end);"
 
+
+			create_iterator :
+				# Create new fields for all the bits of stuff we need.
+				create_fields &
+				"\(sum_indent)\(generator).getBuilder().visitVarInsn(org.objectweb.asm.Opcodes.ALOAD, 0);" &
+				"\(sum_indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(\(iterator_type)));" &
+				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+				"\(sum_indent)\(input.array).load(\(generator));" &
+				"\(sum_indent)\(generator).visitMethod(\(iterator_type).getConstructors()[0]);" &
+				"\(sum_indent)\(iterator_instance).store(\(generator));"
+
+			iterator_trampoline :
+				# Create a re-entry point for the end of input (i.e., the iterator returning).
+				"\(sum_indent)\(generator).markState(\(Id)_process);" &
+				"\(sum_indent)\(iterator_instance).load(\(generator));" &
+				"\(sum_indent)\(generator).visitMethod(\(iterator_type).getMethod(\"next\"));" &
+				"\(sum_indent)org.objectweb.asm.Label \(Id)_cont =  new org.objectweb.asm.Label();" &
+				"\(sum_indent)\(generator).getBuilder().visitJumpInsn(org.objectweb.asm.Opcodes.IFNE, \(Id)_cont);" &
+				"\(sum_indent)\(generator).jumpToState(\(Id)_end);" &
+				"\(sum_indent)\(generator).getBuilder().visitLabel(\(Id)_cont);" &
+				(If modify_source_reference
+					Then "\(sum_indent)\(GenerateId parameters.source_reference).set(\(generator).pushIteratorSourceReference(\(class_name).this, \(iterator_instance), \(parent_source_reference.storage_name)));"
+					Else "") &
+				process_action.gen_gen(
+					indent : indent,
+					code :
+						"\(indent)\(process_action.extra_indent)\(generator).copyField(\(process_action.storage_name), \(storage_name));" &
+						"\(indent)\(process_action.extra_indent)\(generator).jumpToState(\(Id)_process);"
+				)
 		}
 	}
 	set_current +: {
