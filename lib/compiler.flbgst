@@ -2039,12 +2039,72 @@ language_tmpl : Template {
 							]
 						}
 					]
-					type_demand : ensure_type.filter {
-						types : [ known_types.int, known_types.float, known_types.str ]
-						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
+					type_demand : ensure_type.shared_fate {
+						ensure_type_of : ensure_type.multiple {
+							actions : [
+								ensure_type.single {
+									ensure_type_of : ensure_type.filter {
+										types : [ known_types.int, known_types.float, known_types.str ]
+										ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
+									}
+								},
+								ensure_type.intrinsic {}
+							]
+						}
 					}
-					#TODO
-					code_value : codegen.not_implemented {}
+					code_value : codegen.bind {
+						define : {
+							input_frame : codegen.other_code { field : $selector }
+						}
+						in : Template kws.ordered_iterator {
+							accumulator_type : known_types.frame
+
+							modify_source_reference : True
+							input : input_list {
+								items : [ parameters.input_frame ]
+							}
+							initial : kws.frame_new {
+								container : parameters.self_frame
+								context : parameters.context
+							}
+							build_action : codegen.bind {
+								define : {
+									context : kws.list_prepend {
+										frame : kws.dynamic_type_dispatch {
+											allow_types : [ known_types.frame ]
+											of : kws.lookup_dynamic {
+												name : current_name
+												source : kws.list_prepend {
+													frame : parameters.input_frame
+													tail : kws.list_null {}
+												}
+											}
+										}
+										tail : parameters.context
+									}
+								}
+								in : Template codegen.prepare_lookup_cache {
+									name : $select_env
+									in : codegen.other_code { field : $expression }
+								}
+							}
+
+							process_action : kws.set_frame_or_tmpl {
+								returns : into
+								name : kws.string_ordinal {
+									source : current_ordinal
+								}
+								into : current_accumulator
+								with : kws.lookup_dynamic {
+									name : current_name
+									source : kws.list_prepend {
+										frame : parameters.input_frame
+										tail : kws.list_null {}
+									}
+								}
+							}
+						}
+					}
 				}
 				reverse : Template selector_tmpl {
 					level : 0

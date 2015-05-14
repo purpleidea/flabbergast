@@ -1,0 +1,2 @@
+x : 1 Through 4
+value : (For v : x Order By -x Reduce x * a + x With a : 0) == ((4 * 3 + 3) * 2 + 2) + 1
