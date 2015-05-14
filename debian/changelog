@@ -1,3 +1,14 @@
+flabbergast (0.3~ppa0) trusty; urgency=medium
+
+  * Add implementation for `Order By`
+  * Fix error causing parse errors to be lost in JVM
+  * Add REPLs
+  * Change `As` to `Enforce`
+  * Do a check for overriding non-existent attributes
+  * Fix `update-flabbergast`
+
+ -- Andre Masella <andre@masella.name>  Thu, 14 May 2015 06:23:07 -0400
+
 flabbergast (0.2~ppa0) trusty; urgency=medium
 
   * Use full path to compiler during update
