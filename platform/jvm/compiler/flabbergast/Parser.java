@@ -261,7 +261,7 @@ public class Parser {
 		 */
 		void update(String message, String syntax_name) {
 			if (index > Parser.this.index + 1) {
-				message = "Expected " + message + " while parsing "
+				Parser.this.message = "Expected " + message + " while parsing "
 						+ syntax_name + " but got "
 						+ Parser.toLiteral("" + peekLast()) + " instead.";
 				Parser.this.row = row;
