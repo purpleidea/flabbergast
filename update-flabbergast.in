@@ -32,7 +32,7 @@ do
 		do
 			"$COMPILER" "$DIRECTORY" || EXIT_CODE="1"
 		done
-		find "$DIRECTORY" -type d -a -empty -exec rmdir {} \;
+		find "$DIRECTORY" -type d -a -empty -exec rmdir {} \; -prune
 	elif [ -e "$DIRECTORY" ]
 	then
 		echo "$DIRECTORY: cannot update" 1>&2
