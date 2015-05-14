@@ -1,3 +1,9 @@
+flabbergast (0.3~ppa1) trusty; urgency=medium
+
+  * Re-ran autoconf
+
+ -- Andre Masella <andre@masella.name>  Thu, 14 May 2015 07:17:50 -0400
+
 flabbergast (0.3~ppa0) trusty; urgency=medium
 
   * Add implementation for `Order By`
