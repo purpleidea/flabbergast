@@ -50,6 +50,40 @@ public abstract class ElaboratePrinter implements ConsumeResult {
 				write(name);
 			}
 			write("\n");
+		} else if (result instanceof Stringish) {
+			write("\"");
+			for (String s : (Stringish) result) {
+				for (int it = 0; it < s.length(); it++) {
+					if (s.charAt(it) == 7) {
+						write("\\a");
+					} else if (s.charAt(it) == 8) {
+						write("\\b");
+					} else if (s.charAt(it) == 12) {
+						write("\\f");
+					} else if (s.charAt(it) == 10) {
+						write("\\n");
+					} else if (s.charAt(it) == 13) {
+						write("\\r");
+					} else if (s.charAt(it) == 9) {
+						write("\\t");
+					} else if (s.charAt(it) == 11) {
+						write("\\v");
+					} else if (s.charAt(it) == 34) {
+						write("\\\"");
+					} else if (s.charAt(it) == 92) {
+						write("\\\\");
+					} else if (s.charAt(it) < 16) {
+						write("\\x0");
+						write(Integer.toHexString(s.charAt(it)));
+					} else if (s.charAt(it) < 32) {
+						write("\\x");
+						write(Integer.toHexString(s.charAt(it)));
+					} else {
+						write(s.substring(it, it + 1));
+					}
+				}
+			}
+			write("\"\n");
 		} else {
 			write(result.toString());
 			write("\n");
