@@ -50,6 +50,9 @@ public abstract class ElaboratePrinter implements ConsumeResult {
 				write(name);
 			}
 			write("\n");
+		} else if (result instanceof Computation) {
+			write("<unfinished>");
+			write("\n");
 		} else if (result instanceof Stringish) {
 			write("\"");
 			for (String s : (Stringish) result) {

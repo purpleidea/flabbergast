@@ -141,6 +141,8 @@ namespace Flabbergast {
 				}
 				Console.WriteLine();
 				t.SourceReference.Write(Console.Out, prefix, seen_srcref);
+			} else if (result is Computation) {
+				Console.WriteLine("<unfinished>");
 			} else if (result is Stringish) {
 				var provider = CodeDomProvider.CreateProvider("CSharp");
 				provider.GenerateCodeFromExpression(new CodePrimitiveExpression(result.ToString()), Console.Out, null);
