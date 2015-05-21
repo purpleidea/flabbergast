@@ -27,15 +27,17 @@ namespace Flabbergast {
 			var base_name = uri.Substring(4);
 			var type_name = "Flabbergast.Library." + base_name.Replace('/', '.');
 			foreach (var path in paths) {
-				var src_file = Path.Combine(path, base_name + ".flbgst");
-				if (!File.Exists(src_file)) {
-					continue;
+				foreach (var extension in new[] { ".nflbgst", ".flbgst"}) {
+					var src_file = Path.Combine(path, base_name + extension);
+					if (!File.Exists(src_file)) {
+						continue;
+					}
+					var parser = Parser.Open(src_file);
+					var type = parser.ParseFile(collector, unit, type_name);
+					reason = type == null ? LibraryFailure.Corrupt : LibraryFailure.None;
+					cache[uri] = type;
+					return type;
 				}
-				var parser = Parser.Open(src_file);
- 				var type = parser.ParseFile(collector, unit, type_name);
-				reason = type == null ? LibraryFailure.Corrupt : LibraryFailure.None;
-				cache[uri] = type;
-				return type;
 			}
 			cache[uri] = null;
 			reason = LibraryFailure.Missing;

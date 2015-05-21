@@ -50,6 +50,17 @@ class AutoWriteClassVisitor extends ClassVisitor {
 }
 
 public class MainCompiler {
+
+	private static String removeExtensions(String filename,
+			String... extensions) {
+		for (String extension : extensions) {
+			if (filename.endsWith(extension)) {
+				return filename.substring(0,
+						filename.length() - extension.length());
+			}
+		}
+		return filename;
+	}
 	public static void main(String[] args) {
 		Options options = new Options();
 		options.addOption("t", "trace-parsing", false,
@@ -90,9 +101,8 @@ public class MainCompiler {
 			try {
 				Parser parser = Parser.open(filename);
 				parser.setTrace(result.hasOption('t'));
-				String file_root = ("flabbergast/library/" + (filename
-						.endsWith(".flbgst") ? filename.substring(0,
-						filename.length() - ".flbgst".length()) : filename))
+				String file_root = ("flabbergast/library/" + removeExtensions(
+						filename, ".flbgst", ".jflbgst"))
 						.replace(File.separatorChar, '/')
 						.replaceAll("[/.]+", "/").replace('-', '_');
 				parser.parseFile(collector, unit, file_root);

@@ -14,6 +14,9 @@ namespace Flabbergast {
 			foreach (var file in Directory.EnumerateFiles(directory, "*.flbgst")) {
 				sources.Add(file);
 			}
+			foreach (var file in Directory.EnumerateFiles(directory, "*.nflbgst")) {
+				sources.Add(file);
+			}
 			foreach (var file in Directory.EnumerateFiles(directory, "*.dll")) {
 				known_dlls[file] = true;
 			}
