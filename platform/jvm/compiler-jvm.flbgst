@@ -2646,8 +2646,5 @@ compiler : compiler_lib.language_with_repl_tmpl {
 		}
 	}
 	value : "package flabbergast;\n" & (For group : expanded_groups Reduce acc & group.value With acc : "")
-
-	#TODO This is due to a bug in the bootstrap interpreter, remove it
-	needs_unbox : True
 }
 value : compiler.value
