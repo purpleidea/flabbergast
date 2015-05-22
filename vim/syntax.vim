@@ -1,7 +1,7 @@
 " Vim syntax file
 " Language:	Flabbergast
 " Maintainer:	Andre Masella <andre@masella.name>
-" Filenames:	*.flbgst
+" Filenames:	*.flbgst, *.?flbgst
 
 " Quit when a syntax file was already loaded
 if exists("b:current_syntax")
