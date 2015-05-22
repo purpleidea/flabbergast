@@ -1,0 +1,132 @@
+# Return the conjunction (and) of the arguments.
+all : allifier(base : identity)
+
+# Convert a function-like template from one that returns a list of Booleans to
+# a conjunctions (and).
+allifier : Template {
+	base ?:
+	value : Template base {
+		value +original: For item : original Reduce acc && item With acc : True
+	}
+}
+
+# Return the disjunction (or) of the arguments.
+any : anyifier(base : identity)
+
+# Convert a function-like template from one that returns a list of Booleans to
+# a disjunction (or).
+anyifier : Template {
+	base ?:
+	value : Template base {
+		value +original: For item : original Reduce acc || item With acc : False
+	}
+}
+
+# Count the number of items in a frame.
+count : firstifier(base : count_list)
+
+# Count the number of item in a list of frames.
+count_list : Template {
+	args ?:
+	value :
+		For arg : args, arg_name : Name
+		Select
+			arg_name : (For x : arg Reduce k + 1 With k : 0)
+}
+
+# Selects all frames which have `enabled` set to true in the values in a frame.
+enabled : Template {
+	args ?:
+	value :
+		For arg : args, arg_name : Name
+			Where arg.enabled
+			Select arg_name : arg
+}
+
+# Return the first argument supplied.
+first : firstifier(base : identity)
+
+# Convert a function-like template from one that returns a list of non-null
+# values into one that returns the first non-null value.
+firstifier : Template {
+	base ?:
+	value : Template base {
+		value +original: For item : original Reduce acc ?? item With acc : Null
+	}
+}
+
+# Return the last argument supplied.
+last : lastifier(base : identity)
+
+# Convert a function-like template from one that returns a list of non-null
+# values into one that returns the last non-null value.
+lastifier : Template {
+	base ?:
+	value : Template base {
+		value +original: For item : original Reduce item ?? acc With acc : Null
+	}
+}
+
+# Function-like template that returns its arguments.
+identity : Template {
+	args ?:
+	value : args
+}
+
+# Selects all non-null values in a frame.
+non_null : Template {
+	args ?:
+	value :
+		For arg : args, arg_name : Name
+			Where !(arg Is Null)
+			Select arg_name : arg
+}
+
+# Replaces all null values in a frame with `default`.
+or_default : Template {
+	args ?:
+	default ?:
+	value :
+		For arg : args, arg_name : Name
+			Select arg_name : arg ?? default
+}
+
+
+str_concat : str_concatifier(base : identity, delimiter : "")
+
+# Convert a function-like template from one that returns a list of strings to a
+# single string with the `delimiter` between them.
+str_concatifier : Template {
+	base ?:
+	value : Template base {
+		# A string to place between items.
+		delimiter %:
+		value +original:
+			For item : original, pos : Ordinal
+			Reduce
+				(If pos > 1 Then acc & delimiter Else "") &
+				item
+			With acc : ""
+	}
+}
+
+# Pad a string to `length` by adding the string `padding` to the end. If
+# multiple arguments are supplied, they are then concatentated after padding.
+str_pad : str_concatifier(base : str_pad_list)
+
+# Pad a string to `length` by adding the string `padding` to the end. If the
+# string is too long, it is unmodified.
+str_pad_list : Template {
+	# The padding characters to use. If this is not a multiple of the difference
+	# in lengths, it may pad slightly longer.
+	padding : " "
+	# The target length of the string.
+	length ?:
+
+	value :
+		For arg : args, arg_name : Name
+			Select arg_name :
+				If Length arg < length
+					Then (For x : 1 Through ((length - Length input) / Length padding) Reduce (acc & padding) With acc : arg)
+					Else arg
+}

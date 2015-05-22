@@ -945,11 +945,12 @@ Because Flabbergast is meant to render data, it has a rather lean standard libra
 
 So, the Flabbergast libraries look like they do to avoid I/O and minimise the ensuing insanity.
 
-### Frame Manipulation (`lib:frame`)
-This library is simply a collection of convenience templates for manipulating frames. It is portable and should be present on every platform; it is reasonable to expect to have it.
+There are platform specific libraries, which end in `-interop`, to provide access to the underlying libraries. Do not access these libraries directly. Instead, using the corresponding platform-independent library (_e.g._, `utils` rather than `utils-interop`). These libraries enhance the functionality of these base libraries, but the originals may still be visible in stack traces; consider them an implementation detail.
 
-### String Manipulation (`lib:str`)
-These functions perform common string operations not found in the language. This is not a portable language, but should be trivial to port to new platforms; it is reasonable to expect to have it.
+### General Utilities (`lib:utils`)
+This library is simply a collection of convenience function-like templates. It is portable and should be present on every platform; it is reasonable to expect to have it.
+
+Broadly, it provides basic string manipulation, convenience functions to manipulate frames, and layered override templates. Currently, Flabbergast lacks a documentation generator, so the best information is the source comments.
 
 ### Regular Expressions (`lib:regex`)
 The regular expression library works in two parts: there are a set of templates to build a regular expression and a function to collect matches from a regular expression. Regular expression syntax varies across platforms, so a more uniform way of defining expressions is needed. This is what the templates provide: a consistent mechanism. Essentially, the library provides a way to build a regular expression “function” that can be called on a string. For example:

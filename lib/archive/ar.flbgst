@@ -1,3 +1,5 @@
+utils_lib : From lib:utils
+
 # A BSD `ar` style archive
 archive_tmpl : Template {
 	# The collection of `file_tmpl` files.
@@ -15,18 +17,6 @@ archive_tmpl : Template {
 	group : 4
 	# The other permission bits.
 	other : 4
-}
-
-# Pad a string with spaces to the specified length.
-pad_string : Template {
-	input ?:
-	length ?:
-
-	value :
-		If Length input <= length
-			Then input & padding
-			Else Error "Input string too long. Should be \(length) but is \(Length input)."
-	padding : For x : (1 Through (length - Length input)) Reduce (acc & " ") With acc : ""
 }
 
 # A file in a compressed archive
@@ -47,13 +37,13 @@ file_tmpl : Template {
 	file_header : If file_name_length > 16 Then "#1/" & file_name_length Else file_name
 	header_suffix : If file_name_length > 16 Then file_name Else ""
 	header_perms :
-		pad_string(length : 6, input : uid) &
-		pad_string(length : 6, input : gid) &
-		pad_string(length : 8, input : user & group & other)
+		utils_lib.str_pad(length : 6, input : uid) &
+		utils_lib.str_pad(length : 6, input : gid) &
+		utils_lib.str_pad(length : 8, input : user & group & other)
 	value :
-		pad_string(length : 16, input : file_header) &
-		pad_string(length : 12, input : mtime) &
+		utils_lib.str_pad(length : 16, input : file_header) &
+		utils_lib.str_pad(length : 12, input : mtime) &
 		header_perms &
-		pad_string(length : 10, input : Length contents + Length header_suffix) &
+		utils_lib.str_pad(length : 10, input : Length contents + Length header_suffix) &
 		"`\n" & header_suffix & contents
 }
