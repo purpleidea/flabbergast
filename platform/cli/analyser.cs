@@ -513,8 +513,8 @@ internal class Environment : CodeRegion {
 		var load_count = all_children.Sum(info => info.NeedsLoad(current) ? 1 : 0);
 	    if (load_count > 0) {
 			generator.StartInterlock(load_count);
-	        lookup_results.AddRange(from info in all_children where info.NeedsLoad(current) select info.Load(generator, source_reference, context));
-	        var state = generator.DefineState();
+			lookup_results.AddRange(from info in all_children where info.NeedsLoad(current) select info.Load(generator, source_reference, context));
+			var state = generator.DefineState();
 			generator.SetState(state);
 			generator.DecrementInterlock(generator.Builder);
 			var end_label = generator.Builder.DefineLabel();
