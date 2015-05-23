@@ -196,7 +196,7 @@ class Environment implements CodeRegion {
 			source_reference.load(generator);
 			builder.visitLdcInsn(narrow_error);
 			builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
-					getInternalName(TaskMaster.class), "ReportOtherError",
+					getInternalName(TaskMaster.class), "reportOtherError",
 					Generator.makeSignature(null, SourceReference.class,
 							String.class));
 			builder.visitInsn(Opcodes.ICONST_0);
