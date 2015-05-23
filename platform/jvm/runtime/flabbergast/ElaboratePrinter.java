@@ -30,6 +30,7 @@ public abstract class ElaboratePrinter implements ConsumeResult {
 				write("{ # Frame ");
 				String id = Integer.toString(seen.size());
 				write(id);
+				write("\n");
 				seen.put(f, id);
 				for (String name : f) {
 					write(prefix);
