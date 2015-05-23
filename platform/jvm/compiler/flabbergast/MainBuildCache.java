@@ -14,7 +14,8 @@ public class MainBuildCache {
 			if (f.isDirectory()) {
 				discover(f, sources, known_classes);
 			} else if (f.isFile()) {
-				if (f.getName().endsWith(".flbgst")) {
+				if (f.getName().endsWith(".flbgst")
+						|| f.getName().endsWith(".jflbgst")) {
 					sources.add(f);
 				} else if (f.getName().endsWith(".class")) {
 					known_classes.add(f);
@@ -47,8 +48,7 @@ public class MainBuildCache {
 			try {
 				String filename = source.getPath();
 				Parser parser = Parser.open(filename);
-				String file_root = ("flabbergast/library/" + (filename
-						.substring(0, filename.length() - ".flbgst".length())))
+				String file_root = ("flabbergast/library/" + removeSuffix(filename))
 						.replace(File.separatorChar, '/')
 						.replaceAll("[/.]+", "/").replace('-', '_');
 				parser.parseFile(collector, unit, file_root);
@@ -62,4 +62,13 @@ public class MainBuildCache {
 		System.exit(success ? 0 : 1);
 	}
 
+	public static String removeSuffix(String filename) {
+		for (String suffix : new String[]{".flbgst", ".jflbgst"}) {
+			if (filename.endsWith(suffix)) {
+				return filename.substring(0,
+						filename.length() - suffix.length());
+			}
+		}
+		return filename;
+	}
 }
