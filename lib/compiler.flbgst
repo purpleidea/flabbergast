@@ -3813,9 +3813,11 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : []
-					ensure_type_is : ensure_type.any {}
-					code_value : kws.external_from_field {
-						field : $uri
+					ensure_type_is : ensure_type.intrinsic { needs_unbox : False }
+					code_value : codegen.return_intrinsic_dispatch {
+						of : kws.external_from_field {
+							field : $uri
+						}
 					}
 				}
 				direct_lookup : Template expression_tmpl {
