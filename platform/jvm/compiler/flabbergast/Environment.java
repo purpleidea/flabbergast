@@ -106,34 +106,38 @@ class Environment implements CodeRegion {
 			LoadableValue source_reference, LoadableValue context,
 			LoadableValue self_frame, Block block) throws Exception {
 		generator.debugPosition(this);
-		MethodVisitor builder = generator.getBuilder();
 		List<LoadableCache> lookup_results = new ArrayList<LoadableCache>();
 		if (specials != null) {
 			FieldValue child_context = generator.makeField("anon_ctxt",
 					Context.class);
 			final FieldValue child_frame = generator.makeField("anon_frame",
 					Frame.class);
-			builder.visitVarInsn(Opcodes.ALOAD, 0);
-			builder.visitTypeInsn(Opcodes.NEW, getInternalName(Frame.class));
-			builder.visitInsn(Opcodes.DUP);
+			generator.getBuilder().visitVarInsn(Opcodes.ALOAD, 0);
+			generator.getBuilder().visitTypeInsn(Opcodes.NEW,
+					getInternalName(Frame.class));
+			generator.getBuilder().visitInsn(Opcodes.DUP);
 			generator.loadTaskMaster();
 			generator.generateNextId();
 			source_reference.load(generator);
 			context.load(generator);
 			self_frame.load(generator);
-			builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
-					getInternalName(Frame.class), "<init>",
+			generator.getBuilder().visitMethodInsn(
+					Opcodes.INVOKESPECIAL,
+					getInternalName(Frame.class),
+					"<init>",
 					org.objectweb.asm.Type.getConstructorDescriptor(Frame.class
 							.getConstructors()[0]));
-			child_frame.store(builder);
+			child_frame.store(generator);
 
-			builder.visitVarInsn(Opcodes.ALOAD, 0);
+			generator.getBuilder().visitVarInsn(Opcodes.ALOAD, 0);
 			child_frame.load(generator);
 			context.load(generator);
-			builder.visitMethodInsn(Opcodes.INVOKESTATIC,
-					getInternalName(Context.class), "prepend", Generator
-							.makeSignature(Context.class, Frame.class,
-									Context.class));
+			generator.getBuilder().visitMethodInsn(
+					Opcodes.INVOKESTATIC,
+					getInternalName(Context.class),
+					"prepend",
+					Generator.makeSignature(Context.class, Frame.class,
+							Context.class));
 			child_context.store(generator);
 			// Promote the context with the specials to proper status
 			context = child_context;
@@ -194,13 +198,15 @@ class Environment implements CodeRegion {
 		if (narrow_error != null) {
 			generator.loadTaskMaster();
 			source_reference.load(generator);
-			builder.visitLdcInsn(narrow_error);
-			builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
-					getInternalName(TaskMaster.class), "reportOtherError",
+			generator.getBuilder().visitLdcInsn(narrow_error);
+			generator.getBuilder().visitMethodInsn(
+					Opcodes.INVOKEVIRTUAL,
+					getInternalName(TaskMaster.class),
+					"reportOtherError",
 					Generator.makeSignature(null, SourceReference.class,
 							String.class));
-			builder.visitInsn(Opcodes.ICONST_0);
-			builder.visitInsn(Opcodes.IRETURN);
+			generator.getBuilder().visitInsn(Opcodes.ICONST_0);
+			generator.getBuilder().visitInsn(Opcodes.IRETURN);
 			return;
 		}
 		int load_count = 0;
@@ -216,7 +222,6 @@ class Environment implements CodeRegion {
 				}
 			}
 			generator.stopInterlock();
-			builder = generator.getBuilder();
 		}
 		for (LoadableCache lookup_result : lookup_results) {
 			if (!lookup_result.getDirectCopy())
@@ -233,14 +238,16 @@ class Environment implements CodeRegion {
 							.getTypes().get(0)));
 			Label label = new Label();
 			lookup_result.getValue().load(generator);
-			builder.visitTypeInsn(Opcodes.INSTANCEOF, getInternalName(Generator
-					.getBoxedType(lookup_result.getTypes().get(0))));
-			builder.visitJumpInsn(Opcodes.IFNE, label);
+			Class<?> required_type = Generator.getBoxedType(lookup_result
+					.getTypes().get(0));
+			generator.getBuilder().visitTypeInsn(Opcodes.INSTANCEOF,
+					getInternalName(required_type));
+			generator.getBuilder().visitJumpInsn(Opcodes.IFNE, label);
 			generator.emitTypeError(source_reference, String.format(
-					"Expected type %s for “%s”, but got %s.", lookup_result
-							.getTypes().get(0), lookup_result.getNameInfo()
-							.getName(), "%s"), lookup_result.getValue());
-			builder.visitLabel(label);
+					"Expected type %s for “%s”, but got %s.", required_type,
+					lookup_result.getNameInfo().getName(), "%s"), lookup_result
+					.getValue());
+			generator.getBuilder().visitLabel(label);
 		}
 		List<LoadableCache> permutable_caches = new ArrayList<LoadableCache>();
 		int old_paths = generator.getPaths();
@@ -387,7 +394,7 @@ class Environment implements CodeRegion {
 			generator.markState(state);
 			block.invoke(new AutoUnboxValue(original, type));
 			generator.setBuilder(builder);
-			builder.visitLabel(next_label);
+			generator.getBuilder().visitLabel(next_label);
 		}
 		StringBuilder error_message = new StringBuilder();
 		error_message.append("Expected type ");
