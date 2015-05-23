@@ -55,6 +55,15 @@ firstifier : Template {
 	}
 }
 
+# Create a frame with the specified attribute name and value.
+frame : Template {
+	# The value to be used. Only one may be specified.
+	args ?:
+	# The name to use
+	name ?:
+	value : For arg : args Select name : arg
+}
+
 # Return the last argument supplied.
 last : lastifier(base : identity)
 
