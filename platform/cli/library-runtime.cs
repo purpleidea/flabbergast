@@ -50,13 +50,21 @@ namespace Flabbergast {
 				col_width = Math.Max(col_width, lookup.GetName(name_it).Length);
 			}
 			for (var name_it = 0; name_it < lookup.NameCount; name_it++) {
-				Console.Error.Write("| {0}", lookup.GetName(name_it).PadRight(col_width, ' '));
+				Console.Error.Write("│ {0}", lookup.GetName(name_it).PadRight(col_width, ' '));
 			}
-			Console.Error.WriteLine("|");
+			Console.Error.WriteLine("│");
+			for (var name_it = 0; name_it < lookup.NameCount; name_it++) {
+				Console.Error.Write(name_it == 0 ? "├" : "┼");
+				for (var s = 0; s <= col_width; s++) {
+					Console.Error.Write("─");
+				}
+			}
+			Console.Error.WriteLine("┤");
+
 			var seen = new Dictionary<SourceReference, bool>();
 			var known_frames = new Dictionary<Frame, string>();
 			var frame_list = new List<Frame>();
-			var null_text = "| ".PadRight(col_width + 2, ' ');
+			var null_text = "│ ".PadRight(col_width + 2, ' ');
 			for (var frame_it = 0; frame_it < lookup.FrameCount; frame_it++) {
 				for (var name_it = 0; name_it < lookup.NameCount; name_it++) {
 					var frame = lookup[name_it, frame_it];
@@ -68,9 +76,9 @@ namespace Flabbergast {
 						frame_list.Add(frame);
 						known_frames[frame] = frame_list.Count.ToString().PadRight(col_width, ' ');
 					}
-					Console.Error.Write("| {0}", known_frames[frame]);
+					Console.Error.Write("│ {0}", known_frames[frame]);
 				}
-				Console.Error.WriteLine("|");
+				Console.Error.WriteLine("│");
 			}
 			for (var it = 0; it < frame_list.Count; it++) {
 				Console.Error.WriteLine("Frame {0} defined:", it + 1);
