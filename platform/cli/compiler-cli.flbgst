@@ -1941,7 +1941,7 @@ codegen : compiler_lib.codegen_tmpl {
 		extra_indent : ""
 		storage_name : "null"
 		gen_gen +: {
-			value : "\(indent)throw new System.NotImplementedException(\"\(pretty_name) not implemented\");"
+			value : "\(indent)throw new System.NotImplementedException(System.String.Format(\"{0}:{1}:{2}-{3}:{4}: \(pretty_name) not implemented\", FileName, StartRow, StartColumn, EndRow, EndColumn));"
 		}
 	}
 	other_code +: {
