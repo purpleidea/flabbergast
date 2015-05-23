@@ -100,7 +100,6 @@ or_default : Template {
 			Select arg_name : arg ?? default
 }
 
-
 str_concat : str_concatifier(base : identity, delimiter : "")
 
 # Convert a function-like template from one that returns a list of strings to a
@@ -119,11 +118,44 @@ str_concatifier : Template {
 	}
 }
 
+# Find the position of `str` in the argument. See `str_find_list` for details.
+str_find : firstifier(base : str_find_list)
+
+# Find the position of `str` in the arguments or null if it isn't found.
+str_find_list : Template ( From lib:utilsinterop ).str_find_list {
+	# The arguments to check (a.k.a., the haystack).
+	args ?:
+	# The string to find (a.k.a., the needle).
+	str ?:
+	# The position to begin searching from. If the position is negative, the
+	# position is relative to the end of the string, rather than the beginning.
+	start : 0
+	# Search from the end of the string towards the beginning.
+	backward : False
+
+	str_args :
+		For arg : args, arg_name : Name
+		Select arg_name : {
+			str : arg To Str
+			length : Length str
+			real_start :
+				If start Enforce Int >= 0
+					Then start
+					Else (start + length)
+			enabled : real_start Enforce Int >= 0 && real_start < length
+		}
+}
+
+# convert a string to lower case.
+str_lower_case : str_concatifier(base : str_lower_case_list)
+# convert strings to lower case.
+str_lower_case_list : Template ( From lib:utilsinterop ).str_lower_case_list {}
+
 # Pad a string to `length` by adding the string `padding` to the end. If
 # multiple arguments are supplied, they are then concatentated after padding.
 str_pad : str_concatifier(base : str_pad_list)
 
-# Pad a string to `length` by adding the string `padding` to the end. If the
+# Pad strings to `length` by adding the string `padding` to the end. If the
 # string is too long, it is unmodified.
 str_pad_list : Template {
 	# The padding characters to use. If this is not a multiple of the difference
@@ -136,6 +168,64 @@ str_pad_list : Template {
 		For arg : args, arg_name : Name
 			Select arg_name :
 				If Length arg < length
-					Then (For x : 1 Through ((length - Length input) / Length padding) Reduce (acc & padding) With acc : arg)
+					Then (For x : 1 Through ((length - Length arg) / Length padding) Reduce (acc & padding) With acc : arg)
 					Else arg
 }
+
+# Check if a string starts with `str`.
+str_prefixed : allifier(base : str_prefixed_list)
+
+# Check if a string starts with `str`.
+str_prefixed_list : Template ( From lib:utilsinterop ).str_prefixed_list {}
+
+# Extract an internal span of a string. See `str_slice_list`.
+str_slice : str_concatifier(base : str_slice_list)
+
+# Extract an internal span of strings.
+str_slice_list : Template ( From lib:utilsinterop ).str_slice_list {
+	# The position at which to begin the extraction.
+	start : 0
+	# The position at which to end the extraction. If this is beyond the end of
+	# the string, the entire string is kept. This or `length` must be provided.
+	end : start + length
+	# The length of the extraction. If this is beyond the end of the string, the
+	# entire string is kept. This or `end` must be provided.
+	length : end - start
+	# If extraction begins after the end of the string, this value will be
+	# returned.
+	empty : ""
+
+	str_args :
+		If length Enforce Int < 0
+			Then Error "Length \(length) must be non-negative."
+			Else
+				(For arg : args, arg_name : Name
+				Select arg_name : {
+					str : arg To Str
+					str_length : Length str
+					real_start :
+						If start Enforce Int >= 0
+							Then start
+							Else (start + length)
+					real_length : (If str_length < length Then str_length Else length) - real_start + 1
+					enabled : real_length > 0
+				})
+}
+
+# Check if a string ends with `str`.
+str_suffixed : allifier(base : str_suffixed_list)
+
+# Check if strings ends with `str`.
+str_suffixed_list : Template ( From lib:utilsinterop ).str_suffixed_list {}
+
+# Remove leading and trailing whitespace from a string.
+str_trim : str_concatifier(base : str_trim_list)
+
+# Remove leading and trailing whitespace from strings.
+str_trim_list : Template ( From lib:utilsinterop ).str_trim_list {}
+
+# CONVERT A STRING TO UPPER CASE.
+str_upper_case : str_concatifier(base : str_upper_case_list)
+
+# CONVERT STRINGS TO UPPER CASE.
+str_upper_case_list : Template ( From lib:utilsinterop ).str_upper_case_list {}

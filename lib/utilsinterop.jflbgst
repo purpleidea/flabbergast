@@ -1,0 +1,46 @@
+str_lower_case_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke java.lang.String toLowerCase (arg To Str)
+}
+str_find_list : Template {
+	value :
+		For arg : str_args, arg_name : Name
+		Select arg_name :
+			If arg.enabled
+			Then
+				(Let pos :
+					If backward
+						Then XInvoke java.lang.String lastIndexOf (arg.str, str To Str, arg.real_start)
+						Else XInvoke java.lang.String indexOf (arg.str, str To Str, arg.real_start)
+				In If pos == -1 Then Null Else pos)
+			Else Null
+}
+str_prefixed_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke java.lang.String startsWith (arg To Str, str To Str)
+}
+str_slice_list : Template {
+	value :
+		For arg : str_args, arg_name : Name
+		Select arg_name :
+			If arg.enabled
+				Then XInvoke java.lang.String substring (arg.str, arg.real_start, arg.real_start + arg.real_length)
+				Else empty
+}
+str_suffixed_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke java.lang.String endsWith (arg To Str, str To Str)
+}
+str_trim_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke java.lang.String trim (arg To Str)
+}
+str_upper_case_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke java.lang.String toUpperCase (arg To Str)
+}

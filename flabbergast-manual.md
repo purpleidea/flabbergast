@@ -945,7 +945,7 @@ Because Flabbergast is meant to render data, it has a rather lean standard libra
 
 So, the Flabbergast libraries look like they do to avoid I/O and minimise the ensuing insanity.
 
-There are platform specific libraries, which end in `-interop`, to provide access to the underlying libraries. Do not access these libraries directly. Instead, using the corresponding platform-independent library (_e.g._, `utils` rather than `utils-interop`). These libraries enhance the functionality of these base libraries, but the originals may still be visible in stack traces; consider them an implementation detail.
+There are platform specific libraries, which end in `interop`, to provide access to the underlying libraries. Do not access these libraries directly. Instead, using the corresponding platform-independent library (_e.g._, `utils` rather than `utilsinterop`). These libraries enhance the functionality of these base libraries, but the originals may still be visible in stack traces; consider them an implementation detail.
 
 ### General Utilities (`lib:utils`)
 This library is simply a collection of convenience function-like templates. It is portable and should be present on every platform; it is reasonable to expect to have it.

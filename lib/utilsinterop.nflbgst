@@ -1,0 +1,46 @@
+str_lower_case_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke System.String ToLower (arg To Str)
+}
+str_find_list : Template {
+	value :
+		For arg : str_args, arg_name : Name
+		Select arg_name :
+			If arg.enabled
+			Then
+				(Let pos :
+					If backward
+						Then XInvoke System.String LastIndexOf (arg.str, str, arg.real_start)
+						Else XInvoke System.String IndexOf (arg.str, str, arg.real_start)
+				In If pos == -1 Then Null Else pos)
+			Else Null
+}
+str_prefixed_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke System.String StartsWith (arg To Str, str To Str)
+}
+str_slice_list : Template {
+	value :
+		For arg : str_args, arg_name : Name
+		Select arg_name :
+			If arg.enabled
+				Then XInvoke System.String Substring (arg.str, arg.real_start, arg.real_length)
+				Else empty
+}
+str_suffixed_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke System.String EndsWith (arg To Str, str To Str)
+}
+str_trim_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke System.String Trim (arg To Str)
+}
+str_upper_case_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke System.String ToUpper (arg To Str)
+}
