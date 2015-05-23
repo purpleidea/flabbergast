@@ -3191,6 +3191,19 @@ language_tmpl : Template {
 									]
 								}
 							},
+							# Null → *
+							choice_tmpl {
+								type : known_types.unit
+								action : codegen.type_dispatch_parsed {
+									field : $right
+									choices : [
+										choice_tmpl {
+											type : known_types.unit
+											action : left_result
+										}
+									]
+								}
+							},
 							# Template → *
 							choice_tmpl {
 								type : known_types.template
@@ -3199,6 +3212,19 @@ language_tmpl : Template {
 									choices : [
 										choice_tmpl {
 											type : known_types.template
+											action : left_result
+										}
+									]
+								}
+							},
+							# Str → *
+							choice_tmpl {
+								type : known_types.str
+								action : codegen.type_dispatch_parsed {
+									field : $right
+									choices : [
+										choice_tmpl {
+											type : known_types.str
 											action : left_result
 										}
 									]
