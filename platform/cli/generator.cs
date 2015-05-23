@@ -860,7 +860,7 @@ internal class FunctionGenerator : Generator {
 			init_builder.Emit(OpCodes.Brtrue, has_instance);
 			init_builder.Emit(OpCodes.Ldarg_0);
 			init_builder.Emit(OpCodes.Ldarg_1);
-			init_builder.Emit(OpCodes.Ldstr, "Cannot perform override. No value in source tuple to override!");
+			init_builder.Emit(OpCodes.Ldstr, "Cannot perform override. No value in source frame to override!");
 			init_builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new[] { typeof(SourceReference), typeof(string) }));
 			init_builder.Emit(OpCodes.Ldnull);
 			init_builder.Emit(OpCodes.Ret);

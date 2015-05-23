@@ -73,7 +73,7 @@ namespace Flabbergast {
 /**
  * A stack element that bifurcates.
  *
- * These are typical of instantiation and tuple overriding that have both a
+ * These are typical of instantiation and attribute overriding that have both a
  * container and an ancestor.
  */
 

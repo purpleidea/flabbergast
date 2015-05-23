@@ -100,7 +100,7 @@ class FunctionGenerator extends Generator {
 			init_builder.visitVarInsn(Opcodes.ALOAD, 1);
 			init_builder.visitVarInsn(Opcodes.ALOAD, 2);
 			init_builder
-					.visitLdcInsn("Cannot perform override. No value in source tuple to override!");
+					.visitLdcInsn("Cannot perform override. No value in source frame to override!");
 			init_builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
 					getInternalName(TaskMaster.class), "reportOtherError", Type
 							.getMethodDescriptor(TaskMaster.class.getMethod(
