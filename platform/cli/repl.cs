@@ -69,8 +69,11 @@ namespace Flabbergast {
 			var assembly_builder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("Repl"), AssemblyBuilderAccess.Run);
 			var module_builder = assembly_builder.DefineDynamicModule("ReplModule");
 			var unit = new CompilationUnit(module_builder, false);
-			var task_master = new ConsoleTaskMaster();
 			var collector = new ConsoleCollector();
+			var task_master = new ConsoleTaskMaster();
+			task_master.AddUriHandler(BuiltInLibraries.INSTANCE);
+			task_master.AddUriHandler(new LoadPrecompiledLibraries());
+			task_master.AddUriHandler(new DynamicallyCompiledLibraries(collector));
 
 			if (files.Count == 1) {
 				var parser = Parser.Open(files[0]);
