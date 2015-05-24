@@ -100,6 +100,18 @@ or_default : Template {
 			Select arg_name : arg ?? default
 }
 
+# Multiply a list of numbers.
+product : productifier(base : identity)
+
+# Convert a function-like template from one that returns a list of numbers to a
+# single product.
+productifier : Template {
+	base ?:
+	value : Template base {
+		value +original: For item : original Reduce acc * item With acc : 1
+	}
+}
+
 str_concat : str_concatifier(base : identity, delimiter : "")
 
 # Convert a function-like template from one that returns a list of strings to a
@@ -257,4 +269,16 @@ str_upper_case : str_concatifier(base : str_upper_case_list)
 str_upper_case_list : Template ( From lib:utilsinterop ).str_upper_case_list {
 	# The strings to manipulate.
 	args ?:
+}
+
+# Sum a list of numbers.
+sum : sumifier(base : identity)
+
+# Convert a function-like template from one that returns a list of numbers to a
+# single sum.
+sumifier : Template {
+	base ?:
+	value : Template base {
+		value +original: For item : original Reduce acc + item With acc : 0
+	}
 }
