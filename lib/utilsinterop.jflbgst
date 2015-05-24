@@ -5,16 +5,19 @@ str_lower_case_list : Template {
 }
 str_find_list : Template {
 	value :
-		For arg : str_args, arg_name : Name
-		Select arg_name :
-			If arg.enabled
-			Then
-				(Let pos :
-					If backward
-						Then XInvoke java.lang.String lastIndexOf (arg.str, str To Str, arg.real_start)
-						Else XInvoke java.lang.String indexOf (arg.str, str To Str, arg.real_start)
-				In If pos == -1 Then Null Else pos)
-			Else Null
+		If Length str == 0
+			Then Error "“str” must not be empty."
+			Else
+				(For arg : str_args, arg_name : Name
+				Select arg_name :
+					If arg.enabled
+					Then
+						(Let pos :
+							If backward
+								Then XInvoke java.lang.String lastIndexOf (arg.str, str To Str, arg.real_start)
+								Else XInvoke java.lang.String indexOf (arg.str, str To Str, arg.real_start)
+						In If pos == -1 Then Null Else pos)
+					Else Null)
 }
 str_prefixed_list : Template {
 	value :
