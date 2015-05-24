@@ -76,6 +76,8 @@ public abstract class Stringish
 
 	public abstract long getLength();
 
+	public abstract long getUtf8Length();
+
 	@Override
 	public Iterator<String> iterator() {
 		return new RamblingIterator<String>(this);

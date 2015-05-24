@@ -54,6 +54,11 @@ str_trim_list : Template {
 		For arg : args, arg_name : Name
 		Select arg_name : XInvoke java.lang.String trim (arg To Str)
 }
+str_utf8_length_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke flabbergast.Stringish getUtf8Length (arg To Str)
+}
 str_upper_case_list : Template {
 	value :
 		For arg : args, arg_name : Name

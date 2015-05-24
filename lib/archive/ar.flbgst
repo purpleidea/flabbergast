@@ -21,9 +21,9 @@ archive_tmpl : Template {
 
 # A file in a compressed archive
 file_tmpl : Template {
-	# The file name, which should contain only ASCII characters.
+	# The file name.
 	file_name ?:
-	# The file contents, which should contain only ASCII characters.
+	# The file contents.
 	contents ?:
 	uid %:
 	gid %:
@@ -32,7 +32,7 @@ file_tmpl : Template {
 	group %:
 	other %:
 
-	file_name_length : Length file_name
+	file_name_length : utils_lib.str_utf8_length(file_name)
 	# If the file name is more than 16 characters, use the BSD `ar` encoding.
 	file_header : If file_name_length > 16 Then "#1/" & file_name_length Else file_name
 	header_suffix : If file_name_length > 16 Then file_name Else ""
@@ -44,6 +44,6 @@ file_tmpl : Template {
 		utils_lib.str_pad(length : 16, input : file_header) &
 		utils_lib.str_pad(length : 12, input : mtime) &
 		header_perms &
-		utils_lib.str_pad(length : 10, input : Length contents + Length header_suffix) &
+		utils_lib.str_pad(length : 10, input : utils_lib.str_utf8_length(contents, header_suffix)) &
 		"`\n" & header_suffix & contents
 }

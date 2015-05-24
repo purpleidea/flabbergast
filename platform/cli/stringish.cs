@@ -7,6 +7,7 @@ namespace Flabbergast {
 	public abstract class Stringish : IComparable<Stringish> {
 		public static Stringish[] BOOLEANS = {new SimpleStringish("False"), new SimpleStringish("True")};
 		public abstract long Length { get; }
+		public abstract long Utf8Length { get; }
 
 		public int CompareTo(Stringish other) {
 			var this_stream = Stream();
@@ -88,6 +89,10 @@ namespace Flabbergast {
 			get { return str.Length; }
 		}
 
+		public override long Utf8Length {
+			get { return System.Text.Encoding.UTF8.GetByteCount(str); }
+		}
+
 		private readonly string str;
 
 		public SimpleStringish(string str) {
@@ -102,6 +107,9 @@ namespace Flabbergast {
 	public class ConcatStringish : Stringish {
 		public override long Length {
 			get { return chars; }
+		}
+		public override long Utf8Length {
+			get { return head.Utf8Length + tail.Utf8Length; }
 		}
 
 		private readonly long chars;

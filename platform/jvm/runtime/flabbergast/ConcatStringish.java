@@ -26,6 +26,11 @@ public class ConcatStringish extends Stringish {
 	}
 
 	@Override
+	public long getUtf8Length() {
+		return head.getUtf8Length() + tail.getUtf8Length();
+	}
+
+	@Override
 	public String ramblingNext(Stack<GetNext<String>> stack) {
 		stack.push(tail);
 		return head.ramblingNext(stack);

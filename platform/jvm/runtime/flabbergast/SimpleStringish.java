@@ -1,5 +1,7 @@
 package flabbergast;
 
+import java.nio.charset.StandardCharsets;
+
 import java.util.Iterator;
 import java.util.Stack;
 
@@ -21,6 +23,12 @@ public class SimpleStringish extends Stringish {
 	public long getLength() {
 		return str.length();
 	}
+
+	@Override
+	public long getUtf8Length() {
+		return str.getBytes(StandardCharsets.UTF_8).length;
+	}
+
 
 	@Override
 	public Iterator<String> iterator() {

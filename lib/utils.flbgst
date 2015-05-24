@@ -262,6 +262,15 @@ str_trim_list : Template ( From lib:utilsinterop ).str_trim_list {
 	args ?:
 }
 
+# Get the UTF-8 length of a string.
+str_utf8_length : sumifier(base : str_utf8_length_list)
+
+# Get the UTF-8 length of strings.
+str_utf8_length_list : Template ( From lib:utilsinterop ).str_utf8_length_list {
+	# The strings to measure.
+	args ?:
+}
+
 # CONVERT A STRING TO UPPER CASE.
 str_upper_case : str_concatifier(base : str_upper_case_list)
 
