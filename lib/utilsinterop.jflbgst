@@ -24,6 +24,18 @@ str_prefixed_list : Template {
 		For arg : args, arg_name : Name
 		Select arg_name : XInvoke java.lang.String startsWith (arg To Str, str To Str)
 }
+str_replace_list : Template {
+	value :
+		If Length str == 0
+			Then Error "“str” must not be empty."
+			Else
+				(Let
+					java_pattern : XInvoke java.util.regex.Pattern quote (str To Str),
+					java_replacement : XInvoke java.util.regex.Matcher quoteReplacement (with To Str)
+				In
+					For arg : args, arg_name : Name
+					Select arg_name : XInvoke java.lang.String replaceAll (arg To Str, java_pattern, java_replacement))
+}
 str_slice_list : Template {
 	value :
 		For arg : str_args, arg_name : Name

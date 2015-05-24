@@ -178,6 +178,20 @@ str_prefixed : allifier(base : str_prefixed_list)
 # Check if a string starts with `str`.
 str_prefixed_list : Template ( From lib:utilsinterop ).str_prefixed_list {}
 
+# Replace occurrences of string `str` in a string to `with`. See
+# `str_replace_list` for details.
+str_replace : firstifier(base : str_replace_list)
+
+# Replace occurrences of string `str` in strings to `with`.
+str_replace_list : Template ( From lib:utilsinterop ).str_replace_list {
+	# The strings to manipulate (a.k.a., the haystack).
+	args ?:
+	# The string for which to search (a.k.a., the needle).
+	str ?:
+	# The replacement string.
+	with : ""
+}
+
 # Extract an internal span of a string. See `str_slice_list`.
 str_slice : str_concatifier(base : str_slice_list)
 
