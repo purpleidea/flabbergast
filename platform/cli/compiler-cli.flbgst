@@ -2479,7 +2479,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 								in : parser.many {
 									nonempty : True
 									accumulate : True
-									separator : parser.single { char : "." }
+									separator : parser.single { char : ".," }
 									of : cli_identifier { }
 								}
 							},
