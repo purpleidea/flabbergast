@@ -82,6 +82,44 @@ identity : Template {
 	value : args
 }
 
+# Finds the maximum in a list of values
+max : maxifier(base : identity)
+
+# Convert a function-like template from one that returns a list of homogenous
+# values into one that returns the largest value.
+maxifier : Template {
+	base ?:
+	value : Template base {
+		value +original:
+			For item : original
+			Where !(item Is Null)
+			Reduce
+				If acc Is Null
+					Then item
+					Else If acc > item Then acc Else item
+			With acc : Null
+	}
+}
+
+# Finds the minimum in a list of values
+min : minifier(base : identity)
+
+# Convert a function-like template from one that returns a list of homogenous
+# values into one that returns the largest value.
+minifier : Template {
+	base ?:
+	value : Template base {
+		value +original:
+			For item : original
+			Where !(item Is Null)
+			Reduce
+				If acc Is Null
+					Then item
+					Else If acc < item Then acc Else item
+			With acc : Null
+	}
+}
+
 # Selects all non-null values in a frame.
 non_null : Template {
 	args ?:
