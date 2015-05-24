@@ -149,7 +149,10 @@ str_find_list : Template ( From lib:utilsinterop ).str_find_list {
 # convert a string to lower case.
 str_lower_case : str_concatifier(base : str_lower_case_list)
 # convert strings to lower case.
-str_lower_case_list : Template ( From lib:utilsinterop ).str_lower_case_list {}
+str_lower_case_list : Template ( From lib:utilsinterop ).str_lower_case_list {
+	# The strings to manipulate.
+	args ?:
+}
 
 # Pad a string to `length` by adding the string `padding` to the end. If
 # multiple arguments are supplied, they are then concatentated after padding.
@@ -176,7 +179,10 @@ str_pad_list : Template {
 str_prefixed : allifier(base : str_prefixed_list)
 
 # Check if a string starts with `str`.
-str_prefixed_list : Template ( From lib:utilsinterop ).str_prefixed_list {}
+str_prefixed_list : Template ( From lib:utilsinterop ).str_prefixed_list {
+	# The strings to check.
+	args ?:
+}
 
 # Replace occurrences of string `str` in a string to `with`. See
 # `str_replace_list` for details.
@@ -230,16 +236,25 @@ str_slice_list : Template ( From lib:utilsinterop ).str_slice_list {
 str_suffixed : allifier(base : str_suffixed_list)
 
 # Check if strings ends with `str`.
-str_suffixed_list : Template ( From lib:utilsinterop ).str_suffixed_list {}
+str_suffixed_list : Template ( From lib:utilsinterop ).str_suffixed_list {
+	# The strings to check.
+	args ?:
+}
 
 # Remove leading and trailing whitespace from a string.
 str_trim : str_concatifier(base : str_trim_list)
 
 # Remove leading and trailing whitespace from strings.
-str_trim_list : Template ( From lib:utilsinterop ).str_trim_list {}
+str_trim_list : Template ( From lib:utilsinterop ).str_trim_list {
+	# The strings to manipulate.
+	args ?:
+}
 
 # CONVERT A STRING TO UPPER CASE.
 str_upper_case : str_concatifier(base : str_upper_case_list)
 
 # CONVERT STRINGS TO UPPER CASE.
-str_upper_case_list : Template ( From lib:utilsinterop ).str_upper_case_list {}
+str_upper_case_list : Template ( From lib:utilsinterop ).str_upper_case_list {
+	# The strings to manipulate.
+	args ?:
+}
