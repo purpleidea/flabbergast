@@ -1,0 +1,111 @@
+absolute_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke System.Math Abs (arg)
+}
+angle_unit_degrees : 0.0174532925
+angle_unit_gradians : 0.01570796326794896696777
+angle_unit_radians : 1.0
+angle_unit_turns : 6.283185307179586231996
+ceiling_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke System.Math Ceiling (arg)
+}
+circle : {
+	arccos_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke System.Math Acos (arg * 1.0) / angle_unit
+	}
+	arcsin_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke System.Math Asin (arg * 1.0) / angle_unit
+	}
+	arctan_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke System.Math Atan (arg * 1.0) / angle_unit
+	}
+	cos_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke System.Math Cos (arg * angle_unit)
+	}
+	sin_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke System.Math Sin (arg * angle_unit)
+	}
+	tan_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke System.Math Tan (arg * angle_unit)
+	}
+}
+floor_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke System.Math Floor (arg)
+}
+hyperbola : {
+	arccos_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke System.Math Log (arg + XInvoke System.Math Sqrt (arg * arg - 1.0)) / angle_unit
+	}
+	arcsin_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke System.Math Log (arg + XInvoke System.Math Sqrt (arg * arg + 1.0)) / angle_unit
+	}
+	arctan_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : 0.5 * XInvoke System.Math Log ((arg + 1.0) / (arg - 1.0)) / angle_unit
+	}
+	cos_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke System.Math Cosh (arg * angle_unit)
+	}
+	sin_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke System.Math Sinh (arg * angle_unit)
+	}
+	tan_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke System.Math Tanh (arg * angle_unit)
+	}
+}
+log_list : Template {
+	value :
+		Let
+			real_base : base * 1.0
+		In
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke System.Math Log (arg * 1.0, real_base)
+}
+
+power_list : Template {
+	value :
+		Let
+			real_exponent : exponent To Float
+		In
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke System.Math Pow (arg To Float, real_exponent)
+}
+
+round_list : Template {
+	value :
+		Let
+			real_places : If places Enforce Int < 0
+				Then Error "The number of decimal places specified, \(places), must be non-negative."
+				Else places
+		In
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke System.Math Round (arg To Float, real_places)
+}

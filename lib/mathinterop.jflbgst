@@ -1,0 +1,109 @@
+absolute_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke java.lang.Math abs (arg)
+}
+angle_unit_degrees : 0.0174532925
+angle_unit_gradians : 0.01570796326794896696777
+angle_unit_radians : 1.0
+angle_unit_turns : 6.283185307179586231996
+ceiling_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke java.lang.Math ceil (arg)
+}
+circle : {
+	arccos_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke java.lang.Math acos (arg To Float)
+	}
+	arcsin_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke java.lang.Math asin (arg To Float)
+	}
+	arctan_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke java.lang.Math atan (arg To Float)
+	}
+	cos_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke java.lang.Math cos (arg To Float)
+	}
+	sin_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke java.lang.Math sin (arg To Float)
+	}
+	tan_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke java.lang.Math tan (arg To Float)
+	}
+}
+floor_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke java.lang.Math floor (arg)
+}
+hyperbola : {
+	arccos_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke java.lang.Math log (arg + XInvoke java.lang.Math sqrt (arg * arg - 1.0))
+	}
+	arcsin_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke java.lang.Math log (arg + XInvoke java.lang.Math sqrt (arg * arg + 1.0))
+	}
+	arctan_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : 0.5 * XInvoke java.lang.Math log ((arg + 1.0) / (arg - 1.0))
+	}
+	cos_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke java.lang.Math cosh (arg To Float)
+	}
+	sin_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke java.lang.Math sinh (arg To Float)
+	}
+	tan_list : Template {
+		value :
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke java.lang.Math tanh (arg To Float)
+	}
+}
+log_list : Template {
+	value :
+		Let
+			real_base : XInvoke java.lang.Math log (base To Float)
+		In
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke java.lang.Math log (arg To Float) / real_base
+}
+power_list : Template {
+	value :
+		Let
+			real_exponent : exponent To Float
+		In
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke java.lang.Math pow (arg To Float, real_exponent)
+}
+round_list : Template {
+	value :
+		Let
+			real_places : If places Enforce Int < 0
+				Then Error "The number of decimal places specified, \(places), must be non-negative."
+				Else XInvoke java.lang.Math pow (10.0, places To Float)
+		In
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke java.lang.Math round (arg To Float * real_places) / real_places
+}

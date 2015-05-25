@@ -1,0 +1,143 @@
+utils_lib : From lib:utils
+
+# Compute the absolute value of a number.
+absolute : utils_lib.firstifier(base : absolute_list)
+
+absolute_list : Template ( From lib:mathinterop ).absolute_list {
+	# A list of numbers.
+	args ?:
+}
+
+# The default angle unit for trigonometric calculations.
+angle_unit : angle_unit_radians
+
+angle_unit_degrees : ( From lib:mathinterop ).angle_unit_degrees
+angle_unit_gradians : ( From lib:mathinterop ).angle_unit_gradians
+angle_unit_radians : ( From lib:mathinterop ).angle_unit_radians
+angle_unit_turns : ( From lib:mathinterop ).angle_unit_turns
+
+# Compute the smallest integral value greater than or equal to the argument.
+ceiling : utils_lib.firstifier(base : ceiling_list)
+
+ceiling_list : Template ( From lib:mathinterop ).ceiling_list {
+	# A list of numbers.
+	args ?:
+}
+
+# Trigonometic functions for a circle.
+circle : {
+	arccos : utils_lib.firstifier(base : arccos_list)
+	arccos_list : Template ( From lib:mathinterop ).circle.arccos_list {
+		# A list of angles.
+		args ?:
+	}
+	arcsin : utils_lib.firstifier(base : arcsin_list)
+	arcsin_list : Template ( From lib:mathinterop ).circle.arcsin_list {
+		# A list of angles.
+		args ?:
+	}
+	arctan : utils_lib.firstifier(base : arctan_list)
+	arctan_list : Template ( From lib:mathinterop ).circle.arctan_list {
+		# A list of angles.
+		args ?:
+	}
+	cos : utils_lib.firstifier(base : cos_list)
+	cos_list : Template ( From lib:mathinterop ).circle.cos_list {
+		# A list of angles.
+		args ?:
+	}
+	sin : utils_lib.firstifier(base : sin_list)
+	sin_list : Template ( From lib:mathinterop ).circle.sin_list {
+		# A list of angles.
+		args ?:
+	}
+	tan : utils_lib.firstifier(base : tan_list)
+	tan_list : Template ( From lib:mathinterop ).circle.tan_list {
+		# A list of angles.
+		args ?:
+	}
+}
+# Compute the largest integral value less than or equal to the argument.
+floor : utils_lib.firstifier(base : floor_list)
+
+floor_list : Template ( From lib:mathinterop ).floor_list {
+	# A list of numbers.
+	args ?:
+}
+
+# Trigonometic functions for a hyperbola.
+hyperbola : {
+	arccos : utils_lib.firstifier(base : arccos_list)
+	arccos_list : Template ( From lib:mathinterop ).hyperbola.arccos_list {
+		# A list of angles.
+		args ?:
+	}
+	arcsin : utils_lib.firstifier(base : arcsin_list)
+	arcsin_list : Template ( From lib:mathinterop ).hyperbola.arcsin_list {
+		# A list of angles.
+		args ?:
+	}
+	arctan : utils_lib.firstifier(base : arctan_list)
+	arctan_list : Template ( From lib:mathinterop ).hyperbola.arctan_list {
+		# A list of angles.
+		args ?:
+	}
+	cos : utils_lib.firstifier(base : cos_list)
+	cos_list : Template ( From lib:mathinterop ).hyperbola.cos_list {
+		# A list of angles.
+		args ?:
+	}
+	sin : utils_lib.firstifier(base : sin_list)
+	sin_list : Template ( From lib:mathinterop ).hyperbola.sin_list {
+		# A list of angles.
+		args ?:
+	}
+	tan : utils_lib.firstifier(base : tan_list)
+	tan_list : Template ( From lib:mathinterop ).hyperbola.tan_list {
+		# A list of angles.
+		args ?:
+	}
+}
+# Compute the logarithm of the argument. See `log_list for details.
+log : utils_lib.firstifier(base : log_list)
+
+# Compute the logarithm of the argument.
+log_list : Template ( From lib:mathinterop ).log_list {
+	# A list of numbers.
+	args ?:
+	# The base to use.
+	base : natural
+}
+
+# The natural number, _e_.
+natural : 2.7182818284590452354
+
+# The ratio of a circle's circumference to its diameter, _π_.
+pi : 3.14159265358979323846
+
+# Compute the argument raised to an exponent. See `power_list` for details.
+power : utils_lib.firstifier(base : power_list)
+
+# Compute the argument raised to an exponent.
+power_list : Template ( From lib:mathinterop ).power_list {
+	# A list of numbers.
+	args ?:
+	# A number to raise the values.
+	exponent ?:
+}
+
+# Rounds the arguments to a specified number of decimal places. See
+# `round_list` for details.
+round : utils_lib.firstifier(base : round_list)
+
+# Rounds the arguments to a specified number of decimal places. See
+# `round_list` for details.
+round_list : Template ( From lib:mathinterop ).round_list {
+	# A list of numbers.
+	args ?:
+	# The number of decimal places. Must be non-negative.
+	places : 0
+}
+
+# The ratio of a circle's circumference to its radius, _τ_.
+tau : pi * 2
