@@ -422,7 +422,7 @@ abstract class Generator {
 			source_reference.load(builder);
 			builder.visitLdcInsn(String.format(error_message.toString(),
 					original.getBackingType().getSimpleName()));
-			visitMethod(TaskMaster.class.getMethod("ReportOtherError",
+			visitMethod(TaskMaster.class.getMethod("reportOtherError",
 					SourceReference.class, String.class));
 			builder.visitInsn(Opcodes.ICONST_0);
 			builder.visitInsn(Opcodes.IRETURN);
@@ -770,7 +770,7 @@ abstract class Generator {
 					methods.get(0).getName(), methods.get(0)
 							.getDeclaringClass().getCanonicalName(),
 					arg_types.toString()));
-			visitMethod(TaskMaster.class.getMethod("ReportOtherError",
+			visitMethod(TaskMaster.class.getMethod("reportOtherError",
 					SourceReference.class, String.class));
 			builder.visitInsn(Opcodes.ICONST_0);
 			builder.visitInsn(Opcodes.IRETURN);
