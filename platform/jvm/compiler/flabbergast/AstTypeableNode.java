@@ -65,7 +65,7 @@ abstract class AstTypeableNode extends AstNode {
 		} catch (ClassNotFoundException e) {
 			success.set(false);
 			collector.reportRawError(where, "No such type " + type_name
-					+ " found. Perhaps you are missing an assembly reference.");
+					+ " found.");
 			return;
 		}
 
