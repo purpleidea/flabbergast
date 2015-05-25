@@ -3094,6 +3094,9 @@ language_tmpl : Template {
 					operator : "To"
 					ensure_type_is : ensure_type.dynamic {
 						field : $right
+					}
+					type_demand : ensure_type.dynamic {
+						field : $right
 						propagate_castable : True
 						ensure_type_of : propagate { fields : [ $left ] }
 					}
