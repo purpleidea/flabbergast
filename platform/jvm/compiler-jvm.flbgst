@@ -2637,7 +2637,9 @@ compiler : compiler_lib.language_with_repl_tmpl {
 								"\(indent)\(generator).fold((RevCons<LoadableValue>) null, arguments, new Generator.FoldBlock<expression, RevCons<LoadableValue>>() { public void invoke(final int \(Id)_index, final expression \(Id)_item, final RevCons<LoadableValue> \(Id)_tail, final Generator.ParameterisedBlock<RevCons<LoadableValue>> \(Id)_block) throws java.lang.Exception { \(Id)_item.generate(\(argument_list)new Generator.ParameterisedBlock<LoadableValue>() { public void invoke(final LoadableValue \(Id)_result) throws java.lang.Exception { \(Id)_block.invoke(new RevCons<LoadableValue>(\(Id)_result, \(Id)_tail)); } }); } }, new Generator.ParameterisedBlock<RevCons<LoadableValue>>() { public void invoke(final RevCons<LoadableValue> \(Id)_args) throws java.lang.Exception {" &
 								"\(indent)\t\(generator).debugPosition(\(class_name).this);" &
 								"\(indent)\tfinal LoadableValue \(storage_name) = \(generator).invokeNative(\(parameters.source_reference.storage_name), methods, \(Id)_args.toList()); " &
+								"\(indent)\tif (\(storage_name) != null) {" &
 								code &
+								"\(indent)\t}" &
 								"\(indent)} });"
 						}
 					}

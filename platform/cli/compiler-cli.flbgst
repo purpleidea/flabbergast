@@ -2526,7 +2526,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 						result : Id
 					}
 					code_value : codegen.gen_tmpl {
-						extra_indent : "\t"
+						extra_indent : "\t\t"
 						argument_list : "\(generator), " &
 							(If generation_flavour.non_accumulate_flavour.has_cache Then lookup_cache & ", " Else "") &
 							(generation_flavour.non_accumulate_flavour.call_site {}).value
@@ -2535,8 +2535,10 @@ compiler : compiler_lib.language_with_repl_tmpl {
 							value :
 								"\(indent)\(generator).Fold((RevCons<LoadableValue>) null, arguments, (\(Id)_index, \(Id)_item, \(Id)_tail, \(Id)_block) => \(Id)_item.Generate(\(argument_list)(\(Id)_result) => \(Id)_block(new RevCons<LoadableValue>(\(Id)_result, \(Id)_tail))), (\(Id)_args) => {" &
 								"\(indent)\t\(generator).DebugPosition(this);" &
-								"\(indent)\tvar \(storage_name) = \(generator).InvokeNative(\(parameters.source_reference.storage_name), Methods, \(Id)_args.ToArray()); " &
+								"\(indent)\tvar \(storage_name) = \(generator).InvokeNative(\(parameters.source_reference.storage_name), Methods, \(Id)_args.ToArray());" &
+								"\(indent)\tif (\(storage_name) != null) {" &
 								code &
+								"\(indent)\t}" &
 								"\(indent)});"
 						}
 					}
