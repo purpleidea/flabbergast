@@ -110,8 +110,6 @@ public class CharacterCategory extends Computation implements ConsumeResult {
 		Frame frame = new Frame(master, master.nextId(), source_reference,
 				context, container);
 		for (int it = 0; it < input.length(); it++) {
-			System.err.println(mappings.get((byte) Character.getType(input
-					.charAt(it))));
 			frame.set(TaskMaster.ordinalNameStr(it + 1),
 					mappings.get((byte) Character.getType(input.charAt(it))));
 		}
