@@ -2567,7 +2567,76 @@ compiler : compiler_lib.language_with_repl_tmpl {
 		}
 		expression +: {
 			rules +: {
-				# This is a special expression to call methods in the CLI libraries.
+				xcomputation : Template expression_tmpl {
+					level : 19
+					pretty_name : "invoke Java flabbergast.Computation class"
+					class_extra : "\t\tjava.lang.reflect.Constructor constructor;"
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "XComputation" },
+							space { mandatory : True },
+							parser.accumulate_string {
+								field : "type_name"
+								in : parser.many {
+									nonempty : True
+									accumulate : True
+									separator : parser.single { char : "." }
+									of : jvm_identifier { }
+								}
+							}
+						]
+					}
+					apply_environment_to : []
+					ensure_type_is : ensure_type.multiple {
+						actions : [
+							ensure_type.intrinsic {},
+							{
+								result : current_type
+								value :
+									"\(indent)try {" &
+									"\(indent)\tClass<?> clazz = Class.forName(type_name.toString());" &
+									"\(indent)\tconstructor = clazz.getConstructor(TaskMaster.class, SourceReference.class, Context.class, Frame.class, Frame.class);" &
+									"\(indent)\tif (!Computation.class.isAssignableFrom(clazz)) {" &
+									"\(indent)\t\t_success.set(false);" &
+									"\(indent)\t\t_collector.reportRawError(\(class_name).this, \"Type \" + type_name + \" does not extend flabbergast.Computation.\");" &
+									"\(indent)\t}" &
+									"\(indent)} catch (NoSuchMethodException e) {" &
+									"\(indent)\t_success.set(false);" &
+									"\(indent)\t_collector.reportRawError(\(class_name).this, \"No valid constructor in type \" + type_name + \" found.\");" &
+									"\(indent)} catch (ClassNotFoundException e) {" &
+									"\(indent)\t_success.set(false);" &
+									"\(indent)\t_collector.reportRawError(\(class_name).this, \"No such type \" + type_name + \".\");" &
+									"\(indent)}"
+							}
+						]
+					}
+					code_value : codegen.return_intrinsic_dispatch {
+						of : codegen.gen_tmpl {
+							extra_indent : ""
+							gen_gen +: {
+									value :
+										"\(indent)\(generator).startInterlock(1);" &
+										"\(indent)\(generator).loadTaskMaster();" &
+										"\(indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(constructor.getDeclaringClass()));" &
+										"\(indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+										"\(indent)\(generator).loadTaskMaster();" &
+										"\(indent)\(parameters.source_reference.storage_name).load(\(generator));" &
+										"\(indent)\(parameters.context.storage_name).load(\(generator));" &
+										"\(indent)\(parameters.self_frame.storage_name).load(\(generator));" &
+										"\(indent)\(parameters.container_frame.storage_name).load(\(generator));" &
+										"\(indent)\(generator).visitMethod(constructor);" &
+										"\(indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+										"\(indent)final FieldValue \(storage_name) = \(generator).makeField(\"xcomputation\", Object.class);" &
+										"\(indent)\(generator).generateConsumeResult(\(storage_name));" &
+										"\(indent)\(generator).visitMethod(Computation.class.getMethod(\"listen\", ConsumeResult.class));" &
+										"\(indent)\(generator).visitMethod(TaskMaster.class.getMethod(\"slot\", Computation.class));" &
+										"\(indent)\(generator).stopInterlock();" &
+										code
+							}
+						}
+					}
+				}
+				# This is a special expression to call methods in the JVM libraries.
 				xinvoke : Template expression_tmpl {
 					level : 19
 					pretty_name : "invoke Java method"

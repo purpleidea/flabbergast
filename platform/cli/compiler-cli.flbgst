@@ -2466,6 +2466,74 @@ compiler : compiler_lib.language_with_repl_tmpl {
 		}
 		expression +: {
 			rules +: {
+					xcomputation : Template expression_tmpl {
+					level : 19
+					pretty_name : "invoke CLI Flabbergast.Computation class"
+					class_extra : "\t\tSystem.Reflection.ConstructorInfo constructor;"
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "XComputation" },
+							space { mandatory : True },
+							parser.accumulate_string {
+								field : "type_name"
+								in : parser.many {
+									nonempty : True
+									accumulate : True
+									separator : parser.single { char : ".," }
+									of : cli_identifier { }
+								}
+							}
+						]
+					}
+					apply_environment_to : []
+					ensure_type_is : ensure_type.multiple {
+						actions : [
+							ensure_type.intrinsic {},
+							{
+								result : current_type
+								value :
+									"\(indent)System.Type type = System.Type.GetType(type_name.ToString(), false);" &
+									"\(indent)if (type == null) {" &
+									"\(indent)\t_success = false;" &
+									"\(indent)\t_collector.ReportRawError(this, \"No such type \" + type_name + \".\");" &
+									"\(indent)} else {" &
+									"\(indent)\tconstructor = type.GetConstructor(new[] { typeof(TaskMaster), typeof(SourceReference), typeof(Context), typeof(Frame), typeof(Frame) });" &
+									"\(indent)\tif (!typeof(Computation).IsAssignableFrom(type)) {" &
+									"\(indent)\t\t_success = false;" &
+									"\(indent)\t\t_collector.ReportRawError(this, \"Type \" + type_name + \" does not extend Flabbergast.Computation.\");" &
+									"\(indent)\t}" &
+									"\(indent)\tif (constructor == null) {" &
+									"\(indent)\t\t_success = false;" &
+									"\(indent)\t\t_collector.ReportRawError(this, \"No valid constructor in type \" + type_name + \" found.\");" &
+									"\(indent)\t}" &
+									"\(indent)}"
+							}
+						]
+					}
+					code_value : codegen.return_intrinsic_dispatch {
+						of : codegen.gen_tmpl {
+							extra_indent : ""
+							gen_gen +: {
+									value :
+										"\(indent)\(generator).StartInterlock(1);" &
+										"\(indent)\(generator).LoadTaskMaster();" &
+										"\(indent)\(generator).LoadTaskMaster();" &
+										"\(indent)\(parameters.source_reference.storage_name).Load(\(generator));" &
+										"\(indent)\(parameters.context.storage_name).Load(\(generator));" &
+										"\(indent)\(parameters.self_frame.storage_name).Load(\(generator));" &
+										"\(indent)\(parameters.container_frame.storage_name).Load(\(generator));" &
+										"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, constructor);" &
+										"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
+										"\(indent)var \(storage_name) = \(generator).MakeField(\"xcomputation\", typeof(object));" &
+										"\(indent)\(generator).GenerateConsumeResult(\(storage_name), true);" &
+										"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Computation).GetMethod(\"Notify\", new[] { typeof(ConsumeResult) }));" &
+										"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(TaskMaster).GetMethod(\"Slot\", new[] { typeof(Computation) }));" &
+										"\(indent)\(generator).StopInterlock();" &
+										code
+							}
+						}
+					}
+				}
 				# This is a special expression to call methods in the CLI libraries.
 				xinvoke : Template expression_tmpl {
 					level : 19
