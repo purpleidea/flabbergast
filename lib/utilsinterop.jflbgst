@@ -1,3 +1,8 @@
+str_categories_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XComputation flabbergast.CharacterCategory
+}
 str_lower_case_list : Template {
 	value :
 		For arg : args, arg_name : Name

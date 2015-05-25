@@ -39,6 +39,7 @@
 		<Compile Include="exec.cs"/>
 		<Compile Include="iterator.cs"/>
 		<Compile Include="library-runtime.cs"/>
+		<Compile Include="misc.cs"/>
 		<Compile Include="srcref.cs"/>
 		<Compile Include="stringish.cs"/>
 		<Compile Include="AssemblyInfo.cs"/>

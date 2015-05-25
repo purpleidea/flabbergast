@@ -150,6 +150,86 @@ productifier : Template {
 	}
 }
 
+# Get the Unicode category for every character in a string. See
+# `str_categories_list` for details.
+str_categories : firstifier(base : str_categories_list)
+
+# Get the Unicode category for every character in strings. The value to be
+# returned for each category must be user-defined.
+str_categories_list : Template ( From lib:utilsinterop ).str_categories_list {
+	args ?:
+
+	letter_lower %:
+	letter_modifier %:
+	letter_other %:
+	letter_title %:
+	letter_upper %:
+	mark_combining %:
+	mark_enclosing %:
+	mark_nonspace %:
+	number_decimal %:
+	number_letter %:
+	number_other %:
+	other_control %:
+	other_format %:
+	other_private %:
+	other_surrogate %:
+	other_unassigned %:
+	punctuation_connector %:
+	punctuation_dash %:
+	punctuation_end %:
+	punctuation_final_quote %:
+	punctuation_initial_quote %:
+	punctuation_other %:
+	punctuation_start %:
+	separator_line %:
+	separator_paragraph %:
+	separator_space %:
+	symbol_currency %:
+	symbol_math %:
+	symbol_modifier %:
+	symbol_other %:
+}
+
+# Get the Unicode category name for every character in a string. See
+# `str_categories_list` for details.
+str_categories_spec : firstifier(base : str_categories_spec_list)
+
+# Get the Unicode category name for every character in a string. The names are
+# from the Unicode specification. See `str_categories_list` for details.
+str_categories_spec_list : Template str_categories_list {
+	letter_lower : "Ll"
+	letter_modifier : "Lm"
+	letter_other : "Lo"
+	letter_title : "Lt"
+	letter_upper : "Lu"
+	mark_combining : "Mc"
+	mark_enclosing : "Me"
+	mark_nonspace : "Mn"
+	number_decimal : "Nd"
+	number_letter : "Nl"
+	number_other : "No"
+	other_control : "Cc"
+	other_format : "Cf"
+	other_private : "Co"
+	other_surrogate : "Cs"
+	other_unassigned : "Cn"
+	punctuation_connector : "Pc"
+	punctuation_dash : "Pd"
+	punctuation_end : "Pe"
+	punctuation_final_quote : "Pf"
+	punctuation_initial_quote : "Pi"
+	punctuation_other : "Po"
+	punctuation_start : "Ps"
+	separator_line : "Zl"
+	separator_paragraph : "Zp"
+	separator_space : "Zs"
+	symbol_currency : "Sc"
+	symbol_math : "Sm"
+	symbol_modifier : "Sk"
+	symbol_other : "So"
+}
+
 str_concat : str_concatifier(base : identity, delimiter : "")
 
 # Convert a function-like template from one that returns a list of strings to a
