@@ -957,7 +957,7 @@ This library is a collection of convenience function-like templates. It has seve
  - general string manipulation : `str_find`, `str_lower_case`, `str_pad`, `str_replace`, `str_slice`, `str_upper_case`, `str_trim`
  - string analysis: `str_prefixed` (check for prefix), `str_suffixed` (check for suffix), `str_utf8_length`
  - parsing: `parse_float`, `parse_int`
- - frame manipulation: `frame`, `or_default`
+ - frame manipulation: `frame`, `or_default`, `int_to_ordinal`, `is_list` (check if a frame has auto-generated attribute names)
 
 Many of these functions have a `_list` variant. In the list variant, the output is a frame with each of the arguments treated separately (_e.g._, `str_utf8_length_list("what", "€")` returns `[ 4, 2 ]`) while the non-list variant will return either an aggregation of the results of the first (_e.g._, `str_utf8_length("what", "€")` returns `6`). 
 

@@ -6,6 +6,11 @@ int_to_char_list : Template {
 					Then XInvoke System.Char ConvertFromUtf32 (arg To Int)
 					Else Error "Code point \(arg) is out of range."
 }
+int_to_ordinal_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke Flabbergast.TaskMaster,Flabbergast.Runtime OrdinalName (arg Enforce Int)
+}
 int_to_str_list : Template {
 	value :
 		Let
