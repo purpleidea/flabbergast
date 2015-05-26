@@ -546,6 +546,11 @@ internal abstract class Generator {
 		Builder.Emit(OpCodes.Ldarg_0);
 		for(var it = 0; it < arguments.Length; it++) {
 			arguments[it].Load(this);
+			if (it == 0 && !best_method.IsStatic && best_method.ReflectedType.IsValueType) {
+				var local = Builder.DeclareLocal(arguments[it].BackingType);
+				Builder.Emit(OpCodes.Stloc, local);
+				Builder.Emit(OpCodes.Ldloca, local);
+			}
 			if (arguments[it].BackingType != method_arguments[it]) {
 				if (method_arguments[it] == typeof(sbyte) || method_arguments[it] == typeof(byte)) {
 					Builder.Emit(OpCodes.Conv_I1);
