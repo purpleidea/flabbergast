@@ -568,7 +568,7 @@ internal abstract class Generator {
 				}
 			}
 		}
-		Builder.Emit(OpCodes.Call, best_method);
+		Builder.Emit(best_method.IsVirtual || best_method.IsAbstract ? OpCodes.Callvirt : OpCodes.Call, best_method);
 		if (result.BackingType != best_method.ReturnType) {
 				if (result.BackingType == typeof(long)) {
 					Builder.Emit(OpCodes.Conv_I8);
