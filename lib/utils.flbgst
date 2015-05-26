@@ -146,6 +146,24 @@ or_default : Template {
 			Select arg_name : arg ?? default
 }
 
+# Convert a string containing digits and stuff into a floating-point number.
+parse_float : firstifier(base : parse_float_list)
+
+# Convert strings containing digits into integers.
+parse_float_list : Template ( From lib:utilsinterop ).parse_float_list {
+	args ?:
+}
+
+# Convert a string containing digits into an integer.
+parse_int : firstifier(base : parse_int_list)
+
+# Convert strings containing digits into integers.
+parse_int_list : Template ( From lib:utilsinterop ).parse_int_list {
+	args ?:
+	# The radix to use for the digits. The limits of this are platform-dependant.
+	radix : 10
+}
+
 # Multiply a list of numbers.
 product : productifier(base : identity)
 

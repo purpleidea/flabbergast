@@ -6,6 +6,16 @@ int_to_char_list : Template {
 					Then XInvoke flabbergast.Stringish fromCodepoint (arg To Int)
 					Else Error "Code point \(arg) is out of range."
 }
+parse_float_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XComputation flabbergast.ParseDouble
+}
+parse_int_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XComputation flabbergast.ParseInt
+}
 str_categories_list : Template {
 	value :
 		For arg : args, arg_name : Name

@@ -137,4 +137,116 @@ namespace Flabbergast {
 			return true;
 		}
 	}
+
+	public class ParseDouble : Computation {
+
+		private int interlock = 2;
+		private String input;
+
+		private TaskMaster master;
+		private SourceReference source_reference;
+		private Context context;
+
+		public ParseDouble(TaskMaster master, SourceReference source_ref,
+				Context context, Frame self, Frame container) {
+			this.master = master;
+			this.source_reference = source_ref;
+			this.context = context;
+		}
+
+		protected override bool Run() {
+			if (input == null) {
+				var input_lookup = new Lookup(master, source_reference,
+						new String[]{"arg"}, context);
+				input_lookup.Notify(result => {
+					if (result is Stringish) {
+						input = result.ToString();
+						if (Interlocked.Decrement(ref interlock) == 0) {
+							master.Slot(this);
+						}
+					} else {
+						master.ReportOtherError(source_reference,
+								"Input argument must be a string.");
+					}
+				});
+				master.Slot(input_lookup);
+
+				if (Interlocked.Decrement(ref interlock) > 0) {
+					return false;
+				}
+			}
+
+			try {
+				result = Convert.ToDouble(input);
+				return true;
+			} catch (Exception e) {
+				master.ReportOtherError(source_reference, e.Message);
+				return false;
+			}
+		}
+	}
+
+	public class ParseInt : Computation {
+
+		private int interlock = 3;
+		private String input;
+		private int radix;
+
+		private TaskMaster master;
+		private SourceReference source_reference;
+		private Context context;
+
+		public ParseInt(TaskMaster master, SourceReference source_ref,
+				Context context, Frame self, Frame container) {
+			this.master = master;
+			this.source_reference = source_ref;
+			this.context = context;
+		}
+
+		protected override bool Run() {
+			if (input == null) {
+				var input_lookup = new Lookup(master, source_reference,
+						new String[]{"arg"}, context);
+				input_lookup.Notify(result => {
+					if (result is Stringish) {
+						input = result.ToString();
+						if (Interlocked.Decrement(ref interlock) == 0) {
+							master.Slot(this);
+						}
+					} else {
+						master.ReportOtherError(source_reference,
+								"Input argument must be a string.");
+					}
+				});
+				master.Slot(input_lookup);
+
+				var radix_lookup = new Lookup(master, source_reference,
+						new String[]{"radix"}, context);
+				radix_lookup.Notify(result => {
+					if (result is Int64) {
+						radix = (int)(long)result;
+						if (Interlocked.Decrement(ref interlock) == 0) {
+							master.Slot(this);
+						}
+					} else {
+						master.ReportOtherError(source_reference,
+								"Input argument must be a string.");
+					}
+				});
+				master.Slot(radix_lookup);
+
+				if (Interlocked.Decrement(ref interlock) > 0) {
+					return false;
+				}
+			}
+
+			try {
+				result = Convert.ToInt64(input, radix);
+				return true;
+			} catch (Exception e) {
+				master.ReportOtherError(source_reference, e.Message);
+				return false;
+			}
+		}
+	}
 }
