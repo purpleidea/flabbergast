@@ -55,6 +55,17 @@ firstifier : Template {
 	}
 }
 
+float_to_str : str_concatifier(base : float_to_str_list, delimiter : "")
+
+float_to_str_list : Template ( From lib:utilsinterop ).float_to_str_list {
+	args ?:
+	# Use scientific/exponential notation instead of fixed-point.
+	exponential : False
+	# The number of decimal digits to use.
+	digits : 0
+}
+
+
 # Create a frame with the specified attribute name and value.
 frame : Template {
 	# The value to be used. Only one may be specified.

@@ -19,6 +19,13 @@ public abstract class Stringish
 		return new SimpleStringish(new String(new int[]{(int) codepoint}, 0, 1));
 	}
 
+	public static Stringish fromDouble(double value, boolean expoential,
+			long digits) {
+		return new SimpleStringish(String.format("%"
+				+ (digits > 0 ? "." + digits : "") + (expoential ? "e" : "f"),
+				value));
+	}
+
 	public static Stringish fromInt(long value, boolean hex, long digits) {
 		return new SimpleStringish(String.format("%"
 				+ (digits > 0 ? "0" + digits : "") + (hex ? "X" : "d"), value));

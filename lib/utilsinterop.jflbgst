@@ -15,6 +15,15 @@ int_to_str_list : Template {
 				(For arg : args, arg_name : Name
 				Select arg_name : XInvoke flabbergast.Stringish fromInt (arg To Int, hex, digits))
 }
+float_to_str_list : Template {
+	value :
+		If digits < 0
+			Then
+				Error "The number of digits must be non-negative."
+			Else
+				(For arg : args, arg_name : Name
+				Select arg_name : XInvoke flabbergast.Stringish fromDouble (arg To Float, exponential, digits))
+}
 parse_float_list : Template {
 	value :
 		For arg : args, arg_name : Name

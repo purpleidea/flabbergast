@@ -16,6 +16,16 @@ int_to_str_list : Template {
 			For arg : args, arg_name : Name
 			Select arg_name : XInvoke System.Int64 ToString (arg Enforce Int, format_code Enforce Str)
 }
+float_to_str_list : Template {
+	value :
+		Let
+			format_code :
+				(If exponential Then "e" Else "F") &
+				(If digits Enforce Int >= 0 Then digits Else Error "The number of digits must be positive.")
+		In
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke System.Double ToString (arg To Float, format_code Enforce Str)
+}
 parse_float_list : Template {
 	value :
 		For arg : args, arg_name : Name
