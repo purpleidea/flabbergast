@@ -6,6 +6,16 @@ int_to_char_list : Template {
 					Then XInvoke System.Char ConvertFromUtf32 (arg To Int)
 					Else Error "Code point \(arg) is out of range."
 }
+int_to_str_list : Template {
+	value :
+		Let
+			format_code :
+				(If hex Then "X" Else "D") &
+				(If digits Enforce Int >= 0 Then digits Else Error "The number of digits must be positive.")
+		In
+			For arg : args, arg_name : Name
+			Select arg_name : XInvoke System.Int64 ToString (arg Enforce Int, format_code Enforce Str)
+}
 parse_float_list : Template {
 	value :
 		For arg : args, arg_name : Name

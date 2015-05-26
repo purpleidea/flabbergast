@@ -19,6 +19,11 @@ public abstract class Stringish
 		return new SimpleStringish(new String(new int[]{(int) codepoint}, 0, 1));
 	}
 
+	public static Stringish fromInt(long value, boolean hex, long digits) {
+		return new SimpleStringish(String.format("%"
+				+ (digits > 0 ? "0" + digits : "") + (hex ? "X" : "d"), value));
+	}
+
 	public static Stringish fromObject(Object o) {
 		if (Stringish.class.isAssignableFrom(o.getClass())) {
 			return (Stringish) o;

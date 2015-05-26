@@ -6,6 +6,15 @@ int_to_char_list : Template {
 					Then XInvoke flabbergast.Stringish fromCodepoint (arg To Int)
 					Else Error "Code point \(arg) is out of range."
 }
+int_to_str_list : Template {
+	value :
+		If digits < 0
+			Then
+				Error "The number of digits must be non-negative."
+			Else
+				(For arg : args, arg_name : Name
+				Select arg_name : XInvoke flabbergast.Stringish fromInt (arg To Int, hex, digits))
+}
 parse_float_list : Template {
 	value :
 		For arg : args, arg_name : Name

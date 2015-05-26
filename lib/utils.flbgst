@@ -90,6 +90,14 @@ int_to_char_list : Template ( From lib:utilsinterop ).int_to_char_list {
 	args ?:
 }
 
+int_to_str : str_concatifier(base : int_to_str_list, delimiter : "")
+
+int_to_str_list : Template ( From lib:utilsinterop ).int_to_str_list {
+	args ?:
+	digits : 0
+	hex : False
+}
+
 # Finds the maximum in a list of values
 max : maxifier(base : identity)
 
