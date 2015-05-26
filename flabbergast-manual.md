@@ -967,6 +967,9 @@ There is also a good example of using lookup to do useful work: `str_categories`
 
 Currently, Flabbergast lacks a documentation generator, so the best information is the source comments.
 
+### Archives (`lib:archive/ar`)
+Since Flabbergast only outputs a single value, it can be awkward to generate multiple files. To combat this, it supports creating `ar`-style archives, which are plain text. To do this, instantiate `archive_tmpl` with the `args` being a list of `file_tmpl`, each with `file_name` and `contents`. The resulting file can then be unpacked using the UNIX `ar` program.
+
 ### Regular Expressions (`lib:regex`)
 TODO
 The regular expression library works in two parts: there are a set of templates to build a regular expression and a function to collect matches from a regular expression. Regular expression syntax varies across platforms, so a more uniform way of defining expressions is needed. This is what the templates provide: a consistent mechanism. Essentially, the library provides a way to build a regular expression “function” that can be called on a string. For example:
