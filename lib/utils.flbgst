@@ -55,8 +55,11 @@ firstifier : Template {
 	}
 }
 
+# Convert a float into a string with precision control. See `float_to_str_list`
+# for details.
 float_to_str : str_concatifier(base : float_to_str_list, delimiter : "")
 
+# Convert floats into strings with precision control.
 float_to_str_list : Template ( From lib:utilsinterop ).float_to_str_list {
 	args ?:
 	# Use scientific/exponential notation instead of fixed-point.
@@ -64,7 +67,6 @@ float_to_str_list : Template ( From lib:utilsinterop ).float_to_str_list {
 	# The number of decimal digits to use.
 	digits : 0
 }
-
 
 # Create a frame with the specified attribute name and value.
 frame : Template {
@@ -101,18 +103,24 @@ int_to_char_list : Template ( From lib:utilsinterop ).int_to_char_list {
 	args ?:
 }
 
+# Convert an integer to a string with precision control. See `int_to_str` for
+# details.
 int_to_str : str_concatifier(base : int_to_str_list, delimiter : "")
 
+# Convert integers to strings with precision control.
 int_to_str_list : Template ( From lib:utilsinterop ).int_to_str_list {
 	args ?:
+	# The number of digits to display. If the number is too small, it will be
+	# padded with zeros.
 	digits : 0
+	# Display in hexadecimal, instead of decimal.
 	hex : False
 }
 
 # Finds the maximum in a list of values
 max : maxifier(base : identity)
 
-# Convert a function-like template from one that returns a list of homogenous
+# Convert a function-like template from one that returns a list of homogeneous
 # values into one that returns the largest value.
 maxifier : Template {
 	base ?:
@@ -131,7 +139,7 @@ maxifier : Template {
 # Finds the minimum in a list of values
 min : minifier(base : identity)
 
-# Convert a function-like template from one that returns a list of homogenous
+# Convert a function-like template from one that returns a list of homogeneous
 # values into one that returns the largest value.
 minifier : Template {
 	base ?:
@@ -159,6 +167,7 @@ non_null : Template {
 # Replaces all null values in a frame with `default`.
 or_default : Template {
 	args ?:
+	# The default value to use instead of Null.
 	default ?:
 	value :
 		For arg : args, arg_name : Name
@@ -283,6 +292,7 @@ str_codepoints_list : Template ( From lib:utilsinterop ).str_codepoints_list {
 	args ?:
 }
 
+# Concatenate the arguments.
 str_concat : str_concatifier(base : identity, delimiter : "")
 
 # Convert a function-like template from one that returns a list of strings to a

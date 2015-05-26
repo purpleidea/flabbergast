@@ -948,11 +948,27 @@ So, the Flabbergast libraries look like they do to avoid I/O and minimise the en
 There are platform specific libraries, which end in `interop`, to provide access to the underlying libraries. Do not access these libraries directly. Instead, using the corresponding platform-independent library (_e.g._, `utils` rather than `utilsinterop`). These libraries enhance the functionality of these base libraries, but the originals may still be visible in stack traces; consider them an implementation detail.
 
 ### General Utilities (`lib:utils`)
-This library is simply a collection of convenience function-like templates. It is portable and should be present on every platform; it is reasonable to expect to have it.
+This library is a collection of convenience function-like templates. It has several broad categories of functions:
 
-Broadly, it provides basic string manipulation, convenience functions to manipulate frames, and layered override templates. Currently, Flabbergast lacks a documentation generator, so the best information is the source comments.
+ - aggregation functions: `all`, `any`, `count`, `first`, `last`, `max`, `min`, `product`, `str_concat`, `sum`
+ - filtering functions: `enabled`, `non_null`
+ - precision formatting: `float_to_str` `int_to_str`,
+ - Unicode manipulation: `int_to_char`, `str_categories`, `str_codepoints`
+ - general string manipulation : `str_find`, `str_lower_case`, `str_pad`, `str_replace`, `str_slice`, `str_upper_case`, `str_trim`
+ - string analysis: `str_prefixed` (check for prefix), `str_suffixed` (check for suffix), `str_utf8_length`
+ - parsing: `parse_float`, `parse_int`
+ - frame manipulation: `frame`, `or_default`
+
+Many of these functions have a `_list` variant. In the list variant, the output is a frame with each of the arguments treated separately (_e.g._, `str_utf8_length_list("what", "€")` returns `[ 4, 2 ]`) while the non-list variant will return either an aggregation of the results of the first (_e.g._, `str_utf8_length("what", "€")` returns `6`). 
+
+There are also several `ifier` function-like templates. These are higher-order templates: they transform the output of a function-like template. For instance, `sumifier` converts a function-like template that returns a list of numbers into one that returns a sum. The `sum` function-like template is the `identity` function-like template transformed by the `sumifier`. Similarly, the `str_utf8_length` is also made by `sumifier` applied to `str_utf8_length_list`.
+
+There is also a good example of using lookup to do useful work: `str_categories`. This function-like template takes a string and returns the Unicode category for each character in the string. The categories are found by lookup. The `str_categories_spec` function converts them into the two letter names used in the Unicode specification. This function can be re-purposed though; for instance, creating an `is_digit` check could be done by amending the template and setting `number_decimal` to true, and all the other categories to false.
+
+Currently, Flabbergast lacks a documentation generator, so the best information is the source comments.
 
 ### Regular Expressions (`lib:regex`)
+TODO
 The regular expression library works in two parts: there are a set of templates to build a regular expression and a function to collect matches from a regular expression. Regular expression syntax varies across platforms, so a more uniform way of defining expressions is needed. This is what the templates provide: a consistent mechanism. Essentially, the library provides a way to build a regular expression “function” that can be called on a string. For example:
 
     regex_lib : From lib:regex
@@ -970,14 +986,21 @@ The regular expression library works in two parts: there are a set of templates 
     x : For Each my_expr(str : my_string) Select foo_value 
 
 ### Rendering (`lib:render`)
+TODO
 This library converts frames in to JSON-parseable strings and XML documents. In short, the library provides templates such that a frame can be reduced to XML or JSON fragments.
 
-It is portable and should be present on every platform.
-
 ### Mathematics (`lib:math`)
-TODO
+The mathematics library contains all the usual functions for:
+
+ - exponentiation and logarithms: `log`, `power`
+ - trigonometry (`circle` and `hyperbola`): `arccos`, `arcsin`, `arctan`, `cos`, `sin`, `tan`
+ - rounding: `absolute`, `ceiling`, `floor`, `round`
+ - constants: `natural`, `pi`, `tau`
+
+Much like `lib:utils`, there are `_list` variants of these. The trigonometric functions are a bit unique: by setting `angle_unit`, the units used for angles can be changed between degrees, gradians, radians, and turns; the default is radians.
 
 ### Relational Database Access (`lib:sql`)
+TODO
 Much like regular expression, different underlying database libraries are present, but templates can be used to smooth out the wrinkles. The query-building templates are uniform across databases, but the drivers will be unique to each database. Moreover, while most databases have a concept of a connection that is held open by the application until the database is no longer needed, this has little parity in a Flabbergast program. Much more responsibility falls to the library implementation to manage the connections. In the case of in-application access, it might be best if the database connection is simply provided via `From`. The schema for the database should be provided.
 
     sql_lib : From lib:sql
