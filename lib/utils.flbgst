@@ -82,6 +82,14 @@ identity : Template {
 	value : args
 }
 
+# Convert a Unicode codepoint (integer) into a string.
+int_to_char : str_concatifier(base : int_to_char_list, delimiter : "")
+
+# Convert a list of Unicode codepoints (integers) into a list of strings.
+int_to_char_list : Template ( From lib:utilsinterop ).int_to_char_list {
+	args ?:
+}
+
 # Finds the maximum in a list of values
 max : maxifier(base : identity)
 
@@ -228,6 +236,14 @@ str_categories_spec_list : Template str_categories_list {
 	symbol_math : "Sm"
 	symbol_modifier : "Sk"
 	symbol_other : "So"
+}
+
+# Convert a string into a list of codepoints (integers) for each character.
+str_codepoints : firstifier(base : str_codepoints_list)
+
+# Convert strings into lists of codepoints (integers) for each character.
+str_codepoints_list : Template ( From lib:utilsinterop ).str_codepoints_list {
+	args ?:
 }
 
 str_concat : str_concatifier(base : identity, delimiter : "")

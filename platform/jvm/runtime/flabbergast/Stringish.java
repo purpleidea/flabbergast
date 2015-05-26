@@ -15,6 +15,10 @@ public abstract class Stringish
 	public static Stringish[] BOOLEANS = new Stringish[]{
 			new SimpleStringish("False"), new SimpleStringish("True")};
 
+	public static Stringish fromCodepoint(long codepoint) {
+		return new SimpleStringish(new String(new int[]{(int) codepoint}, 0, 1));
+	}
+
 	public static Stringish fromObject(Object o) {
 		if (Stringish.class.isAssignableFrom(o.getClass())) {
 			return (Stringish) o;

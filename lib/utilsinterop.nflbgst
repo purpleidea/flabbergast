@@ -1,7 +1,20 @@
+int_to_char_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name :
+				If arg Enforce Int >= 0 && arg < 0xD800 || arg > 0xDFFF && arg < 0x10FFFF
+					Then XInvoke System.Char ConvertFromUtf32 (arg To Int)
+					Else Error "Code point \(arg) is out of range."
+}
 str_categories_list : Template {
 	value :
 		For arg : args, arg_name : Name
 		Select arg_name : XComputation Flabbergast.CharacterCategory,Flabbergast.Runtime
+}
+str_codepoints_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XComputation Flabbergast.StringToCodepoints,Flabbergast.Runtime
 }
 str_lower_case_list : Template {
 	value :

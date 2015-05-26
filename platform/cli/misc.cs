@@ -94,4 +94,47 @@ namespace Flabbergast {
 			return true;
 		}
 	}
+	public class StringToCodepoints : Computation {
+		private int interlock = 2;
+		private String input;
+
+		private TaskMaster master;
+		private SourceReference source_reference;
+		private Context context;
+		private Frame container;
+
+		public StringToCodepoints(TaskMaster master, SourceReference source_ref,
+				Context context, Frame self, Frame container) {
+			this.master = master;
+			this.source_reference = source_ref;
+			this.context = context;
+			this.container = self;
+		}
+		protected override bool Run() {
+			if (input == null) {
+				Computation input_lookup = new Lookup(master, source_reference, new []{"arg"}, context);
+				input_lookup.Notify(result => {
+					if (result is Stringish) {
+						input = result.ToString();
+						if (Interlocked.Decrement(ref interlock) == 0) {
+							master.Slot(this);
+						}
+					} else {
+						master.ReportOtherError(source_reference, "Input argument must be a string.");
+					}
+				});
+				master.Slot(input_lookup);
+
+				if (Interlocked.Decrement(ref interlock) > 0) {
+					return false;
+				}
+			}
+			var frame = new Frame(master, master.NextId(), source_reference, context, container);
+			for(int it = 0; it < input.Length; it++) {
+				frame[TaskMaster.OrdinalNameStr(it + 1)] = (long) Char.ConvertToUtf32(input, it);
+			}
+			result = frame;
+			return true;
+		}
+	}
 }
