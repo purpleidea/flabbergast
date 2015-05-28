@@ -5,7 +5,7 @@ absolute : utils_lib.firstifier(base : absolute_list)
 
 absolute_list : Template ( From lib:mathinterop ).absolute_list {
 	# A list of numbers.
-	args ?:
+	args %:
 }
 
 # The default angle unit for trigonometric calculations.
@@ -21,7 +21,7 @@ ceiling : utils_lib.firstifier(base : ceiling_list)
 
 ceiling_list : Template ( From lib:mathinterop ).ceiling_list {
 	# A list of numbers.
-	args ?:
+	args %:
 }
 
 # Trigonometic functions for a circle.
@@ -29,32 +29,32 @@ circle : {
 	arccos : utils_lib.firstifier(base : arccos_list)
 	arccos_list : Template ( From lib:mathinterop ).circle.arccos_list {
 		# A list of angles.
-		args ?:
+		args %:
 	}
 	arcsin : utils_lib.firstifier(base : arcsin_list)
 	arcsin_list : Template ( From lib:mathinterop ).circle.arcsin_list {
 		# A list of angles.
-		args ?:
+		args %:
 	}
 	arctan : utils_lib.firstifier(base : arctan_list)
 	arctan_list : Template ( From lib:mathinterop ).circle.arctan_list {
 		# A list of angles.
-		args ?:
+		args %:
 	}
 	cos : utils_lib.firstifier(base : cos_list)
 	cos_list : Template ( From lib:mathinterop ).circle.cos_list {
 		# A list of angles.
-		args ?:
+		args %:
 	}
 	sin : utils_lib.firstifier(base : sin_list)
 	sin_list : Template ( From lib:mathinterop ).circle.sin_list {
 		# A list of angles.
-		args ?:
+		args %:
 	}
 	tan : utils_lib.firstifier(base : tan_list)
 	tan_list : Template ( From lib:mathinterop ).circle.tan_list {
 		# A list of angles.
-		args ?:
+		args %:
 	}
 }
 # Compute the largest integral value less than or equal to the argument.
@@ -62,7 +62,7 @@ floor : utils_lib.firstifier(base : floor_list)
 
 floor_list : Template ( From lib:mathinterop ).floor_list {
 	# A list of numbers.
-	args ?:
+	args %:
 }
 
 # Trigonometic functions for a hyperbola.
@@ -70,32 +70,32 @@ hyperbola : {
 	arccos : utils_lib.firstifier(base : arccos_list)
 	arccos_list : Template ( From lib:mathinterop ).hyperbola.arccos_list {
 		# A list of angles.
-		args ?:
+		args %:
 	}
 	arcsin : utils_lib.firstifier(base : arcsin_list)
 	arcsin_list : Template ( From lib:mathinterop ).hyperbola.arcsin_list {
 		# A list of angles.
-		args ?:
+		args %:
 	}
 	arctan : utils_lib.firstifier(base : arctan_list)
 	arctan_list : Template ( From lib:mathinterop ).hyperbola.arctan_list {
 		# A list of angles.
-		args ?:
+		args %:
 	}
 	cos : utils_lib.firstifier(base : cos_list)
 	cos_list : Template ( From lib:mathinterop ).hyperbola.cos_list {
 		# A list of angles.
-		args ?:
+		args %:
 	}
 	sin : utils_lib.firstifier(base : sin_list)
 	sin_list : Template ( From lib:mathinterop ).hyperbola.sin_list {
 		# A list of angles.
-		args ?:
+		args %:
 	}
 	tan : utils_lib.firstifier(base : tan_list)
 	tan_list : Template ( From lib:mathinterop ).hyperbola.tan_list {
 		# A list of angles.
-		args ?:
+		args %:
 	}
 }
 # Compute the logarithm of the argument. See `log_list for details.
@@ -104,7 +104,7 @@ log : utils_lib.firstifier(base : log_list)
 # Compute the logarithm of the argument.
 log_list : Template ( From lib:mathinterop ).log_list {
  A list of numbers.
-	args ?:
+	args %:
 	# The base to use.
 	base : natural
 }
@@ -121,7 +121,7 @@ power : utils_lib.firstifier(base : power_list)
 # Compute the argument raised to an exponent.
 power_list : Template ( From lib:mathinterop ).power_list {
 	# A list of numbers.
-	args ?:
+	args %:
 	# A number to raise the values.
 	exponent ?:
 }
@@ -134,7 +134,7 @@ round : utils_lib.firstifier(base : round_list)
 # `round_list` for details.
 round_list : Template ( From lib:mathinterop ).round_list {
 	# A list of numbers.
-	args ?:
+	args %:
 	# The number of decimal places. Must be non-negative.
 	places : 0
 }
