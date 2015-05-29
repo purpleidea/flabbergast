@@ -1,3 +1,9 @@
+flabbergast (0.4~ppa1) trusty; urgency=medium
+
+  * Fix C# scoping problem 
+
+ -- Andre Masella <andre@masella.name>  Fri, 29 May 2015 08:51:06 -0400
+
 flabbergast (0.4~ppa0) trusty; urgency=medium
 
   * Document lib:archive/ar
