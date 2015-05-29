@@ -1,3 +1,9 @@
+flabbergast (0.4~ppa2) trusty; urgency=medium
+
+  * Fix missing comment in library
+
+ -- Andre Masella <andre@masella.name>  Fri, 29 May 2015 18:46:53 -0400
+
 flabbergast (0.4~ppa1) trusty; urgency=medium
 
   * Fix C# scoping problem 

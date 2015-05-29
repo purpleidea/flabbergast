@@ -103,7 +103,7 @@ log : utils_lib.firstifier(base : log_list)
 
 # Compute the logarithm of the argument.
 log_list : Template ( From lib:mathinterop ).log_list {
- A list of numbers.
+	# A list of numbers.
 	args %:
 	# The base to use.
 	base : natural
