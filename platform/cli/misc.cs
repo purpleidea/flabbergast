@@ -59,9 +59,9 @@ namespace Flabbergast {
 			if (mappings.Count == 0) {
 				interlock = categories.Count + 2;
 				Computation input_lookup = new Lookup(master, source_reference, new []{"arg"}, context);
-				input_lookup.Notify(result => {
-					if (result is Stringish) {
-						input = result.ToString();
+				input_lookup.Notify(input_result => {
+					if (input_result is Stringish) {
+						input = input_result.ToString();
 						if (Interlocked.Decrement(ref interlock) == 0) {
 							master.Slot(this);
 						}
@@ -73,8 +73,8 @@ namespace Flabbergast {
 
 				foreach (var entry in categories) {
 					var lookup = new Lookup(master, source_reference, new []{ entry.Value }, context);
-					lookup.Notify(result => {
-						mappings[entry.Key] = result;
+					lookup.Notify(cat_result => {
+						mappings[entry.Key] = cat_result;
 						if (Interlocked.Decrement(ref interlock) == 0) {
 							master.Slot(this);
 						}
@@ -113,9 +113,9 @@ namespace Flabbergast {
 		protected override bool Run() {
 			if (input == null) {
 				Computation input_lookup = new Lookup(master, source_reference, new []{"arg"}, context);
-				input_lookup.Notify(result => {
-					if (result is Stringish) {
-						input = result.ToString();
+				input_lookup.Notify(input_result => {
+					if (input_result is Stringish) {
+						input = input_result.ToString();
 						if (Interlocked.Decrement(ref interlock) == 0) {
 							master.Slot(this);
 						}
@@ -158,9 +158,9 @@ namespace Flabbergast {
 			if (input == null) {
 				var input_lookup = new Lookup(master, source_reference,
 						new String[]{"arg"}, context);
-				input_lookup.Notify(result => {
-					if (result is Stringish) {
-						input = result.ToString();
+				input_lookup.Notify(input_result => {
+					if (input_result is Stringish) {
+						input = input_result.ToString();
 						if (Interlocked.Decrement(ref interlock) == 0) {
 							master.Slot(this);
 						}
@@ -207,9 +207,9 @@ namespace Flabbergast {
 			if (input == null) {
 				var input_lookup = new Lookup(master, source_reference,
 						new String[]{"arg"}, context);
-				input_lookup.Notify(result => {
-					if (result is Stringish) {
-						input = result.ToString();
+				input_lookup.Notify(input_result => {
+					if (input_result is Stringish) {
+						input = input_result.ToString();
 						if (Interlocked.Decrement(ref interlock) == 0) {
 							master.Slot(this);
 						}
@@ -222,9 +222,9 @@ namespace Flabbergast {
 
 				var radix_lookup = new Lookup(master, source_reference,
 						new String[]{"radix"}, context);
-				radix_lookup.Notify(result => {
-					if (result is Int64) {
-						radix = (int)(long)result;
+				radix_lookup.Notify(radix_result => {
+					if (radix_result is Int64) {
+						radix = (int)(long)radix_result;
 						if (Interlocked.Decrement(ref interlock) == 0) {
 							master.Slot(this);
 						}
