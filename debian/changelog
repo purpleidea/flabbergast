@@ -1,3 +1,18 @@
+flabbergast (0.4~ppa0) trusty; urgency=medium
+
+  * Document lib:archive/ar
+  * Call methods on value types properly in `XInvoke`
+  * Create `XComputation` expression
+  * Add utils and math libraries
+  * Prevent compiler crash when no method is found in `XInvoke`
+  * Fix bad typing in coercion
+  * Add library accessors to CLI REPL
+  * Add missing dispatches to coercion
+  * Allow platform-specific libraries (`.nflbgst` and `.jflbgst`)
+  * Escape strings in Java REPL
+
+ -- Andre Masella <andre@masella.name>  Fri, 29 May 2015 06:34:45 -0400
+
 flabbergast (0.3~ppa1) trusty; urgency=medium
 
   * Re-ran autoconf
