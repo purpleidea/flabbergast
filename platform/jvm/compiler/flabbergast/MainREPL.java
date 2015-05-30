@@ -16,9 +16,20 @@ public class MainREPL {
 
 	public static class PrintToConsole extends ElaboratePrinter {
 		private ConsoleReader reader;
+		private Object value;
 
 		public PrintToConsole(ConsoleReader reader) {
 			this.reader = reader;
+		}
+
+		@Override
+		public void consume(Object result) {
+			value = result;
+		}
+
+		public void print() {
+			if (value != null)
+				print(value);
 		}
 
 		@Override
@@ -106,7 +117,7 @@ public class MainREPL {
 
 		ErrorCollector collector = new ConsoleCollector();
 		DynamicCompiler compiler = new DynamicCompiler(collector);
-		TaskMaster task_master = new ConsoleTaskMaster();
+		ConsoleTaskMaster task_master = new ConsoleTaskMaster();
 		task_master.addUriHandler(BuiltInLibraries.INSTANCE);
 		task_master.addUriHandler(new LoadPrecompiledLibraries());
 		task_master.addUriHandler(compiler);
@@ -160,11 +171,11 @@ public class MainREPL {
 			reader.setUsePagination(true);
 			String line;
 			int id = 0;
-			ElaboratePrinter printer = new PrintToConsole(reader);
-			RawPrint raw_printer = new RawPrint(reader);
 			KeepRunning keep_running = new KeepRunning();
 			while (keep_running.allowed() && (line = reader.readLine()) != null) {
 				Parser parser = new Parser("<console>", line);
+				PrintToConsole printer = new PrintToConsole(reader);
+				RawPrint raw_printer = new RawPrint(reader);
 				Class<? extends Computation> run_type = parser.parseRepl(
 						collector, compiler.getCompilationUnit(),
 						"flabbergast/interactive/Line" + (id++));
@@ -178,6 +189,8 @@ public class MainREPL {
 					computation.listen(keep_running);
 					task_master.slot(computation);
 					task_master.run();
+					printer.print();
+					task_master.reportCircularEvaluation();
 				}
 			}
 		} catch (Exception e) {

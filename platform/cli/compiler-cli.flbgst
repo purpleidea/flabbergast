@@ -1734,6 +1734,7 @@ kws : compiler_lib.kws_repl_tmpl {
 				indent : indent,
 				code :
 					"\(sum_indent)\(output_callback.storage_name).Load(\(generator));" &
+					"\(sum_indent)\(generator).SlotIfFrame(\(item.storage_name));" &
 					"\(sum_indent)\(generator).LoadReboxed(\(item.storage_name), typeof(object));" &
 					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Callvirt, typeof(ConsumeResult).GetMethod(\"Invoke\", new [] { typeof(object) }));" &
 					code

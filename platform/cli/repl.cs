@@ -77,7 +77,7 @@ namespace Flabbergast {
 
 			if (files.Count == 1) {
 				var parser = Parser.Open(files[0]);
-				var root_type = parser.ParseFile(collector, unit, "TestRoot");
+				var root_type = parser.ParseFile(collector, unit, "REPLRoot");
 				if (root_type != null) {
 					var computation = (Computation) Activator.CreateInstance(root_type, task_master);
 					computation.Notify(r => original = r as Frame);
@@ -102,12 +102,16 @@ namespace Flabbergast {
 
 			while (run && (s = line_editor.Edit(id + "‽ ", "")) != null) {
 				var parser = new Parser("line" + id, s);
-				var run_type = parser.ParseRepl(collector, unit, "Test" + id++);
+				var run_type = parser.ParseRepl(collector, unit, "REPL" + id++);
 				if (run_type != null) {
-					var computation = (Computation) Activator.CreateInstance(run_type, new object[] { task_master, original, current, update_current, (ConsumeResult) HandleResult, (ConsumeResult) Console.WriteLine });
+					object result = null;
+					var computation = (Computation) Activator.CreateInstance(run_type, new object[] { task_master, original, current, update_current, (ConsumeResult) (output => result = output), (ConsumeResult) Console.WriteLine });
 					computation.Notify(r => run = (r as bool?) ?? true);
 					task_master.Slot(computation);
 					task_master.Run();
+					if (result != null) {
+						HandleResult(result);
+					}
 					task_master.ReportCircularEvaluation();
 				}
 			}

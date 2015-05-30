@@ -367,23 +367,7 @@ abstract class Generator {
 	 * @throws NoSuchMethodException
 	 */
 	public void doReturn(LoadableValue result) throws Exception {
-		if (result.getBackingType() == Frame.class
-				|| result.getBackingType() == Object.class) {
-			Label end = new Label();
-			if (result.getBackingType() == Object.class) {
-				result.load(builder);
-				builder.visitTypeInsn(Opcodes.INSTANCEOF,
-						getInternalName(Frame.class));
-				builder.visitJumpInsn(Opcodes.IFEQ, end);
-				result.load(builder);
-				builder.visitTypeInsn(Opcodes.CHECKCAST,
-						getInternalName(Frame.class));
-			} else {
-				result.load(builder);
-			}
-			visitMethod(Frame.class.getMethod("slot"));
-			builder.visitLabel(end);
-		}
+		slotIfFrame(result);
 		copyField(result, "result", Object.class);
 		builder.visitInsn(Opcodes.ICONST_0);
 		builder.visitInsn(Opcodes.IRETURN);
@@ -1085,6 +1069,25 @@ abstract class Generator {
 		visitMethod(TaskMaster.class.getMethod("slot", Computation.class));
 	}
 
+	public void slotIfFrame(LoadableValue result) throws Exception {
+		if (result.getBackingType() == Frame.class
+				|| result.getBackingType() == Object.class) {
+			Label end = new Label();
+			if (result.getBackingType() == Object.class) {
+				result.load(builder);
+				builder.visitTypeInsn(Opcodes.INSTANCEOF,
+						getInternalName(Frame.class));
+				builder.visitJumpInsn(Opcodes.IFEQ, end);
+				result.load(builder);
+				builder.visitTypeInsn(Opcodes.CHECKCAST,
+						getInternalName(Frame.class));
+			} else {
+				result.load(builder);
+			}
+			visitMethod(Frame.class.getMethod("slot"));
+			builder.visitLabel(end);
+		}
+	}
 	/**
 	 * Slot a computation for execution and stop execution.
 	 * 

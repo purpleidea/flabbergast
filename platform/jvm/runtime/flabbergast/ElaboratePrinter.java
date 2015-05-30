@@ -8,6 +8,10 @@ public abstract class ElaboratePrinter implements ConsumeResult {
 
 	@Override
 	public void consume(Object result) {
+		print(result);
+	}
+
+	protected void print(Object result) {
 		Map<Frame, String> seen = new HashMap<Frame, String>();
 		try {
 			print(result, "", seen);

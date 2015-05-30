@@ -1818,6 +1818,7 @@ kws : compiler_lib.kws_repl_tmpl {
 				indent : indent,
 				code :
 					"\(sum_indent)\(output_callback.storage_name).load(\(generator));" &
+					"\(sum_indent)\(generator).slotIfFrame(\(item.storage_name));" &
 					"\(sum_indent)\(generator).loadReboxed(\(item.storage_name), Object.class);" &
 					"\(sum_indent)\(generator).visitMethod(ConsumeResult.class.getMethod(\"consume\", Object.class));" &
 					code

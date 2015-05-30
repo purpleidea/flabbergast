@@ -745,6 +745,12 @@ internal abstract class Generator {
 	 * Generate a successful return.
 	 */
 	public void Return(LoadableValue result) {
+		SlotIfFrame(result);
+		CopyField(result, typeof(Computation).GetField("result", BindingFlags.NonPublic | BindingFlags.Instance));
+		Builder.Emit(OpCodes.Ldc_I4_1);
+		Builder.Emit(OpCodes.Ret);
+	}
+	public void SlotIfFrame(LoadableValue result) {
 		if (result.BackingType == typeof(Frame) || result.BackingType == typeof(object)) {
 			var end = Builder.DefineLabel();
 			if (result.BackingType == typeof(object)) {
@@ -759,9 +765,6 @@ internal abstract class Generator {
 			Builder.Emit(OpCodes.Call, typeof(Frame).GetMethod("Slot"));
 			Builder.MarkLabel(end);
 		}
-		CopyField(result, typeof(Computation).GetField("result", BindingFlags.NonPublic | BindingFlags.Instance));
-		Builder.Emit(OpCodes.Ldc_I4_1);
-		Builder.Emit(OpCodes.Ret);
 	}
 	private LoadableValue ToStringishHelper(LoadableValue source) {
 		if (source.BackingType == typeof(bool)) {
