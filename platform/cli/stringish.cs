@@ -58,6 +58,20 @@ namespace Flabbergast {
 			return typeof(Stringish).IsAssignableFrom(t) ? typeof(Stringish) : t;
 		}
 
+		public long OffsetByCodePoints(long offset) {
+			long real_offset = 0;
+			IEnumerator<string> stream = Stream();
+			while (offset > 0 && stream.MoveNext()) {
+				var index = 0;
+				while (index < stream.Current.Length && offset > 0) {
+					offset--;
+					index += Char.IsSurrogatePair(stream.Current, index) ? 2 : 1;
+				}
+				real_offset += index;
+			}
+			return real_offset;
+		}
+
 		public abstract IEnumerator<string> Stream();
 
 		public override string ToString() {
@@ -86,7 +100,7 @@ namespace Flabbergast {
 
 	public class SimpleStringish : Stringish {
 		public override long Length {
-			get { return str.Length; }
+			get { return length; }
 		}
 
 		public override long Utf8Length {
@@ -94,9 +108,16 @@ namespace Flabbergast {
 		}
 
 		private readonly string str;
+		private readonly long length;
 
 		public SimpleStringish(string str) {
 			this.str = str;
+			length = str.Length;
+			for (var index = 0; index < str.Length; index++) {
+				if (Char.IsSurrogatePair(str, index)) {
+					length--;
+				}
+			}
 		}
 
 		public override IEnumerator<string> Stream() {

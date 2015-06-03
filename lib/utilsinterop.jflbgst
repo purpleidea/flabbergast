@@ -65,8 +65,8 @@ str_find_list : Template {
 					Then
 						(Let pos :
 							If backward
-								Then XInvoke java.lang.String lastIndexOf (arg.str, str To Str, arg.real_start)
-								Else XInvoke java.lang.String indexOf (arg.str, str To Str, arg.real_start)
+								Then XInvoke java.lang.String lastIndexOf (arg.str, str To Str, XInvoke java.lang.String offsetByCodePoints (arg.str, 0, arg.real_start))
+								Else XInvoke java.lang.String indexOf (arg.str, str To Str, XInvoke java.lang.String offsetByCodePoints (arg.str, 0, arg.real_start))
 						In If pos == -1 Then Null Else pos)
 					Else Null)
 }
@@ -92,7 +92,7 @@ str_slice_list : Template {
 		For arg : str_args, arg_name : Name
 		Select arg_name :
 			If arg.enabled
-				Then XInvoke java.lang.String substring (arg.str, arg.real_start, arg.real_start + arg.real_length)
+				Then XInvoke java.lang.String substring (arg.str,  XInvoke java.lang.String offsetByCodePoints (arg.str, 0, arg.real_start), XInvoke java.lang.String offsetByCodePoints (arg.str, 0, arg.real_start + arg.real_length))
 				Else empty
 }
 str_suffixed_list : Template {

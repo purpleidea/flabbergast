@@ -9,9 +9,11 @@ import flabbergast.RamblingIterator.GetNext;
 
 public class SimpleStringish extends Stringish {
 	private String str;
+	private long num_codepoints;
 
 	public SimpleStringish(String str) {
 		this.str = str;
+		num_codepoints = str.codePointCount(0, str.length());
 	}
 
 	@Override
@@ -21,7 +23,7 @@ public class SimpleStringish extends Stringish {
 
 	@Override
 	public long getLength() {
-		return str.length();
+		return num_codepoints;
 	}
 
 	@Override

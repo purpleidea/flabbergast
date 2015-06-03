@@ -67,8 +67,8 @@ str_find_list : Template {
 					Then
 						(Let pos :
 							If backward
-								Then XInvoke System.String LastIndexOf (arg.str, str, arg.real_start)
-								Else XInvoke System.String IndexOf (arg.str, str, arg.real_start)
+								Then XInvoke System.String LastIndexOf (arg.str, str, XInvoke Flabbergast.Stringish,Flabbergast.Runtime OffsetByCodePoints (arg.str, arg.real_start))
+								Else XInvoke System.String IndexOf (arg.str, str, XInvoke Flabbergast.Stringish,Flabbergast.Runtime OffsetByCodePoints (arg.str, arg.real_start))
 						In If pos == -1 Then Null Else pos)
 					Else Null)
 }
@@ -90,7 +90,7 @@ str_slice_list : Template {
 		For arg : str_args, arg_name : Name
 		Select arg_name :
 			If arg.enabled
-				Then XInvoke System.String Substring (arg.str, arg.real_start, arg.real_length)
+				Then XInvoke System.String Substring (arg.str, XInvoke Flabbergast.Stringish,Flabbergast.Runtime OffsetByCodePoints (arg.str, arg.real_start), XInvoke Flabbergast.Stringish,Flabbergast.Runtime OffsetByCodePoints (arg.str, arg.real_length))
 				Else empty
 }
 str_suffixed_list : Template {

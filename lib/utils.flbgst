@@ -438,7 +438,7 @@ str_slice_list : Template ( From lib:utilsinterop ).str_slice_list {
 						If start Enforce Int >= 0
 							Then start
 							Else (start + length)
-					real_length : (If str_length < length Then str_length Else length) - real_start + 1
+					real_length : (If str_length < length Then str_length Else length) - real_start
 					enabled : real_length > 0
 				})
 }
