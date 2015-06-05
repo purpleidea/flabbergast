@@ -1,0 +1,124 @@
+utils_lib : From lib:utils
+
+ini : {
+	escape_transform_tmpl : Template {
+		backslash : utils_lib.str_transform.char_tmpl { char : "\\"  replacement : "\\\\" }
+		backspace : utils_lib.str_transform.char_tmpl { char : "\b"  replacement : "\\b" }
+		bell : utils_lib.str_transform.char_tmpl { char : "\a"  replacement : "\\a" }
+		colon : utils_lib.str_transform.char_tmpl { char : ":"  replacement : "\\:" }
+		equals : utils_lib.str_transform.char_tmpl { char : "="  replacement : "\\=" }
+		newline : utils_lib.str_transform.char_tmpl { char : "\n"  replacement : "\\n" }
+		null : utils_lib.str_transform.char_tmpl { char : "\x00"  replacement : "\\0" }
+		octothrope : utils_lib.str_transform.char_tmpl { char : "#"  replacement : "\\#" }
+		return : utils_lib.str_transform.char_tmpl { char : "\r"  replacement : "\\r" }
+		semi : utils_lib.str_transform.char_tmpl { char : ";"  replacement : "\\;" }
+		tab : utils_lib.str_transform.char_tmpl { char : "\t"  replacement : "\\t" }
+	}
+
+	escape_transform : escape_transform_tmpl {}
+
+	object : Template {
+		prefix : ""
+		heirarchy_separator : "\\"
+
+		value :
+			(For arg : args, arg_name : Name
+				Where !(arg Is Frame)
+				Reduce acc & "\n" & arg_name & "=" &
+					(If arg Is Bool Then (If arg Then "true" Else "false")
+					Else If arg Is Str Then "\"" & utils_lib.str_escape(arg, transformations : ini.escape_transform) & "\""
+					Else arg To Str)
+				With acc : "") &
+			(For arg : args, arg_name : Name
+				Where arg Is Frame
+				Reduce acc & "\n" & "[" & prefix & arg_name & "]\n" & ini.object(args : arg, prefix : prefix & arg_name & heirarchy_separator, heirarchy_separator : heirarchy_separator)
+				With acc : "")
+	}
+}
+xml : {
+	attribute : Template {
+		attr_name ?:
+		attr_value ?:
+
+		xml_attr :
+			(If xml_ns Is Null Then "" Else "\(xml_ns.qname):") &
+			"\(attr_name)=\"\(utils_lib.str_escape(attr_value, transformations : xml.escape_transform))\""
+	}
+	comment : Template {
+		content ?:
+		xml_value : "<!-- " & utils_lib.str_escape(content, transformations : xml.escape_transform) & " -->"
+	}
+	document : Template {
+		root ?:
+		namespaces : Template {}
+		xml_ns : Null
+
+		xml_namespace :
+			For xml_ns_uri : namespaces {}, xml_ns_name : Name
+			Select xml_ns_name : {
+					name : xml_ns_name
+					uri : xml_ns_uri
+					xml_def : " xmlns:\(name)=\"\(uri)\""
+				}
+
+		xml_root : True
+		xml_value : "<?xml version=\"1.0\" encoding=\"utf-8\"?>" & root.xml_value
+	}
+
+	element : Template {
+		node_name ?:
+		children ?:
+		attributes : []
+
+		qname : (If xml_ns Is Null Then "" Else "\(Lookup xml_ns_name In xml_ns):") & node_name
+		attr_values :
+			For attr : attributes, attr_name : Name
+				Reduce
+					acc & " " &
+					(If attr Is Frame Then attr.xml_attr
+					Else "\(attr_name)=\"\(utils_lib.str_escape(attr To Str, transformations : xml.escape_transform))\"")
+			With acc : ""
+		child_values :
+			For child : children
+			Where !(child Is Null)
+			Reduce
+				acc &
+					(If child Is Str Then utils_lib.str_escape(child, transformations : xml.escape_transform)
+					Else If child Is Frame Then child.xml_value
+					Else Error "Cannot XMLise value.")
+			With acc : ""
+		xml_root : False
+		xmlns_defs :
+			If Lookup xml_root In Container
+			Then
+				(For def : xml_namespace
+				Reduce acc & def.xml_def
+				With acc : "")
+			Else ""
+		xml_value :
+			"<\(qname)\(attr_values)\(xmlns_defs)" &
+			(If child_values == ""
+				Then "/>"
+				Else ">\(child_values)</\(qname)>")
+	}
+	escape_transform_tmpl : Template {
+		amp : utils_lib.str_transform.char_tmpl { char : "&"  replacement : "&amp;" }
+		quot : utils_lib.str_transform.char_tmpl { char : "\""  replacement : "&quot;" }
+		apos : utils_lib.str_transform.char_tmpl { char : "'"  replacement : "&apos;" }
+		lt : utils_lib.str_transform.char_tmpl { char : "<"  replacement : "&gt;" }
+		gt : utils_lib.str_transform.char_tmpl { char : ">"  replacement : "&lt;" }
+		nonprint : utils_lib.str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "&#", utf32, ";" ]  mode : mode_decimal }
+	}
+
+	escape_transform : escape_transform_tmpl {}
+	processing_instruction : Template {
+		content ?:
+
+		xml_value : "<?\(content)?>"
+	}
+	text : Template {
+		content ?:
+		xml_value : utils_lib.str_escape(content, transformations : xml.escape_transform)
+	}
+}
+
