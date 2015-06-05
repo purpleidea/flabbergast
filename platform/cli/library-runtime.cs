@@ -109,10 +109,15 @@ namespace Flabbergast {
 		}
 
 		private void HandleFinalResult(object result) {
-			if (result is Stringish || result is long || result is bool || result is double) {
+			if (result is bool) {
+				Success = true;
+				Console.WriteLine((bool) result ? "True" : "False");
+			} else if (result is Stringish || result is long || result is bool || result is double) {
 				Success = true;
 				if (output_filename == null) {
-					Console.WriteLine(result);
+					Console.Write(result);
+					if (!(result is Stringish))
+						Console.WriteLine();
 				} else {
 					File.WriteAllText(output_filename, result.ToString(), Encoding.UTF8);
 				}
