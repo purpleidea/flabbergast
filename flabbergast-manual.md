@@ -954,7 +954,7 @@ This library is a collection of convenience function-like templates. It has seve
  - filtering functions: `enabled`, `non_null`
  - precision formatting: `float_to_str` `int_to_str`,
  - Unicode manipulation: `int_to_char`, `str_categories`, `str_codepoints`
- - general string manipulation : `str_find`, `str_lower_case`, `str_pad`, `str_replace`, `str_slice`, `str_upper_case`, `str_trim`
+ - general string manipulation : `str_escape`, `str_find`, `str_lower_case`, `str_pad`, `str_replace`, `str_slice`, `str_upper_case`, `str_trim`
  - string analysis: `str_prefixed` (check for prefix), `str_suffixed` (check for suffix), `str_utf8_length`
  - parsing: `parse_float`, `parse_int`
  - frame manipulation: `frame`, `or_default`, `int_to_ordinal`, `is_list` (check if a frame has auto-generated attribute names)
@@ -964,6 +964,8 @@ Many of these functions have a `_list` variant. In the list variant, the output 
 There are also several `ifier` function-like templates. These are higher-order templates: they transform the output of a function-like template. For instance, `sumifier` converts a function-like template that returns a list of numbers into one that returns a sum. The `sum` function-like template is the `identity` function-like template transformed by the `sumifier`. Similarly, the `str_utf8_length` is also made by `sumifier` applied to `str_utf8_length_list`.
 
 There is also a good example of using lookup to do useful work: `str_categories`. This function-like template takes a string and returns the Unicode category for each character in the string. The categories are found by lookup. The `str_categories_spec` function converts them into the two letter names used in the Unicode specification. This function can be re-purposed though; for instance, creating an `is_digit` check could be done by amending the template and setting `number_decimal` to true, and all the other categories to false.
+
+The `str_escape` and corresponding `str_transform` templates allow escaping a string for output. To do so, first, create a frame that contains all the transformations to be performed, then pass this frame and the strings to be escaped to `str_escape` to produce an escaped version of the input. There are two kinds of transformation supported: `char_tmpl` transforms a single character to an escaped version (_e.g._, &amp; → `&amp;` or " → `\"`) and `range_tmpl` converts characters in a range into a numeric escape (_e.g._, ë → `%C3%AB` or ë → `\u00EB`). The escaping will preferentially choose a character transformation to a range transformation. Ranges must not overlap.
 
 Currently, Flabbergast lacks a documentation generator, so the best information is the source comments.
 
@@ -989,8 +991,7 @@ The regular expression library works in two parts: there are a set of templates 
     x : For Each my_expr(str : my_string) Select foo_value 
 
 ### Rendering (`lib:render`)
-TODO
-This library converts frames in to JSON-parseable strings and XML documents. In short, the library provides templates such that a frame can be reduced to XML or JSON fragments.
+This library converts frames in to other formats, including INI, JSON, XML, and YAML. In short, the library provides templates such that a frame can be rendered to output formats. The exact semantics are different for each format, but, in general, the templates are composed into the desired structure providing the hierarchy and the library generates a string containing the output file. Escaping is handled automatically.
 
 ### Mathematics (`lib:math`)
 The mathematics library contains all the usual functions for:
