@@ -42,6 +42,59 @@ ini : {
 				With acc : "")
 	}
 }
+# Tools for generation JavaScript Object Notation files
+json : {
+	# Escaping conventions used by JSON files
+	escape_transform_tmpl : Template {
+		backslash : utils_lib.str_transform.char_tmpl { char : "\\"  replacement : "\\\\" }
+		backspace : utils_lib.str_transform.char_tmpl { char : "\b"  replacement : "\\b" }
+		formfeed : utils_lib.str_transform.char_tmpl { char : "\f"  replacement : "\\f" }
+		newline : utils_lib.str_transform.char_tmpl { char : "\n"  replacement : "\\n" }
+		null : utils_lib.str_transform.char_tmpl { char : "\x00"  replacement : "\\u0000" }
+		quote : utils_lib.str_transform.char_tmpl { char : "\""  replacement : "\\\"" }
+		return : utils_lib.str_transform.char_tmpl { char : "\r"  replacement : "\\r" }
+		tab : utils_lib.str_transform.char_tmpl { char : "\t"  replacement : "\\t" }
+		nonprint : utils_lib.str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "\\u", utf16_0 ] }
+	}
+
+	# The default escaping transformations, for use with `str_escape`.
+	escape_transform : escape_transform_tmpl {}
+
+	# Produce a list of other JSON fragments.
+	list : Template scalar {
+		# A list of JSON elements (list, object, or scalar).
+		children ?:
+
+		# The rendered JSON string.
+		json_value :
+			(For child : children, position : Ordinal
+			Reduce acc & (If position == 1 Then "" Else ", ") & child.json_value
+			With acc : "[") &
+			"]"
+	}
+	# Produce an object containing key-value pairs
+	object : Template scalar {
+		# A list of JSON elements (list, object, or scalar). Attribute names will be used as JSON object keys.
+		children ?:
+
+		# The rendered JSON string.
+		json_value :
+			(For child : children, arg_name : Name, position : Ordinal
+			Reduce acc & (If position == 1 Then "" Else ", ") & "\"" & arg_name & "\":" & child.json_value
+			With acc : "{") & "}"
+	}
+	# Produce a single JSON value
+	scalar : Template {
+		# The value to be converted. Most Flabbergast types will be mapped automatically.
+		arg ?:
+		yaml_value :
+				If arg Is Str Then "\"" & utils_lib.str_escape(arg, transformations : json.escape_transform) & "\""
+				Else If arg Is Null Then "null"
+				Else If arg Is Bool Then (If arg Then "true" Else "false")
+				Else If arg Is Int || arg Is Float Then arg To Str
+				Else Error "Cannot JSONulate value."
+	}
+}
 # Tools for generation XML documents
 xml : {
 	# An XML attribute found in an `element`.
