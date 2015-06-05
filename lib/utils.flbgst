@@ -329,6 +329,62 @@ str_concatifier : Template {
 	}
 }
 
+# Escape a string based on the provided transformation. See `str_escape_list`
+# for details.
+str_escape : str_concatifier(base : str_escape_list, delimiter : "")
+
+# Escape strings based on the provided transformation.
+str_escape_list : Template ( From lib:utilsinterop ).str_escape_list {
+	# A list of transformations to be done on the string, from `str_transform`.
+	transformations ?:
+}
+
+# Transformations that can be done on a string to escape it.
+str_transform : {
+	# Transform a single character into an arbitrary escaped form.
+	char_tmpl : Template ( From lib:utilsinterop ).str_transform.char_tmpl {
+		# A single-character string to use as input.
+		char ?:
+		# The string to use in the escaped result.
+		replacement ?:
+	}
+	# Transform a range of characters into a numeric escape sequence.
+	range_tmpl : Template ( From lib:utilsinterop ).str_transform.range_tmpl {
+		# The inclusive lower bound of the range of characters to escape as a
+		# single-character string.
+		start ?:
+		# The inclusive upper bound of the range of characters to escape as a
+		# single-character string.
+		end ?:
+		# A list of strings and encoded numbers to output in the escaped string.
+		replacement ?:
+		# The mode for encoded numbers to appear in the output.
+		mode : mode_hex_upper
+
+		# Encode numbers as padded upper-case hexadecimal.
+		mode_hex_upper %:
+		# Encode numbers as padded lower-case hexadecimal.
+		mode_hex_lower %:
+		# Encode numbers as unpadded decimal.
+		mode_decimal %:
+
+		# A single 32-bit number representing the entire Unicode codepoint.
+		utf32 %:
+		# A 16-bit number with the first half of a UTF-16 pair.
+		utf16_0 %:
+		# A 16-bit number with the second half of a UTF-16 pair.
+		utf16_1 %:
+		# A 8-bit number with the first quarter of a UTF-8 quartet.
+		utf8_0 %:
+		# A 8-bit number with the second quarter of a UTF-8 quartet.
+		utf8_1 %:
+		# A 8-bit number with the third quarter of a UTF-8 quartet.
+		utf8_2 %:
+		# A 8-bit number with the fourth quarter of a UTF-8 quartet.
+		utf8_3 %:
+	}
+}
+
 # Find the position of `str` in the argument. See `str_find_list` for details.
 str_find : firstifier(base : str_find_list)
 

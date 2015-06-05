@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 using System.Threading;
 
 namespace Flabbergast {
@@ -247,6 +248,192 @@ namespace Flabbergast {
 				master.ReportOtherError(source_reference, e.Message);
 				return false;
 			}
+		}
+	}
+	public class Escape : Computation {
+		private delegate void ConsumeChar(int c);
+		private delegate void ConsumeString(string str);
+
+		public static string Quote(string input) {
+			return input.Replace("{", "{{").Replace("}", "}}");
+		}
+
+		private class Range {
+			internal int start;
+			internal int end;
+			internal string replacement;
+		}
+
+		private Dictionary<int, string> single_substitutions = new Dictionary<int, string>();
+		private SortedList<int, Range> ranges = new SortedList<int, Range>();
+		private string[] input;
+		private TaskMaster master;
+		private SourceReference source_ref;
+		private Context context;
+		private Frame self;
+		private int interlock = 3;
+		private bool state = false;
+
+		public Escape(TaskMaster master, SourceReference source_ref,
+				Context context, Frame self, Frame container) {
+				this.master = master;
+				this.source_ref = source_ref;
+				this.context = context;
+				this.self = self;
+		}
+
+		private void HandleArgs(object result) {
+				if (result is Frame) {
+					var input = (Frame) result;
+					Interlocked.Add(ref interlock, (int) input.Count);
+					this.input = new string[input.Count];
+					var index = 0;
+					foreach (var name in input.GetAttributeNames()) {
+						var target_index = index++;
+						input.GetOrSubscribe(name, arg => {
+							if (arg is Stringish) {
+								this.input[target_index] = arg.ToString();
+								if (Interlocked.Decrement(ref interlock) == 0) {
+									master.Slot(this);
+								}
+							} else {
+								master.ReportOtherError(source_ref, String.Format("Expected “args” to contain strings. Got {0} instead.", arg.GetType()));
+							}
+						});
+					}
+					if (Interlocked.Decrement(ref interlock) == 0) {
+						master.Slot(this);
+					}
+				} else {
+					master.ReportOtherError(source_ref, String.Format("Expected “args” to be a frame. Got {0} instead.", Stringish.HideImplementation(result.GetType())));
+				}
+		}
+
+		void HandleRange(Frame spec) {
+			LookupChar(spec, "start", start => {
+				LookupChar(spec, "end", end => {
+					LookupString(spec, "format_str", replacement => {
+						ranges.Add(start, new Range() { start = start, end = end, replacement = replacement });
+						if (Interlocked.Decrement(ref interlock) == 0) {
+							master.Slot(this);
+						}
+					});
+				});
+			});
+		}
+
+		void HandleSubstition(Frame spec) {
+			LookupChar(spec, "char", c => {
+				LookupString(spec, "replacement", replacement => {
+					single_substitutions[c] = replacement;
+					if (Interlocked.Decrement(ref interlock) == 0) {
+						master.Slot(this);
+					}
+				});
+			});
+		}
+
+		private void HandleTransformation(object result) {
+			if (result is Frame) {
+				var frame = (Frame) result;
+				var lookup = new Lookup(master, source_ref, new []{"type"}, Context.Prepend(frame, null));
+				lookup.Notify(type_result => {
+					if (type_result is long) {
+						switch ((long) type_result) {
+							case 0:
+								HandleSubstition(frame);
+								return;
+							case 1:
+								HandleRange(frame);
+								return;
+						}
+					}
+					master.ReportOtherError(source_ref, "Illegal transformation specified.");
+				});
+				master.Slot(lookup);
+			}
+		}
+		private void HandleTransformations(object result) {
+			if (result is Frame) {
+					var input = (Frame) result;
+					Interlocked.Add(ref interlock, (int) input.Count);
+					foreach (var name in input.GetAttributeNames()) {
+						input.GetOrSubscribe(name, HandleTransformation);
+					}
+					if (Interlocked.Decrement(ref interlock) == 0) {
+						master.Slot(this);
+					}
+			} else {
+					master.ReportOtherError(source_ref, String.Format("Expected “transformations” to be a frame. Got {0} instead.", Stringish.HideImplementation(result.GetType())));
+			}
+		}
+
+		void LookupChar(Frame frame, string name, ConsumeChar consume) {
+			LookupString(frame, name, str => {
+				if (str.Length == 1 || str.Length == 2 && Char.IsSurrogatePair(str, 0)) {
+					consume(Char.ConvertToUtf32(str, 0));
+				} else {
+					master.ReportOtherError(source_ref, String.Format("String “{0}” for “{1}” must be a single codepoint.", str, name));
+				}
+			});
+		}
+
+		void LookupString(Frame frame, string name, ConsumeString consume) {
+			var lookup = new Lookup(master, source_ref, new []{name}, Context.Prepend(frame, null));
+			lookup.Notify(result => {
+				if (result is Stringish) {
+					var str = result.ToString();
+					consume(str);
+				} else {
+					master.ReportOtherError(source_ref, String.Format("Expected “{0}” to be a string. Got {1} instead.", name, result.GetType()));
+				}
+			});
+			master.Slot(lookup);
+		}
+
+		protected override bool Run() {
+			if (!state) {
+				var input_lookup = new Lookup(master, source_ref, new []{"args"}, context);
+				input_lookup.Notify(HandleArgs);
+				master.Slot(input_lookup);
+				var transformation_lookup = new Lookup(master, source_ref, new []{"transformations"}, context);
+				transformation_lookup.Notify(HandleTransformations);
+				master.Slot(transformation_lookup);
+				state = true;
+				if (Interlocked.Decrement(ref interlock) > 0) {
+					return false;
+				}
+			}
+			var output_frame = new Frame(master, master.NextId(), source_ref, context, self);
+			for (var index = 0; index < input.Length; index++) {
+				var buffer = new StringBuilder();
+				for(var it = 0; it < input[index].Length; it += Char.IsSurrogatePair(input[index], it) ? 2 : 1) {
+					var c = Char.ConvertToUtf32(input[index], it);
+					var is_surrogate = Char.IsSurrogatePair(input[index], it);
+					string replacement;
+					if (single_substitutions.TryGetValue(c, out replacement)) {
+						buffer.Append(replacement);
+					} else {
+						bool matched = false;
+						foreach(var range in ranges.Values) {
+							if (c >= range.start && c <= range.end) {
+								var utf8 = new byte[4];
+								
+								Encoding.UTF8.GetBytes(input[index], it, is_surrogate ? 2 : 1, utf8, 0);
+								buffer.Append(String.Format(range.replacement, c, (int) input[index][it], is_surrogate ? (int) input[index][it + 1] : 0, (int) utf8[0], (int) utf8[1], (int) utf8[2], (int) utf8[3]));
+								matched = true;
+								break;
+							}
+						}
+						if (!matched) {
+							buffer.Append(Char.ConvertFromUtf32(c));
+						}
+					}
+				}
+				output_frame[TaskMaster.OrdinalNameStr(index)] = new SimpleStringish(buffer.ToString());
+			}
+			result = output_frame;
+			return true;
 		}
 	}
 }

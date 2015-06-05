@@ -56,6 +56,37 @@ str_lower_case_list : Template {
 		For arg : args, arg_name : Name
 		Select arg_name : XInvoke System.String ToLower (arg To Str)
 }
+str_escape_list : Template {
+	value : XComputation Flabbergast.Escape,Flabbergast.Runtime
+}
+str_transform : {
+	char_tmpl : Template {
+		type : 0
+	}
+	range_tmpl : Template {
+		type : 1
+		mode_hex_upper : { four : "X8"  two : "X4"  one : "X2" }
+		mode_hex_lower : { four : "x8"  two : "x4"  one : "x2" }
+		mode_decimal : { four : "D"  two : "D"  one : "D" }
+
+		utf32 : { value : "{0:\(mode.four)}" }
+		utf16_0 : { value : "{1:\(mode.two)}" }
+		utf16_1 : { value : "{2:\(mode.two)}" }
+		utf8_0 : { value : "{3:\(mode.one)}" }
+		utf8_1 : { value : "{4:\(mode.one)}" }
+		utf8_2 : { value : "{5:\(mode.one)}" }
+		utf8_3 : { value : "{6:\(mode.one)}" }
+
+		format_str :
+			For part : replacement
+				Reduce
+					acc &
+					(If part Is Frame
+							Then part.value Enforce Str
+							Else XInvoke Flabbergast.Escape,Flabbergast.Runtime Quote (part To Str))
+				With acc : ""
+	}
+}
 str_find_list : Template {
 	value :
 		If Length str == 0
