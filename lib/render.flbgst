@@ -180,7 +180,7 @@ yaml : {
 	escape_transform : escape_transform_tmpl {}
 
 	# Produce a list of other YAML fragments.
-	list : Template scalar {
+	list : Template {
 		# A list of YAML elements (list, object, or scalar).
 		children ?:
 
@@ -194,7 +194,7 @@ yaml : {
 			With acc : "\n"
 	}
 	# Produce an object containing key-value pairs
-	object : Template scalar {
+	object : Template {
 		# A list of YAML elements (list, object, or scalar). Attribute names will be used as YAML keys.
 		children ?:
 		yaml_indent : parent_yaml_indent & "  "
