@@ -161,6 +161,7 @@ namespace Flabbergast {
 	 * The lookup context when this frame was created and any of its ancestors.
 	 */
 		public Context Context { get; private set; }
+		public long Count { get { return attributes.Count; } }
 		public Stringish Id { get; private set; }
 		/**
 	 * Access the functions in the frames. Frames should not be mutated, but this

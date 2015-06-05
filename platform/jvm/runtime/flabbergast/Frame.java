@@ -44,6 +44,10 @@ public class Frame implements Iterable<String> {
 		this.id = TaskMaster.ordinalName(id);
 	}
 
+	public int count() {
+		return attributes.size();
+	}
+
 	/**
 	 * Access the functions in the frames. Frames should not be mutated, but
 	 * this policy is not enforced by this class; it must be done in the calling
