@@ -1,3 +1,13 @@
+flabbergast (0.5~ppa0) trusty; urgency=medium
+
+  * Add INI, JSON, XML, and YAML rendering support
+  * Add string escaping support
+  * Make CLI printing consistent with JVM
+  * Fix a number of UTF-32/UTF-16 problems
+  * Change REPL to avoid race condition causing missing output
+
+ -- Andre Masella <andre@masella.name>  Fri, 05 Jun 2015 07:10:52 -0400
+
 flabbergast (0.4~ppa2) trusty; urgency=medium
 
   * Fix missing comment in library
