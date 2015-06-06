@@ -186,12 +186,30 @@ public abstract class TaskMaster implements Iterable<Lookup> {
 		computations.offer(computation);
 	}
 
-	public boolean verifySymbol(SourceReference source_reference,
+	private interface ReportError {
+		public void invoke(String error_msg);
+	}
+
+	public static boolean verifySymbol(Stringish strish) {
+		return verifySymbol(strish, new ReportError() {
+			@Override
+			public void invoke(String error_msg) {
+			}
+		});
+	}
+	public boolean verifySymbol(final SourceReference source_reference,
 			Stringish strish) {
+		return verifySymbol(strish, new ReportError() {
+			@Override
+			public void invoke(String error_msg) {
+				reportOtherError(source_reference, error_msg);
+			}
+		});
+	}
+	private static boolean verifySymbol(Stringish strish, ReportError error) {
 		String str = strish.toString();
 		if (str.length() < 1) {
-			reportOtherError(source_reference,
-					"An attribute name cannot be empty.");
+			error.invoke("An attribute name cannot be empty.");
 			return false;
 		}
 		switch (Character.getType(str.charAt(0))) {
@@ -199,10 +217,8 @@ public abstract class TaskMaster implements Iterable<Lookup> {
 			case Character.OTHER_LETTER :
 				break;
 			default :
-				reportOtherError(
-						source_reference,
-						String.format(
-								"The name “%s” is unbecoming of an attribute; it cannot start with “%s”.",
+				error.invoke(String
+						.format("The name “%s” is unbecoming of an attribute; it cannot start with “%s”.",
 								str, str.charAt(0)));
 				return false;
 		}
@@ -220,10 +236,8 @@ public abstract class TaskMaster implements Iterable<Lookup> {
 				case Character.UPPERCASE_LETTER :
 					continue;
 				default :
-					reportOtherError(
-							source_reference,
-							String.format(
-									"The name “%s” is unbecoming of an attribute; it cannot contain “%s”.",
+					error.invoke(String
+							.format("The name “%s” is unbecoming of an attribute; it cannot contain “%s”.",
 									str, str.charAt(it)));
 					return false;
 			}

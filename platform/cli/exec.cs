@@ -271,10 +271,18 @@ namespace Flabbergast {
 			computations.Enqueue(computation);
 		}
 
+		private delegate void ReportError(string error_msg);
+
+		public static bool VerifySymbol(Stringish strish) {
+			return VerifySymbol(strish, error_msg => {});
+		}
 		public bool VerifySymbol(SourceReference source_reference, Stringish strish) {
+			return VerifySymbol(strish, msg => ReportOtherError(source_reference, msg));
+		}
+		private static bool VerifySymbol(Stringish strish, ReportError error) {
 			var str = strish.ToString();
 			if (str.Length < 1) {
-				ReportOtherError(source_reference, "An attribute name cannot be empty.");
+				error("An attribute name cannot be empty.");
 				return false;
 			}
 			switch (Char.GetUnicodeCategory(str[0])) {
@@ -282,9 +290,8 @@ namespace Flabbergast {
 				case UnicodeCategory.OtherLetter:
 					break;
 				default:
-					ReportOtherError(source_reference,
-						String.Format("The name “{0}” is unbecoming of an attribute; it cannot start with “{1}”.", str,
-							str[0]));
+					error(String.Format("The name “{0}” is unbecoming of an attribute; it cannot start with “{1}”.",
+						str, str[0]));
 					return false;
 			}
 			for (var it = 1; it < str.Length; it++) {
@@ -301,9 +308,8 @@ namespace Flabbergast {
 					case UnicodeCategory.UppercaseLetter:
 						continue;
 					default:
-						ReportOtherError(source_reference,
-							String.Format("The name “{0}” is unbecoming of an attribute; it cannot contain “{1}”.", str,
-								str[it]));
+						error(String.Format("The name “{0}” is unbecoming of an attribute; it cannot contain “{1}”.",
+							str, str[it]));
 						return false;
 				}
 			}

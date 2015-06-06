@@ -49,6 +49,11 @@ str_codepoints_list : Template {
 		For arg : args, arg_name : Name
 		Select arg_name : XComputation flabbergast.StringToCodepoints
 }
+str_is_identifier_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke flabbergast.TaskMaster verifySymbol (arg Enforce Str)
+}
 str_lower_case_list : Template {
 	value :
 		For arg : args, arg_name : Name

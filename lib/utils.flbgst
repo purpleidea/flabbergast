@@ -413,6 +413,15 @@ str_find_list : Template ( From lib:utilsinterop ).str_find_list {
 		}
 }
 
+# Checks if a string is a valid identifier.
+str_is_identifier : allifier(base : str_is_identifier_list)
+
+# Checks if strings are valid identifiers.
+str_is_identifier_list : Template ( From lib:utilsinterop ).str_is_identifier_list {
+	# The strings to check.
+	args %:
+}
+
 # convert a string to lower case.
 str_lower_case : str_concatifier(base : str_lower_case_list)
 # convert strings to lower case.
