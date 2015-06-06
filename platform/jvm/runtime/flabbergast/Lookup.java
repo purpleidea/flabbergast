@@ -86,7 +86,7 @@ public class Lookup extends Computation {
 				return null;
 			}
 			if (current.frame == frame && current.name == name) {
-				return current.result_frame;
+				return current.source_frame;
 			}
 		}
 		return null;
