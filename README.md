@@ -67,7 +67,7 @@ At every point, I made design decisions that were what I thought are the “best
 
 - Do not be truthy.
 - Use words for complicated or unusual operations in preference to symbols. The symbols we have so far are mathematics and logical operators, string join, null coalescence, and the attribute definitions. I slightly regret attribute definitions, but they are so common, using words would be very cumbersome.
-- Fail in the most helpful way possible (i.e., fail as early and explicitly as possible).
+- Fail in the most helpful way possible (_i.e._, fail as early and explicitly as possible).
 - Avoid magic names. Current, there are `args`, `value`, and the ones generated automatically in lists. I am strongly opposed to users knowing about the one in lists; in future, they might be randomised on startup.
 - Avoid strings as messengers for structured data. This is part of the reason for lacking an evaluation operator.
 - Do not dictate policy to the user. For instance, the predecessor to Flabbergast had a frame merge operator and it had control over how conflicting attributes were merged. The fricassée expressions give that control to the user. This is also why schema validation is unlikely; it will always be a subset of what the user really needs. This serves the “do not be truthy” goal.
