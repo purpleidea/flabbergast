@@ -87,7 +87,7 @@ json : {
 	scalar : Template {
 		# The value to be converted. Most Flabbergast types will be mapped automatically.
 		arg ?:
-		yaml_value :
+		json_value :
 				If arg Is Str Then "\"" & utils_lib.str_escape(arg, transformations : json.escape_transform) & "\""
 				Else If arg Is Null Then "null"
 				Else If arg Is Bool Then (If arg Then "true" Else "false")
