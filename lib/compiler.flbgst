@@ -4078,12 +4078,12 @@ language_tmpl : Template {
 						number : $amount
 					}
 				}
-				int_k : Template int_with_unit_expr_tmpl { symbol : "k"  unit : 1000 }
-				int_m : Template int_with_unit_expr_tmpl { symbol : "M"  unit : 1000 * 1000 }
-				int_g : Template int_with_unit_expr_tmpl { symbol : "G"  unit : 1000 * 1000 * 1000 }
-				int_ki : Template int_with_unit_expr_tmpl { symbol : "ki"  unit : 1024 }
-				int_mi : Template int_with_unit_expr_tmpl { symbol : "Mi"  unit : 1024 * 1024 }
-				int_gi : Template int_with_unit_expr_tmpl { symbol : "Gi"  unit : 1024 * 1024 * 1024 }
+				int_ik : Template int_with_unit_expr_tmpl { symbol : "ki"  unit : 1024 }
+				int_im : Template int_with_unit_expr_tmpl { symbol : "Mi"  unit : 1024 * 1024 }
+				int_ig : Template int_with_unit_expr_tmpl { symbol : "Gi"  unit : 1024 * 1024 * 1024 }
+				int_sk : Template int_with_unit_expr_tmpl { symbol : "k"  unit : 1000 }
+				int_sm : Template int_with_unit_expr_tmpl { symbol : "M"  unit : 1000 * 1000 }
+				int_sg : Template int_with_unit_expr_tmpl { symbol : "G"  unit : 1000 * 1000 * 1000 }
 				float_literal : Template expression_tmpl {
 					pretty_name : "floating-point value"
 					level : max_level
