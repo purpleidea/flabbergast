@@ -180,7 +180,7 @@ internal abstract class NameInfo {
 		return info;
 	}
 	public virtual bool HasName(string name) {
-		return Children.ContainsKey(name);
+		return Children.ContainsKey(name) && Children[name] != null;
 	}
 	public abstract Type EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox);
 	public abstract void CreateChild(ErrorCollector collector, string name, string root, ref bool success);
@@ -317,6 +317,7 @@ internal class CopyFromParentInfo : NameInfo {
 	public CopyFromParentInfo(Environment environment, string name, NameInfo source, bool force_back) {
 		Environment = environment;
 		Name = name;
+		if (source == null) throw new InvalidOperationException();
 		Source = source;
 		ForceBack = force_back;
 	}
@@ -587,7 +588,13 @@ internal class Environment : CodeRegion {
 			Parent.Lookup(collector, names, ref success);
 		}
 		if (Parent != null && Parent.HasName(enumerator.Current)) {
-			return Lookback(enumerator.Current).Lookup(collector, enumerator, ref success);
+			var back = Lookback(enumerator.Current);
+			if (back == null) {
+				success = false;
+				collector.ReportForbiddenNameAccess(this, enumerator.Current);
+				return new JunkInfo();
+			}
+			return back.Lookup(collector, enumerator, ref success);
 		}
 		var info = new OpenNameInfo(this, enumerator.Current);
 		Children[enumerator.Current] = info;
@@ -600,7 +607,10 @@ internal class Environment : CodeRegion {
 		if (Children.ContainsKey(name)) {
 			return Children[name];
 		}
-		var copy_info = new CopyFromParentInfo(this, name, Parent.Lookback(name), ForceBack);
+		var original = Parent.Lookback(name);
+		if (original == null)
+			return null;
+		var copy_info = new CopyFromParentInfo(this, name, original, ForceBack);
 		Children[name] = copy_info;
 		return copy_info;
 	}

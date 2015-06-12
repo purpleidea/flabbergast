@@ -414,8 +414,12 @@ class Environment implements CodeRegion {
 		if (children.containsKey(name)) {
 			return children.get(name);
 		}
-		NameInfo copy_info = new CopyFromParentInfo(this, name,
-				parent.lookback(name), force_back);
+		NameInfo original = parent.lookback(name);
+		if (original == null) {
+			return null;
+		}
+		NameInfo copy_info = new CopyFromParentInfo(this, name, original,
+				force_back);
 		children.put(name, copy_info);
 		return copy_info;
 	}
@@ -439,7 +443,13 @@ class Environment implements CodeRegion {
 			parent.lookup(collector, names, success);
 		}
 		if (parent != null && parent.hasName(current)) {
-			return lookback(current).lookup(collector, iter, success);
+			NameInfo back = lookback(current);
+			if (back == null) {
+				success.set(false);
+				collector.reportForbiddenNameAccess(this, current);
+				return new JunkInfo();
+			}
+			return back.lookup(collector, iter, success);
 		}
 		NameInfo info = new OpenNameInfo(this, current);
 		children.put(current, info);
