@@ -14,6 +14,7 @@ public class MainPrinter {
 				"Write output to file instead of standard output.");
 		options.addOption("t", "trace-parsing", false,
 				"Produce a trace of the parse process.");
+		options.addOption("p", "no-precomp", false, "Do not use precompiled libraries");
 		options.addOption("h", "help", false, "Show this message and exit");
 		CommandLineParser cl_parser = new GnuParser();
 		CommandLine result;
@@ -44,7 +45,9 @@ public class MainPrinter {
 		DynamicCompiler compiler = new DynamicCompiler(collector);
 		ConsoleTaskMaster task_master = new ConsoleTaskMaster();
 		task_master.addUriHandler(BuiltInLibraries.INSTANCE);
-		task_master.addUriHandler(new LoadPrecompiledLibraries());
+		if (!result.hasOption('p')) {
+			task_master.addUriHandler(new LoadPrecompiledLibraries());
+		}
 		task_master.addUriHandler(compiler);
 		try {
 			Parser parser = Parser.open(files[0]);

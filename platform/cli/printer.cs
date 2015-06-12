@@ -10,9 +10,11 @@ public class Printer {
 		var trace = false;
 		string output_filename = null;
 		var show_help = false;
+		var use_precompiled = true;
 		var options = new OptionSet {
 			{"o=|output", "Write output to file instead of standard output.", v => output_filename = v},
 			{"t|trace-parsing", "Produce a trace of the parse process.", v => trace = v != null},
+			{"p|no-precomp", "do not use precompiled libraries", v => use_precompiled = v == null},
 			{"h|help", "show this message and exit", v => show_help = v != null}
 		};
 
@@ -47,7 +49,9 @@ public class Printer {
 		var collector = new ConsoleCollector();
 		var task_master = new ConsoleTaskMaster();
 		task_master.AddUriHandler(BuiltInLibraries.INSTANCE);
-		task_master.AddUriHandler(new LoadPrecompiledLibraries());
+		if (use_precompiled) {
+			task_master.AddUriHandler(new LoadPrecompiledLibraries());
+		}
 		task_master.AddUriHandler(new DynamicallyCompiledLibraries(collector));
 		var parser = Parser.Open(files[0]);
 		parser.Trace = trace;

@@ -89,6 +89,7 @@ public class MainREPL {
 
 	public static void main(String[] args) {
 		Options options = new Options();
+		options.addOption("p", "no-precomp", false, "Do not use precompiled libraries");
 		options.addOption("h", "help", false, "Show this message and exit");
 		CommandLineParser cl_parser = new GnuParser();
 		CommandLine result;
@@ -119,7 +120,9 @@ public class MainREPL {
 		DynamicCompiler compiler = new DynamicCompiler(collector);
 		ConsoleTaskMaster task_master = new ConsoleTaskMaster();
 		task_master.addUriHandler(BuiltInLibraries.INSTANCE);
-		task_master.addUriHandler(new LoadPrecompiledLibraries());
+		if (!result.hasOption('p')) {
+			task_master.addUriHandler(new LoadPrecompiledLibraries());
+		}
 		task_master.addUriHandler(compiler);
 		final Ptr<Frame> root = new Ptr<Frame>();
 		try {

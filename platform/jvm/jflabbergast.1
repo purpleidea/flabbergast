@@ -9,7 +9,9 @@ jflabbergast \- Render a Flabbergast file using the Java Virtual Machine
 .B \-o
 .I output.txt
 ] [
-.B \-t 
+.B \-p
+] [
+.B \-t
 ]
 .SH DESCRIPTION
 Runs the Flabbergast interpreter on the provided file and writes the \fBvalue\fR attribute to standard output, or a specified file.
@@ -18,6 +20,9 @@ Runs the Flabbergast interpreter on the provided file and writes the \fBvalue\fR
 .TP
 \-o
 A file to overwrite with the output instead of writing to standard output.
+.TP
+\-p
+Do not load pre-compiled libraries. Only use source libraries, compiled as needed. Use this if the cache is out-of-date or \fBFLABBERGAST_PATH\fR has libraries that shadow ones provided in the distribution.
 .TP
 \-t
 Print the traversal of the parser. This is a lot of useless information.

@@ -13,7 +13,7 @@ namespace Flabbergast {
 				Console.Error.WriteLine("The URI “{0}” is not a valid name.", uri);
 				break;
 			case LibraryFailure.Corrupt:
-				Console.Error.WriteLine("The URI “{0}” could not be loaded.", uri);
+				Console.Error.WriteLine("The URI “{0}” could not be loaded due to corruption.", uri);
 				break;
 			case LibraryFailure.Missing:
 				Console.Error.WriteLine("The URI “{0}” could not be found.", uri);
