@@ -1,0 +1,332 @@
+render_lib : From lib:render
+utils_lib : From lib:utils
+
+environment : environments.devel
+finalization_wait : Null
+max_concurrent_processes : Null
+max_process_failures : 1
+max_task_failures : 1
+min_process_restart_duration : 15
+preemption_priority : 0
+production : False
+# The job scheduling constraints. Each attribute may be set to null to disable,
+# a number for a minimum constraint, or a list of strings with each permitted
+# resource.
+constraint : {
+	host : Null
+	rack : Null
+}
+resources : {
+	cpu : Null
+	disk : Null
+	ram : Null
+}
+
+# The configuration of the health checking system.
+health_check : {
+	# Initial delay for performing an HTTP health check.
+	initial_interval_secs : 15s
+	# Interval on which to check the task's health via HTTP.
+	interval_secs : 10s
+	# HTTP request timeout.
+	timeout_secs : 1s
+	# Maximum number of consecutive failures that tolerated before considering a task unhealthy.
+	max_consecutive_failures : 0
+}
+
+# The configuration for updating instances within a job.
+update : {
+	# Maximum number of instances to be updated in one iteration.
+	batch_size : 1
+	# Maximum number of seconds before a instance must move into the running state before considered a failure.
+	restart_threshold : 1m
+	# Minimum number of seconds a shard must remain in running state before considered a success.
+	watch_secs : 45s
+	# Maximum number of restarts per shard during update. Increments total failure count when this limit is exceeded.
+	max_per_shard_failures : 0
+	# Maximum number of shard failures to be tolerated in total during an update.
+	max_total_failures : 0
+	# Automatically revert modified instances upon failure.
+	rollback_on_failure : True
+	# All threads from a given batch will be blocked from picking up new instances until the entire batch is updated. This essentially simulates the legacy sequential updater algorithm.
+	wait_for_batch_completion : False
+	# Indicates a coordinated update. If no pulses are received within the provided interval the update will be blocked.
+	pulse_interval_secs : Null
+}
+# The environments in which jobs may be run.
+environments : {
+	prod : "prod"
+	devel : "devel"
+	test : "test"
+	staging : "staging"
+}
+# The policies used when scheduling cron jobs
+cron_policy : {
+	cancel_new : "CANCEL_NEW"
+	kill_existing : "KILL_EXISTING"
+}
+
+# Top-level container for generating an Aurora configuration file.
+aurora_file : Template {
+	# A list of job frames.
+	jobs ?:
+
+	python_indent : "\t"
+	# The rendered Aurora file
+	value :
+		(For job : jobs
+			Where !(job Is Null)
+			Reduce acc & python_indent & job.python_value & ",\n"
+			With acc : "jobs = [\n") & "\t]\n"
+}
+
+# An Aurora process, defining a binary to run inside a task.
+process : Template render_lib.python.object {
+	# The process name will be made available from the attribute name.
+	process_name %:
+	# The command line, or any string of BASH commands to start the process.
+	command_line ?:
+	# Maximum number of non-zero exit status this process may encounter before
+	# being marked as permanently failed.
+	max_process_failures %:
+	# Automatically respawn the process, even if it exists successfully.
+	daemon : False
+	# This process does not determine the success or exit of a task. This is used
+	# for helper processes, such as log savers.
+	ephemeral : False
+	# Minimum number of seconds between process restarts.
+	min_process_restart_duration %:
+	# This process should run after all non-final processes in a task.
+	final : False
+
+	python_type : "Process"
+	literal_attrs : {
+		max_failures : max_process_failures
+		daemon : Lookup daemon In Container
+		ephemeral : Lookup ephemeral In Container
+		min_duration : min_process_restart_duration
+		final : Lookup final In Container
+	}
+	string_attrs : {
+		name : process_name
+		cmdline :
+			For part : command_line
+			Reduce
+				acc &
+				(If part Is Frame Then part.command_line_value Else utils_lib.str_replace(part, str : "{{", with : "{{&"))
+			With acc : ""
+	}
+}
+# An Aurora task, container of multiple processes.
+task : Template render_lib.python.object {
+	# A template containing a template for each process that runs inside this task.
+	processes : Template {}
+	# The maximum number of times a task can fail before being marked.
+	max_task_failures %:
+	# The maximum number of concurrent processes, or null for unlimited.
+	max_concurrent_processes %:
+	# How long to wait for processes marked with `final`.
+	finalization_wait %:
+	# A frame containing all the resources needed by the task.
+	resources %:
+	# This defines all the ports used by this task. A port can be an alias, by
+	# defining it to be `ports.other_port` or null to create a unique end-point.
+	port_defs : Template {
+		aurora : $http
+		http : Null
+	}
+	# The primary port.
+	primary_port : ports.http
+
+	# This variable will insert the current instance number into commands and such.
+	current_instance : { command_line_value : "{{mesos.instance}}" }
+	# This variable will insert the current task ID into commands and such when using Thermos.
+	current_task_id : { command_line_value : "{{thermos.task_id}}" }
+	ports :
+		For port_alias : port_defs {}, port_name : Name
+		Select port_name : {
+				alias_exists :
+					If port_alias Is Null
+						Then True
+						Else (For p : ports, p_name : Name
+								Reduce acc || p_name Enforce Str == port_alias Enforce Str
+								With acc : False)
+				alias :
+					If port_alias Is Null
+						Then ""
+						Else If alias_exists Then "'\(port_name)' : '\(port_alias)',"
+						Else Error "Cannot find port \(port_alias) referenced by \(port_name) in \(job_name)."
+				command_line_value : "{{thermos.ports[\(port_name)]}}"
+			}
+
+	exp_processes : For process : processes {}, process_name : Name Select process_name : process {}
+
+	resource_info : {
+		cpu : resources.cpu
+		disk : resources.disk
+		ram : resources.ram
+	}
+
+	python_type : "Task"
+	literal_attrs : {
+		max_concurrency : max_concurrent_processes
+		max_failures : max_task_failures
+		finalization_wait : Lookup finalization_wait In Container
+		# TODO constraints: I have no idea how to express these nicely
+		resources :
+			(For resource : resource_info, resource_name : Name
+				Where !(resource Is Null)
+				Reduce
+					acc & resource_name & " = " &
+					(If resource Is Float Then resource Else resource Enforce Int) & ", "
+				With acc : "Resource(") & ")"
+		processes :
+			(For process : exp_processes, pos : Ordinal
+				Reduce
+					acc &
+					(If pos > 1 Then ",\n" Else "") &
+					process.python_value
+				With acc : "[") & "]"
+	}
+	string_attrs : {}
+}
+# An Aurora job, which runs a task
+job : Template render_lib.python.object {
+	job_name %:
+	# The task to run in this job.
+	task ?:
+	# The user account as whom this job will be scheduled.
+	role %:
+	# The cluster in which this job will be scheduled.
+	cluster %:
+	# The environment in which to schedule this job. See `environments`.
+	environment %:
+	# The number of instances of this task to schedule.
+	instances ?:
+	# The cron rescheduling policy, set from `cron_policy`.
+	cron_collision_policy : Null
+	# The maximum number of task failures to permit.
+	max_task_failures %:
+	# The priority of this job when pre-empting other jobs in the scheduler.
+	preemption_priority %:
+	# An optional container to use.
+	container : Null
+	# An optional cron schedule to use, from `lib:unix/cron`
+	cron_schedule : Null
+
+	python_type : "Job"
+	literal_attrs : {
+		task : Lookup task.python_value In Container
+		instances : Let x : Lookup instances In Container In If x Is Null Then Null Else x Enforce Int
+		cron_collision_policy : Lookup cron_collision_policy In Container
+		constraints :
+			(For c : { host : constraint.host  rack : constraint.rack }, c_name : Name
+				Where !(c Is Null)
+				Reduce
+					acc &
+					"'\(c_name)' : '" &
+					(If c Is Int
+						Then
+							If c Enforce Int > 0
+								Then "limit:\(c Enforce Int)"
+								Else Error "Constraint \(c) on \(c_name) seems a bit silly."
+						Else
+							utils_lib.str_escape(args : c, transformations : python.escape_transform, delimiter : ",")) &
+						"',"
+					With acc : "{") & "}"
+		max_task_failures :
+			Let x : Lookup max_task_failures In Container
+				In
+					If x Is Null Then Null
+					Else If x Enforce Int >= -1 Then x
+					Else Error "Invalid max_task_failures: \(x)"
+		priority : preemption_priority Enforce Int
+		production : Lookup production In Container Enforce Bool
+		container : Let x : Lookup container In Container In If x Is Null Then Null Else x.python_value
+		announce :
+			Let task : Lookup task In Container
+			In render_lib.python.object {
+				python_type : "Announcer"
+				literal_attrs : {
+					portmap :
+						(For port : task.ports
+							Reduce acc & port.alias
+							With acc : "{") & "}"
+				}
+				string_attrs : {
+					primary_port : Lookup port_name In task.primary_port
+				}
+			}
+		update_config : render_lib.python.object {
+			python_type : "UpdateConfig"
+			literal_attrs : {
+				max_total_failures :
+					If update.max_total_failures < 0 || update.max_total_failures > instances
+						Then Error "update.max_total_failures (\(update.max_total_failures)) is not between 0 and the number of instances(\(instances) in \(job_name)."
+						Else update.max_total_failures
+				batch_size :
+					If update.batch_size < 1 || update.batch_size > instances
+						Then Error "update.batch_size (\(update.batch_size)) is not between 1 and the number of instances(\(instances) in \(job_name)."
+						Else update.batch_size
+				restart_threshold :
+						If update.restart_threshold < 0
+							Then Error "update.restart_threshold(\(update.restart_threshold)) must be non-negative."
+							Else update.restart_threshold
+				watch_secs :
+						If update.watch_secs < 0
+							Then Error "update.watch_secs(\(update.watch_secs)) must be non-negative."
+							Else update.watch_secs
+				max_per_shard_failures :
+						If update.max_per_shard_failures < 0
+							Then Error "update.max_per_shard_failures(\(update.max_per_shard_failures)) must be non-negative."
+							Else update.max_per_shard_failures
+				pulse_interval_secs :
+						If update.pulse_interval_secs Is Null Then Null
+						Else If update.pulse_interval_secs < 0
+							Then Error "update.pulse_interval_secs(\(update.pulse_interval_secs)) must be non-negative."
+							Else update.pulse_interval_secs
+				rollback_on_failure : update.rollback_on_failure Enforce Bool
+				wait_for_batch_completion : update.wait_for_batch_completion Enforce Bool
+			}
+			string_attrs : {}
+		}
+		health_check_config : render_lib.python.object {
+			python_type : "HealthCheckConfig"
+			literal_attrs : {
+				initial_interval_secs :
+						If health_check.initial_interval_secs < 0
+							Then Error "health_check.initial_interval_secs(\(health_check.initial_interval_secs)) must be non-negative."
+							Else health_check.initial_interval_secs
+				interval_secs :
+						If health_check.interval_secs < 0
+							Then Error "health_check.interval_secs(\(health_check.interval_secs)) must be non-negative."
+							Else health_check.interval_secs
+				timeout_secs :
+						If health_check.timeout_secs < 0
+							Then Error "health_check.timeout_secs(\(health_check.timeout_secs)) must be non-negative."
+							Else health_check.timeout_secs
+				max_consecutive_failures :
+						If health_check.max_consecutive_failures < 0
+							Then Error "health_check.max_consecutive_failures(\(health_check.max_consecutive_failures)) must be non-negative."
+							Else health_check.max_consecutive_failures
+			}
+			string_attrs : {}
+		}
+	}
+	string_attrs : {
+		name : job_name
+		role : Lookup role In Container
+		cluster : Lookup cluster In Container
+		environment : Lookup environment In Container
+		cron_schedule :
+			Let x : Lookup cron_schedule In Container
+				In If x Is Null Then Null Else x.cron_value
+	}
+}
+# A Docker container for a job.
+docker_container : Template {
+	# The Docker container to be pulled.
+	image ?:
+
+	python_value : "Docker(image = \"" & utils_lib.str_escape(image, transformations : render_lib.python.escape_transform) & "\")"
+}
