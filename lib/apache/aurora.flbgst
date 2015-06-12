@@ -130,7 +130,7 @@ task : Template render_lib.python.object {
 	# A frame containing all the resources needed by the task.
 	resources %:
 	# This defines all the ports used by this task. A port can be an alias, by
-	# defining it to be `ports.other_port` or null to create a unique end-point.
+	# defining it to be `$other_port` or null to create a unique end-point.
 	port_defs : Template {
 		aurora : $http
 		http : Null

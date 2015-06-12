@@ -204,6 +204,187 @@ There is an entirely different way to generate frames: from existing frames usin
 
 These are the essential features of the language. Many other built-in expressions are provided, including an `If` expression, other ways to generate frames, access to external libraries, more variants of the fricassée expression, and more subtle ways to lookup identifiers.
 
+## A Worked Example: Apache Aurora
+Let's start with an example for a simple job that runs on Apache Aurora. Aurora is a long-running job configuration system for Mesos. It's purposes is to collect and dispatch all the needed job information to Mesos. In Aurora, a file consists of many jobs, each with a task to perform. A task can have multiple processes that run inside of it. Most resources are configured on the job level; some on the task level.
+
+The first thing needed is some basic plumbing:
+
+    aurora_lib : From lib:apache/aurora # Import the Aurora library.
+    hw_file : aurora_lib.aurora_file { # Create an Aurora configuration file
+      jobs : [ ] # Aurora requires we provide a list of job. We have none so far.
+    }
+    value : hw_file.value # Flabbergast is going to dump this string to the output.
+
+This won't do anything useful, but we have a basic skeleton. Let's create a job.
+
+    aurora_lib : From lib:apache/aurora
+    hw_file : aurora_lib.aurora_file {
+      jobs : [
+        job { # Create a job. This could also be `aurora_lib.job`, but we have nothing else named `job`.
+          instances : 1 # One replica of this job should run.
+          job_name : "hello_world" # Provide a friendly job name.
+          task : aurora_lib.task { } # Each job needs a task.
+        }
+      ]
+    }
+    value : hw_file.value
+
+This will create one job, but this file won't work. A job needs a `cluster` and a `role`; it is also desirable to specify `resources`.
+
+    aurora_lib : From lib:apache/aurora
+    cluster : "cluster1"
+    role : "jrhacker"
+    resources : {
+      cpu : 0.1
+      ram : 16Mi
+      disk : 16Mi
+    }
+    hw_file : aurora_lib.aurora_file {
+      jobs : [
+        job {
+          instances : 1
+          job_name : "hello_world"
+          task : aurora_lib.task { }
+        }
+      ]
+    }
+    value : hw_file.value
+
+I chose to put `cluster`, `role`, and `resources` resources at the top-level. This is so that they are shared between all jobs that I create. It is also completely valid to do:
+
+    aurora_lib : From lib:apache/aurora
+    hw_file : aurora_lib.aurora_file {
+      resources : {
+        cpu : 0.1
+        ram : 16Mi
+        disk : 16Mi
+      }
+      jobs : [
+        job {
+          cluster : "cluster1"
+          role : "jrhacker"
+          instances : 1
+          job_name : "hello_world"
+          task : aurora_lib.task { }
+        }
+      ]
+    }
+    value : hw_file.value
+
+I can even split the `resources` frame.
+
+    aurora_lib : From lib:apache/aurora
+    role : "jrhacker"
+    resources : {
+      cpu : 0.2 # This value will be eclipsed by⋯
+      ram : 16Mi
+    }
+    hw_file : aurora_lib.aurora_file {
+      resources : {
+        disk : 16Mi
+      }
+      jobs : [
+        job {
+          resources : {
+            cpu : 0.1 # ⋯ this one, because this one is “closer” to the point of use.
+          }
+          cluster : "cluster1"
+          instances : 1
+          job_name : "hello_world"
+          task : aurora_lib.task { }
+        }
+      ]
+    }
+    value : hw_file.value
+
+In this case, it doesn't change the output, but it allows me to control which parameters are shared by which jobs.
+
+Our task is pretty useless, let's give it some processes:
+
+    aurora_lib : From lib:apache/aurora
+    cluster : "cluster1"
+    role : "jrhacker"
+    resources : {
+      cpu : 0.1
+      ram : 16Mi
+      disk : 16Mi
+    }
+    hw_file : aurora_lib.aurora_file {
+      jobs : [
+        job {
+          instances : 1
+          job_name : "hello_world"
+          task : aurora_lib.task {
+            processes +: { # Add to the processes template ⋯
+              hw : Template process { # ⋯ a new process template; the name of this process will be `hw`
+                command_line : [ "echo hello world" ] # The command line we want to run.
+              }
+            }
+          }
+        }
+      ]
+    }
+    value : hw_file.value
+
+This will give us a basic configuration. Aurora allows multiple replicas/instances of a job. Suppose we want each replica to know its identity:
+
+    aurora_lib : From lib:apache/aurora
+    cluster : "cluster1"
+    role : "jrhacker"
+    resources : {
+      cpu : 0.1
+      ram : 16Mi
+      disk : 16Mi
+    }
+    hw_file : aurora_lib.aurora_file {
+      jobs : [
+        job {
+          instances : 1
+          job_name : "hello_world"
+          task : aurora_lib.task {
+            processes +: {
+              hw : Template process {
+                command_line : [ "echo hello world. I am ", current_instance ]
+              }
+            }
+          }
+        }
+      ]
+    }
+    value : hw_file.value
+
+Aurora also allows setting multiple ports for incoming connections.
+
+    aurora_lib : From lib:apache/aurora
+    cluster : "cluster1"
+    role : "jrhacker"
+    resources : {
+      cpu : 0.1
+      ram : 16Mi
+      disk : 16Mi
+    }
+    hw_file : aurora_lib.aurora_file {
+      jobs : [
+        job {
+          instances : 1
+          job_name : "hello_world"
+          task : aurora_lib.task {
+						port_defs +: {
+							xmpp : Null # Creating a new null entry, defines a new port. By setting it to a string, it becomes an alias.
+						}
+            processes +: {
+              hw : Template process {
+                command_line : [ "helloworldd --http ", ports.http, " --xmpp ", ports.xmpp ]
+              }
+            }
+          }
+        }
+      ]
+    }
+    value : hw_file.value
+
+What makes Flabbergast helpful is how you can extend these base templates to suit your needs. You can create a template that runs a database. It could calculate the needed disk given a list of datasets. That way, a user gets a correctly configured database only having to specify the data sets. Other things to consider might be creating a standard configuration for a sharded system, then using a fricassée to create them over the right range. Or, even, combine the two: create a lists of grouped datasets, then use those to bring up many similar databases to serve them.
+
 ## Core Concepts
 
 There are two core concepts in Flabbergast: contextual (dynamic) lookup and inheritance. Both of these exist in the context of frames, which are the primary data structure. They somewhat resemble objects in Python, Perl and JavaScript.
@@ -941,7 +1122,7 @@ Because Flabbergast is meant to render data, it has a rather lean standard libra
  - string manipulation. Yuck. String manipulation is the source of all computational suffering. Embrace the frames.
  - regular expressions and parsing. Ignoring that parsing is usually absent, generally, this is done on the strings read from files.
  - mathematics. Computation is good!
- - XML and JSON.
+ - generating XML, JSON, and other formats to be read by the programs being configured.
 
 So, the Flabbergast libraries look like they do to avoid I/O and minimise the ensuing insanity.
 
@@ -972,26 +1153,8 @@ Currently, Flabbergast lacks a documentation generator, so the best information 
 ### Archives (`lib:archive/ar`)
 Since Flabbergast only outputs a single value, it can be awkward to generate multiple files. To combat this, it supports creating `ar`-style archives, which are plain text. To do this, instantiate `archive_tmpl` with the `args` being a list of `file_tmpl`, each with `file_name` and `contents`. The resulting file can then be unpacked using the UNIX `ar` program.
 
-### Regular Expressions (`lib:regex`)
-TODO
-The regular expression library works in two parts: there are a set of templates to build a regular expression and a function to collect matches from a regular expression. Regular expression syntax varies across platforms, so a more uniform way of defining expressions is needed. This is what the templates provide: a consistent mechanism. Essentially, the library provides a way to build a regular expression “function” that can be called on a string. For example:
-
-    regex_lib : From lib:regex
-    my_expr : Template regex_lib.alternate {
-      elements : [
-        "foo:",
-        Template kleene {
-          of : Template char_group {
-            of : "a-z"
-          name : $foo_value
-          }
-        }
-      ]
-    }
-    x : For Each my_expr(str : my_string) Select foo_value 
-
 ### Rendering (`lib:render`)
-This library converts frames in to other formats, including INI, JSON, XML, and YAML. In short, the library provides templates such that a frame can be rendered to output formats. The exact semantics are different for each format, but, in general, the templates are composed into the desired structure providing the hierarchy and the library generates a string containing the output file. Escaping is handled automatically.
+This library converts frames in to other formats, including INI, JSON, Python, XML, and YAML. In short, the library provides templates such that a frame can be rendered to output formats. The exact semantics are different for each format, but, in general, the templates are composed into the desired structure providing the hierarchy and the library generates a string containing the output file. Escaping is handled automatically.
 
 ### Mathematics (`lib:math`)
 The mathematics library contains all the usual functions for:
@@ -1031,6 +1194,12 @@ TODO
 
 ### Self-Hosting Compiler (`lib:compiler`)
 There is a compiler capable of generating a real compiler in a target language that implements the KWS VM. Although this should be available on every platform to have supported that platform, it is rather useless for in-application settings.
+
+### Apache Aurora (`lib:apache/aurora`)
+Configures jobs for running on the Apache Aurora framework, which managers long-running jobs on Mesos.
+
+### Cron Specifiers (`lib:unix/cron`)
+Allows generating the time specifications in for `crontab` entries.
 
 ## Questions of Varying Frequency
 
