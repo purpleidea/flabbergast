@@ -95,6 +95,51 @@ json : {
 				Else Error "Cannot JSONulate value."
 	}
 }
+# Tools for generating Python object representations
+python : {
+	# Escaping conventions used by Python files
+	escape_transform_tmpl : Template {
+		backslash : utils_lib.str_transform.char_tmpl { char : "\\"  replacement : "\\\\" }
+		backspace : utils_lib.str_transform.char_tmpl { char : "\b"  replacement : "\\b" }
+		bell : utils_lib.str_transform.char_tmpl { char : "\a"  replacement : "\\a" }
+		formfeed : utils_lib.str_transform.char_tmpl { char : "\f"  replacement : "\\f" }
+		newline : utils_lib.str_transform.char_tmpl { char : "\n"  replacement : "\\n" }
+		null : utils_lib.str_transform.char_tmpl { char : "\x00"  replacement : "\\u0000" }
+		quote : utils_lib.str_transform.char_tmpl { char : "\""  replacement : "\\\"" }
+		return : utils_lib.str_transform.char_tmpl { char : "\r"  replacement : "\\r" }
+		tab : utils_lib.str_transform.char_tmpl { char : "\t"  replacement : "\\t" }
+		vertical_tab : utils_lib.str_transform.char_tmpl { char : "\v"  replacement : "\\v" }
+		nonprint : utils_lib.str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "\\x", utf8_0 ] }
+	}
+
+	# The default escaping transformations, for use with `str_escape`.
+	escape_transform : escape_transform_tmpl {}
+
+	# Convenience template for generating Pystachio objects
+	object : Template {
+		# The Python object name.
+		python_type ?:
+		# The attributes, which have been type checked, that will be assigned to the Python object.
+		literal_attrs ?:
+		# The attributes, which will be converted to escaped strings, that will be assigned to the Python object.
+		string_attrs ?:
+
+		# The present indentation level. At the top level, this should be overriden to the empty string.
+		python_indent : Lookup python_indent In Container & "\t"
+
+		# The rendered Python object
+		python_value :
+			(For attr_name : Name, literal_attr : literal_attrs, str_attr : string_attrs
+				Where !(literal_attr Is Null) || !(str_attr Is Null)
+				Reduce
+					acc & "\n\(python_indent)\(attr_name) = " &
+					(If literal_attr Is Null Then "\"" & utils_lib.str_escape(str_attr, transformations : python.escape_transform) & "\""
+					Else If literal_attr Is Frame Then literal_attr.python_value
+					Else literal_attr) &
+					","
+			With acc : "\(python_type)(") & "\n" & python_indent & ")"
+	}
+}
 # Tools for generation XML documents
 xml : {
 	# An XML attribute found in an `element`.
