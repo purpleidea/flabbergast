@@ -588,7 +588,7 @@ abstract class Generator {
 		if (load_owner_externals) {
 			for (String uri : owner_externals) {
 				if (!externals.containsKey(uri)) {
-					externals.put(uri, makeField(uri, Object.class));
+					externals.put(uri, makeField("library", Object.class));
 				}
 			}
 		}
@@ -1029,7 +1029,7 @@ abstract class Generator {
 	public LoadableValue resolveUri(String uri) {
 		owner_externals.add(uri);
 		if (!externals.containsKey(uri)) {
-			FieldValue library_field = makeField(uri, Object.class);
+			FieldValue library_field = makeField("library", Object.class);
 			externals.put(uri, library_field);
 		}
 		return externals.get(uri);
