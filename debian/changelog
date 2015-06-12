@@ -1,3 +1,13 @@
+flabbergast (0.6~ppa0) trusty; urgency=medium
+
+  * Add libraries for Aurora, Python rendering, and crontabs
+  * Fix parse error for Gi, Mi, ki
+  * Avoid creating bad field names in Java
+  * Allow skipping loading of precompiled libraries
+  * Fix crash when doing illegal lookup in sub environment
+
+ -- Andre Masella <andre@masella.name>  Fri, 12 Jun 2015 07:34:45 -0400
+
 flabbergast (0.5~ppa0) trusty; urgency=medium
 
   * Add INI, JSON, XML, and YAML rendering support
