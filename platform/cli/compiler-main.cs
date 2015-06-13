@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Text.RegularExpressions;
 using NDesk.Options;
 
 namespace Flabbergast {
@@ -43,7 +44,7 @@ namespace Flabbergast {
 				parser.Trace = trace;
 
 				var dll_name = Path.ChangeExtension(Path.GetFileNameWithoutExtension(filename), ".dll");
-				var type_name = "Flabbergast.Library" + Path.GetDirectoryName(filename).Replace(Path.DirectorySeparatorChar, '.') + Path.GetFileNameWithoutExtension(filename);
+				var type_name = Regex.Replace("Flabbergast.Library." + Path.GetDirectoryName(filename).Replace(Path.DirectorySeparatorChar, '.') + Path.GetFileNameWithoutExtension(filename), "\\.+", ".");
 				var assembly_name = new AssemblyName(type_name) {CodeBase = "file://" + Path.GetDirectoryName(filename)};
 				var assembly_builder = AppDomain.CurrentDomain.DefineDynamicAssembly(assembly_name, AssemblyBuilderAccess.RunAndSave);
 				CompilationUnit.MakeDebuggable(assembly_builder);

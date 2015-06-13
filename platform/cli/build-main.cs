@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Text.RegularExpressions;
 using NDesk.Options;
 
 namespace Flabbergast {
@@ -20,12 +21,14 @@ namespace Flabbergast {
 			foreach (var file in Directory.EnumerateFiles(directory, "*.dll")) {
 				known_dlls[file] = true;
 			}
+			foreach (var file in Directory.EnumerateFiles(directory, "*.dll.mdb")) {
+				known_dlls[file] = true;
+			}
 		}
 		public static int Main(string[] args) {
-			if (args.Length != 1) {
+			if (args.Length != 0) {
 				return 1;
 			}
-			Directory.SetCurrentDirectory(args[0]);
 
 			var known_dlls = new Dictionary<string, bool>();
 			var sources = new List<string>();
@@ -34,11 +37,12 @@ namespace Flabbergast {
 			var collector = new ConsoleCollector();
 			bool success = true;
 			foreach (var filename in sources) {
-				var parser = Parser.Open(filename);
+				var parser = Parser.Open(Path.GetFullPath(filename));
 
 				var dll_name = Path.ChangeExtension(Path.GetFileNameWithoutExtension(filename), ".dll");
-				known_dlls.Remove(dll_name);
-				var type_name = "Flabbergast.Library." + Path.GetDirectoryName(filename).Replace(Path.DirectorySeparatorChar, '.') + Path.GetFileNameWithoutExtension(filename);
+				known_dlls.Remove(Path.Combine(".", dll_name));
+				known_dlls.Remove(Path.Combine(".", Path.ChangeExtension(Path.GetFileNameWithoutExtension(filename), ".dll.mdb")));
+				var type_name = Regex.Replace("Flabbergast.Library." + Path.GetDirectoryName(filename).Replace(Path.DirectorySeparatorChar, '.') + Path.GetFileNameWithoutExtension(filename), "\\.+", ".");
 				var assembly_name = new AssemblyName(type_name) {CodeBase = "file://" + Path.GetDirectoryName(filename)};
 				var assembly_builder = AppDomain.CurrentDomain.DefineDynamicAssembly(assembly_name, AssemblyBuilderAccess.RunAndSave);
 				CompilationUnit.MakeDebuggable(assembly_builder);
