@@ -20,8 +20,16 @@ class WriterCompilationUnit extends CompilationUnit<Boolean> {
 			Class<?> superclass, Class<?>... interfaces) {
 		AutoWriteClassVisitor visitor = new AutoWriteClassVisitor(
 				new ClassWriter(ClassWriter.COMPUTE_MAXS
-						| (compute_frames ? 0 : ClassWriter.COMPUTE_FRAMES)));
-		fileEvent(visitor.target);
+						| (compute_frames ? ClassWriter.COMPUTE_FRAMES : 0))) {
+			@Override
+			public void visit(int version, int access, String class_name,
+					String signature, String super_name, String[] interfaces) {
+				super.visit(version, access, class_name, signature, super_name,
+						interfaces);
+				fileEvent(target);
+			}
+
+		};
 		String[] interface_names = new String[interfaces.length];
 		for (int it = 0; it < interfaces.length; it++) {
 			interface_names[it] = getInternalName(interfaces[it]);

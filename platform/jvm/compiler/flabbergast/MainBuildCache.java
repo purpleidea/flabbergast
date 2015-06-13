@@ -1,6 +1,7 @@
 package flabbergast;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -9,7 +10,7 @@ import java.util.Set;
 public class MainBuildCache {
 
 	private static void discover(File root, List<File> sources,
-			Set<File> known_classes) {
+			Set<String> known_classes) {
 		for (File f : root.listFiles()) {
 			if (f.isDirectory()) {
 				discover(f, sources, known_classes);
@@ -18,7 +19,11 @@ public class MainBuildCache {
 						|| f.getName().endsWith(".jflbgst")) {
 					sources.add(f);
 				} else if (f.getName().endsWith(".class")) {
-					known_classes.add(f);
+					try {
+						known_classes.add(f.getCanonicalPath());
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 				}
 			}
 		}
@@ -33,31 +38,37 @@ public class MainBuildCache {
 			return;
 		}
 		ErrorCollector collector = new ConsoleCollector();
-		final Set<File> known_classes = new HashSet<File>();
+		final Set<String> known_classes = new HashSet<String>();
 		List<File> sources = new ArrayList<File>();
 		File root = new File(".");
 		discover(root, sources, known_classes);
 
 		CompilationUnit<Boolean> unit = new WriterCompilationUnit(true) {
+			@Override
 			protected void fileEvent(File file) {
-				known_classes.remove(file);
+				try {
+					known_classes.remove(file.getCanonicalPath());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		};
 		boolean success = true;
 		for (File source : sources) {
 			try {
 				String filename = source.getPath();
-				Parser parser = Parser.open(filename);
+				Parser parser = Parser.open(source.getCanonicalPath());
 				String file_root = ("flabbergast/library/" + removeSuffix(filename))
 						.replace(File.separatorChar, '/')
 						.replaceAll("[/.]+", "/").replace('-', '_');
 				parser.parseFile(collector, unit, file_root);
 			} catch (Exception e) {
 				success = false;
+				e.printStackTrace();
 			}
 		}
-		for (File dead : known_classes) {
-			dead.delete();
+		for (String dead : known_classes) {
+			new File(dead).delete();
 		}
 		System.exit(success ? 0 : 1);
 	}
