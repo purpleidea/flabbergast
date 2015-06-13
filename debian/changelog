@@ -1,3 +1,10 @@
+flabbergast (0.7~ppa0) trusty; urgency=medium
+
+  * Fix cache building systems
+  * Put platform-specific files in the right packages
+
+ -- Andre Masella <andre@masella.name>  Fri, 12 Jun 2015 22:52:34 -0400
+
 flabbergast (0.6~ppa0) trusty; urgency=medium
 
   * Add libraries for Aurora, Python rendering, and crontabs
