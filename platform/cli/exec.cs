@@ -160,6 +160,7 @@ namespace Flabbergast {
 				array[it + 10] = (char) ('A' + it);
 				array[it + 36] = (char) ('a' + it);
 			}
+			Array.Sort(array);
 			return array;
 		}
 
