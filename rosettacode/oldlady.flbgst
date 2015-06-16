@@ -1,0 +1,67 @@
+# Generate the lyrics “I know an old lady who swallowed a fly”. http://rosettacode.org/wiki/Old_lady_swallowed_a_fly
+poem : lady_tmpl {
+	animal : "fly"
+	catch : "I don't know why she swallowed the fly.\nPerhaps she'll die.\n\n"
+	quip : ""
+	next : std_lady_tmpl {
+		animal : "spider"
+		sarcasm : "That wriggled and jiggled and tickled inside her"
+		next : swallow_lady_tmpl {
+			animal : "bird"
+			sarcasm : "Quite absurd"
+			next : swallow_lady_tmpl {
+				animal : "cat"
+				sarcasm : "Fancy that"
+				next : swallow_lady_tmpl {
+					animal : "dog"
+					sarcasm : "What a hog"
+					next : swallow_lady_tmpl {
+						animal : "pig"
+						sarcasm : "Her mouth was so big"
+						next : std_lady_tmpl {
+							animal : "goat"
+							sarcasm : "Opened her throat and down went the goat"
+							next : swallow_lady_tmpl {
+								animal : "cow"
+								sarcasm : "I don't know how"
+								next : swallow_lady_tmpl {
+									animal : "donkey"
+									sarcasm : "It was rather wonkey"
+									next : std_lady_tmpl {
+										animal : "horse"
+										sarcasm : "She's dead of course"
+										next : Null
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+lady_tmpl : Template {
+	animal ?:
+	next ?:
+	quip ?:
+	catch :
+		"She swallowed the \(animal) to catch the \(Lookup animal In Container).\n" &
+		Lookup catch In Container
+
+	value :
+		"I know an old lady who swallowed a \(animal).\n" &
+		quip &
+		(If next Is Null Then "" Else catch & next.value)
+}
+std_lady_tmpl : Template lady_tmpl {
+	sarcasm ?:
+	quip : "\(sarcasm).\n"
+}
+swallow_lady_tmpl : Template lady_tmpl {
+	sarcasm ?:
+	quip : "\(sarcasm) to swallow a \(animal).\n"
+}
+
+value : poem.value

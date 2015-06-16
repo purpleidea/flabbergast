@@ -1,0 +1,1 @@
+Here are examples of some of the more whimsical [Rosetta Code](http://rosettacode.org/) tasks in Flabbergast. Normally, Rosetta Code examples are meant to be very compact, but these are slightly more verbose, for clarity.

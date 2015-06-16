@@ -1,0 +1,4 @@
+# Produce the lyrics to the song “99 bottles of beer” http://rosettacode.org/
+value : For x : 1 Through 99
+	Reduce "\(x) bottles of beer on the wall\n\(x) bottles of beer\nTake one down, pass it around\n\(x - 1) bottles of beer on the wall\n\n" & acc
+	With acc : ""

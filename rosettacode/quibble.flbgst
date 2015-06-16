@@ -1,0 +1,16 @@
+# Comma quibbling is a task originally set by Eric Lippert in his blog. http://rosettacode.org/wiki/Comma_quibbling
+quibble : Template {
+	args ?:
+	rev_args : For a : args Reverse Select a
+	value :
+		"{" &
+		(For arg : rev_args, pos : Ordinal
+			Reduce
+				If pos == 1 Then arg & acc
+				Else If pos == 2 Then "\(arg) and \(acc)"
+				Else "\(arg), \(acc)"
+			With acc : "}")
+}
+value : For x : [[], ["ABC"],  ["ABC", "DEF"] , ["ABC", "DEF", "G", "H"]]
+	Reduce acc & quibble(args : x) & "\n"
+	With acc : ""
