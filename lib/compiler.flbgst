@@ -2938,6 +2938,76 @@ language_tmpl : Template {
 						}
 					}
 				}
+				list_join : Template binary_operator {
+					pretty_name : "frame concatenation"
+					level : 3
+					operator : "Append"
+					right_operand : Template sibling_expression {}
+					ensure_type_is : ensure_type.filter {
+						types : [ known_types.frame ]
+						ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
+					}
+					code_value : codegen.bind {
+						define : {
+							output_frame : kws.frame_new {
+								creation_method : "concatenated"
+								container : parameters.self_frame
+								context : parameters.context
+							}
+							left_input : codegen.other_code { field : $left }
+							right_input : codegen.other_code { field : $right }
+						}
+						in : Template codegen.bind {
+							define : {
+								offset : kws.iterator {
+									accumulator_type : known_types.int
+									input : input_list { items : [ parameters.left_input ] }
+									initial : kws.numeric_constant {
+										type : known_types.int
+										number : 0
+									}
+									default_case : kws.set_frame_or_tmpl {
+										name : kws.string_ordinal {
+											source : current_ordinal
+										}
+										returns : current_ordinal
+										into : parameters.output_frame
+										with : kws.lookup_dynamic {
+											name : current_name
+											source : kws.list_prepend {
+												frame : parameters.left_input
+												tail : kws.list_null {}
+											}
+										}
+									}
+									cases : []
+								}
+							}
+							in : Template kws.iterator {
+								accumulator_type : known_types.frame
+								input : input_list { items : [ parameters.right_input ] }
+								initial : parameters.output_frame
+								default_case : kws.set_frame_or_tmpl {
+									name : kws.string_ordinal {
+										source : kws.int_add {
+											left : current_ordinal
+											right : parameters.offset
+										}
+									}
+									into : parameters.output_frame
+									with : kws.lookup_dynamic {
+										name : current_name
+										source : kws.list_prepend {
+											frame : parameters.right_input
+											tail : kws.list_null {}
+										}
+									}
+								}
+								cases : []
+							}
+						}
+					}
+				}
 
 				disjunction : Template binary_operator {
 					pretty_name : "logical disjunction"

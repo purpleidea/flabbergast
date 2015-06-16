@@ -89,7 +89,8 @@ public class MainREPL {
 
 	public static void main(String[] args) {
 		Options options = new Options();
-		options.addOption("p", "no-precomp", false, "Do not use precompiled libraries");
+		options.addOption("p", "no-precomp", false,
+				"Do not use precompiled libraries");
 		options.addOption("h", "help", false, "Show this message and exit");
 		CommandLineParser cl_parser = new GnuParser();
 		CommandLine result;
@@ -161,14 +162,14 @@ public class MainREPL {
 		try {
 			ConsoleReader reader = new ConsoleReader();
 			reader.addCompletor(new SimpleCompletor(new String[]{"args",
-					"value", "Bool", "By", "Container", "Each", "Else",
-					"Enforce", "Error", "False", "Finite", "Float", "FloatMax",
-					"FloatMin", "For", "Frame", "From", "GenerateId", "Id",
-					"If", "In", "Infinity", "Int", "IntMax", "IntMin", "Is",
-					"Length", "Let", "Lookup", "NaN", "Name", "Null", "Order",
-					"Ordinal", "Reduce", "Reverse", "Select", "Str",
-					"Template", "Then", "This", "Through", "To", "True",
-					"Where", "With"}));
+					"value", "Append", "Bool", "By", "Container", "Each",
+					"Else", "Enforce", "Error", "False", "Finite", "Float",
+					"FloatMax", "FloatMin", "For", "Frame", "From",
+					"GenerateId", "Id", "If", "In", "Infinity", "Int",
+					"IntMax", "IntMin", "Is", "Length", "Let", "Lookup", "NaN",
+					"Name", "Null", "Order", "Ordinal", "Reduce", "Reverse",
+					"Select", "Str", "Template", "Then", "This", "Through",
+					"To", "True", "Where", "With"}));
 			reader.setDefaultPrompt("‽ ");
 			reader.setUseHistory(true);
 			reader.setUsePagination(true);

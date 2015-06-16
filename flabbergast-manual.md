@@ -697,11 +697,13 @@ It's useful to remember how all the pieces of structured data manipulation in th
 
 ![](https://rawgithub.com/apmasell/flabbergast/master/inheritance.svg)
 
-Templates can be made from scratch or from existing templates. Frames can be made from scratch, by instantiating templates, or the fricassée `Select` operations. Scalar values can be distilled from frames using the fricassée `Reduce` operation. Obviously, scalar values can be manipulated a number of ways not shown in the diagram.
+Templates can be made from scratch or from existing templates. Frames can be made from scratch, by instantiating templates, the fricassée `Select` operations, or the `Append` expression. Scalar values can be distilled from frames using the fricassée `Reduce` operation. Obviously, scalar values can be manipulated a number of ways not shown in the diagram.
 
 ### Miscellaneous
 
 The `Let` expression allows binding a value to a new name. For example, `Let a : 3 In a * a`. This is a convenient way to eliminate common subexpressions. Be advised that the normal short-circuiting rules do not apply: all the values in the expression must be evaluated first. Multiple attributes can be bound at once (_e.g._, `Let a : 3, b : 4 In a * a + b * b`).
+
+The `Append` operators concatenates two frames. The attribute names are the same as if a literal list had been used. This means that `{ a : 5 } Append [ 6 ]` will produce the same frame as `[ 5, 6 ]`.
 
 The `From` expression allows importing external content into the program. This does two jobs: allows accessing libraries and allows access information for the program being configured. The `From` keyword is always followed by a URI. The `lib:` URI is  used for the standard library. The `file:` URI may also be supported. By convention, it is best to do all the importing at the start of a file:
 

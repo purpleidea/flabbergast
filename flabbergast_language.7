@@ -146,6 +146,17 @@ Concatenate two strings
 Γ ⊢ b \fBTo Str\fR ↓ \(dqy\(dq :: Str
 .SEME
 
+.TP
+Concatenate two frames
+.SEM (s, ...) ⊢ a:E\*<+\*> \fBAppend\fR b:E ↓ t = < u; (t, s, ...); ORD(x) → av\*<x\*>, ORD(|at| + y) → bv\*<y\*> >
+(s, ...) ⊢ a ↓ at = < ac; ae; ak\*<x\*> → av\*<x\*> >,
+
+(s, ...) ⊢ b ↓ < bc; be; bk\*<y\*> → bv\*<y\*> >,
+
+(s, ...) ⊢ \fBThis\fR ↓ u
+
+.SEME
+
 .SS EXPRESSION SYNTAX (E) – DISJUNCTION
 .TP
 Logical disjunction (short circuiting)
