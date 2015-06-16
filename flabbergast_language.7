@@ -534,7 +534,9 @@ Literal frame
 
 ∀ x ∈ a : (r, t, ...) ⊢ x ↓ k\*<x\*> → v\*<x\*>,
 
-¬∃ k\*<y\*> = k\*<x\*>
+¬∃ k\*<y\*> = k\*<x\*>,
+
+(s, ...) ⊢ \fBThis\fR ↓ u
 .SEME
 Construct a new literal frame.
 
@@ -672,7 +674,9 @@ Subexpression
 .TP
 Literal list
 .SEM (s, ...) ⊢ \fB[\fR (arg:E\*<0\*> (\fB,\fR arg:E\*<0\*>)*)? \fB]\fR ↓ t = < u; (t, s, ...); ∀ x ∈ arg : ORD(x) → v\*<x\*> >
-∀ x ∈ arg : (s, ...) ⊢ x ↓ v\*<x\*>
+∀ x ∈ arg : (s, ...) ⊢ x ↓ v\*<x\*>,
+
+(s, ...) ⊢ \fBThis\fR ↓ u
 .SEME
 
 This creates a list-like frame. Names are selected by the ORD function such that the frame will have the same order of items as the original list when collated. Indexing is 1-based.
