@@ -2660,7 +2660,7 @@ language_tmpl : Template {
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "For" },
-							parser.other { type: $selector  field : $selector },
+							parser.other { type: $selector  alternate : $selector0  field : $selector },
 							parser.exact { word : "Select" },
 							space { preferred : True },
 							parser.other { type: $expression  alternate : $expression2  field : $expression },
