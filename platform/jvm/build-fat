@@ -22,7 +22,7 @@ do
 done
 
 # Build the standard library
-rsync -a --include '**.flbgst' --include '*.jflbgst' --exclude '*' ../../lib/ .build
+rsync -a --include '**.flbgst' --include '**.jflbgst' --exclude '*' ../../lib/ .build
 cd .build
 ${JAVA-java} -cp . flabbergast.MainBuildCache -P
 cd ..
@@ -34,4 +34,4 @@ Created-By: ${VERSION} (The Flabbergast Project)
 Main-Class: flabbergast.MainPrinter
 EOI
 ${JAR-jar} cfm "flabbergast-${VERSION}.jar" "manifest" -C .build .
-rm -rf mainfest .build
+rm -rf manifest .build
