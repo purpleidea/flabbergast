@@ -7,6 +7,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+
 public class MainBuildCache {
 
 	private static void discover(File root, List<File> sources,
@@ -33,7 +40,21 @@ public class MainBuildCache {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		if (args.length != 0) {
+		Options options = new Options();
+		options.addOption("P", "preserve", false,
+				"Do not delete old class files.");
+		CommandLineParser cl_parser = new GnuParser();
+		final CommandLine result;
+
+		try {
+			result = cl_parser.parse(options, args);
+		} catch (ParseException e) {
+			System.err.println(e.getMessage());
+			System.exit(1);
+			return;
+		}
+
+		if (result.getArgs().length != 0) {
 			System.exit(1);
 			return;
 		}
@@ -67,8 +88,10 @@ public class MainBuildCache {
 				e.printStackTrace();
 			}
 		}
-		for (String dead : known_classes) {
-			new File(dead).delete();
+		if (!result.hasOption('P')) {
+			for (String dead : known_classes) {
+				new File(dead).delete();
+			}
 		}
 		System.exit(success ? 0 : 1);
 	}
