@@ -2,3 +2,4 @@
 build
 compiler/flabbergast/compiler-jvm.java
 flabbergast-*.jar
+manifest

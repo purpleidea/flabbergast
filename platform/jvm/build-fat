@@ -1,9 +1,10 @@
 #!/bin/sh
 # Build a self-contained JAR
 
-VERSION=0.6
-
 set -exu
+
+VERSION=$(../../configure --version | awk 'NR == 1 { print $3 }')
+
 rm -rf .build
 mkdir .build
 
