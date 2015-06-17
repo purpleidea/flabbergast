@@ -1,0 +1,37 @@
+#!/bin/sh
+# Build a self-contained JAR
+
+VERSION=0.6
+
+set -exu
+rm -rf .build
+mkdir .build
+
+# Unpack required JARs
+cd .build
+for each in ../asm-5.0.3.jar ../commons-cli-1.2.jar ../jline-1.0.jar
+do
+${JAR-jar} xf $each
+done
+cd ..
+
+# Compile the Java core
+for each in runtime compiler
+do
+	${JAVAC-javac} -g -encoding UTF-8 -cp .build -sourcepath "$each" -d .build $(find "$each" -name '*.java')
+done
+
+# Build the standard library
+rsync -a --include '**.flbgst' --include '*.jflbgst' --exclude '*' ../../lib/ .build
+cd .build
+${JAVA-java} -cp . flabbergast.MainBuildCache -P
+cd ..
+
+# Build the final JAR.
+cat > manifest <<EOI
+Manifest-Version: 1.0
+Created-By: ${VERSION} (The Flabbergast Project)
+Main-Class: flabbergast.MainPrinter
+EOI
+${JAR-jar} cfm "flabbergast-${VERSION}.jar" "manifest" -C .build .
+rm -rf mainfest .build
