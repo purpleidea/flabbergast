@@ -9,6 +9,8 @@ Flabbergast, in some ways, is like a macro system. However, macro systems, such 
 
 Another way to think about that language is that it is a system where dependency injection is not something added to the language, but is implicit. Every reference is an injection point. Defining an attribute is performing an injection. Since attributes can be overridden, the injection framework remains fluid.
 
+For more background on the complexity of configuration languages, take a look at [Configuration Pinocchio](https://www.usenix.org/conference/srecon15europe/program/presentation/masella), presented at SREcon15 Europe.
+
 ## Getting Started
 
 As general background, this guide assumes some previous experience programming. Familiarity with one functional language, including Scheme, LISP, Haskell, or ML, and one object-oriented language is almost essential or experience with R, as it has elements of both. A deeper understanding of a dynamically-typed object-oriented language like Python, Perl, Ruby, or JavaScript can be extremely helpful, though not necessary. Use of a macro processor, such as the C Pre-Processor or M4 might provide some extra insights.
