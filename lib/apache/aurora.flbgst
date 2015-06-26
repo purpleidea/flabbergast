@@ -113,14 +113,14 @@ process : Template render_lib.python.object {
 			For part : command_line
 			Reduce
 				acc &
-				(If part Is Frame Then part.command_line_value Else utils_lib.str_replace(part, str : "{{", with : "{{&"))
+				(If part Is Frame Then part.command_line_value Else utils_lib.str_replace(part, str : "{{", with : "{{&")) & "\n"
 			With acc : ""
 	}
 }
 # An Aurora task, container of multiple processes.
 task : Template render_lib.python.object {
-	# A template containing a template for each process that runs inside this task.
-	processes : Template {}
+	# A frame containing a frame for each process that runs inside this task.
+	processes ?:
 	# The maximum number of times a task can fail before being marked.
 	max_task_failures %:
 	# The maximum number of concurrent processes, or null for unlimited.
@@ -159,8 +159,6 @@ task : Template render_lib.python.object {
 				command_line_value : "{{thermos.ports[\(port_name)]}}"
 			}
 
-	exp_processes : For process : processes {}, process_name : Name Select process_name : process {}
-
 	resource_info : {
 		cpu : resources.cpu
 		disk : resources.disk
@@ -181,7 +179,7 @@ task : Template render_lib.python.object {
 					(If resource Is Float Then resource Else resource Enforce Int) & ", "
 				With acc : "Resource(") & ")"
 		processes :
-			(For process : exp_processes, pos : Ordinal
+			(For process : Container.processes, pos : Ordinal
 				Reduce
 					acc &
 					(If pos > 1 Then ",\n" Else "") &
