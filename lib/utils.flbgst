@@ -22,6 +22,28 @@ anyifier : Template {
 	}
 }
 
+# Limits the range of a list of values. For details, see `clampifier`.
+clamp_list : clampifier(base : identity)
+
+# Convert a function-like template from one that returns a list of values into
+# one that returns a list of values clipped between the inclusive range `lower`
+# to `upper`.
+clampifier : Template {
+	base ?:
+	value : Template base {
+		lower %:
+		upper %:
+		value +original:
+			For item : original, item_name : Name
+			Where !(item Is Null)
+			Select item_name :
+				If item > upper Then upper
+				Else If item < lower Then lower
+				Else item
+	}
+}
+
+
 # Count the number of items in a frame.
 count : firstifier(base : count_list)
 
