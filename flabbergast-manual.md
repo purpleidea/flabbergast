@@ -225,7 +225,7 @@ This won't do anything useful, but we have a basic skeleton. Let's create a job.
         job { # Create a job. This could also be `aurora_lib.job`, but we have nothing else named `job`.
           instances : 1 # One replica of this job should run.
           job_name : "hello_world" # Provide a friendly job name.
-          task : aurora_lib.task { } # Each job needs a task.
+          task : aurora_lib.task { processes : [] } # Each job needs a task.
         }
       ]
     }
@@ -246,7 +246,7 @@ This will create one job, but this file won't work. A job needs a `cluster` and 
         job {
           instances : 1
           job_name : "hello_world"
-          task : aurora_lib.task { }
+          task : aurora_lib.task { processes : [] }
         }
       ]
     }
@@ -267,7 +267,7 @@ I chose to put `cluster`, `role`, and `resources` resources at the top-level. Th
           role : "jrhacker"
           instances : 1
           job_name : "hello_world"
-          task : aurora_lib.task { }
+          task : aurora_lib.task { processes : [] }
         }
       ]
     }
@@ -293,7 +293,7 @@ I can even split the `resources` frame.
           cluster : "cluster1"
           instances : 1
           job_name : "hello_world"
-          task : aurora_lib.task { }
+          task : aurora_lib.task { processes : [] }
         }
       ]
     }
@@ -317,8 +317,9 @@ Our task is pretty useless, let's give it some processes:
           instances : 1
           job_name : "hello_world"
           task : aurora_lib.task {
-            processes +: { # Add to the processes template ⋯
-              hw : Template process { # ⋯ a new process template; the name of this process will be `hw`
+            processes : { # Define the processes ⋯
+              hw : process { # ⋯ using process template
+								process_name : "hw" # The name of this process will be `hw`
                 command_line : [ "echo hello world" ] # The command line we want to run.
               }
             }
@@ -344,8 +345,9 @@ This will give us a basic configuration. Aurora allows multiple replicas/instanc
           instances : 1
           job_name : "hello_world"
           task : aurora_lib.task {
-            processes +: {
-              hw : Template process {
+            processes : {
+              hw : process {
+								process_name : "hw"
                 command_line : [ "echo hello world. I am ", current_instance ]
               }
             }
@@ -374,8 +376,9 @@ Aurora also allows setting multiple ports for incoming connections.
 						port_defs +: {
 							xmpp : Null # Creating a new null entry, defines a new port. By setting it to a string, it becomes an alias.
 						}
-            processes +: {
-              hw : Template process {
+            processes : {
+              hw : process {
+								process_name : "hw"
                 command_line : [ "helloworldd --http ", ports.http, " --xmpp ", ports.xmpp ]
               }
             }
