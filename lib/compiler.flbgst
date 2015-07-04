@@ -833,8 +833,12 @@ codegen_tmpl : Template {
 		# This is a template to be used for the return. It must be a template for
 		# rebinding to work correctly.
 		in ?:
-		# Return the result of `in`. Feel free to set to a `define` entry.
+		# Return the result of `in`. Feel free to set to a `new_parameters` entry.
 		returns : Null
+		# The results of the computations done in `define`. These will be bound as
+		# `parameters` inside the `in` template, but are present here for using as
+		# `returns`.
+		new_parameters ?:
 	}
 	collapse_others : Template gen_tmpl {
 		# The field containing the list.

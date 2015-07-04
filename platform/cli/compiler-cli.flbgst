@@ -1777,12 +1777,13 @@ codegen : compiler_lib.codegen_tmpl {
 				With acc : "")
 		jail : {
 			exp_in : in {}
-			parameters : For def_name : Name, def : define
-				Select def_name : codegen.gen_tmpl {
-					extra_indent : ""
-					storage_name : def.storage_name
-				}
+			parameters : new_parameters
 		}
+		new_parameters : For def_name : Name, def : define
+			Select def_name : codegen.gen_tmpl {
+				extra_indent : ""
+				storage_name : def.storage_name
+			}
 
 		gen_gen +: {
 			value :
