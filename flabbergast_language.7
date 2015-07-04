@@ -968,7 +968,31 @@ The name must be present in the existing frame or an error occurs.
 .SEME
 
 
-.SH FRICASSÉE SELECTORS (FS)
+.SH FRICASSÉE SELECTORS (FS) – BINDING
+
+.TP
+Binding selector
+.SEM Γ ⊢ base:FS\*<+\*> \fBLet\fR name:I \fB:\fR nameexpr:E\*<0\*> (\fB,\fR name:I \fB:\fR nameexpr:E\*<0\*> )* ↓ < c; Γ; k\*<i\*> →  w\*<i\*> >
+(t, ...) = Γ,
+
+Γ ⊢ base ↓ < u; Δ; k\*<i\*> →  v\*<i\*> >,
+
+v\*<i\*> = < u\*<i\*>; Δ\*<i\*>; vk\*<ij\*> → vv\*<ij\*> >,
+
+w\*<i\*> = < u\*<i\*>; Δ\*<i\*>; wk\*<ij\*> → wv\*<ij\*> >,
+
+∀ i : wk\*<i\*> = name ∪ vk\*<i\*>,
+
+∀ i, j ∈ name : (v\*<i\*>, t, ...) ⊢  nameexpr ↓ wv\*<ij\*>,
+
+∀ i, j ∉  name : wv\*<ij\*> = vv\*<ij\*>,
+
+Γ ⊢ \fBThis\fR ↓ c
+.SEME
+
+Modify a list of witnesses, provided as a frame of frames, to include new entires or replace existing ones.
+
+.SH FRICASSÉE SELECTORS (FS) – TERMINAL
 
 .TP
 Pass-through selector

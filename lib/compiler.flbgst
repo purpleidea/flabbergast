@@ -2008,7 +2008,7 @@ language_tmpl : Template {
 		}
 
 		selector : Template nested_syntax_group {
-			max_level : 2
+			max_level : 3
 			environment_enabled : True
 			generation_flavour : codegen.flavour_aware
 			common +: {
@@ -2192,6 +2192,116 @@ language_tmpl : Template {
 								name : current_name
 								into : current_accumulator
 								with : parameters.current_itr_frame
+							}
+						}
+					}
+				}
+
+				let : Template selector_tmpl {
+					pretty_name : "name binding"
+					level : 2
+					pattern : parser.sequence {
+						of : [
+							child_selector { field : $selector },
+							parser.exact { word : "Let" },
+							space { mandatory : True },
+							parser.accumulate_list {
+								type : $named_definition
+								field : $definitions
+								deduplicate : expanded_groups.named_definition.expanded_common.name
+								in : parser.many_word {
+									of : parser.other { type : $named_definition  field : Null }
+									separator_word : ","
+									nonempty : True
+								}
+							},
+							space { preferred : True }
+						]
+					}
+					apply_environment_to : [
+						environment.other_with_result {
+							field : $selector
+							name : $select_env
+							apply_to : [
+								environment.list_of { field : $definitions },
+								environment.modified_environment {
+									force_back : True
+									special_names : [ masks_from_definitions { field : $definitions } ]
+									apply_to : [ environment.collect { } ]
+									name : $inner_environment
+								}
+							]
+						}
+					]
+					type_demand : ensure_type.propagate_all {
+						field : $definitions
+					}
+					code_value : fricassee_iterator {
+						accumulator_type : known_types.frame
+						start : Template kws.frame_new {
+							creation_method : pretty_name
+							container : parameters.self_frame
+							context : parameters.context
+						}
+						step : Template kws.set_frame_or_tmpl {
+							returns : into
+
+							name : current_name
+							into : current_accumulator
+							with : codegen.bind {
+								define : {
+									current_itr_frame : kws.dynamic_type_dispatch {
+										of : parameters.current_itr_frame
+										allow_types : [ known_types.frame ]
+									}
+									context : kws.list_prepend {
+										frame : kws.dynamic_type_dispatch {
+											of : parameters.current_itr_frame
+											allow_types : [ known_types.frame ]
+										}
+										tail : parameters.context
+									}
+								}
+								in : Template codegen.push_source_reference {
+									in : kws.iterator {
+										accumulator_type : known_types.frame
+										input : input_list {
+											items : [ parameters.current_itr_frame ]
+										}
+										initial : kws.frame_new {
+											creation_method : "fricassée Let"
+											container : parameters.self_frame
+											context : parameters.context
+										}
+										default_case : kws.set_frame_or_tmpl {
+											returns : into
+											name : current_name
+											into : current_accumulator
+											with : kws.lookup_dynamic {
+												name : current_name
+												source : kws.list_prepend {
+													frame : parameters.current_itr_frame
+													tail : kws.list_null {}
+												}
+											}
+										}
+										cases : [
+											list_case {
+												field : $definitions
+												name_field : $name
+												type : $named_definition
+												action : kws.set_frame_or_tmpl {
+													returns : into
+													name : current_name
+													into : current_accumulator
+													with : codegen.other_code {
+														field : current_element
+													}
+												}
+											}
+										]
+									}
+								}
 							}
 						}
 					}

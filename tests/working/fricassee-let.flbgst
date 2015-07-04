@@ -1,0 +1,1 @@
+value : (For x : 1 Through 3 Let y : x * x Reduce y + x + a With a : 0) == 2 + 6 + 12
