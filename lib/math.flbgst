@@ -57,6 +57,29 @@ circle : {
 		args %:
 	}
 }
+
+# Compute a running product.
+cumulative_product : Template {
+	# The numbers to multiply.
+	args %:
+	# The starting value.
+	initial : 1
+	value : For arg : args, arg_name : Name
+		Accumulate arg * run With run : initial
+		Select arg_name : run
+}
+
+# Compute a running sum.
+cumulative_sum : Template {
+	# The numbers to sum.
+	args %:
+	# The starting value.
+	initial : 0
+	value : For arg : args, arg_name : Name
+		Accumulate arg + run With run : initial
+		Select arg_name : run
+}
+
 # Compute the largest integral value less than or equal to the argument.
 floor : utils_lib.firstifier(base : floor_list)
 
