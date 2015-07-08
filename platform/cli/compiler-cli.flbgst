@@ -807,6 +807,12 @@ kws : compiler_lib.kws_repl_tmpl {
 			extra_post : "\(sum_indent)\(builder).Emit(System.Reflection.Emit.OpCodes.Ceq);"
 		}
 	}
+	capture +: {
+		opcode : "Call"
+		gen_gen +: {
+			extra_emit : ", typeof(Precomputation).GetMethod(\"Capture\", new System.Type[] { typeof(object) })"
+		}
+	}
 	error +: {
 		extra_indent : message.extra_indent
 		gen_gen +: {

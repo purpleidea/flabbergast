@@ -370,6 +370,11 @@ kws_tmpl : Template {
 	error : Template codegen.gen_tmpl {
 		message ?:
 	}
+	capture : Template base_tmpl {
+		source ?:
+		arguments : [ { value : source  type : known_vm_types.any } ]
+		return_type : known_vm_types.function
+	}
 	int_add : Template base_tmpl {
 		left ?:
 		right ?:

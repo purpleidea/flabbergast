@@ -437,4 +437,23 @@ namespace Flabbergast {
 			return false;
 		}
 	}
+
+	/**
+	 * Holds a value for inclusion of a pre-computed value in a template.
+	 */
+	public class Precomputation : Computation {
+		public static ComputeValue Capture(object result) {
+			return new Precomputation(result).ComputeValue;
+		}
+		public Precomputation(object result) {
+			this.result = result;
+		}
+		public Computation ComputeValue(
+			TaskMaster task_master, SourceReference reference, Context context, Frame self, Frame container) {
+			return this;
+		}
+		protected override bool Run() {
+			return true;
+		}
+	}
 }

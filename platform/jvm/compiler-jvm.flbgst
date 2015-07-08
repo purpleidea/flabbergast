@@ -843,6 +843,15 @@ kws : compiler_lib.kws_repl_tmpl {
 			extra_post : "\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.IXOR);"
 		}
 	}
+	capture +: {
+		opcode : "Precomputation.class.getConstructors()[0]"
+		emit_method : Null
+		gen_gen +: {
+			extra_load :
+				"\(sum_indent)\(builder).visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(Precomputation.class));" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.DUP);"
+		}
+	}
 	error +: {
 		extra_indent : message.extra_indent
 		gen_gen +: {

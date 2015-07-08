@@ -378,6 +378,11 @@ Put a value in a box (i.e., convert a value of another type to the `Any` type).
      r : Any = box(value : Template)
      r : Any = box(value : Unit)
 
+### Capture
+Create a function that will return a provided value.
+
+     r : Function = capture(value : Any)
+
 ### Conditional
 Perform the block specified if the condition is true.
 
