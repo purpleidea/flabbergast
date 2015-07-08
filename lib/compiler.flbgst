@@ -2196,7 +2196,7 @@ language_tmpl : Template {
 				}
 
 				let : Template selector_tmpl {
-					pretty_name : "name binding"
+					pretty_name : "fricassée Let"
 					level : 2
 					pattern : parser.sequence {
 						of : [
@@ -2267,7 +2267,7 @@ language_tmpl : Template {
 											items : [ parameters.current_itr_frame ]
 										}
 										initial : kws.frame_new {
-											creation_method : "fricassée Let"
+											creation_method : pretty_name
 											container : parameters.self_frame
 											context : parameters.context
 										}
