@@ -1,0 +1,3 @@
+cumsum : For x : 1 Through 3 Accumulate cs + x With cs : 0 Select cs
+
+value : (For v : cumsum Reduce acc & "," & v With acc : "0") == "0,1,3,6"

@@ -968,6 +968,32 @@ The name must be present in the existing frame or an error occurs.
 .SEME
 
 
+.SH FRICASSÉE SELECTORS (FS) – ACCUMULATING
+
+.TP
+Binding selector
+.SEM Γ ⊢ base:FS\*<+\*> \fBAccumulate\fR expr:E\*<0\*> \fBWith\fR name:I \fB:\fR initial:E\*<0\*> ↓ < c; Γ; k\*<i\*> →  w\*<i\*> >
+(t, ...) = Γ,
+
+Γ ⊢ base ↓ < u; Δ; k\*<i\*> →  v\*<i\*> >,
+
+Γ ⊢ initial ↓ wv\*<-1,name\*>,
+
+v\*<i\*> = < u\*<i\*>; Δ\*<i\*>; vk\*<ij\*> → vv\*<ij\*> >,
+
+w\*<i\*> = < u\*<i\*>; Δ\*<i\*>; wk\*<ij\*> → wv\*<ij\*> >,
+
+∀ i : wk\*<i\*> = name ∪ vk\*<i\*>,
+
+∀ i, j = name : (< c; Γ; wv\*<i-1,j\*> >, v\*<i\*>, t, ...) ⊢  expr ↓ wv\*<ij\*>,
+
+∀ i, j ≠ name : wv\*<ij\*> = vv\*<ij\*>,
+
+Γ ⊢ \fBThis\fR ↓ c
+.SEME
+
+Bind a new value in each frame that is carried accross all frames in the iteration order.
+
 .SH FRICASSÉE SELECTORS (FS) – BINDING
 
 .TP

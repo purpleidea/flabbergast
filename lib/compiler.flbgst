@@ -2006,7 +2006,7 @@ language_tmpl : Template {
 		}
 
 		selector : Template nested_syntax_group {
-			max_level : 3
+			max_level : 4
 			environment_enabled : True
 			generation_flavour : codegen.flavour_aware
 			common +: {
@@ -2197,7 +2197,7 @@ language_tmpl : Template {
 
 				let : Template selector_tmpl {
 					pretty_name : "fricassée Let"
-					level : 2
+					level : 3
 					pattern : parser.sequence {
 						of : [
 							child_selector { field : $selector },
@@ -2294,6 +2294,139 @@ language_tmpl : Template {
 													into : current_accumulator
 													with : codegen.other_code {
 														field : current_element
+													}
+												}
+											}
+										]
+									}
+								}
+							}
+						}
+					}
+				}
+
+				accumulate : Template selector_tmpl {
+					pretty_name : "fricassée Accumulate"
+					level : 2
+					pattern : parser.sequence {
+						of : [
+							child_selector { field : $selector },
+							parser.exact { word : "Accumulate" },
+							space { mandatory : True },
+							parser.other { type: $expression  alternate : $expression0  field : $reduce_expr },
+							space { mandatory : True },
+							parser.exact { word : "With" },
+							space { mandatory : True },
+							valid_identifier { field : $initial_name },
+							space { preferred : True },
+							parser.exact { word : ":" },
+							space { preferred : True },
+							parser.other { type: $expression  alternate : $expression0  field : $initial_expr },
+							space { preferred : True }
+						]
+					}
+					apply_environment_to : [
+						environment.other_elements {
+							fields : [ $initial_expr ]
+						},
+						environment.other_with_result {
+							field : $selector
+							name : $select_env
+							apply_to : [
+								environment.modified_environment {
+									name : $reduce_env
+									special_names : [ mask_from_fields {
+										name_field : $initial_name
+										expr_field : $initial_expr
+										type_storage : $bottleneck_type
+									} ]
+									apply_to : [
+										environment.other_elements { fields : [ $reduce_expr ] },
+										environment.collect { }
+									]
+								}
+							]
+						}
+					]
+					type_demand : ensure_type.propagate {
+						fields : [ $reduce_expr, $initial_expr ]
+						needs_unbox : False
+					}
+					code_value : codegen.bind {
+						define : {
+							new_outer_frame : kws.frame_new {
+								creation_method : pretty_name
+								container : parameters.self_frame
+								context : parameters.context
+							}
+						}
+						returns : new_parameters.new_outer_frame
+						in : Template fricassee_iterator {
+							accumulator_type : known_vm_types.any
+							start : Template codegen.other_code {
+								field : $initial_expr
+							}
+							step : Template codegen.bind {
+								define : {
+									current_itr_frame : kws.dynamic_type_dispatch {
+										of : parameters.current_itr_frame
+										allow_types : [ known_types.frame ]
+									}
+									new_inner_frame : kws.set_frame_or_tmpl {
+										returns : with
+										name : current_name
+										into : parameters.new_outer_frame
+										with : kws.frame_new {
+											creation_method : pretty_name
+											container : parameters.self_frame
+											context : parameters.context
+										}
+									}
+									context : kws.list_prepend {
+										frame : kws.dynamic_type_dispatch {
+											of : parameters.current_itr_frame
+											allow_types : [ known_types.frame ]
+										}
+										tail : parameters.context
+									}
+									real_accumulator : current_accumulator
+								}
+								in : Template codegen.push_source_reference {
+									in : kws.iterator {
+										accumulator_type : known_vm_types.any
+										input : input_list {
+											items : [ parameters.current_itr_frame ]
+										}
+										initial : kws.null_constant {}
+										default_case : kws.set_frame_or_tmpl {
+											returns : current_accumulator
+											name : current_name
+											into : parameters.new_inner_frame
+											with : kws.lookup_dynamic {
+												name : current_name
+												source : kws.list_prepend {
+													frame : parameters.current_itr_frame
+													tail : kws.list_null {}
+												}
+											}
+										}
+										cases : [
+											field_case {
+												field : $initial_name
+												action : kws.set_frame_or_tmpl {
+													returns : with
+													name : current_name
+													into : parameters.new_inner_frame
+													with : codegen.prepare_lookup_cache {
+														name : $reduce_env
+														specials : special_from_expression {
+															type_storage : $bottleneck_type
+															field : $initial_name
+															is : parameters.real_accumulator
+														}
+														in : codegen.other_code {
+															field : $reduce_expr
+														}
 													}
 												}
 											}
