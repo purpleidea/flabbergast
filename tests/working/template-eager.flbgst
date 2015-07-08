@@ -1,0 +1,9 @@
+a : {
+	x : True
+	t : Template { v !: x }
+}
+b : {
+	x : False
+	f : a.t {}
+}
+value : b.f.v

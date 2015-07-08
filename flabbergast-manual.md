@@ -684,6 +684,7 @@ There are several amendment attributes, not all of which can be used in all cont
  - `+`, followed by an identifier, then `:`, followed by an expression, will replace an attribute but allows the previous value to be bound to the identifier supplied. The attribute must already exist, so this is not valid when declaring a new template.
  - `+: {`, followed by a list of amendments, terminated by `}`, performs template amendment. It is short-hand for `+oldtemplate: Template oldtemplate { ... }` with the convenience of not having to choose a name.
  - `%:` indicates that a value is expected to be available through lookup. It does not actually *do* anything; it is merely a way to explain intentions to others and provide a place to hang documentation. It can be thought of as a weak version of `?:` attributes, and is usually preferable.
+ - `!:`, followed by an expression, creates an attribute, but evaluates is eagerly, in the current context, much like the function call convenience syntax.
 
 There is also a function call convenience syntax. In their own way, templates can act as lambdas. In frame instantiation, the expressions are evaluated in the context of the frame created. In a function call, expressions provided are evaluated in the current (parent) context, then placed into the instantiated template. A list of unnamed expressions can be provided and these are collected into an `args` frame. Finally, instead of simply returning the entire frame, the `value` attribute is returned from the instantiated frame. For instance, the function call:
 
@@ -694,19 +695,19 @@ There is also a function call convenience syntax. In their own way, templates ca
       z : f(a, b, c : c)
     }
 
-is rewritten as:
+is almost rewritten as:
 
     {
       a : 3
       b : 2
       c : 1
       z : f {
-        args : [ 3,  2 ]
-        c : 1
+        args !: [ a,  b ]
+        c !: c
       }.value
     }
 
-In this example, `c` would be circular evaluation when using normal evaluation semantics, but because the evaluation of the parameters happens in the containing context, this is fine.
+In this example, `c` would be circular evaluation when using normal evaluation semantics, but because the evaluation of the parameters happens in the containing context, this is fine. There is a subtle different too: the resulting tuple's container will not be the one where it is instantiated, but the one where it is defined.
 
 For Java programmers, there's an easy analogy for the two modes of template instantiation: anonymous inner classes. Creating a template is a bit like instantiating an anonymous inner class. If that class has multiple methods, then template instantiation gives similar behaviour. If only one method is of interest, then it can be instantiated using function-like instantiation, much like lambda notation in Java 8.
 

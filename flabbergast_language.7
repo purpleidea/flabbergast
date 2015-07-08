@@ -513,7 +513,7 @@ Remote contextual lookup.
 .TP
 Instantiate a template
 
-.SEM Γ ⊢ source:E\*<+\*> \fB{\fR a:(A / O)+ \fB}\fR ↓ v
+.SEM Γ ⊢ source:E\*<+\*> \fB{\fR a:(A / O / E)+ \fB}\fR ↓ v
 Γ ⊢ \fB(Template\fR source \fB{\fR a \fB}) { }\fR ↓ v
 .SEME
 
@@ -543,7 +543,7 @@ Null coalescence
 Literal frame
 .SEM (t, ...) ⊢ \fB{\fR (a:A)* \fB}\fR ↓ r = < u; r, t, ...;  ∀ x ∈ a : k\*<x\*> → v\*<x\*> >
 
-∀ x ∈ a : (r, t, ...) ⊢ x ↓ k\*<x\*> → v\*<x\*>,
+∀ x ∈ a : (t, ...); (r, t, ...) ⊢ x ↓ k\*<x\*> → v\*<x\*>,
 
 ¬∃ k\*<y\*> = k\*<x\*>,
 
@@ -553,9 +553,9 @@ Construct a new literal frame.
 
 .TP
 Create a new template
-.SEM Γ ⊢ \fBTemplate {\fR a:(A / X)* \fB}\fR ↓ < Γ; k\*<x\*> → e\*<x\*> >
+.SEM Γ ⊢ \fBTemplate {\fR a:(A / E / X)* \fB}\fR ↓ < Γ; k\*<x\*> → e\*<x\*> >
 
-∀ x ∈ a : x ↓ k\*<x\*> → e\*<x\*>,
+∀ x ∈ a : Γ ⊢ x ↓ k\*<x\*> → e\*<x\*>,
 
 ¬∃ k\*<y\*> = k\*<x\*>
 .SEME
@@ -564,13 +564,13 @@ Create a new template, not based on any current template.
 
 .TP
 Extend a template
-.SEM (t, ...) ⊢ \fBTemplate\fR source:E\*<+\*> \fB{\fR a:(A / O / X)* \fB}\fR ↓ < (t, ..., s, ...); ∀ m : k\*<m\*> → e\*<m\*> >
+.SEM (t, ...) ⊢ \fBTemplate\fR source:E\*<+\*> \fB{\fR a:(A / E / O / X)* \fB}\fR ↓ < (t, ..., s, ...); ∀ m : k\*<m\*> → e\*<m\*> >
 
 (t, ...) ⊢ source ↓ S = < (s, ...); k\*<s\*> → e\*<s\*>, ... >,
 
-∀ x ∈ a, (∃ k\*<s\*> : k\*<x\*> = k\*<s\*>) : e\*<s\*> ⊢ x ↓ k\*<m\*> → e\*<m\*>,
+∀ x ∈ a, (∃ k\*<s\*> : k\*<x\*> = k\*<s\*>) : (t, ...); e\*<s\*> ⊢ x ↓ k\*<m\*> → e\*<m\*>,
 
-∀ x ∈ a, (¬∃ k\*<s\*> : k\*<x\*> = k\*<s\*>) : x ↓ k\*<m\*> → e\*<m\*>,
+∀ x ∈ a, (¬∃ k\*<s\*> : k\*<x\*> = k\*<s\*>) : (t, ...) ⊢ x ↓ k\*<m\*> → e\*<m\*>,
 
 ∀ k\*<s\*> → e\*<s\*> : ¬∃ k\*<s\*> : k\*<x\*> = k\*<s\*> : k\*<m\*> → e\*<m\*> = k\*<s\*> → e\*<s\*>
 .SEME
@@ -910,48 +910,62 @@ Embedded expression
 .SH FRAME PARTS
 .TP
 Frame attribute definition (A)
-.SEM name:I \fB:\fR expr:E ↓ name → expr
+.SEM Γ ⊢ name:I \fB:\fR expr:E ↓ name → expr
 .SEME
-.SEM R ⊢ name:I \fB:\fR expr:E ↓ name → expr
+.SEM Γ; R ⊢ name:I \fB:\fR expr:E ↓ name → expr
 .SEME
 Define a new attribute in a frame, equal to some expression.
 
 .TP
 In a template, define an attribute that must be overridden. (X)
-.SEM name:I \fB?:\fR ↓ name → \fBError \(dqAttribute \fRname\fB must be overridden.\(dq\fR
+.SEM Γ ⊢ name:I \fB?:\fR ↓ name → \fBError \(dqAttribute \fRname\fB must be overridden.\(dq\fR
 .SEME
-.SEM R ⊢ name:I \fB?:\fR ↓ name → \fBError \(dqAttribute \fRname\fB must be overridden.\(dq\fR
+.SEM Γ; R ⊢ name:I \fB?:\fR ↓ name → \fBError \(dqAttribute \fRname\fB must be overridden.\(dq\fR
 .SEME
 
 Create an attribute whose value is an error requiring an override.
 
 .TP
 In a template, define an attribute that is expected to be found via lookup. (X)
-.SEM name:I \fB%:\fR ↓
+.SEM Γ ⊢ name:I \fB%:\fR ↓
 .SEME
-.SEM R ⊢ name:I \fB%:\fR ↓ name → R
+.SEM Γ; R ⊢ name:I \fB%:\fR ↓ name → R
 .SEME
 
 This does not do anything. It is intended to convey that an attribute should be available for inside out lookup. This is inteded as a place to collect documentation.
 
 .TP
 Override sub-template definition. (O)
-.SEM R ⊢ name:I \fB+:\fR \fB{\fR a:(A / O / X)+ \fB}\fR ↓ name → \fBTemplate \fR R \fB{\fR a \fB}\fR
+.SEM Γ; R ⊢ name:I \fB+:\fR \fB{\fR a:(A / O / X)+ \fB}\fR ↓ name → \fBTemplate \fR R \fB{\fR a \fB}\fR
 .SEME
 
 The name \fIoriginal\fR must be selected to be entirely unique in the program scope.
 
 .TP
 Redefine an attribute. (O)
-.SEM R ⊢ name:I \fB+\fR original:I \fB:\fR expr:E ↓ name → \fBLet\fR original \fB:\fR R \fBIn\fR expr
+.SEM Γ; R ⊢ name:I \fB+\fR original:I \fB:\fR expr:E ↓ name → \fBLet\fR original \fB:\fR R \fBIn\fR expr
 .SEME
 
 .TP
 Remove definition for an attribute. (O)
-.SEM R ⊢ name \fB-:\fR ↓
+.SEM Γ; R ⊢ name \fB-:\fR ↓
 .SEME
 
 The name must be present in the existing frame or an error occurs.
+
+.TP
+Define an attribute that is eagerly evaluated instead of lazily evaluated. (E)
+.SEM Γ ⊢ name:I \fB:\fR expr:E ↓ name → C
+Γ ⊢ expr ↓ v,
+
+∀ Δ : Δ ⊢ C ↓ v
+.SEME
+.SEM Γ; R ⊢ name:I \fB:\fR expr:E ↓ name → C
+Γ ⊢ expr ↓ v,
+
+∀ Δ : Δ ⊢ C ↓ v
+.SEME
+
 
 .SH TYPE DEFINITIONS (T)
 .SEM \fBBool\fR ↓ Bool

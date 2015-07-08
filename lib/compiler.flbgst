@@ -1994,6 +1994,52 @@ language_tmpl : Template {
 					apply_environment_to : [ ]
 					code_value : parameters.target
 				}
+				eager_attribute : Template syntax_element {
+					pretty_name : "eagerly evaluated attribute"
+					alternatives : { new_tmpl_attributes : Null  extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
+					pattern : parser.sequence {
+						of : [
+							space { preferred : True },
+							valid_identifier { field : $name },
+							space { preferred : True },
+							parser.exact { word : "!:" },
+							space { preferred : True },
+							parser.other {
+								type : $expression
+								alternate : $expression0
+								field : $expression
+							}
+						]
+					}
+					apply_environment_to : [
+						environment.modified_environment {
+							apply_to : [ environment.other_elements { fields : [ $expression ] } ]
+							special_names : [ forbidden_name_from_field { field : $name } ]
+							force_back : True
+							name : $inner_environment
+						}
+					]
+					type_demand : ensure_type.propagate {
+						fields : [ $expression ]
+						needs_unbox : False
+					}
+					code_value : kws.set_frame_or_tmpl_from_field {
+						name_field : $name
+						returns : into
+						into : parameters.target
+						with : kws.capture {
+							source : codegen.push_source_reference {
+								in : codegen.prepare_lookup_cache {
+									in : codegen.other_code {
+										field : $expression
+										target_flavour : codegen.flavour_aware
+									}
+									name : $inner_environment
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 
