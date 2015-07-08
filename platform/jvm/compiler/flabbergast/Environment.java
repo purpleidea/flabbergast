@@ -178,36 +178,38 @@ class Environment implements CodeRegion {
 
 		LookupCache base_lookup_cache = new LookupCache(current);
 		List<NameInfo> all_children = new ArrayList<NameInfo>();
-		String narrow_error = null;
 		for (NameInfo info : children.values()) {
 			if (info == null) {
 				continue;
 			}
 			info.addAll(all_children);
 		}
-		for (NameInfo info : all_children) {
-			String current_narrow_error = info.checkValidNarrowing(
-					base_lookup_cache, current);
-			if (narrow_error != null && current_narrow_error != null) {
-				narrow_error = String.format("%s\n%s", narrow_error,
-						current_narrow_error);
-			} else if (narrow_error == null) {
-				narrow_error = current_narrow_error;
+		if (current != null) {
+			String narrow_error = null;
+			for (NameInfo info : all_children) {
+				String current_narrow_error = info.checkValidNarrowing(
+						base_lookup_cache, current);
+				if (narrow_error != null && current_narrow_error != null) {
+					narrow_error = String.format("%s\n%s", narrow_error,
+							current_narrow_error);
+				} else if (narrow_error == null) {
+					narrow_error = current_narrow_error;
+				}
 			}
-		}
-		if (narrow_error != null) {
-			generator.loadTaskMaster();
-			source_reference.load(generator);
-			generator.getBuilder().visitLdcInsn(narrow_error);
-			generator.getBuilder().visitMethodInsn(
-					Opcodes.INVOKEVIRTUAL,
-					getInternalName(TaskMaster.class),
-					"reportOtherError",
-					Generator.makeSignature(null, SourceReference.class,
-							String.class));
-			generator.getBuilder().visitInsn(Opcodes.ICONST_0);
-			generator.getBuilder().visitInsn(Opcodes.IRETURN);
-			return;
+			if (narrow_error != null) {
+				generator.loadTaskMaster();
+				source_reference.load(generator);
+				generator.getBuilder().visitLdcInsn(narrow_error);
+				generator.getBuilder().visitMethodInsn(
+						Opcodes.INVOKEVIRTUAL,
+						getInternalName(TaskMaster.class),
+						"reportOtherError",
+						Generator.makeSignature(null, SourceReference.class,
+								String.class));
+				generator.getBuilder().visitInsn(Opcodes.ICONST_0);
+				generator.getBuilder().visitInsn(Opcodes.IRETURN);
+				return;
+			}
 		}
 		int load_count = 0;
 		for (NameInfo info : all_children) {

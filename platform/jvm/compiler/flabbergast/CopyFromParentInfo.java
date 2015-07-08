@@ -82,7 +82,7 @@ class CopyFromParentInfo extends NameInfo {
 
 	@Override
 	public boolean needsLoad(LookupCache current) {
-		return !current.has(source) || must_unbox
+		return current == null || !current.has(source) || must_unbox
 				&& current.get(source).getBackingType() == Object.class;
 	}
 }

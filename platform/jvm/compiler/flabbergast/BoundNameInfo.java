@@ -48,6 +48,6 @@ class BoundNameInfo extends RestrictableType {
 
 	@Override
 	public boolean needsLoad(LookupCache current) {
-		return !current.has(this);
+		return current == null || !current.has(this);
 	}
 }

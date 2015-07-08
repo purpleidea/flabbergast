@@ -298,7 +298,7 @@ internal class BoundNameInfo : RestrictableType {
 		return Target.EnsureType(collector, type, ref success, must_unbox);
 	}
 	public override bool NeedsLoad(LookupCache current) {
-		return !current.Has(this);
+		return current == null || !current.Has(this);
 	}
 	public override void CreateChild(ErrorCollector collector, string name, string root, ref bool success) {
 		Children[name] = new OpenNameInfo(Environment, root + "." + name);
@@ -348,7 +348,7 @@ internal class CopyFromParentInfo : NameInfo {
 		return base.HasName(name) || Source.HasName(name);
 	}
 	public override bool NeedsLoad(LookupCache current) {
-		return !current.Has(Source) || must_unbox && current[Source].BackingType == typeof(object);
+		return current == null || !current.Has(Source) || must_unbox && current[Source].BackingType == typeof(object);
 	}
 	public override string CheckValidNarrowing(LookupCache next, LookupCache current) {
 		if (current.Has(Source)) {
@@ -487,32 +487,34 @@ internal class Environment : CodeRegion {
 
 		var base_lookup_cache = new LookupCache(current);
 		var all_children = new List<NameInfo>();
-		string narrow_error = null;
 		foreach (var info in Children.Values) {
 			if (info == null) {
 				continue;
 			}
 			info.AddAll(all_children);
 		}
-		foreach (var info in all_children) {
-			var current_narrow_error = info.CheckValidNarrowing(base_lookup_cache, current);
-			if (narrow_error != null && current_narrow_error != null) {
-				narrow_error = String.Format("{0}\n{1}", narrow_error, current_narrow_error);
-			} else {
-				narrow_error = narrow_error ?? current_narrow_error;
+		if (current != null) {
+			string narrow_error = null;
+			foreach (var info in all_children) {
+				var current_narrow_error = info.CheckValidNarrowing(base_lookup_cache, current);
+				if (narrow_error != null && current_narrow_error != null) {
+					narrow_error = String.Format("{0}\n{1}", narrow_error, current_narrow_error);
+				} else {
+					narrow_error = narrow_error ?? current_narrow_error;
+				}
+			}
+			if (narrow_error != null) {
+				generator.LoadTaskMaster();
+				source_reference.Load(generator);
+				generator.Builder.Emit(OpCodes.Ldstr, narrow_error);
+				generator.Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new[] { typeof(SourceReference), typeof(string) }));
+				generator.Builder.Emit(OpCodes.Ldc_I4_0);
+				generator.Builder.Emit(OpCodes.Ret);
+				return;
 			}
 		}
-		if (narrow_error != null) {
-			generator.LoadTaskMaster();
-			source_reference.Load(generator);
-			generator.Builder.Emit(OpCodes.Ldstr, narrow_error);
-			generator.Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new[] { typeof(SourceReference), typeof(string) }));
-			generator.Builder.Emit(OpCodes.Ldc_I4_0);
-			generator.Builder.Emit(OpCodes.Ret);
-			return;
-		}
 		var load_count = all_children.Sum(info => info.NeedsLoad(current) ? 1 : 0);
-	    if (load_count > 0) {
+		if (load_count > 0) {
 			generator.StartInterlock(load_count);
 			lookup_results.AddRange(from info in all_children where info.NeedsLoad(current) select info.Load(generator, source_reference, context));
 			var state = generator.DefineState();
