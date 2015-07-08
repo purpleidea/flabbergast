@@ -1711,7 +1711,7 @@ kws : compiler_lib.kws_repl_tmpl {
 		literal_case +: {
 			name_str : "\"\(name)\""
 		}
-		remote_field_case +: {
+		field_case +: {
 			name_str : "\(field).toString()"
 		}
 		list_case +: {

@@ -792,12 +792,10 @@ kws_tmpl : Template {
 			# The attribute name.
 			name ?:
 		}
-		# The attribute name of the special case is defined in a field of another element.
-		remote_field_case : Template base_case_tmpl {
-			# The field containing the element of interest.
+		# The attribute name of the special case is defined in a field.
+		field_case : Template base_case_tmpl {
+			# The field containing the name.
 			field ?:
-			# The field in the element of interest containing the name.
-			name_field ?:
 		}
 		# The attributes are many based on a list of other syntax elements.
 		list_case : Template base_case_tmpl {
