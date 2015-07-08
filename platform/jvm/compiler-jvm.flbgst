@@ -2264,21 +2264,21 @@ codegen : compiler_lib.codegen_tmpl {
 		non_accumulate_flavour : flavour_empty
 	}
 	flavour_attribute : flavour_complex_tmpl {
-		has_cache : False
-		parameter_names : [ $source_template, $target ]
+		has_cache : True
+		parameter_names : [ $source_reference, $context, $self_frame, $container_frame, $source_template, $target ]
 		interface : "FlavourAttribute"
 		call_site +: {
-			parameter_lookups : [ parameters.source_template, parameters.target ]
+			parameter_lookups : [ parameters.source_reference, parameters.context, parameters.self_frame, parameters.container_frame, parameters.source_template, parameters.target ]
 		}
 		accumulate_flavour : flavour_attribute_accumulate
 		non_accumulate_flavour : flavour_attribute
 	}
 	flavour_attribute_accumulate : flavour_complex_tmpl {
-		has_cache : False
-		parameter_names : [ $source_template, $target ]
+		has_cache : True
+		parameter_names : [ $source_reference, $context, $self_frame, $container_frame, $source_template, $target ]
 		interface : "FlavourAttribute"
 		call_site +: {
-			parameter_lookups : [ parameters.source_template, parameters.accumulator ]
+			parameter_lookups : [ parameters.source_reference, parameters.context, parameters.self_frame, parameters.container_frame, parameters.source_template, parameters.accumulator ]
 		}
 		accumulate_flavour : flavour_attribute_accumulate
 		non_accumulate_flavour : flavour_attribute
@@ -2351,7 +2351,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 
 		generator : "_generator"
 		generation_environment : "environment"
-		lookup_cache : If !(generation_flavour Is Null) && generation_flavour.has_cache Then "_cache" Else Null
+		lookup_cache : If !(generation_flavour Is Null) && generation_flavour.has_cache Then "_cache" Else "null"
 		parameters : If generation_flavour Is Null Then Null Else generation_flavour.parameter_definitions
 		code_gen: If generation_flavour Is Null
 			Then ""

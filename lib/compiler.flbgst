@@ -976,7 +976,7 @@ codegen_tmpl : Template {
 	# Generate code that is unaware of the environment but has an accumulator for
 	# folding generation.
 	flavour_accumulate ?:
-	# Generate code for an attibute. Attributes do not have any context, but do
+	# Generate code for an attribute. Attributes do not have any context, but do
 	# have a source template and a target frame/template being generated.
 	flavour_attribute ?:
 	# For use in the REPL. There is a root frame and a current frame.
@@ -1741,7 +1741,12 @@ language_tmpl : Template {
 					code_value : codegen.push_source_reference {
 						inherit : False
 						in : codegen.empty_parameter {
-							parameters : { source_template : emptiness }
+							parameters : {
+								context : emptiness
+								self_frame : emptiness
+								container_frame : emptiness
+								source_template : emptiness
+							}
 							in : codegen.collapse_others {
 								type : known_types.frame
 								target_flavour : codegen.flavour_attribute_accumulate
@@ -1991,6 +1996,7 @@ language_tmpl : Template {
 				}
 			}
 		}
+
 		named_definition : Template syntax_group {
 			environment_enabled : True
 			generation_flavour : codegen.flavour_aware
