@@ -1,6 +1,6 @@
 a : {
 	x : True
-	t : Template { v !: x }
+	t : Template { v : Now x }
 }
 b : {
 	x : False

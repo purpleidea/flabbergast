@@ -3,7 +3,7 @@ utils_lib : From lib:utils
 # A BSD `ar` style archive
 archive_tmpl : Template {
 	# The collection of `file_tmpl` files.
-	args ?:
+	args : Required
 	value : For file : args Reduce acc & file.value With acc : "!<arch>\n"
 	# The default user ID to create files.
 	uid : 0
@@ -22,15 +22,15 @@ archive_tmpl : Template {
 # A file in a compressed archive
 file_tmpl : Template {
 	# The file name.
-	file_name ?:
+	file_name : Required
 	# The file contents.
-	contents ?:
-	uid %:
-	gid %:
-	mtime %:
-	user %:
-	group %:
-	other %:
+	contents : Required
+	uid : Used
+	gid : Used
+	mtime : Used
+	user : Used
+	group : Used
+	other : Used
 
 	file_name_length : utils_lib.str_utf8_length(file_name)
 	# If the file name is more than 16 characters, use the BSD `ar` encoding.

@@ -44,7 +44,7 @@ parser : compiler_lib.parser_tmpl {
 		copy_instance : of.copy_instance
 
 		parse_complete : Template {
-			ok ?:
+			ok : Required
 			value : If ok
 				Then "\(indent)goto optional_exit_\(id);"
 				Else
@@ -69,7 +69,7 @@ parser : compiler_lib.parser_tmpl {
 
 		parent_parse_complete : Lookup parse_complete In Container
 		parse_complete : Template {
-			ok ?:
+			ok : Required
 			value : If ok Then "" Else "\(indent)_sequence_fail_\(id) = true;\(indent)goto _sequence_end_\(id);"
 		}
 		parser_gen :
@@ -98,7 +98,7 @@ parser : compiler_lib.parser_tmpl {
 		pok : parent_parse_complete(ok : True, indent : indent)
 		perr : parent_parse_complete(ok : False, indent : indent)
 		parse_complete : Template {
-			ok ?:
+			ok : Required
 			value: If ok Then "" Else "\(indent)_position = _many_position_\(id);\(indent)_obj = _many_obj_\(id);\(indent)break;"
 		}
 		need_first : nonempty || !(separator Is Null)
@@ -137,7 +137,7 @@ parser : compiler_lib.parser_tmpl {
 		pok : parent_parse_complete(ok : True, indent : indent)
 		perr : parent_parse_complete(ok : False, indent : indent)
 		parse_complete : Template {
-			ok ?:
+			ok : Required
 			value : If ok
 				Then "\(indent)_alternate_success_\(id) = true;"
 				Else "\(indent)_position = _alt_position_\(id);\(indent)_obj = _alt_obj_\(id);"
@@ -282,7 +282,7 @@ parser : compiler_lib.parser_tmpl {
 		copy_instance : If require_definition Then "\t\t_obj.\(field) = \(field);\n" & in.copy_instance Else ""
 
 		accumulate_char : Template {
-			input ?:
+			input : Required
 			value : "\(indent)_obj.\(field) = _obj.\(field) * \(multiplier) + (\(input) - \(offset));"
 		}
 		parser_gen : in.parser_gen
@@ -301,14 +301,14 @@ parser : compiler_lib.parser_tmpl {
 		parent_parse_complete : Lookup parse_complete In Container
 		parent_unicode_accumulate_char : Lookup accumulate_char In Container
 		parse_complete : Template {
-			ok ?:
+			ok : Required
 			save_char : (parent_unicode_accumulate_char { input : "System.Char.ConvertFromUtf32(" & unicode_accumulate_char & ")" }).value
 			pok : parent_parse_complete(ok : True, indent : indent)
 			perr : parent_parse_complete(ok : False, indent : indent)
 			value : If ok Then (save_char & pok) Else perr
 		}
 		accumulate_char : Template {
-			input ?:
+			input : Required
 			value : "\(indent)\(unicode_accumulate_char) = \(unicode_accumulate_char) * \(multiplier) + (\(input) - \(offset));"
 		}
 		parser_gen : "\(indent)int \(unicode_accumulate_char) = \(initial);" & in.parser_gen
@@ -331,12 +331,12 @@ parser : compiler_lib.parser_tmpl {
 
 		float_accumulate_buffer : "_float_acc_" & Id
 		accumulate_char : Template {
-			input ?:
+			input : Required
 			value : indent & float_accumulate_buffer & ".Append(" & input & ");"
 		}
 		parent_parse_complete : Lookup parse_complete In Container
 		parse_complete : Template {
-			ok ?:
+			ok : Required
 			value : If ok
 				Then
 					"\(indent)if (System.Double.TryParse(\(float_accumulate_buffer).ToString(), out _obj.\(field))) {" &
@@ -383,7 +383,7 @@ parser : compiler_lib.parser_tmpl {
 			Else ""
 
 		accumulate_char : Template {
-			input ?:
+			input : Required
 			value : "\(indent)_obj.\(field).Append(\(input));"
 		}
 		parser_gen : in.parser_gen
@@ -395,7 +395,7 @@ parser : compiler_lib.parser_tmpl {
 
 		parent_parse_complete : Lookup parse_complete In Container
 		parse_complete : Template {
-			ok ?:
+			ok : Required
 			value : If ok
 				Then
 					(accumulate_char { input : "System.Char.ConvertFromUtf32(" & codepoint & ")" }).value &
@@ -747,7 +747,7 @@ kws : compiler_lib.kws_repl_tmpl {
 	# the results, inserting the opcodes, then storing the result in a field.
 	base_tmpl +: {
 		cached : False
-		opcode ?:
+		opcode : Required
 		storage_name : If return_type Is Null Then "null" Else Id
 
 		extra_indent : For arg : arguments Reduce arg.value.extra_indent & acc With acc : ""
@@ -1000,7 +1000,7 @@ kws : compiler_lib.kws_repl_tmpl {
 		name_indent : ""
 		gen_gen +: {
 			sum_indent : indent & source.extra_indent & name_indent
-			load_names ?:
+			load_names : Required
 			base_code :
 				source.gen_gen(
 					indent : indent & name_indent,
@@ -1080,9 +1080,9 @@ kws : compiler_lib.kws_repl_tmpl {
 	}
 	create_function_tmpl +: {
 		extra_indent : ""
-		parameter_names ?:
-		method ?:
-		delegate_type ?:
+		parameter_names : Required
+		method : Required
+		delegate_type : Required
 		parent_generator : Lookup generator In Container
 		generator : Id & "_generator"
 		lookup_cache : "null"
@@ -1121,12 +1121,12 @@ kws : compiler_lib.kws_repl_tmpl {
 		delegate_type : "ComputeOverride"
 	}
 	set_frame_or_tmpl_tmpl +: {
-		string_indent ?:
+		string_indent : Required
 		extra_indent : into.extra_indent & with.extra_indent & string_indent
 		storage_name : returns.storage_name
 		gen_gen +: {
 			sum_indent : indent & into.extra_indent & with.extra_indent & string_indent
-			load_name ?:
+			load_name : Required
 			base_code : into.gen_gen(
 				indent : indent & string_indent,
 				code : with.gen_gen(
@@ -1225,7 +1225,7 @@ kws : compiler_lib.kws_repl_tmpl {
 	}
 	string_constant_tmpl +: {
 		extra_indent : ""
-		source ?:
+		source : Required
 		gen_gen +: {
 			value : "\(indent)var \(storage_name) = new StringishValue(\(source));" & code
 		}
@@ -1272,7 +1272,7 @@ kws : compiler_lib.kws_repl_tmpl {
 		}
 	}
 	external_tmpl +: {
-		uri_str ?:
+		uri_str : Required
 		extra_indent : ""
 		gen_gen +: {
 				value : "\(indent)var \(storage_name) = \(generator).ResolveUri(\(uri_str));" & code
@@ -1338,7 +1338,7 @@ kws : compiler_lib.kws_repl_tmpl {
 	}
 	dynamic_type_dispatch_tmpl +: {
 		extra_indent : of.extra_indent & "\t"
-		type_list ?:
+		type_list : Required
 
 		gen_gen +: {
 			sum_indent : indent & of.extra_indent
@@ -1365,7 +1365,7 @@ kws : compiler_lib.kws_repl_tmpl {
 		type_list : "\(type_storage).MustUnbox ? AstTypeableNode.ClrTypeFromType(\(type_storage).RestrictedType) : null"
 	}
 	dynamic_type_check_tmpl +: {
-		reference_type ?:
+		reference_type : Required
 		extra_indent : source.extra_indent
 		gen_gen +: {
 			value : source.gen_gen(
@@ -1383,7 +1383,7 @@ kws : compiler_lib.kws_repl_tmpl {
 		reference_type : "\(field).TypeId"
 	}
 	iterator_tmpl +: {
-		iterator_type ?:
+		iterator_type : Required
 		extra_indent : ""
 
 		parent_source_reference : Lookup parameters.source_reference In Container
@@ -1430,8 +1430,8 @@ kws : compiler_lib.kws_repl_tmpl {
 		input_tmpl +: {
 			array : Id
 			gen_gen : Template {
-				indent ?:
-				value ?:
+				indent : Required
+				value : Required
 
 				sum_indent : indent & extra_indent
 				base_code :
@@ -1610,11 +1610,11 @@ kws : compiler_lib.kws_repl_tmpl {
 		}
 
 		base_case_tmpl +: {
-			name_str ?:
+			name_str : Required
 			count : " + 1"
 			loop_tab : ""
 			add : Template {
-				indent ?:
+				indent : Required
 				value :
 					"\(indent)\(loop_tab)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
 					"\(indent)\(loop_tab)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(name_str));" &
@@ -1622,7 +1622,7 @@ kws : compiler_lib.kws_repl_tmpl {
 					"\(indent)\(loop_tab)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(MergeIterator).GetMethod(\"AddDispatcher\", new System.Type[] { typeof(string), typeof(int) }));"
 			}
 			gen_gen : Template {
-				indent ?:
+				indent : Required
 				sum_indent : indent & action.extra_indent & loop_tab
 				base_code :
 					"\(sum_indent)\(generator).CopyField(\(action.storage_name), \(storage_name));" &
@@ -1759,14 +1759,14 @@ codegen : compiler_lib.codegen_tmpl {
 		# the correct indentation. It can be thought of as the indentation
 		# difference between the starting indentation and the indentation of the
 		# callback.
-		extra_indent ?:
+		extra_indent : Required
 		storage_name : Id
 		gen_gen : Template {
 			# The indentation of the code.
-			indent ?:
+			indent : Required
 			# The code to execute when this operation is completed and its value is
 			# stored in a variable with the name of the value in `storage_name`.
-			code ?:
+			code : Required
 			value : code
 		}
 	}
@@ -1985,8 +1985,8 @@ codegen : compiler_lib.codegen_tmpl {
 		}
 		lookup_special_tmpl +: {
 			raw_material : Template {
-				indent ?:
-				value ?:
+				indent : Required
+				value : Required
 			}
 
 			# This is here so that our call to the generate of the named elements
@@ -2051,13 +2051,13 @@ codegen : compiler_lib.codegen_tmpl {
 	}
 	type_dispatch_tmpl +: {
 		callback : Id & "_code"
-		reference_type ?:
+		reference_type : Required
 		choice_tmpl +: {
-			target_type ?:
+			target_type : Required
 		}
 
 		gen_gen +: {
-			sum_indent ?:
+			sum_indent : Required
 
 			choice_block :
 				For choice : choices
@@ -2110,7 +2110,7 @@ codegen : compiler_lib.codegen_tmpl {
 	}
 
 	flavour_complex_tmpl : Template {
-		parameter_names ?:
+		parameter_names : Required
 		parameter_str :
 			For parameter_name : parameter_names
 				Reduce "\(acc)LoadableValue _\(parameter_name), "
@@ -2124,7 +2124,7 @@ codegen : compiler_lib.codegen_tmpl {
 				storage_name : "_" & parameter_name
 			}
 		call_site : Template {
-			parameter_lookups ?:
+			parameter_lookups : Required
 			value :
 				For x : parameter_lookups
 					Reduce acc & x.storage_name & ", "
@@ -2279,7 +2279,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 			"\t\treturn _obj;\n\t}\n}\n"
 
 		parse_complete : Template {
-			ok ?:
+			ok : Required
 			value :
 				"\(indent)_position.Cache<\(class_name)>(_start_index, \(If ok Then "_obj" Else "null"));" &
 				"\(indent)_position.TraceExit(\"\(group_name):\(rule_name)\", \(If ok Then "true" Else "false"));" &
@@ -2323,7 +2323,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 			Else ""
 
 		parse_rule_initiator : Template {
-			alternate_name ?:
+			alternate_name : Required
 			value :
 				For rule_name : Name, rule : expanded_rules
 					Select rule_name :

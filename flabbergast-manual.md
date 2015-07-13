@@ -176,12 +176,12 @@ In most other languages, this would break the class since any references to the 
 Templates can also act as functions. Undefined attributes are parameters, and a single attribute can act as a result:
 
     square : Template {
-      x ?:
+      x : Required
       value : x * x
     }
     b : (square { x : 5 }).value
 
-The `?:` attribute definition defines an attribute to be present, but contain an error, forcing the user of a template to replace this value.
+The `Required` attribute definition defines an attribute to be present, but contain an error, forcing the user of a template to replace this value.
 
 For convenience, Flabbergast provides alternate syntax for consuming such a template:
 
@@ -190,7 +190,7 @@ For convenience, Flabbergast provides alternate syntax for consuming such a temp
 Unnamed values are placed in an `args` attribute.
 
     sum_of_squares : Template {
-        args ?:
+        args : Required
         value : For x : args Reduce acc + x * x With acc : 0
     }
     c : sum_of_squares(3, 4, 5)
@@ -679,12 +679,12 @@ Templates can also be derived using a syntax that is a hybrid of the two: `Templ
 There are several amendment attributes, not all of which can be used in all contexts:
 
  - `:`, followed by an expression, simply defines an attribute to be the supplied expression. If there previously was an attribute of the same name, it is discarded.
- - `?:` creates an attribute that is always an error. This can be thought of as an _abstract_ attribute, in the C++/Java/C# terminology. This is not permitted during instantiation.
+ - `: Required` creates an attribute that is always an error. This can be thought of as an _abstract_ attribute, in the C++/Java/C# terminology. This is not permitted during instantiation.
  - `-:` deletes an attribute. The attribute must already exist, so this is not valid when declaring a new template.
  - `+`, followed by an identifier, then `:`, followed by an expression, will replace an attribute but allows the previous value to be bound to the identifier supplied. The attribute must already exist, so this is not valid when declaring a new template.
  - `+: {`, followed by a list of amendments, terminated by `}`, performs template amendment. It is short-hand for `+oldtemplate: Template oldtemplate { ... }` with the convenience of not having to choose a name.
- - `%:` indicates that a value is expected to be available through lookup. It does not actually *do* anything; it is merely a way to explain intentions to others and provide a place to hang documentation. It can be thought of as a weak version of `?:` attributes, and is usually preferable.
- - `!:`, followed by an expression, creates an attribute, but evaluates is eagerly, in the current context, much like the function call convenience syntax.
+ - `: Used` indicates that a value is expected to be available through lookup. It does not actually *do* anything; it is merely a way to explain intentions to others and provide a place to hang documentation. It can be thought of as a weak version of `Required` attributes, and is usually preferable.
+ - `: Now`, followed by an expression, creates an attribute, but evaluates is eagerly, in the current context, much like the function call convenience syntax.
 
 There is also a function call convenience syntax. In their own way, templates can act as lambdas. In frame instantiation, the expressions are evaluated in the context of the frame created. In a function call, expressions provided are evaluated in the current (parent) context, then placed into the instantiated template. A list of unnamed expressions can be provided and these are collected into an `args` frame. Finally, instead of simply returning the entire frame, the `value` attribute is returned from the instantiated frame. For instance, the function call:
 
@@ -702,8 +702,8 @@ is almost rewritten as:
       b : 2
       c : 1
       z : f {
-        args !: [ a,  b ]
-        c !: c
+        args : Now [ a,  b ]
+        c : Now c
       }.value
     }
 
@@ -734,7 +734,7 @@ Supposing this was CUPS, it might be perfectly reasonable for CUPS to provide a 
     known_backends : From cups:backends
     # Function-like template to determine if a backend is supported by CUPS
     supported_backend : Template {
-      backend ?:
+      backend : Required
       value : For known_backend : known_backends
         Reduce accumulator || backend == known_backend
         With accumulator : False
@@ -752,7 +752,7 @@ In most languages, afterthoughts are not appreciated. However, most configuratio
 
 Most languages, particularly object-oriented languages, have a lot of plumbing: taking data from one place and copying it to another. Most constructors in object-oriented languages spend their time stuffing parameters into fields. There is a push in multi-paradigm object-oriented languages, including Python, Scala, Ruby, Groovy, Boo, and Nemerle, to have the compiler write the plumbing, freeing the programmer to work on the real logic. Flabbergast has a different approach: don't have plumbing at all. Define the data where it should be defined and use contextual lookup to pull data from the wherever. Copying data is generally a sign that contextual lookup is not being used effectively.
 
-Although Flabbergast has the `?:` attribute definition, it should almost never be used. This is one of the most frequent mistakes of novice programmers. If there's a value needed, just use it; there's no need force the consumer of a template to fill in the blank. The real use case is for things that must be provided and unique. For instance, the name of an SMB share is probably best defined with `?:`, but the list of users that can access the share should certainly not use `?:`. It's okay that a user who instantiates a share template without providing a users list somewhere will cause a lookup error: failure to provide an appropriately name value is a failure to consume that API correctly and, indeed, this was noted by an error being produced. There's no need to make this some how “more” explicit. The `%:` attribute definition provides an advisory version of `?:` that indicates that a value should be supplied, but does not stipulate that it needs to be included directly.
+Although Flabbergast has the `Required` attribute definition, it should almost never be used. This is one of the most frequent mistakes of novice programmers. If there's a value needed, just use it; there's no need force the consumer of a template to fill in the blank. The real use case is for things that must be provided and unique. For instance, the name of an SMB share is probably best defined with `Required`, but the list of users that can access the share should certainly not use `Required`. It's okay that a user who instantiates a share template without providing a users list somewhere will cause a lookup error: failure to provide an appropriately name value is a failure to consume that API correctly and, indeed, this was noted by an error being produced. There's no need to make this some how “more” explicit. The `Used` attribute definition provides an advisory version of `Required` that indicates that a value should be supplied, but does not stipulate that it needs to be included directly.
 
 The most important feature of Flabbergast is overriding. When starting out with Java or C#, understanding how to divide things up into objects is the hard part. When starting out with ML or Haskell, understanding how to make things stateless is the hard part. When starting out with Flabbergast, understanding  how to make things easy to override is the hard part.
 
@@ -778,8 +778,8 @@ Indeed, this could be translated into Flabbergast as follows:
 However, it is often simpler to make items self-rendering:
 
     item_tmpl : Template {
-      name ?:
-      country ?:
+      name : Required
+      country : Required
       value : "name: \(name) country: \(country)\n"
     }
     strs : For item : items
@@ -789,8 +789,8 @@ However, it is often simpler to make items self-rendering:
 This has two advantages: the rendering logic can be overridden and the interface is simpler. As a disadvantage, there is now an inheritance implication for the values of `items`. However, because the template `item_tmpl` can be overridden and replaced, the inheritance implication is flexible. In fact, it would be reasonable to have:
 
     item_base_tmpl : Template {
-      name ?:
-      country ?:
+      name : Required
+      country : Required
     }
     item_xml_tmpl : Template item_base_tmpl {
       value : "<person><name>\(name)</name><country>\(country)</country></person>"
@@ -825,7 +825,7 @@ Naming things is difficult. Very difficult. The major disadvantage to dynamic sc
 1. Name things well. That might sound glib, but it isn't. The traditional loop variables `i`, `j`, and `k` are a heap of trouble in Flabbergast. The opposite end of the spectrum `where_super_explicit_names_that_no_one_can_confuse` are used is equally unpleasant. If the name is semantically meaningful and the same term isn't overloaded (_e.g._, `mu` can be the magnetic field permeability of free space and the coefficient of friction), then it is probably a good choice and collisions will be intentional (making `mu` unfortunate, but `magnetic_perm` quite reasonable).
 2. Use frames as name spaces. While frames are _not_ name spaces, contextual lookup can be used to help the situation. Using `parser.space` can provide more information than simply `space`.
 3. Name library imports with `_lib`. It is good hygiene to import libraries using `foo_lib : From lib:foo` as if there is a collision, the values will be the same anyway.
-4. Use lookup traps when needed. If lookup should stop beyond a certain point, define the name to `Null` to stop lookup from continuing. In templates, if the value needs to be provided or the name is common (_e.g._, `name` or `enabled`) use the `?:` definition to trap lookup.
+4. Use lookup traps when needed. If lookup should stop beyond a certain point, define the name to `Null` to stop lookup from continuing. In templates, if the value needs to be provided or the name is common (_e.g._, `name` or `enabled`) use the `Required` definition to trap lookup.
 
 For a good reflection on naming, read [What's in a Name](https://blogs.janestreet.com/whats-in-a-name/) from Jane Street Tech Blog.
 
@@ -836,12 +836,12 @@ In all languages, having common design patterns that introduce intent are import
 If a list of items is generated, it can be useful to give each an attribute that renders the result. The result can then be accumulated from this attribute.
 
     arg_tmpl : Template {
-      name ?:
-      value ?:
+      name : Required
+      value : Required
       spec : "--" & name & " " & value
     }
     switch_tmpl : Template {
-      name ?:
+      name : Required
       active : True
       spec : If active Then "--" & name Else ""
     }
@@ -862,12 +862,12 @@ In the previous example, an argument list is created for an executable binary. T
 
     foo_tmpl : Template
       arg_tmpl : Template {
-        name ?:
-        value ?:
+        name : Required
+        value : Required
         spec : "--" & name & " " & value
       }
       switch_tmpl : Template {
-        name ?:
+        name : Required
         active : True
         spec : If active Then "--" & name Else ""
       }
@@ -891,8 +891,8 @@ Now, frames inheriting from `foo_tmpl` can easily change the `args`.
 The attribute names, if useful, can be included in the template instantiation.
 
     arg_tmpl : Template {
-      name %:
-      value ?:
+      name : Used
+      value : Required
       spec : "--" & name & " " & value
     }
     binary : "foo"
@@ -969,8 +969,8 @@ Here, the data is specified separate and the renders are provided as a template 
 While `spec` or `value` attributes are extremely useful, sometimes, it can be helpful to have more than one. Consider generating C code: there need to be prototypes and implementations for each function.
 
     c_function_tmpl : Template {
-      signature ?:
-      body ?:
+      signature : Required
+      body : Required
       prototype_spec : signature & ";\n"
       implementation_spec : signature & "{\n" & body & "\n}\n"
     }
@@ -982,14 +982,14 @@ While `spec` or `value` attributes are extremely useful, sometimes, it can be he
 ### Contextual Accumulation
 There are situations where it is desirable to have an accumulator that is not common to all cases. For instance, suppose Python code was being generated and the indentation must be correct:
 
-    python_stmt : Template { line ?:  spec : indent & line }
+    python_stmt : Template { line : Required  spec : indent & line }
     python_group : Template {
-      statements ?:
+      statements : Required
       spec : For statement : statements Reduce acc & statement.spec & "\n" With acc : ""
     }
     python_block : Template {
-      line ?:
-      statements ?:
+      line : Required
+      statements : Required
 
       parent_indent : Lookup indent In Container
       indent : parent_indent & "\t"
@@ -1006,7 +1006,7 @@ Finally, the `indent` definition is an contextual lookup trap. If the user of th
 So, the following would produce correctly indented, if not pointless, Python:
 
     transform_var : Template python_group {
-        var %:
+        var : Used
         statements : [
             python_stmt { line : "\(var) = bar(\(var))" },
             python_block {
@@ -1046,16 +1046,16 @@ In some cases, it is desirable to combine templates. There is no direct template
 
 Here, `b_tmpl` extends `a_tmpl`. If the changes that `b_tmpl` are general, it might be nice to have a higher-order way to apply those changes to any template, not just `a_tmpl`. This could be accomplished in the following way:
 
-    b_ifier : Template { base ?:  value : Template base { z : x + y } }
+    b_ifier : Template { base : Required  value : Template base { z : x + y } }
     a_tmpl : Template { x : 3  y : 4 }
     b_tmpl : b_ifier(base : a_tmpl)
 
 The `b_ifier` function-like template can apply the same changes to any desired template; it is a mixin, capable of extending the behaviour of a template. The overriding mixins can be layered on top of one another:
 
     overrides : [
-      Template { base?:  value : Template base { x : 4 } },
-      Template { base?:  value : Template base { y : 3 } },
-      Template { base?:  value : Template base { z : 2 } }
+      Template { base : Required  value : Template base { x : 4 } },
+      Template { base : Required  value : Template base { y : 3 } },
+      Template { base : Required  value : Template base { z : 2 } }
     ]
     foo_tmpl : Template { a : 1 }
     derived_tmpl :
@@ -1066,8 +1066,8 @@ The `b_ifier` function-like template can apply the same changes to any desired t
 
 Here `derived_tmpl` is the combination of all the layered overrides in the `overrides` frame. It's also possible to compose two overriding mixins:
 
-    a_ifier : Template { base ?:  value : Template base { x : 2 * y } }
-    b_ifier : Template { base ?:  value : Template base { z : x + y } }
+    a_ifier : Template { base : Required  value : Template base { x : 2 * y } }
+    b_ifier : Template { base : Required  value : Template base { z : x + y } }
     ab_ifier : Template a_ifier { value +original: b_ifier(base : original) }
 
 This will compose `a_ifier` and `b_ifier` into `ab_ifier`.
@@ -1080,9 +1080,9 @@ Flabbergast can't actually make the problem easier to solve, but it can make it 
 Consider something like:
 
     text_box : Template {
-        text ?:
-        width ?:
-        height ?:
+        text : Required
+        width : Required
+        height : Required
         # Explicitly define our minimums to be passed up.
         min_width : 5  min_height : 1
         preferred_width : 10
@@ -1093,9 +1093,9 @@ Consider something like:
         value : # Render output using width and height
     }
     fancy_border : Template {
-        child ?:
-        width ?:
-        height ?:
+        child : Required
+        width : Required
+        height : Required
         # We enforce what our parent forced on us onto our child widget. (Down)
         exp_child : child {
             width : Lookup width In Container - 1
@@ -1109,9 +1109,9 @@ Consider something like:
         value : # Render output using width, height, and exp_child.value
     }
     vertical_box : Template {
-        children ?:
-        width ?:
-        height ?:
+        children : Required
+        width : Required
+        height : Required
         child_height : height / (For c : children Reduce acc + 1 With acc : 0)
         exp_children : For c : children Select c { width -:  height : Lookup child_height In Container }
         # The maximum of the minimum width of the children.
@@ -1233,7 +1233,7 @@ I sometimes suffix attribute names that hold templates with `_tmpl`, but not alw
 
 In certain contexts, there is a mix of different types and suffixing templates can be helpful. For example:
 
-    thingie_tmpl : Template { name ?: }
+    thingie_tmpl : Template { name : Required }
     thingies : [ thingie_tmpl { name : $a } ]
     num_thingies : For x : thingies Reduce acc + 1 With acc : 0
     length_thingies : For x : thingies Reduce acc + Length x.name With acc : 0
@@ -1244,8 +1244,8 @@ This context has a number of unrelated items. They are of different types and me
 The other situation that occurs relatively frequently is the meta-template. There are many of these in the compiler. It is often useful to have a template which is never meant to be instantiated by the end user; it is simply a base on which to build more templates. In that case, the `_tmpl` suffix functions almost as an indicator of abstractness. For example:
 
     instruction_tmpl : Template {}
-    add_instruction : Template instruction_tmpl { left ?: right ?: }
-    multiply_instruction : Template instruction_tmpl { left ?: right ?: }
+    add_instruction : Template instruction_tmpl { left : Required  right : Required }
+    multiply_instruction : Template instruction_tmpl { left : Required  right : Required }
 
 For inheritance reasons, it will provide a place for common plumbing between all the other instructions, but it isn't meant to be consume directly.
 
@@ -1258,7 +1258,7 @@ This is intentionally not possible. For various embedding reasons, it's importan
 If the goal is to read from a configuration specific file, then invert the inheritance structure:
 
     global_config : Template {
-      name ?:
+      name : Required
       machine_info : From "info:machine/\(name)" # Desired, but unreal syntax
     }
     local_config : global_config { name : "foo" }
@@ -1266,7 +1266,7 @@ If the goal is to read from a configuration specific file, then invert the inher
 The correct refactoring is something like:
 
     global_config : Template {
-      machine_info ?:
+      machine_info : Required
     }
     local_config : global_config {
       machine_info : From info:machine/foo
@@ -1308,8 +1308,8 @@ Again, the way to think of this is to invert where the data is stored, rather th
 
     my_enum : For x : [$a, $b, $c] Select x : x
     tmpl : Template {
-        enumish ?:
-        name ?:
+        enumish : Required
+        name : Required
         value : name & " = " & (
             If enumish == $a Then "0" Else
             If enumish == $b Then "1" Else
@@ -1326,8 +1326,8 @@ It would also be completely reasonable to provide a frame with all the needs:
       c : { id : 2 }
     }
     tmpl : Template {
-        enumish ?:
-        name ?:
+        enumish : Required
+        name : Required
         value : name & " = " & enumish.id
     }
     x : tmpl { name : "foo" enumish : my_enum.a }
@@ -1340,8 +1340,8 @@ That can be taken further by making the enumeration values as templates:
       c : Template { value : "0 \(name) 1" }
     }
     tmpl : Template {
-        enumish ?:
-        name ?:
+        enumish : Required
+        name : Required
         value : name & " = " & (enumish {}).value
     }
     x : tmpl { name : "foo" enumish : my_enum.a }
@@ -1368,7 +1368,7 @@ The predecessor of Flabbergast had an evaluation function and the use cases were
        baz : 0.75
     }
     task_tmpl : Template {
-      name ?:
+      name : Required
       cpu_limit : Eval "cpu_limits.\(name)"
     }
     tasks : {

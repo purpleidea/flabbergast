@@ -69,7 +69,7 @@ cron_policy : {
 # Top-level container for generating an Aurora configuration file.
 aurora_file : Template {
 	# A list of job frames.
-	jobs ?:
+	jobs : Required
 
 	python_indent : "\t"
 	# The rendered Aurora file
@@ -83,19 +83,19 @@ aurora_file : Template {
 # An Aurora process, defining a binary to run inside a task.
 process : Template render_lib.python.object {
 	# The process name will be made available from the attribute name.
-	process_name %:
+	process_name : Used
 	# The command line, or any string of BASH commands to start the process.
-	command_line ?:
+	command_line : Required
 	# Maximum number of non-zero exit status this process may encounter before
 	# being marked as permanently failed.
-	max_process_failures %:
+	max_process_failures : Used
 	# Automatically respawn the process, even if it exists successfully.
 	daemon : False
 	# This process does not determine the success or exit of a task. This is used
 	# for helper processes, such as log savers.
 	ephemeral : False
 	# Minimum number of seconds between process restarts.
-	min_process_restart_duration %:
+	min_process_restart_duration : Used
 	# This process should run after all non-final processes in a task.
 	final : False
 
@@ -120,15 +120,15 @@ process : Template render_lib.python.object {
 # An Aurora task, container of multiple processes.
 task : Template render_lib.python.object {
 	# A frame containing a frame for each process that runs inside this task.
-	processes ?:
+	processes : Required
 	# The maximum number of times a task can fail before being marked.
-	max_task_failures %:
+	max_task_failures : Used
 	# The maximum number of concurrent processes, or null for unlimited.
-	max_concurrent_processes %:
+	max_concurrent_processes : Used
 	# How long to wait for processes marked with `final`.
-	finalization_wait %:
+	finalization_wait : Used
 	# A frame containing all the resources needed by the task.
-	resources %:
+	resources : Used
 	# This defines all the ports used by this task. A port can be an alias, by
 	# defining it to be `$other_port` or null to create a unique end-point.
 	port_defs : Template {
@@ -190,23 +190,23 @@ task : Template render_lib.python.object {
 }
 # An Aurora job, which runs a task
 job : Template render_lib.python.object {
-	job_name %:
+	job_name : Used
 	# The task to run in this job.
-	task ?:
+	task : Required
 	# The user account as whom this job will be scheduled.
-	role %:
+	role : Used
 	# The cluster in which this job will be scheduled.
-	cluster %:
+	cluster : Used
 	# The environment in which to schedule this job. See `environments`.
-	environment %:
+	environment : Used
 	# The number of instances of this task to schedule.
-	instances ?:
+	instances : Required
 	# The cron rescheduling policy, set from `cron_policy`.
 	cron_collision_policy : Null
 	# The maximum number of task failures to permit.
-	max_task_failures %:
+	max_task_failures : Used
 	# The priority of this job when pre-empting other jobs in the scheduler.
-	preemption_priority %:
+	priority : Used
 	# An optional container to use.
 	container : Null
 	# An optional cron schedule to use, from `lib:unix/cron`
@@ -324,7 +324,7 @@ job : Template render_lib.python.object {
 # A Docker container for a job.
 docker_container : Template {
 	# The Docker container to be pulled.
-	image ?:
+	image : Required
 
 	python_value : "Docker(image = \"" & utils_lib.str_escape(image, transformations : render_lib.python.escape_transform) & "\")"
 }

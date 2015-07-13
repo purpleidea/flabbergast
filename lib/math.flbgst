@@ -5,7 +5,7 @@ absolute : utils_lib.firstifier(base : absolute_list)
 
 absolute_list : Template ( From lib:mathinterop ).absolute_list {
 	# A list of numbers.
-	args %:
+	args : Used
 }
 
 # The default angle unit for trigonometric calculations.
@@ -21,7 +21,7 @@ ceiling : utils_lib.firstifier(base : ceiling_list)
 
 ceiling_list : Template ( From lib:mathinterop ).ceiling_list {
 	# A list of numbers.
-	args %:
+	args : Used
 }
 
 # Trigonometic functions for a circle.
@@ -29,39 +29,39 @@ circle : {
 	arccos : utils_lib.firstifier(base : arccos_list)
 	arccos_list : Template ( From lib:mathinterop ).circle.arccos_list {
 		# A list of angles.
-		args %:
+		args : Used
 	}
 	arcsin : utils_lib.firstifier(base : arcsin_list)
 	arcsin_list : Template ( From lib:mathinterop ).circle.arcsin_list {
 		# A list of angles.
-		args %:
+		args : Used
 	}
 	arctan : utils_lib.firstifier(base : arctan_list)
 	arctan_list : Template ( From lib:mathinterop ).circle.arctan_list {
 		# A list of angles.
-		args %:
+		args : Used
 	}
 	cos : utils_lib.firstifier(base : cos_list)
 	cos_list : Template ( From lib:mathinterop ).circle.cos_list {
 		# A list of angles.
-		args %:
+		args : Used
 	}
 	sin : utils_lib.firstifier(base : sin_list)
 	sin_list : Template ( From lib:mathinterop ).circle.sin_list {
 		# A list of angles.
-		args %:
+		args : Used
 	}
 	tan : utils_lib.firstifier(base : tan_list)
 	tan_list : Template ( From lib:mathinterop ).circle.tan_list {
 		# A list of angles.
-		args %:
+		args : Used
 	}
 }
 
 # Compute a running product.
 cumulative_product : Template {
 	# The numbers to multiply.
-	args %:
+	args : Used
 	# The starting value.
 	initial : 1
 	value : For arg : args, arg_name : Name
@@ -72,7 +72,7 @@ cumulative_product : Template {
 # Compute a running sum.
 cumulative_sum : Template {
 	# The numbers to sum.
-	args %:
+	args : Used
 	# The starting value.
 	initial : 0
 	value : For arg : args, arg_name : Name
@@ -85,7 +85,7 @@ floor : utils_lib.firstifier(base : floor_list)
 
 floor_list : Template ( From lib:mathinterop ).floor_list {
 	# A list of numbers.
-	args %:
+	args : Used
 }
 
 # Trigonometic functions for a hyperbola.
@@ -93,32 +93,32 @@ hyperbola : {
 	arccos : utils_lib.firstifier(base : arccos_list)
 	arccos_list : Template ( From lib:mathinterop ).hyperbola.arccos_list {
 		# A list of angles.
-		args %:
+		args : Used
 	}
 	arcsin : utils_lib.firstifier(base : arcsin_list)
 	arcsin_list : Template ( From lib:mathinterop ).hyperbola.arcsin_list {
 		# A list of angles.
-		args %:
+		args : Used
 	}
 	arctan : utils_lib.firstifier(base : arctan_list)
 	arctan_list : Template ( From lib:mathinterop ).hyperbola.arctan_list {
 		# A list of angles.
-		args %:
+		args : Used
 	}
 	cos : utils_lib.firstifier(base : cos_list)
 	cos_list : Template ( From lib:mathinterop ).hyperbola.cos_list {
 		# A list of angles.
-		args %:
+		args : Used
 	}
 	sin : utils_lib.firstifier(base : sin_list)
 	sin_list : Template ( From lib:mathinterop ).hyperbola.sin_list {
 		# A list of angles.
-		args %:
+		args : Used
 	}
 	tan : utils_lib.firstifier(base : tan_list)
 	tan_list : Template ( From lib:mathinterop ).hyperbola.tan_list {
 		# A list of angles.
-		args %:
+		args : Used
 	}
 }
 # Compute the logarithm of the argument. See `log_list for details.
@@ -127,7 +127,7 @@ log : utils_lib.firstifier(base : log_list)
 # Compute the logarithm of the argument.
 log_list : Template ( From lib:mathinterop ).log_list {
 	# A list of numbers.
-	args %:
+	args : Used
 	# The base to use.
 	base : natural
 }
@@ -144,9 +144,9 @@ power : utils_lib.firstifier(base : power_list)
 # Compute the argument raised to an exponent.
 power_list : Template ( From lib:mathinterop ).power_list {
 	# A list of numbers.
-	args %:
+	args : Used
 	# A number to raise the values.
-	exponent ?:
+	exponent : Required
 }
 
 # Rounds the arguments to a specified number of decimal places. See
@@ -157,7 +157,7 @@ round : utils_lib.firstifier(base : round_list)
 # `round_list` for details.
 round_list : Template ( From lib:mathinterop ).round_list {
 	# A list of numbers.
-	args %:
+	args : Used
 	# The number of decimal places. Must be non-negative.
 	places : 0
 }

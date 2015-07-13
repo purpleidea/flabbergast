@@ -1,9 +1,9 @@
 t : Template {
 	x : Template {
 		q : y + z
-		z ?:
+		z : Required
 	}
- y ?:
+ y : Required
 }
 v : t {
 	y : 3

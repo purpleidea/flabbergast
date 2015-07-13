@@ -1,5 +1,5 @@
 fn : Template {
-	v ?:
+	v : Required
 	value : v
 }
 x : {

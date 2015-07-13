@@ -22,7 +22,7 @@ syn region flabbergastInterpolation contained contains=TOP matchgroup=flabbergas
 
 syn match flabbergastTrailingWhite "[ \t]\+$"
 syn match flabbergastTrailingWhite "[ \t]\+$" containedin=ALL
-syn match flabbergastAttribute "[+?%-]\?:\|+" display contained
+syn match flabbergastAttribute "[+-]\?:\|+\|:[ \t]*\(Now\|Required\|Used\)" display contained
 syn match flabbergastIdentifier "\<args\>" display
 syn match flabbergastIdentifier "\<value\>" display
 syn match flabbergastIdentifier "\<[a-z][A-Za-z0-9_]*\>[ \t\n]*[+?%-]\?:" display contains=flabbergastAttribute

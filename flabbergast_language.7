@@ -553,7 +553,7 @@ Construct a new literal frame.
 
 .TP
 Create a new template
-.SEM Γ ⊢ \fBTemplate {\fR a:(A / E / X)* \fB}\fR ↓ < Γ; k\*<x\*> → e\*<x\*> >
+.SEM Γ ⊢ \fBTemplate {\fR a:(A / G / X)* \fB}\fR ↓ < Γ; k\*<x\*> → e\*<x\*> >
 
 ∀ x ∈ a : Γ ⊢ x ↓ k\*<x\*> → e\*<x\*>,
 
@@ -564,7 +564,7 @@ Create a new template, not based on any current template.
 
 .TP
 Extend a template
-.SEM (t, ...) ⊢ \fBTemplate\fR source:E\*<+\*> \fB{\fR a:(A / E / O / X)* \fB}\fR ↓ < (t, ..., s, ...); ∀ m : k\*<m\*> → e\*<m\*> >
+.SEM (t, ...) ⊢ \fBTemplate\fR source:E\*<+\*> \fB{\fR a:(A / G / O / X)* \fB}\fR ↓ < (t, ..., s, ...); ∀ m : k\*<m\*> → e\*<m\*> >
 
 (t, ...) ⊢ source ↓ S = < (s, ...); k\*<s\*> → e\*<s\*>, ... >,
 
@@ -918,18 +918,18 @@ Define a new attribute in a frame, equal to some expression.
 
 .TP
 In a template, define an attribute that must be overridden. (X)
-.SEM Γ ⊢ name:I \fB?:\fR ↓ name → \fBError \(dqAttribute \fRname\fB must be overridden.\(dq\fR
+.SEM Γ ⊢ name:I \fB: Required\fR ↓ name → \fBError \(dqAttribute \fRname\fB must be overridden.\(dq\fR
 .SEME
-.SEM Γ; R ⊢ name:I \fB?:\fR ↓ name → \fBError \(dqAttribute \fRname\fB must be overridden.\(dq\fR
+.SEM Γ; R ⊢ name:I \fB: Required\fR ↓ name → \fBError \(dqAttribute \fRname\fB must be overridden.\(dq\fR
 .SEME
 
 Create an attribute whose value is an error requiring an override.
 
 .TP
 In a template, define an attribute that is expected to be found via lookup. (X)
-.SEM Γ ⊢ name:I \fB%:\fR ↓
+.SEM Γ ⊢ name:I \fB: Used\fR ↓
 .SEME
-.SEM Γ; R ⊢ name:I \fB%:\fR ↓ name → R
+.SEM Γ; R ⊢ name:I \fB: Used\fR ↓ name → R
 .SEME
 
 This does not do anything. It is intended to convey that an attribute should be available for inside out lookup. This is inteded as a place to collect documentation.
@@ -954,13 +954,13 @@ Remove definition for an attribute. (O)
 The name must be present in the existing frame or an error occurs.
 
 .TP
-Define an attribute that is eagerly evaluated instead of lazily evaluated. (E)
-.SEM Γ ⊢ name:I \fB:\fR expr:E ↓ name → C
+Define an attribute that is eagerly evaluated instead of lazily evaluated. (G)
+.SEM Γ ⊢ name:I \fB: Now\fR expr:E ↓ name → C
 Γ ⊢ expr ↓ v,
 
 ∀ Δ : Δ ⊢ C ↓ v
 .SEME
-.SEM Γ; R ⊢ name:I \fB:\fR expr:E ↓ name → C
+.SEM Γ; R ⊢ name:I \fB: Now\fR expr:E ↓ name → C
 Γ ⊢ expr ↓ v,
 
 ∀ Δ : Δ ⊢ C ↓ v

@@ -5,31 +5,31 @@ parser_tmpl : Template {
 	# Parses nothing, always succeeds.
 	nop : Template {}
 	# Match a literal string, exactly as provided.
-	exact : Template { word ?: }
+	exact : Template { word : Required }
 	# Match another parse element, but, if parsing fails, back up the parser and
 	# continue to the next rule.
-	optional : Template { of ?: }
+	optional : Template { of : Required }
 	# Match a list of parse elements, in order.
-	sequence : Template { of ?: }
+	sequence : Template { of : Required }
 	# Match a parse element many times, with the provided separator in between
 	# each element. That is, parse a list of the form `e,e,e` where `e` is the
 	# element and `s` is the separator. The `nonempty` Boolean insists that there
 	# is at least one element parsed, otherwise, an empty is list is valid.
-	many : Template { of ?:  separator : Null  nonempty : False }
+	many : Template { of : Required  separator : Null  nonempty : False }
 	many_word : Template many {
-		separator_word ?:
+		separator_word : Required
 		separator : exact { word : separator_word }
 	}
 	# Parses the elements provided in succession, succeeding if any one succeeds
 	# and failing if all fail.
-	alternate : Template { of ?: }
+	alternate : Template { of : Required }
 	# Parses a single character in the range of characters provided.
-	range : Template { from ?:  to ?: }
+	range : Template { from : Required  to : Required }
 	# Parses a single character, as indicated.
 	single : Template {
 		# A string of characters where the parser may match any single character in
 		# the string.
-		char ?:
+		char : Required
 		# If true, parsing will succeed if the current character is not in the
 		# string defined in `char`.
 		invert_match : False
@@ -37,46 +37,46 @@ parser_tmpl : Template {
 	# Matches any character by Unicode class.
 	char_class : Template {
 		# A list of character classes to match
-		classes ?:
+		classes : Required
 		# If true, parsing will succeed if the current character is not in the
 		# any of the character classes enabled.
 		invert_match : False
 
-		letter_lower %:
-		letter_modifier %:
-		letter_other %:
-		letter_title %:
-		letter_upper %:
-		mark_combining %:
-		mark_enclosing %:
-		mark_nonspace %:
-		number_decimal %:
-		number_letter %:
-		number_other %:
-		other_control %:
-		other_format %:
-		other_private %:
-		other_surrogate %:
-		other_unassigned %:
-		punctuation_connector %:
-		punctuation_dash %:
-		punctuation_end %:
-		punctuation_final_quote %:
-		punctuation_initial_quote %:
-		punctuation_other %:
-		punctuation_start %:
-		separator_line %:
-		separator_paragraph %:
-		separator_space %:
-		symbol_currency %:
-		symbol_math %:
-		symbol_modifier %:
-		symbol_other %:
+		letter_lower : Used
+		letter_modifier : Used
+		letter_other : Used
+		letter_title : Used
+		letter_upper : Used
+		mark_combining : Used
+		mark_enclosing : Used
+		mark_nonspace : Used
+		number_decimal : Used
+		number_letter : Used
+		number_other : Used
+		other_control : Used
+		other_format : Used
+		other_private : Used
+		other_surrogate : Used
+		other_unassigned : Used
+		punctuation_connector : Used
+		punctuation_dash : Used
+		punctuation_end : Used
+		punctuation_final_quote : Used
+		punctuation_initial_quote : Used
+		punctuation_other : Used
+		punctuation_start : Used
+		separator_line : Used
+		separator_paragraph : Used
+		separator_space : Used
+		symbol_currency : Used
+		symbol_math : Used
+		symbol_modifier : Used
+		symbol_other : Used
 	}
 	# Checks that the next character is not one of the specified characters, but does not consume it.
 	except : Template {
 		# A string with characters to match
-		char ?:
+		char : Required
 	}
 	# Parses sub rules and uses their values to compute an integer.
 	accumulate_integer : Template {
@@ -88,13 +88,13 @@ parser_tmpl : Template {
 		# The multiplier is the base of the number used. At each character, the
 		# existing value will be multiplied by the supplied multiplier before the
 		# new value is added.
-		multiplier %:
+		multiplier : Used
 		# The character will have the provided offset subtracted from the current
 		# character before adding it to the accumulator.
-		offset %:
+		offset : Used
 		# After successful parsing, the value is stored in the desired field.
-		field ?:
-		in ?:
+		field : Required
+		in : Required
 	}
 	# This works much like `accumulate_integer` except the integer is a Unicode
 	# codepoint added to the currently accumulated string.
@@ -107,32 +107,32 @@ parser_tmpl : Template {
 		# The multiplier is the base of the number used. At each character, the
 		# existing value will be multiplied by the supplied multiplier before the
 		# new value is added.
-		multiplier %:
+		multiplier : Used
 		# The character will have the provided offset subtracted from the current
 		# character before adding it to the accumulator.
-		offset %:
-		in ?:
+		offset : Used
+		in : Required
 	}
-	accumulate_float : Template { accumulate : False  field ?:  in ?: }
+	accumulate_float : Template { accumulate : False  field : Required  in : Required }
 	accumulate_list : Template {
 		accumulate : False
-		field ?:
-		type ?:
-		in ?:
+		field : Required
+		type : Required
+		in : Required
 		# Remove duplicates using the field name provided. It must be common to
 		# all the children.
 		deduplicate : Null
 		# Field values which are not permitted at all.
 		forbid : []
 	}
-	accumulate_string : Template { accumulate : False  field ?:  in ?: }
+	accumulate_string : Template { accumulate : False  field : Required  in : Required }
 	# Adds a Unicode literal, by codepoint, to the currently accumulating string
 	# after successfully parsing the child parse expression.
-	collect_codepoint : Template { codepoint ?:  in ?: }
+	collect_codepoint : Template { codepoint : Required  in : Required }
 	# Parses another rule
 	other : Template {
 		# This it the name (and therefore type) of the desired rule to parse.
-		type ?:
+		type : Required
 		# Some rules have many possible AST nodes that they can generate. In some
 		# instances, it is desirable to parse only subsets of those possible AST
 		# nodes. Rules may then define groups of AST nodes as “alternate” versions
@@ -142,7 +142,7 @@ parser_tmpl : Template {
 		alternate : Null
 		# The field in which to place the result. If `Null`, it will be added to
 		# the current list.
-		field ?:
+		field : Required
 	}
 
 }
@@ -163,27 +163,27 @@ environment_tmpl : Template {
 	# Apply environment to other syntax elements that support environments.
 	other_elements : Template application_action {
 		# A list of fields to absorb the current environment
-		fields ?:
+		fields : Required
 	}
 	# Apply environment to other syntax elements and collect the environment and
 	# apply to to others.
 	other_with_result : Template application_action {
 		# The field containing the target environment to be collected.
-		field ?:
+		field : Required
 		# The name of this environment for later retrieval.
-		name ?:
-		apply_to ?:
+		name : Required
+		apply_to : Required
 	}
 	# Apply environment to all the other syntax elements in a list.
 	list_of : Template application_action {
 		# The field containing the list.
-		field ?:
+		field : Required
 	}
 	# Apply an *independent* environment for each of the other syntax elements in
 	# a list.
 	list_independent : Template application_action {
 		# The field containing the list of elements.
-		field ?:
+		field : Required
 		# Whether to start with a blank environment or derive from the current environment.
 		inherit : False
 		# Whether the environment is file-level scope.
@@ -192,13 +192,13 @@ environment_tmpl : Template {
 	# Create an empty environment that does not inherit from the current environment.
 	blank_environment : Template application_action {
 		# A list of actions to perform using this new environment.
-		apply_to ?:
+		apply_to : Required
 		# A name to store the environment for later use during code generation.
-		name ?:
+		name : Required
 	}
 	modified_environment : Template application_action {
 		# A list of actions to perform using this new environment.
-		apply_to ?:
+		apply_to : Required
 		# If true, unmasked lookups are done in the parent environment. This is
 		# used for Let-like behaviour. Normally, lookups in a child environment are
 		# independent, so anything “learnt” in the child environment does not apply
@@ -211,62 +211,62 @@ environment_tmpl : Template {
 		# in the child environment than the parent.
 		special_names : []
 		# A name to store the environment for later use during code generation.
-		name ?:
+		name : Required
 
 		# Create masks for all the attributes in a list. Masks are names backed
 		# by real expressions, so information about them can translate to the
 		# rest of the syntax tree.
 		masks_from_definitions : Template {
 			# The field containing the list of attributes.
-			field ?:
+			field : Required
 		}
 		# Create mask from a name and expression. Masks are names backed by real
 		# expressions, so information about them can translate to the rest of the
 		# syntax tree.
 		mask_from_fields : Template {
 			# The field containing the name to mask.
-			name_field ?:
+			name_field : Required
 			# The field containing the expression to mask.
-			expr_field ?:
+			expr_field : Required
 			# Stores the type occurring at the bottleneck.
-			type_storage ?:
+			type_storage : Required
 		}
 		# Create a name backed by an override definition.
 		override_name_from_field : Template {
 			# The field containing the name.
-			field ?:
+			field : Required
 			# Stores the type occurring at the bottleneck.
-			type_storage ?:
+			type_storage : Required
 		}
 		# Create a name from a field where the name must not be used in the new
 		# environment. These are used mostly to detect potential circular
 		# evaluation.
 		forbidden_name_from_field : Template {
 			# The field containing the name.
-			field ?:
+			field : Required
 		}
 	}
 	# Check whether the environment is top-level.
 	top_level : Template application_action {
 		# What value is required in the top-levelness of the environment.
-		desired ?:
+		desired : Required
 	}
 }
 # The definitions for all the types in the Flabbergast language.
 known_types_tmpl : Template {
-	bool ?:
-	float ?:
-	frame ?:
-	int ?:
-	str ?:
-	template ?:
-	unit ?:
+	bool : Required
+	float : Required
+	frame : Required
+	int : Required
+	str : Required
+	template : Required
+	unit : Required
 }
 known_vm_types_tmpl : Template {
-	any ?:
-	list ?:
-	function ?:
-	override_function ?:
+	any : Required
+	list : Required
+	function : Required
+	override_function : Required
 }
 # The actions that can be performed to check that the required return type is
 # correct.
@@ -289,14 +289,14 @@ ensure_type_tmpl : Template {
 	filter : Template {
 		# The set of types to restrict the return type. If the return type is not
 		# in this set, a type mismatch error will be reported.
-		types ?:
+		types : Required
 		# The action to carry forward with the restricted type.
 		ensure_type_of : stop {}
 	}
 	# Apply the current return type to the return type of other AST nodes.
 	propagate : Template {
 		# A list of field names that should be restricted to this type.
-		fields ?:
+		fields : Required
 		# Any types listed here are added to the return type before propagation.
 		# Effectively, this enlarges the return type set. For insight, look at the
 		# coalesce operator.
@@ -305,7 +305,7 @@ ensure_type_tmpl : Template {
 	# Apply the current return type to the return type of a collection of other AST nodes.
 	propagate_all : Template {
 		# The field containing the list.
-		field ?:
+		field : Required
 		# Any types listed here are added to the return type before propagation.
 		# See `propagate.extra_types`.
 		extra_types : []
@@ -313,7 +313,7 @@ ensure_type_tmpl : Template {
 	# Restrict the type based on an AST node containing a type literal (e.g., `Enforce` operator).
 	dynamic : Template {
 		# The field containing the type AST node.
-		field ?:
+		field : Required
 		# Rather than restrict to the type specified, restrict to any type which
 		# may be casted to that type.
 		propagate_castable : False
@@ -322,62 +322,62 @@ ensure_type_tmpl : Template {
 	}
 	# Apply to a stored type
 	special : Template {
-		type_storage ?:
+		type_storage : Required
 	}
 	# Store the type in a type variable.
 	stored : Template {
 		# The field containing a list of identifiers with the lookup pieces.
-		field ?:
+		field : Required
 	}
 	# Stored associated with the node.
 	intrinsic : Template {}
 	# Cause all types in the downsteam rules to have exactly the same type.
 	shared_fate : Template {
-		ensure_type_of ?:
+		ensure_type_of : Required
 	}
 	# Ensure that a type is narrowed to a single type. That is, the union type
 	# has a cardinality of one.
 	single : Template {
-		ensure_type_of ?:
+		ensure_type_of : Required
 	}
 	# Perform no further action.
 	stop : Template {}
 	# Perform multiple independent actions.
 	multiple : Template {
 		# A list of actions to perform.
-		actions ?:
+		actions : Required
 	}
 }
 # Templates for making common fields in syntax elements. This is so that some parse rules accumulate results in a single field, such as comments.
 common_fields_tmpl : Template {
-	str : Template { field_name %: }
-	int : Template { field_name %: }
-	float : Template { field_name %: }
-	other : Template { field_name %:  type ?: }
+	str : Template { field_name : Used }
+	int : Template { field_name : Used }
+	float : Template { field_name : Used }
+	other : Template { field_name : Used  type : Required }
 }
 # Code generation for all the elements in the KWS VM. See that documentation for details.
 kws_tmpl : Template {
 	# The base template for most of the simple instructions.
 	base_tmpl : Template codegen.gen_tmpl {
-		arguments ?:
-		return_type ?:
+		arguments : Required
+		return_type : Required
 	}
 	bool_negate : Template base_tmpl {
-		source ?:
+		source : Required
 		arguments : [ { value : source  type : known_types.bool } ]
 		return_type : known_types.bool
 	}
 	error : Template codegen.gen_tmpl {
-		message ?:
+		message : Required
 	}
 	capture : Template base_tmpl {
-		source ?:
+		source : Required
 		arguments : [ { value : source  type : known_vm_types.any } ]
 		return_type : known_vm_types.function
 	}
 	int_add : Template base_tmpl {
-		left ?:
-		right ?:
+		left : Required
+		right : Required
 		arguments : [
 			{ value : left  type : known_types.int },
 			{ value : right  type : known_types.int }
@@ -385,8 +385,8 @@ kws_tmpl : Template {
 		return_type : known_types.int
 	}
 	int_divide : Template base_tmpl {
-		left ?:
-		right ?:
+		left : Required
+		right : Required
 		arguments : [
 			{ value : left  type : known_types.int },
 			{ value : right  type : known_types.int }
@@ -394,8 +394,8 @@ kws_tmpl : Template {
 		return_type : known_types.int
 	}
 	int_modulus : Template base_tmpl {
-		left ?:
-		right ?:
+		left : Required
+		right : Required
 		arguments : [
 			{ value : left  type : known_types.int },
 			{ value : right  type : known_types.int }
@@ -403,8 +403,8 @@ kws_tmpl : Template {
 		return_type : known_types.int
 	}
 	int_multiply : Template base_tmpl {
-		left ?:
-		right ?:
+		left : Required
+		right : Required
 		arguments : [
 			{ value : left  type : known_types.int },
 			{ value : right  type : known_types.int }
@@ -412,13 +412,13 @@ kws_tmpl : Template {
 		return_type : known_types.int
 	}
 	int_negate : Template base_tmpl {
-		source ?:
+		source : Required
 		arguments : [ { value : source  type : known_types.int } ]
 		return_type : known_types.int
 	}
 	int_subtract : Template base_tmpl {
-		left ?:
-		right ?:
+		left : Required
+		right : Required
 		arguments : [
 			{ value : left  type : known_types.int },
 			{ value : right  type : known_types.int }
@@ -428,22 +428,22 @@ kws_tmpl : Template {
 	# Convert an integer to a Boolean by comparing it to a single value.
 	int_to_bool : Template base_tmpl {
 		# The expression to compute
-		source ?:
+		source : Required
 		# A static integral value to compare against.
-		number ?:
+		number : Required
 		# Whether to invert the result (i.e., not equal rather than equal)
 		invert : False
 		arguments : [{ value : source  type : known_types.int }]
 		return_type : known_types.bool
 	}
 	int_to_float : Template base_tmpl {
-		expr ?:
+		expr : Required
 		arguments : [{ value : expr  type : known_types.int }]
 		return_type : known_types.float
 	}
 	float_add : Template base_tmpl {
-		left ?:
-		right ?:
+		left : Required
+		right : Required
 		arguments : [
 			{ value : left  type : known_types.float },
 			{ value : right  type : known_types.float }
@@ -451,8 +451,8 @@ kws_tmpl : Template {
 		return_type : known_types.float
 	}
 	float_divide : Template base_tmpl {
-		left ?:
-		right ?:
+		left : Required
+		right : Required
 		arguments : [
 			{ value : left  type : known_types.float },
 			{ value : right  type : known_types.float }
@@ -460,18 +460,18 @@ kws_tmpl : Template {
 		return_type : known_types.float
 	}
 	float_is_finite : Template base_tmpl {
-		source ?:
+		source : Required
 		arguments : [ { value : source  type : known_types.float } ]
 		return_type : known_types.bool
 	}
 	float_is_nan : Template base_tmpl {
-		source ?:
+		source : Required
 		arguments : [ { value : source  type : known_types.float } ]
 		return_type : known_types.bool
 	}
 	float_modulus : Template base_tmpl {
-		left ?:
-		right ?:
+		left : Required
+		right : Required
 		arguments : [
 			{ value : left  type : known_types.float },
 			{ value : right  type : known_types.float }
@@ -479,8 +479,8 @@ kws_tmpl : Template {
 		return_type : known_types.float
 	}
 	float_multiply : Template base_tmpl {
-		left ?:
-		right ?:
+		left : Required
+		right : Required
 		arguments : [
 			{ value : left  type : known_types.float },
 			{ value : right  type : known_types.float }
@@ -488,13 +488,13 @@ kws_tmpl : Template {
 		return_type : known_types.float
 	}
 	float_negate : Template base_tmpl {
-		source ?:
+		source : Required
 		arguments : [ { value : source  type : known_types.float } ]
 		return_type : known_types.float
 	}
 	float_subtract : Template base_tmpl {
-		left ?:
-		right ?:
+		left : Required
+		right : Required
 		arguments : [
 			{ value : left  type : known_types.float },
 			{ value : right  type : known_types.float }
@@ -502,13 +502,13 @@ kws_tmpl : Template {
 		return_type : known_types.float
 	}
 	float_to_int : Template base_tmpl {
-		expr ?:
+		expr : Required
 		arguments : [{ value : expr  type : known_types.float }]
 		return_type : known_types.int
 	}
 	string_concatenate : Template base_tmpl {
-		first ?:
-		second ?:
+		first : Required
+		second : Required
 		arguments : [
 			{ value : first  type : known_types.str },
 			{ value : second  type : known_types.str }
@@ -516,46 +516,46 @@ kws_tmpl : Template {
 		return_type : known_types.str
 	}
 	string_ordinal : Template base_tmpl {
-		source ?:
+		source : Required
 		arguments : [ { value : source  type : known_types.int } ]
 		return_type : known_types.str
 	}
 	verify_symbol : Template base_tmpl {
-		source ?:
+		source : Required
 		arguments : [ { value : source  type : known_types.str } ]
 		return_type : known_types.bool
 	}
 	frame_new : Template codegen.gen_tmpl {
 		creation_method : "defined"
-		container ?:
-		context ?:
+		container : Required
+		context : Required
 		source : Null
 	}
 	frame_new_through : Template codegen.gen_tmpl {
-		container ?:
-		context ?:
-		start ?:
-		end ?:
+		container : Required
+		context : Required
+		start : Required
+		end : Required
 	}
 	frame_null : Template codegen.gen_tmpl {}
 	frame_id : Template base_tmpl {
-		source ?:
+		source : Required
 		arguments : [ { value : source  type : known_types.frame } ]
 		return_type : known_types.str
 	}
 	frame_context : Template base_tmpl {
-		source ?:
+		source : Required
 		arguments : [ { value : source  type : known_types.frame } ]
 		return_type : known_vm_types.list
 	}
 	frame_container : Template base_tmpl {
-		source ?:
+		source : Required
 		arguments : [ { value : source  type : known_types.frame } ]
 		return_type : known_vm_types.list
 	}
 	frame_has : Template base_tmpl {
-		source ?:
-		name ?:
+		source : Required
+		name : Required
 		arguments : [
 			{ value : source  type : known_types.frame },
 			{ value : name  type : known_types.str }
@@ -563,8 +563,8 @@ kws_tmpl : Template {
 		return_type : known_types.bool
 	}
 	frame_trace : Template base_tmpl {
-		source ?:
-		prefix ?:
+		source : Required
+		prefix : Required
 		arguments : [
 			{ value : source  type : known_types.frame },
 			{ value : prefix  type : known_types.str }
@@ -573,8 +573,8 @@ kws_tmpl : Template {
 	}
 	list_null : Template codegen.gen_tmpl {}
 	list_prepend : Template base_tmpl {
-		frame ?:
-		tail ?:
+		frame : Required
+		tail : Required
 		arguments : [
 			{ value : frame  type : known_types.frame },
 			{ value : tail  type : known_vm_types.list }
@@ -582,8 +582,8 @@ kws_tmpl : Template {
 		return_type : known_vm_types.list
 	}
 	list_append : Template base_tmpl {
-		head ?:
-		tail ?:
+		head : Required
+		tail : Required
 		arguments : [
 			{ value : head  type : known_vm_types.list },
 			{ value : tail  type : known_vm_types.list }
@@ -591,20 +591,20 @@ kws_tmpl : Template {
 		return_type : known_vm_types.list
 	}
 	lookup_tmpl : Template codegen.gen_tmpl {
-		source ?:
+		source : Required
 	}
 	lookup_literal : Template lookup_tmpl {
-		name ?:
+		name : Required
 	}
 	lookup_field : Template lookup_tmpl {
-		field ?:
+		field : Required
 	}
 	lookup_dynamic : Template lookup_tmpl {
-		name ?:
+		name : Required
 	}
 	apply_override : Template base_tmpl {
-		override ?:
-		original ?:
+		override : Required
+		original : Required
 		arguments : [
 			{ value : override  type : known_vm_types.override_function },
 			{ value : original  type : known_vm_types.function }
@@ -612,27 +612,27 @@ kws_tmpl : Template {
 		return_type : known_vm_types.function
 	}
 	create_function_tmpl : Template codegen.gen_tmpl {
-		returns ?:
+		returns : Required
 	}
 	create_override_function : Template create_function_tmpl { }
 	create_function : Template create_function_tmpl { }
 	set_frame_or_tmpl_tmpl : Template codegen.gen_tmpl {
-		into ?:
-		with ?:
+		into : Required
+		with : Required
 		# The result to return, since a value must be returned. This can either be
 		# `into` to return the collection or `with` to return the item added.
 		returns : into
 	}
 	set_frame_or_tmpl : Template set_frame_or_tmpl_tmpl {
-		name ?:
+		name : Required
 	}
 	set_frame_or_tmpl_from_field : Template set_frame_or_tmpl_tmpl {
-		name_field ?:
+		name_field : Required
 	}
 
 	tmpl_get : Template base_tmpl {
-		name ?:
-		source ?:
+		name : Required
+		source : Required
 		arguments : [
 			{ value : source  type : known_types.template },
 			{ value : name  type : known_types.str }
@@ -640,58 +640,58 @@ kws_tmpl : Template {
 		return_type : known_vm_types.function
 	}
 	tmpl_container : Template base_tmpl {
-		source ?:
+		source : Required
 		arguments : [ { value : source  type : known_types.template } ]
 		return_type : known_types.frame
 	}
 	tmpl_context : Template base_tmpl {
-		source ?:
+		source : Required
 		arguments : [ { value : source  type : known_types.template } ]
 		return_type : known_vm_types.list
 	}
 	tmpl_get_from_field : Template base_tmpl {
-		source ?:
-		field ?:
+		source : Required
+		field : Required
 		arguments : [ { value : source  type : known_types.template } ]
 		return_type : known_vm_types.function
 	}
 	tmpl_new : Template codegen.gen_tmpl {
 		source : Null
-		context ?:
+		context : Required
 		container : parameters.self_frame
 	}
 
 	cast_to_string : Template codegen.gen_tmpl {
-		source ?:
+		source : Required
 	}
 	string_constant_tmpl : Template codegen.gen_tmpl {}
 	string_constant : Template string_constant_tmpl {
-		str ?:
+		str : Required
 	}
 	string_constant_from_field : Template string_constant_tmpl {
-		field ?:
+		field : Required
 	}
 	string_length : Template base_tmpl {
-		source ?:
+		source : Required
 		arguments : [ { value : source  type : known_types.str } ]
 		return_type : known_types.int
 	}
 	# An integral, floating point, or Boolean constant.
 	numeric_constant : Template codegen.gen_tmpl {
 		# The type of the value
-		type ?:
+		type : Required
 		# Either the numeric value, `max`, or `min`.
-		number ?:
+		number : Required
 		# The maximum value this type can take.
-		max ?:
+		max : Required
 		# The minimum value this type can take.
-		min ?:
+		min : Required
 	}
 	numeric_constant_units : Template numeric_constant {
 		# The unit multiplier
-		unit %:
+		unit : Used
 		# The field containing the value
-		field ?:
+		field : Required
 	}
 	# The null value of the unit type.
 	null_constant : Template codegen.gen_tmpl {}
@@ -702,124 +702,124 @@ kws_tmpl : Template {
 
 	external_tmpl : Template codegen.gen_tmpl {}
 	external_literal : Template external_tmpl {
-		uri ?:
+		uri : Required
 	}
 	external_from_field : Template external_tmpl {
-		field ?:
+		field : Required
 	}
 
 	# Compare two values of the same type and return an indicator integer.
 	compare : Template codegen.gen_tmpl {
-		left ?:
-		right ?:
+		left : Required
+		right : Required
 	}
 	# Branch the current program flow.
 	conditional : Template codegen.gen_tmpl {
 		# A Boolean value to choose the correct path.
-		condition ?:
+		condition : Required
 		# The return value if the condition is true.
-		true_action ?:
+		true_action : Required
 		# The return value if the condition is false.
-		false_action ?:
+		false_action : Required
 	}
 	# Perform dynamic dispatch of a value. This is slightly different from the VM
 	# specification; it must be combined with `codegen.type_dispatch` for the
 	# full effect.
 	dynamic_type_dispatch_tmpl : Template codegen.gen_tmpl {
 		# The code generator which produces an unknown type.
-		of ?:
+		of : Required
 	}
 	dynamic_type_dispatch : Template dynamic_type_dispatch_tmpl {
 		# The list of types which this value may take. If the object has a
 		# different type, a run-time error is produced.
-		allow_types ?:
+		allow_types : Required
 	}
 	dynamic_type_dispatch_from_intrinsic : Template dynamic_type_dispatch_tmpl {
 		environment : Null
 	}
 	dynamic_type_dispatch_from_stored_mask : Template dynamic_type_dispatch_tmpl {
-		type_storage ?:
+		type_storage : Required
 	}
 	dynamic_type_check_tmpl : Template codegen.gen_tmpl {
-		source ?:
+		source : Required
 	}
 	dynamic_type_check : Template dynamic_type_check_tmpl {
-		type ?:
+		type : Required
 	}
 	dynamic_type_check_parsed : Template dynamic_type_check_tmpl {
-		field ?:
+		field : Required
 	}
 	iterator_tmpl : Template codegen.gen_tmpl {
 		# The code generation to produce frames and templates over which to be
 		# iterated.
-		input ?:
+		input : Required
 		# The initial value for the accumulator of the iterator.
-		initial ?:
+		initial : Required
 		# The type of the accumulator.
-		accumulator_type ?:
+		accumulator_type : Required
 		# Modify the current source reference to include the current iteration item.
 		modify_source_reference : False
 
 		# The current attribute name of the iterator. This may only be used in
 		# `default_case` and `cases`.
-		current_name ?:
+		current_name : Required
 		# The current position of the iterator. This may only be used in
 		# `default_case` and `cases`.
-		current_ordinal ?:
+		current_ordinal : Required
 		# The current accumulated value in the iterator.
-		current_accumulator ?:
+		current_accumulator : Required
 
 		# The base template for input. Not to be used directly.
 		input_tmpl : Template {}
 		input_list : Template input_tmpl {
-			items ?:
+			items : Required
 		}
 		input_merge : Template input_tmpl {
-			field ?:
+			field : Required
 		}
 	}
 	# Create a frame merge loop using the provided values as inputs.
 	iterator : Template iterator_tmpl {
 		# A list of the special cases of the iterator. The special cases will
 		# always be invoked, even if they are not present in the input.
-		cases ?:
+		cases : Required
 		# The code to be invoked when the iterator has a value not covered in
 		# `cases`.
-		default_case ?:
+		default_case : Required
 
 		# The base template for a “special case”. Not to be used directly.
 		base_case_tmpl : Template {
 			# The value to return if this case is selected.
-			action ?:
+			action : Required
 		}
 		# The attribute name of the special case is a literal.
 		literal_case : Template base_case_tmpl {
 			# The attribute name.
-			name ?:
+			name : Required
 		}
 		# The attribute name of the special case is defined in a field.
 		field_case : Template base_case_tmpl {
 			# The field containing the name.
-			field ?:
+			field : Required
 		}
 		# The attributes are many based on a list of other syntax elements.
 		list_case : Template base_case_tmpl {
 			# The field containing the list of elements of interest.
-			field ?:
+			field : Required
 			# The field in the element of interest containing the name.
-			name_field ?:
-			type ?:
+			name_field : Required
+			type : Required
 			# A name, which may be used in a `other_code` to access the element in the
 			# list in `action`.
-			current_element ?:
+			current_element : Required
 		}
 	}
 	# Create a frame merge loop using the provided values as inputs, reordered. The type of the ordering is inferred from the instrisic of the current syntax node.
 	ordered_iterator : Template iterator_tmpl {
 		# The action to perform that must return the ordering value for the current entry.
-		build_action ?:
+		build_action : Required
 		# The action to perform once the correct order has been determined on each entry.
-		process_action ?:
+		process_action : Required
 	}
 }
 # Supplemental code generation. These are more for controlling behaviour of the
@@ -832,23 +832,23 @@ codegen_tmpl : Template {
 	# Compute values and make them available in the `parameter` space.
 	bind : Template gen_tmpl {
 		# A frame of names to bind and the values to which they should be bound.
-		define ?:
+		define : Required
 		# This is a template to be used for the return. It must be a template for
 		# rebinding to work correctly.
-		in ?:
+		in : Required
 		# Return the result of `in`. Feel free to set to a `new_parameters` entry.
 		returns : Null
 		# The results of the computations done in `define`. These will be bound as
 		# `parameters` inside the `in` template, but are present here for using as
 		# `returns`.
-		new_parameters ?:
+		new_parameters : Required
 	}
 	collapse_others : Template gen_tmpl {
 		# The field containing the list.
-		field ?:
-		type ?:
+		field : Required
+		type : Required
 		# The code generator containing the initial value to put in the fold.
-		initial ?:
+		initial : Required
 
 		# The flavour for accumulation. This should be the accumulating version of
 		# the current flavour by default.
@@ -859,12 +859,12 @@ codegen_tmpl : Template {
 	}
 	# Create a null parameter.
 	empty_parameter : Template gen_tmpl {
-		in ?:
-		emptiness ?:
+		in : Required
+		emptiness : Required
 	}
 	# Create a literal list.
 	mash_into_frame : Template gen_tmpl {
-		field ?:
+		field : Required
 		target_flavour : generation_flavour
 		initial : kws.frame_new {
 			creation_method : "list defined"
@@ -879,21 +879,21 @@ codegen_tmpl : Template {
 	# the final value.
 	fold_others : Template gen_tmpl {
 		# The field containing the list.
-		field ?:
+		field : Required
 		# The code generator containing the initial value to put in the fold.
-		initial ?:
+		initial : Required
 
 		# The flavour for accumulation. This should be the accumulating version of
 		# the current flavour by default.
 		target_flavour : generation_flavour
 	}
 	lookup_cached : Template gen_tmpl {
-		field ?:
+		field : Required
 	}
 	# Change the value of parameters with new values in a lexically-scoped way.
 	mask_parameters : Template gen_tmpl {
-		parameters ?:
-		action ?:
+		parameters : Required
+		action : Required
 	}
 	# Generate an error if executed. This is a tool to help prototyping new
 	# features.
@@ -901,24 +901,24 @@ codegen_tmpl : Template {
 	# Compute the value of another syntax element
 	other_code : Template gen_tmpl {
 		# The field containing the syntax element
-		field ?:
+		field : Required
 
 		target_flavour : generation_flavour
 	}
 	prepare_lookup_cache : Template gen_tmpl {
-		in ?:
-		name ?:
+		in : Required
+		name : Required
 		inherit : True
 		specials : no_specials {}
 		lookup_special_tmpl : Template {}
 		specials_from_definitions : Template lookup_special_tmpl {
-			field ?:
+			field : Required
 			target_flavour : generation_flavour
 		}
 		special_from_expression : Template lookup_special_tmpl {
-			type_storage ?:
-			field ?:
-			is ?:
+			type_storage : Required
+			field : Required
+			is : Required
 			target_flavour : generation_flavour
 		}
 		no_specials : Template lookup_special_tmpl {}
@@ -928,85 +928,85 @@ codegen_tmpl : Template {
 	# This isn't done by default since it would fill up the stack with mostly
 	# uninformative entires, but it is needed when new frames are created.
 	push_source_reference : Template gen_tmpl {
-		in ?:
+		in : Required
 		inherit : True
 		syntax : Null
 	}
 	# Return all possible future types given the limits that were discovered
 	# during analysis.
 	return_intrinsic_dispatch : Template gen_tmpl {
-		of ?:
+		of : Required
 	}
 	# Do some type-dependent behaviour
 	type_dispatch_tmpl : Template gen_tmpl {
 		# A list of `choice_tmpl` to try.
-		choices ?:
+		choices : Required
 		# The action to be performed if none of the supplied types match.
 		default_action : codegen.not_implemented {}
 
 		# A possible path to choose based on the type.
 		choice_tmpl : Template {
 			# The type to match.
-			type ?:
+			type : Required
 			# The code to be generated.
-			action ?:
+			action : Required
 		}
 	}
 	# Choose an appropriate path based on the type of a value.
 	type_dispatch : Template type_dispatch_tmpl {
 		# This contains the value of the `of` code generator, converted to the
 		# appropriate type.
-		converted_result ?:
+		converted_result : Required
 		# The input to be considered.
-		of ?:
+		of : Required
 	}
 	type_dispatch_parsed : Template type_dispatch_tmpl {
 		# The field containing the type information.
-		field ?:
+		field : Required
 	}
 
 	# Generate code that is aware of the current context, This frame and
 	# Container frame.
-	flavour_aware ?:
+	flavour_aware : Required
 	# Generate code that is aware of the current context, This frame, and
 	# Container frame and has a special accumulator for a folding generation.
-	flavour_aware_accumulate ?:
+	flavour_aware_accumulate : Required
 	# Generate code that takes no external input.
-	flavour_empty ?:
+	flavour_empty : Required
 	# Generate code that is unaware of the environment but has an accumulator for
 	# folding generation.
-	flavour_accumulate ?:
+	flavour_accumulate : Required
 	# Generate code for an attribute. Attributes do not have any context, but do
 	# have a source template and a target frame/template being generated.
-	flavour_attribute ?:
+	flavour_attribute : Required
 	# For use in the REPL. There is a root frame and a current frame.
-	flavour_repl ?:
+	flavour_repl : Required
 }
 # The syntax of the Flabbergast language
 language_tmpl : Template {
 	# The templates to generate the parser, as per `parser_tmpl`.
-	parser %:
+	parser : Used
 	# The templates to generate the common fields, as per `common_fields_tmpl`.
-	common_fields %:
+	common_fields : Used
 	# A rule that creates a single node in the AST
 	syntax_element : Template {
 		# The name of AST node. This will be provided by the attribute name. In a
 		# parser generated targeting an object-oriented language, this would be the
 		# name of the class for each different element in the syntax tree.
-		rule_name %:
+		rule_name : Used
 		# The name of the group of rules. In a parser generated targeting an
 		# object-oriented language, this would be the abstract super-class of a
 		# collection of rules.
-		group_name %:
+		group_name : Used
 		# The name of this element as the users should see it.
-		pretty_name ?:
+		pretty_name : Required
 		# A frame where the names are the names of the “alternative” rules where
 		# this syntax element should be included. The values are ignored. In
 		# certain cases, for instance, attributes, it is useful to repackage the
 		# available syntax elements into different groups that have the same type.
 		alternatives : {}
 		# The parser generator structure, made from `parser` templates.
-		pattern ?:
+		pattern : Required
 		# If the syntax group has environment propagation support, this element
 		# contains a list of actions to perform, using templates from the
 		# `environment` frame, when the environment is being configured.
@@ -1031,7 +1031,7 @@ language_tmpl : Template {
 	# introduce deflection into alternate parsing.
 	meandering_element : Template {
 		# The name of the rule to be parsed instead.
-		alternate_name ?:
+		alternate_name : Required
 		# A frame where the names are the of the “alternative” rules where this
 		# element should be included.
 		alternatives : {}
@@ -1130,7 +1130,7 @@ language_tmpl : Template {
 		Select group_name : rule_group_tmpl {}
 
 	nested_syntax_group : Template syntax_group {
-		max_level ?:
+		max_level : Required
 		static_rules : For level : 0 Through (max_level - 1)
 			Select "zzzz_up_\(level)" : meandering_element {
 				alternate_name : group_name & level + 1
@@ -1140,7 +1140,7 @@ language_tmpl : Template {
 	nested_syntax_element : Template syntax_element {
 		# The depth/precedence in the expression nesting system, as inferred from
 		# the specification.
-		level ?:
+		level : Required
 		alternatives : For x : [ level ] Select group_name & x : Null
 	}
 	# Syntax element for expressions
@@ -1168,7 +1168,7 @@ language_tmpl : Template {
 	# An expression with two operands separated by a token
 	binary_operator : Template expression_tmpl {
 		# A string which is the separating token
-		operator ?:
+		operator : Required
 		# A template for the right-hand operand, normally a child expression.
 		right_operand : Template child_expression { }
 		apply_environment_to : [ environment.other_elements { fields : [ $left, $right ] } ]
@@ -1209,7 +1209,7 @@ language_tmpl : Template {
 	}
 	# An "Is" operator.
 	is_suffix_operator : Template binary_operator {
-		suffix ?:
+		suffix : Required
 		operator : "Is"
 		apply_environment_to : [ environment.other_elements { fields : [ $left ] } ]
 		right_operand : Template parser.exact { word : suffix }
@@ -1217,7 +1217,7 @@ language_tmpl : Template {
 	# A unary expression preceded by a token
 	unary_tmpl : Template expression_tmpl  {
 		# A string which precedes the expression
-		operator ?:
+		operator : Required
 		apply_environment_to : [ environment.other_elements { fields : [ $expr ] } ]
 		pattern : parser.sequence {
 			of : [
@@ -1231,13 +1231,13 @@ language_tmpl : Template {
 	literal_tmpl : Template expression_tmpl {
 		level : max_level
 		apply_environment_to : []
-		name ?:
+		name : Required
 		pattern : parser.exact { word : name }
 	}
 	int_with_unit_expr_tmpl : Template expression_tmpl {
 		level : max_level
-		unit ?:
-		symbol ?:
+		unit : Required
+		symbol : Required
 		pattern : int_with_unit_tmpl {}
 		pretty_name : "integral value with unit \(symbol)"
 		apply_environment_to : [ ]
@@ -1250,7 +1250,7 @@ language_tmpl : Template {
 	# A “long” expression (i.e., one containing many terms)
 	long_expression_tmpl : Template expression_tmpl {
 		# The type of the terms to collect
-		term_type ?:
+		term_type : Required
 		pattern : parser.sequence {
 			of : [
 				child_expression { field : $start_expr },
@@ -1294,13 +1294,13 @@ language_tmpl : Template {
 	# A right-hand term in “long” expression
 	long_term_tmpl : Template syntax_element {
 		# The precedence level of the term's enclosing expression.
-		level %:
+		level : Used
 		# The symbol that separates the term.
-		symbol ?:
+		symbol : Required
 		# The KWS VM operation to perform when the operands are integers.
-		integer_operation ?:
+		integer_operation : Required
 		# The KWS VM operation to perform when the operands are floating point numbers.
-		float_operation ?:
+		float_operation : Required
 		apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 		ensure_type_is : ensure_type.number {
 			ensure_type_of : propagate {
@@ -1429,8 +1429,8 @@ language_tmpl : Template {
 		]
 	}
 	int_with_unit_tmpl : Template parser.sequence {
-		symbol %:
-		unit %:
+		symbol : Used
+		unit : Used
 		of : [
 			parser.accumulate_integer {
 				in : valid_number {}
@@ -1457,8 +1457,8 @@ language_tmpl : Template {
 	}
 	function_tmpl : Template expression_tmpl {
 		level : 17
-		has_anon_args ?:
-		has_named_args ?:
+		has_anon_args : Required
+		has_named_args : Required
 		parse_anonymous : Template parser.accumulate_list {
 			field : $anon_args
 			type : $expression
@@ -1609,9 +1609,9 @@ language_tmpl : Template {
 		}
 	}
 	perform_overrides : Template codegen.push_source_reference {
-		accumulator_type ?:
-		source_template ?:
-		new_item ?:
+		accumulator_type : Required
+		source_template : Required
+		new_item : Required
 		in : codegen.type_dispatch {
 			of : source_template
 			choices : [
@@ -1658,8 +1658,8 @@ language_tmpl : Template {
 	}
 	fricassee_iterator : Template codegen.bind {
 		accumulator_type : known_types.frame
-		start ?:
-		step ?:
+		start : Required
+		step : Required
 
 		define : {
 			input_frame : codegen.other_code { field : $selector }
@@ -1931,7 +1931,9 @@ language_tmpl : Template {
 							space { preferred : True },
 							valid_identifier { field : $name },
 							space { preferred : True },
-							parser.exact { word : "?:" }
+							parser.exact { word : ":" },
+							space { preferred : True },
+							parser.exact { word : "Required" }
 						]
 					}
 					apply_environment_to : [ ]
@@ -1962,7 +1964,9 @@ language_tmpl : Template {
 							space { preferred : True },
 							valid_identifier { field : $name },
 							space { preferred : True },
-							parser.exact { word : "%:" }
+							parser.exact { word : ":" },
+							space { preferred : True },
+							parser.exact { word : "Used" }
 						]
 					}
 					apply_environment_to : [ ]
@@ -2002,7 +2006,9 @@ language_tmpl : Template {
 							space { preferred : True },
 							valid_identifier { field : $name },
 							space { preferred : True },
-							parser.exact { word : "!:" },
+							parser.exact { word : ":" },
+							space { preferred : True },
+							parser.exact { word : "Now" },
 							space { preferred : True },
 							parser.other {
 								type : $expression
@@ -2575,11 +2581,11 @@ language_tmpl : Template {
 			}
 			generation_flavour : codegen.flavour_aware
 			merge_input_tmpl : Template syntax_element {
-				prepare_value ?:
+				prepare_value : Required
 				needs_generation : False
 			}
 			# The implementation must provide ways to access the special preparation values.
-			prepare_operations ?:
+			prepare_operations : Required
 			rules +: {
 				expr_input : Template merge_input_tmpl {
 					pretty_name : "fricassée frame input"
@@ -2643,9 +2649,9 @@ language_tmpl : Template {
 
 		type : Template syntax_group {
 			type_element : Template syntax_element {
-				friendly_name ?:
-				castable_from ?:
-				type ?:
+				friendly_name : Required
+				castable_from : Required
+				type : Required
 				pattern : parser.exact { word : friendly_name }
 				pretty_name : friendly_name & " type"
 			}
@@ -2686,8 +2692,8 @@ language_tmpl : Template {
 		time : Template syntax_group {
 			generation_flavour : codegen.flavour_accumulate
 			time_chunk : Template syntax_element {
-				unit ?:
-				symbol ?:
+				unit : Required
+				symbol : Required
 				pattern : int_with_unit_tmpl {}
 				code_value : kws.int_add {
 					left : parameters.accumulator
@@ -2728,7 +2734,7 @@ language_tmpl : Template {
 				comment : common_fields.str
 			}
 			string_escape_tmpl : Template parser.collect_codepoint {
-				char ?:
+				char : Required
 				in : parser.exact { word : "\\\\" & char }
 			}
 			rules +: {
@@ -4542,19 +4548,19 @@ kws_repl_tmpl : Template kws_tmpl {
 	set_current : Template codegen.gen_tmpl {
 		arguments : [ { value : to  type : known_types.frame } ]
 		return_type : known_types.frame
-		to ?:
+		to : Required
 	}
 	print : Template codegen.gen_tmpl {
 		escape : False
-		item ?:
+		item : Required
 	}
 }
 
 language_with_repl_tmpl : Template language_tmpl {
 	repl_tmpl : Template syntax_element {
 		pretty_name : keyword & " in REPL"
-		keyword ?:
-		help ?:
+		keyword : Required
+		help : Required
 	}
 	repl_simple_tmpl : Template repl_tmpl {
 		arg_help : ""
@@ -4588,7 +4594,7 @@ language_with_repl_tmpl : Template language_tmpl {
 	}
 
 	adapt_repl_environment : Template codegen.push_source_reference {
-		for ?:
+		for : Required
 		inherit : False
 		in : codegen.bind {
 			define : {
@@ -4604,7 +4610,7 @@ language_with_repl_tmpl : Template language_tmpl {
 		}
 	}
 	repl_do_and_continue : Template codegen.bind {
-		action ?:
+		action : Required
 		define : {
 			junk : action
 		}

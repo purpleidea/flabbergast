@@ -46,7 +46,7 @@ anywhen : {
 # A collection of times.
 list : Template {
 	# A list of times, either as integers or other specifier templates.
-	of ?:
+	of : Required
 
 	cron_spec :
 		For item : of, pos : Ordinal
@@ -72,9 +72,9 @@ list : Template {
 # A scheduling specifier for a range of times.
 range : Template {
 	# The start time.
-	from ?:
+	from : Required
 	# The end time.
-	to ?:
+	to : Required
 	# The increment over the range.
 	by : Null
 

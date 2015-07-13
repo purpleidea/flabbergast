@@ -1,2 +1,2 @@
-t : Template { x : y + 2  y ?: }
+t : Template { x : y + 2  y : Required }
 value : (t { }).x Is Int
