@@ -141,7 +141,7 @@ python : {
 		converted_literal_attrs :
 			For attr_name : Name, attr : literal_attrs
 				Where !(attr Is Null)
-				Select attr_name : If attr Is Frame Then attr.python_value Else attr
+				Select attr_name : If attr Is Frame Then attr.python_value Else attr To Str
 		converted_string_attrs :
 			For attr_name : Name, attr : string_attrs
 				Where !(attr Is Null)
