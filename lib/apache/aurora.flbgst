@@ -7,7 +7,7 @@ max_concurrent_processes : Null
 max_process_failures : 1
 max_task_failures : 1
 min_process_restart_duration : 15
-preemption_priority : 0
+priority : 0
 production : False
 # The job scheduling constraints. Each attribute may be set to null to disable,
 # a number for a minimum constraint, or a list of strings with each permitted
@@ -238,7 +238,7 @@ job : Template render_lib.python.object {
 					If x Is Null Then Null
 					Else If x Enforce Int >= -1 Then x
 					Else Error "Invalid max_task_failures: \(x)"
-		priority : preemption_priority Enforce Int
+		priority : (Lookup priority In Container) Enforce Int
 		production : Lookup production In Container Enforce Bool
 		container : Let x : Lookup container In Container In If x Is Null Then Null Else x.python_value
 		announce :
