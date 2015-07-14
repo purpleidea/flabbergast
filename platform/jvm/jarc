@@ -4,6 +4,17 @@ set -eux
 
 test -d "$1"
 rm -rf .build
+
+# Source JAR
+${JAR-jar} cfm "flabbergast-${1}-${2}-sources.jar" "${1}.manifest" -C "$1" .
+
+# JavaDoc JAR
+mkdir .build
+${JAVADOC-javadoc} -encoding UTF-8 -sourcepath "$1" -d .build $(find "$1" -name '*.java')
+${JAR-jar} cfm "flabbergast-${1}-${2}-javadoc.jar" "${1}.manifest" -C .build .
+rm -rf .build
+
+# Binary JAR
 mkdir .build
 ${JAVAC-javac} -g -encoding UTF-8 -sourcepath "$1" -d .build $(find "$1" -name '*.java')
 ${JAR-jar} cfm "flabbergast-${1}-${2}.jar" "${1}.manifest" -C .build .

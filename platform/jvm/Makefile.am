@@ -42,21 +42,24 @@ TESTING_INPUTS = $(wildcard testing/flabbergast/*.java)
 
 SPACE = $(NULL) $(NULL)
 
-flabbergast-runtime-$(VERSION).jar: runtime.manifest $(RUNTIME_INPUTS)
+flabbergast-runtime-$(VERSION).jar flabbergast-runtime-$(VERSION)-sources.jar flabbergast-runtime-$(VERSION)-javadoc.jar: runtime.manifest $(RUNTIME_INPUTS)
 	CLASSPATH=$(subst $(SPACE),:,$(JAVA_RUNTIME_DEPS)) ./jarc runtime $(VERSION)
 
-flabbergast-compiler-$(VERSION).jar: compiler.manifest $(COMPILER_INPUTS) flabbergast-runtime-$(VERSION).jar
+flabbergast-compiler-$(VERSION).jar flabbergast-compiler-$(VERSION)-sources.jar flabbergast-compiler-$(VERSION)-javadoc.jar: compiler.manifest $(COMPILER_INPUTS) flabbergast-runtime-$(VERSION).jar
 	CLASSPATH=$(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):flabbergast-runtime-$(VERSION).jar ./jarc compiler $(VERSION)
 
-flabbergast-stdlib-$(VERSION).jar: stdlib.manifest $(STDLIB_INPUTS) flabbergast-compiler-$(VERSION).jar
+flabbergast-stdlib-$(VERSION).jar flabbergast-stdlib-$(VERSION)-sources.jar flabbergast-stdlib-$(VERSION)-javadoc.jar: stdlib.manifest $(STDLIB_INPUTS) flabbergast-compiler-$(VERSION).jar
 	rm -rf .build
 	mkdir .build
 	rsync -a --include '**.flbgst' --include '**.jflbgst' --exclude '*' ../../lib/ .build
+	$(JAR) cfm flabbergast-stdlib-$(VERSION)-sources.jar stdlib.manifest -C .build .
 	cd .build && $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):../flabbergast-runtime-$(VERSION).jar:../flabbergast-compiler-$(VERSION).jar flabbergast.MainBuildCache -P
-	$(JAR) cfm $@ stdlib.manifest -C .build .
+	find .build -type f -a -not -name '*.class' -exec rm {} \;
+	$(JAR) cfm flabbergast-stdlib-$(VERSION).jar stdlib.manifest -C .build .
 	rm -rf .build
+	$(JAR) cf flabbergast-stdlib-$(VERSION)-javadoc.jar -C stdlib-javadoc .
 
-flabbergast-testing-$(VERSION).jar: testing.manifest $(TESTING_INPUTS) flabbergast-compiler-$(VERSION).jar
+flabbergast-testing-$(VERSION).jar flabbergast-testing-$(VERSION)-sources.jar flabbergast-testing-$(VERSION)-javadoc.jar: testing.manifest $(TESTING_INPUTS) flabbergast-compiler-$(VERSION).jar
 	CLASSPATH=$(TESTING_CLASSPATH) ./jarc testing $(VERSION)
 
 runtime.manifest: Makefile
@@ -103,5 +106,11 @@ CLEANFILES = \
 	runtime.manifest \
 	testing.manifest \
 	$(java_DATA) \
+	flabbergast-runtime-$(VERSION)-sources.jar \
+	flabbergast-compiler-$(VERSION)-sources.jar \
+	flabbergast-stdlib-$(VERSION)-sources.jar \
+	flabbergast-runtime-$(VERSION)-javadoc.jar \
+	flabbergast-compiler-$(VERSION)-javadoc.jar \
+	flabbergast-stdlib-$(VERSION)-javadoc.jar \
 	$(TESTS) \
 	$(NULL)
