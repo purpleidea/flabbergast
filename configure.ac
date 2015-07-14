@@ -55,6 +55,7 @@ AC_CONFIG_FILES([
 	vim/Makefile
 ]) 
 AC_CONFIG_FILES([update-flabbergast:update-flabbergast.in], [chmod +x update-flabbergast])
+AC_CONFIG_FILES([platform/jvm/maven-deploy:platform/jvm/maven-deploy.in], [chmod +x platform/jvm/maven-deploy])
 AC_OUTPUT
 
 echo

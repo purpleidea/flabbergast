@@ -1,0 +1,91 @@
+#!/bin/sh
+
+set -exu
+
+REPO=nexus-releases
+VERSION=@VERSION@
+DEP_ASM="
+		<dependency>
+			<groupId>org.ow2.asm</groupId>
+			<artifactId>asm</artifactId>
+			<version>5.0.3</version>
+			<scope>runtime</scope>
+		</dependency>"
+DEP_JLINE="
+		<dependency>
+			<groupId>jline</groupId>
+			<artifactId>jline</artifactId>
+			<version>2.12.1</version>
+			<scope>runtime</scope>
+		</dependency>"
+DEP_CLI="
+		<dependency>
+			<groupId>commons-cli</groupId>
+			<artifactId>commons-cli</artifactId>
+			<version>1.2</version>
+			<scope>runtime</scope>
+		</dependency>"
+DEP_FL_R="
+		<dependency>
+			<groupId>com.github.apmasell.flabbergast</groupId>
+			<artifactId>runtime</artifactId>
+			<version>${VERSION}</version>
+			<scope>runtime</scope>
+		</dependency>"
+
+upload () {
+	COMPONENT=$1
+	PKG=flabbergast-${COMPONENT}
+
+	cat <<EOI > ${PKG}-${VERSION}.pom
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+ 
+	<groupId>com.github.apmasell.flabbergast</groupId>
+	<artifactId>${PKG}</artifactId>
+	<version>${VERSION}</version>
+	<packaging>jar</packaging>
+ 
+	<name>Flabbergast Configuration Language ($2)</name>
+	<url>https://github.com/apmasell/flabbergast</url>
+	<description>The $2 for the Flabbergast Configuration Language on the JVM.</description>
+
+	<licenses>
+		<license>
+			<name>MIT License</name>
+			<url>http://www.opensource.org/licenses/mit-license.php</url>
+ 		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<name>Andre Masella</name>
+			<email>andre@masella.name</email>
+		</developer>
+	</developers>
+
+	<distributionManagement>
+		<repository>
+			<id>$REPO</id>
+			<name>Nexus Release Repository</name>
+			<url>http://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+ 		</repository>
+	</distributionManagement>
+
+	<scm>
+		<connection>scm:git:git@github.com:apmasell/flabbergast.git</connection>
+		<developerConnection>scm:git:git@github.com:apmasell/flabbergast.git</developerConnection>
+		<url>git@github.com:apmasell/flabbergast.git</url>
+	</scm>
+ 
+	<dependencies>$3
+	</dependencies>
+</project>
+EOI
+
+	mvn gpg:sign-and-deploy-file -DrepositoryId=$REPO -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2/ -DpomFile=${PKG}-${VERSION}.pom -Dfile=${PKG}-${VERSION}.jar  -Dsources=${PKG}-${VERSION}-sources.jar -Djavadoc=${PKG}-${VERSION}-javadoc.jar -Dpackaging=jar
+	rm -f ${PKG}-${VERSION}.pom{,.asc} ${PKG}-${VERSION}{,-sources,-javadoc}.jar.asc
+}
+upload runtime Runtime "$DEP_CLI"
+upload compiler Compiler "$DEP_ASM$DEP_JLINE$DEP_FL_R"
+upload stdlib "Standard Library" "$DEP_FL_R"

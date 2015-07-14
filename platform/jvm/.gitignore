@@ -1,5 +1,8 @@
+*.asc
 *.manifest
+*.pom
 build
 compiler/flabbergast/compiler-jvm.java
 flabbergast-*.jar
 manifest
+maven-deploy
