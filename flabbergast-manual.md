@@ -9,7 +9,7 @@ Flabbergast, in some ways, is like a macro system. However, macro systems, such 
 
 Another way to think about that language is that it is a system where dependency injection is not something added to the language, but is implicit. Every reference is an injection point. Defining an attribute is performing an injection. Since attributes can be overridden, the injection framework remains fluid.
 
-For more background on the complexity of configuration languages, take a look at [Configuration Pinocchio](https://www.usenix.org/conference/srecon15europe/program/presentation/masella), presented at SREcon15 Europe.
+For more background on the complexity of configuration languages, take a look at [Configuration Pinocchio](https://www.usenix.org/conference/srecon15europe/program/presentation/masella), presented at SREcon15 Europe, and the [companion paper](http://www.masella.name/~andre/2015-srecon-andre_masella.pdf).
 
 ## Getting Started
 
