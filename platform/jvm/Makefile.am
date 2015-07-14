@@ -17,6 +17,7 @@ javadir = $(datadir)/java
 java_DATA = \
 	flabbergast-runtime-$(VERSION).jar \
 	flabbergast-compiler-$(VERSION).jar \
+	flabbergast-stdlib-$(VERSION).jar \
 	$(NULL)
 
 JAVA_RUNTIME_DEPS = \
@@ -36,6 +37,7 @@ TESTING_CLASSPATH = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS
 
 RUNTIME_INPUTS = $(wildcard runtime/flabbergast/*.java)
 COMPILER_INPUTS = $(wildcard compiler/flabbergast/*.java)
+STDLIB_INPUTS = $(find ../../lib/ -name '*.flbgst' -o -name '*.jflbgst')
 TESTING_INPUTS = $(wildcard testing/flabbergast/*.java)
 
 SPACE = $(NULL) $(NULL)
@@ -45,6 +47,14 @@ flabbergast-runtime-$(VERSION).jar: runtime.manifest $(RUNTIME_INPUTS)
 
 flabbergast-compiler-$(VERSION).jar: compiler.manifest $(COMPILER_INPUTS) flabbergast-runtime-$(VERSION).jar
 	CLASSPATH=$(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):flabbergast-runtime-$(VERSION).jar ./jarc compiler $(VERSION)
+
+flabbergast-stdlib-$(VERSION).jar: stdlib.manifest $(STDLIB_INPUTS) flabbergast-compiler-$(VERSION).jar
+	rm -rf .build
+	mkdir .build
+	rsync -a --include '**.flbgst' --include '**.jflbgst' --exclude '*' ../../lib/ .build
+	cd .build && $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):../flabbergast-runtime-$(VERSION).jar:../flabbergast-compiler-$(VERSION).jar flabbergast.MainBuildCache -P
+	$(JAR) cfm $@ stdlib.manifest -C .build .
+	rm -rf .build
 
 flabbergast-testing-$(VERSION).jar: testing.manifest $(TESTING_INPUTS) flabbergast-compiler-$(VERSION).jar
 	CLASSPATH=$(TESTING_CLASSPATH) ./jarc testing $(VERSION)
@@ -57,6 +67,10 @@ runtime.manifest: Makefile
 compiler.manifest: Makefile
 	@echo "Manifest-Version: 1.0" > $@
 	@echo "Class-Path: $(javadir)/flabbergast-runtime-$(VERSION).jar $(JAVA_COMPILER_DEPS)" >> $@
+	@echo "Created-By: $(VERSION) (The Flabbergast Project)" >> $@
+
+stdlib.manifest: Makefile
+	@echo "Manifest-Version: 1.0" > $@
 	@echo "Created-By: $(VERSION) (The Flabbergast Project)" >> $@
 
 testing.manifest: Makefile
