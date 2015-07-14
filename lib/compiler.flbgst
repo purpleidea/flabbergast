@@ -4279,6 +4279,14 @@ language_tmpl : Template {
 								}
 							},
 							space { preferred : True },
+							parser.optional {
+								of : parser.sequence {
+									of : [
+										parser.exact { word : "," },
+										space { preferred : True }
+									]
+								}
+							},
 							parser.exact { word : "]" }
 						]
 					}
