@@ -97,7 +97,7 @@ json : {
 }
 # Tools for generating Python object representations
 python : {
-	# Escaping conventions used by Python files
+	# Escaping conventions used by normal Python strings
 	escape_transform_tmpl : Template {
 		backslash : utils_lib.str_transform.char_tmpl { char : "\\"  replacement : "\\\\" }
 		backspace : utils_lib.str_transform.char_tmpl { char : "\b"  replacement : "\\b" }
@@ -112,7 +112,16 @@ python : {
 		nonprint : utils_lib.str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "\\x", utf8_0 ] }
 	}
 
+	# Escaping conventions used by multi-line Python strings
+	escape_multiline_transform_tmpl : Template escape_transform_tmpl {
+		# We replace newline with itself to keep it out of `nonprint`.
+		newline : utils_lib.str_transform.char_tmpl { char : "\n"  replacement : "\n" }
+	}
+
 	# The default escaping transformations, for use with `str_escape`.
+	escape_multiline_transform : escape_multiline_transform_tmpl {}
+
+	# The multi-line escaping transfromations, for use with `str_escape`.
 	escape_transform : escape_transform_tmpl {}
 
 	# Convenience template for generating Pystachio objects
@@ -123,21 +132,42 @@ python : {
 		literal_attrs : []
 		# The attributes, which will be converted to escaped strings, that will be assigned to the Python object.
 		string_attrs : []
+		# The attributes, which will be converted to multi-line escaped strings, that will be assigned to the Python object.
+		multiline_string_attrs : []
 
 		# The present indentation level. At the top level, this should be overriden to the empty string.
 		python_indent : Lookup python_indent In Container & "\t"
 
+		converted_literal_attrs :
+			For attr_name : Name, attr : literal_attrs
+				Where !(attr Is Null)
+				Select attr_name : If attr Is Frame Then attr.python_value Else attr
+		converted_string_attrs :
+			For attr_name : Name, attr : string_attrs
+				Where !(attr Is Null)
+				Select attr_name : "\"" & utils_lib.str_escape(attr, transformations : python.escape_transform) & "\""
+		converted_multiline_string_attrs :
+			For attr_name : Name, attr : multiline_string_attrs
+				Where !(attr Is Null)
+				Select attr_name : "\"\"\"" & utils_lib.str_escape(attr, transformations : python.escape_multiline_transform) & "\"\"\""
+
+		python_attrs : For attr_name : Name, literal_attr : converted_literal_attrs, str_attr : converted_string_attrs, ml_str_attr : converted_multiline_string_attrs
+			Select attr_name : {
+					literal_count : If literal_attr Is Null Then 0 Else 1
+					str_count : If str_attr Is Null Then 0 Else 1
+					ml_str_count : If ml_str_attr Is Null Then 0 Else 1
+					attr : (literal_attr ?? str_attr) ?? ml_str_attr
+					value : "\n\(python_indent)\(attr_name) = \(attr),"
+					ok :
+						If literal_count Enforce Int + str_count Enforce Int + ml_str_count Enforce Int > 1
+							Then Error "Attribute \(attr_name) is multiply defined for Python object \(python_type)."
+							Else Null
+			}
 		# The rendered Python object
 		python_value :
-			(For attr_name : Name, literal_attr : literal_attrs, str_attr : string_attrs
-				Where !(literal_attr Is Null) || !(str_attr Is Null)
-				Reduce
-					acc & "\n\(python_indent)\(attr_name) = " &
-					(If literal_attr Is Null Then "\"" & utils_lib.str_escape(str_attr, transformations : python.escape_transform) & "\""
-					Else If literal_attr Is Frame Then literal_attr.python_value
-					Else literal_attr) &
-					","
-			With acc : "\(python_type)(") & "\n" & python_indent & ")"
+			(For attr : python_attrs
+				Reduce acc & attr.value
+				With acc : "\(python_type)(") & "\n" & python_indent & ")"
 	}
 }
 # Tools for generation XML documents

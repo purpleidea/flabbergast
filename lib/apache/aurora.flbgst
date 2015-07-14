@@ -109,6 +109,8 @@ process : Template render_lib.python.object {
 	}
 	string_attrs : {
 		name : process_name
+	}
+	multiline_string_attrs : {
 		cmdline :
 			For part : command_line
 			Reduce
