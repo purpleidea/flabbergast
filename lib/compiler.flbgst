@@ -2009,7 +2009,7 @@ language_tmpl : Template {
 							parser.exact { word : ":" },
 							space { preferred : True },
 							parser.exact { word : "Now" },
-							space { preferred : True },
+							space { mandatory : True },
 							parser.other {
 								type : $expression
 								alternate : $expression0
