@@ -4,7 +4,7 @@ t : Template {
 	y : x + 1
 }
 v : t {
- x -:
+ x : Drop
 }
 w : t {}
 value : w.y == 6 && v.y == 3

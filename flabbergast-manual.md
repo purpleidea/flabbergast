@@ -168,7 +168,7 @@ An unusual feature of Flabbergast is the ability to remove attributes:
       y : z * 3
     }
     b_tmpl : Template a_tmpl {
-      y -:
+      y : Drop
     }
 
 In most other languages, this would break the class since any references to the deleted method or field would be invalid, but in Flabbergast, any references to the removed attribute simply follow normal lookup and can find the value elsewhere.
@@ -680,7 +680,7 @@ There are several amendment attributes, not all of which can be used in all cont
 
  - `:`, followed by an expression, simply defines an attribute to be the supplied expression. If there previously was an attribute of the same name, it is discarded.
  - `: Required` creates an attribute that is always an error. This can be thought of as an _abstract_ attribute, in the C++/Java/C# terminology. This is not permitted during instantiation.
- - `-:` deletes an attribute. The attribute must already exist, so this is not valid when declaring a new template.
+ - `: Drop` deletes an attribute. The attribute must already exist, so this is not valid when declaring a new template.
  - `+`, followed by an identifier, then `:`, followed by an expression, will replace an attribute but allows the previous value to be bound to the identifier supplied. The attribute must already exist, so this is not valid when declaring a new template.
  - `+: {`, followed by a list of amendments, terminated by `}`, performs template amendment. It is short-hand for `+oldtemplate: Template oldtemplate { ... }` with the convenience of not having to choose a name.
  - `: Used` indicates that a value is expected to be available through lookup. It does not actually *do* anything; it is merely a way to explain intentions to others and provide a place to hang documentation. It can be thought of as a weak version of `Required` attributes, and is usually preferable.
@@ -1113,7 +1113,7 @@ Consider something like:
         width : Required
         height : Required
         child_height : height / (For c : children Reduce acc + 1 With acc : 0)
-        exp_children : For c : children Select c { width -:  height : Lookup child_height In Container }
+        exp_children : For c : children Select c { width : Drop  height : Lookup child_height In Container }
         # The maximum of the minimum width of the children.
         min_width : For c : exp_children Reduce If c.min_width > acc Then c.min_width Else acc With acc : 0
         min_height : For c : exp_children Reduce c.min_height + acc With acc : 0

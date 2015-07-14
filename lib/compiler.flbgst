@@ -1192,8 +1192,8 @@ language_tmpl : Template {
 			}
 		}
 		code_value : kws.int_to_bool {
-			number -:
-			invert -:
+			number : Drop
+			invert : Drop
 			source : kws.compare {
 				left : codegen.other_code { field : $left }
 				right : codegen.other_code { field : $right }
@@ -1618,7 +1618,7 @@ language_tmpl : Template {
 				choice_tmpl {
 					type : known_types.template
 					action : kws.iterator {
-						accumulator_type -:
+						accumulator_type : Drop
 						initial : new_item {
 							source : converted_result
 							context : kws.list_append {
@@ -1665,7 +1665,7 @@ language_tmpl : Template {
 			input_frame : codegen.other_code { field : $selector }
 		}
 		in : Template kws.iterator {
-			accumulator_type -:
+			accumulator_type : Drop
 			modify_source_reference : True
 			input : input_list {
 				items : [ parameters.input_frame ]
@@ -1992,7 +1992,9 @@ language_tmpl : Template {
 							space { preferred : True },
 							valid_identifier { field : $name },
 							space { preferred : True },
-							parser.exact { word : "-:" }
+							parser.exact { word : ":" },
+							space { preferred : True },
+							parser.exact { word : "Drop" }
 						]
 					}
 					apply_environment_to : [ ]
