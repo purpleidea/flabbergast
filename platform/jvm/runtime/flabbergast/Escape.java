@@ -152,6 +152,9 @@ public class Escape extends Computation {
 					}
 				});
 				master.slot(lookup);
+			} else {
+				master.reportOtherError(source_ref,
+						"Non-frame in transformation list.");
 			}
 		}
 	}

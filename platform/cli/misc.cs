@@ -351,6 +351,8 @@ namespace Flabbergast {
 					master.ReportOtherError(source_ref, "Illegal transformation specified.");
 				});
 				master.Slot(lookup);
+			} else {
+				master.ReportOtherError(source_ref, "Non-frame in transformation list.");
 			}
 		}
 		private void HandleTransformations(object result) {
