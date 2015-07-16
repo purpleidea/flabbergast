@@ -152,13 +152,9 @@ namespace Flabbergast {
 		}
 
 		private static char[] CreateOrdinalSymbols() {
-			var array = new char[62];
-			for (var it = 0; it < 10; it++) {
-				array[it] = (char) ('0' + it);
-			}
+			var array = new char[26];
 			for (var it = 0; it < 26; it++) {
-				array[it + 10] = (char) ('A' + it);
-				array[it + 36] = (char) ('a' + it);
+				array[it] = (char) ('A' + it);
 			}
 			Array.Sort(array);
 			return array;
