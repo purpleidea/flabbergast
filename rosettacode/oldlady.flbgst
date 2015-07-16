@@ -43,9 +43,9 @@ poem : lady_tmpl {
 }
 
 lady_tmpl : Template {
-	animal ?:
-	next ?:
-	quip ?:
+	animal : Required
+	next : Required
+	quip : Required
 	catch :
 		"She swallowed the \(animal) to catch the \(Lookup animal In Container).\n" &
 		Lookup catch In Container
@@ -56,11 +56,11 @@ lady_tmpl : Template {
 		(If next Is Null Then "" Else catch & next.value)
 }
 std_lady_tmpl : Template lady_tmpl {
-	sarcasm ?:
+	sarcasm : Required
 	quip : "\(sarcasm).\n"
 }
 swallow_lady_tmpl : Template lady_tmpl {
-	sarcasm ?:
+	sarcasm : Required
 	quip : "\(sarcasm) to swallow a \(animal).\n"
 }
 

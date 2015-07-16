@@ -1,6 +1,6 @@
 # Comma quibbling is a task originally set by Eric Lippert in his blog. http://rosettacode.org/wiki/Comma_quibbling
 quibble : Template {
-	args ?:
+	args : Required
 	rev_args : For a : args Reverse Select a
 	value :
 		"{" &
