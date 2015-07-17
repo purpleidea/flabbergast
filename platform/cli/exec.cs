@@ -93,6 +93,9 @@ namespace Flabbergast {
 		protected abstract bool Run();
 
 		protected void WakeupListeners() {
+			if (result == null) {
+				throw new InvalidOperationException();
+			}
 			if (consumer != null) {
 				consumer(result);
 				consumer = null;

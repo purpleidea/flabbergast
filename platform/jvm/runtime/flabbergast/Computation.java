@@ -77,13 +77,13 @@ public abstract class Computation {
 	}
 
 	/**
-	 * The method that will be invoked when the result is needed. If the method
-	 * returns true, the computation is finished. Otherwise, it is assumed that
-	 * the computation needs to wait another value.
+	 * The method that will be invoked when the result is needed.
 	 */
 	protected abstract void run();
 
 	protected void wakeupListeners() {
+		if (result == null)
+			throw new UnsupportedOperationException();
 		for (ConsumeResult cr : consumer)
 			cr.consume(result);
 		consumer.clear();
