@@ -98,6 +98,10 @@ process : Template render_lib.python.object {
 	min_process_restart_duration : Used
 	# This process should run after all non-final processes in a task.
 	final : False
+	# The processes that must be run after this one.
+	blocks : []
+	# The processes that must be run before this one.
+	requires : []
 
 	python_type : "Process"
 	literal_attrs : {
@@ -118,6 +122,17 @@ process : Template render_lib.python.object {
 				(If part Is Frame Then part.command_line_value Else utils_lib.str_replace(part, str : "{{", with : "{{&")) & "\n"
 			With acc : ""
 	}
+	ordering :
+		(For p : requires
+			Let other_process : (Lookup process_name In p) Enforce Str
+			Order By other_process
+			Reduce "\(acc)\(python_indent)Constraint(order=['\(other_process)', '\(process_name)']),\n"
+			With acc : "") &
+		(For p : blocks
+			Let other_process : (Lookup process_name In p) Enforce Str
+			Order By other_process
+			Reduce "\(acc)\(python_indent)Constraint(order=['\(process_name)', '\(other_process)']),\n"
+			With acc : "")
 }
 # An Aurora task, container of multiple processes.
 task : Template render_lib.python.object {
@@ -172,7 +187,10 @@ task : Template render_lib.python.object {
 		max_concurrency : max_concurrent_processes
 		max_failures : max_task_failures
 		finalization_wait : Lookup finalization_wait In Container
-		# TODO constraints: I have no idea how to express these nicely
+		constraints :
+			(For process : Container.processes
+				Reduce acc & process.ordering
+				With acc : "[\n") & python_indent & "]"
 		resources :
 			(For resource : resource_info, resource_name : Name
 				Where !(resource Is Null)
