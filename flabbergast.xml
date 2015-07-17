@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+	<mime-type type="text/x-flabbergast">
+ 		<sub-class-of type="text/plain"/>
+		<comment>Flabbergast Configuration</comment>
+		<glob pattern="*.o_0"/>
+		<glob pattern="*.jo_0"/>
+		<glob pattern="*.no_0"/>
+	</mime-type>
+</mime-info>

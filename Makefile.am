@@ -13,6 +13,8 @@ if BUILD_JVM
 SUBDIRS += platform/jvm
 endif
 
+mimedir = $(datadir)/mime/packages
+
 bin_SCRIPTS = \
 	update-flabbergast \
 	$(NULL)
@@ -24,6 +26,8 @@ man1_MANS = \
 man7_MANS = \
 	flabbergast_language.7 \
 	$(NULL)
+
+mime_DATA = flabbergast.xml
 
 install-data-hook:
 	@for f in $$(find lib -name '*.o_0' -o -name '*.?o_0' -type f); do \
