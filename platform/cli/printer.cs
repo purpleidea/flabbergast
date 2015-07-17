@@ -29,7 +29,7 @@ public class Printer {
 		}
 
 		if (show_help) {
-			Console.WriteLine("Usage: " + AppDomain.CurrentDomain.FriendlyName + " input.flbgst");
+			Console.WriteLine("Usage: " + AppDomain.CurrentDomain.FriendlyName + " input.o_0");
 			Console.WriteLine("Run a Flabbergast file and display the “value” attribute.");
 			Console.WriteLine();
 			Console.WriteLine("Options:");

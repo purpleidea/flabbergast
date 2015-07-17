@@ -12,10 +12,10 @@ namespace Flabbergast {
 			foreach (var path in Directory.EnumerateDirectories(directory)) {
 				Discover(path, sources, known_dlls);
 			}
-			foreach (var file in Directory.EnumerateFiles(directory, "*.flbgst")) {
+			foreach (var file in Directory.EnumerateFiles(directory, "*.o_0")) {
 				sources.Add(file);
 			}
-			foreach (var file in Directory.EnumerateFiles(directory, "*.nflbgst")) {
+			foreach (var file in Directory.EnumerateFiles(directory, "*.no_0")) {
 				sources.Add(file);
 			}
 			foreach (var file in Directory.EnumerateFiles(directory, "*.dll")) {

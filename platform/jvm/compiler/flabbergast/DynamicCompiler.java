@@ -20,7 +20,7 @@ import flabbergast.TaskMaster.LibraryFailure;
 
 public class DynamicCompiler extends LoadLibraries {
 
-	protected String[] extensions = new String[]{".jflbgst", ".flbgst"};
+	protected String[] extensions = new String[]{".jo_0", ".o_0"};
 
 	class AutoLoaderClassVisitor extends ClassVisitor {
 		private String class_name;

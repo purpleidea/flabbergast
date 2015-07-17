@@ -16,7 +16,7 @@ You should read the compiler design document in the parent directory.
 
 ## Compiler Services
 
-Like all compilers, Compiler Services has three steps: parse, analyse, and code generation. The code for all three has some human-written components, in `parser.cs`, `analyser.cs`, and `generator.cs`, respectively, and generated, using `lib:compiler` and `compiler-net.flbgst` to build `compiler-net.cs`.
+Like all compilers, Compiler Services has three steps: parse, analyse, and code generation. The code for all three has some human-written components, in `parser.cs`, `analyser.cs`, and `generator.cs`, respectively, and generated, using `lib:compiler` and `compiler-net.o_0` to build `compiler-net.cs`.
 
 For parsing, a pack-rat parser is used. The patterns specified in `lib:compiler` will generate an LL(1) parser for the syntax of the language with extra steps to memorise values as parsing proceeds. `Flabbergast.Parser` has general parsing state and any error information for the parsing of one file. During the parsing process, many `Flabbergast.ParsingPosition` objects are created to track the state of parsing. Memorisation data is stored in `Parser` as `Memory` structures. All parsable objects descend from `Flabbergast.AstNode` which has properties for information about where the element was parsed, used in error message and debug information generation in later stages. The parser only stores a single error message: the sequentially furtherest error message discovered.
 

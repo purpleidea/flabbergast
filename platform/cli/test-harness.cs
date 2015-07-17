@@ -117,7 +117,7 @@ namespace Flabbergast
             var path = Path.Combine(root, child);
             if (Directory.Exists(path))
             {
-                files.AddRange(Directory.GetFiles(path).Where(file => file.EndsWith(".flbgst")));
+                files.AddRange(Directory.GetFiles(path).Where(file => file.EndsWith(".o_0")));
             }
             return files;
         }

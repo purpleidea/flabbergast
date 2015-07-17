@@ -22,8 +22,8 @@ public class MainBuildCache {
 			if (f.isDirectory()) {
 				discover(f, sources, known_classes);
 			} else if (f.isFile()) {
-				if (f.getName().endsWith(".flbgst")
-						|| f.getName().endsWith(".jflbgst")) {
+				if (f.getName().endsWith(".o_0")
+						|| f.getName().endsWith(".jo_0")) {
 					sources.add(f);
 				} else if (f.getName().endsWith(".class")) {
 					try {
@@ -97,7 +97,7 @@ public class MainBuildCache {
 	}
 
 	public static String removeSuffix(String filename) {
-		for (String suffix : new String[]{".flbgst", ".jflbgst"}) {
+		for (String suffix : new String[]{".o_0", ".jo_0"}) {
 			if (filename.endsWith(suffix)) {
 				return filename.substring(0,
 						filename.length() - suffix.length());

@@ -1,5 +1,5 @@
 usr/bin/update-flabbergast
-usr/share/flabbergast/lib/*.flbgst
-usr/share/flabbergast/lib/*/*.flbgst
+usr/share/flabbergast/lib/*.o_0
+usr/share/flabbergast/lib/*/*.o_0
 usr/share/man/man1/update-flabbergast.1
 usr/share/man/man7/flabbergast_language.7

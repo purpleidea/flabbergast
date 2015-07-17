@@ -23,7 +23,7 @@ do
 done
 
 # Build the standard library
-rsync -a --include '**.flbgst' --include '**.jflbgst' --exclude '*' ../../lib/ .build
+rsync -a --include '**.o_0' --include '**.jo_0' --exclude '*' ../../lib/ .build
 cd .build
 ${JAVA-java} -cp . flabbergast.MainBuildCache -P
 cd ..

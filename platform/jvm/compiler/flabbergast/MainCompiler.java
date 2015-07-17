@@ -102,7 +102,7 @@ public class MainCompiler {
 				Parser parser = Parser.open(filename);
 				parser.setTrace(result.hasOption('t'));
 				String file_root = ("flabbergast/library/" + removeExtensions(
-						filename, ".flbgst", ".jflbgst"))
+						filename, ".o_0", ".jo_0"))
 						.replace(File.separatorChar, '/')
 						.replaceAll("[/.]+", "/").replace('-', '_');
 				parser.parseFile(collector, unit, file_root);

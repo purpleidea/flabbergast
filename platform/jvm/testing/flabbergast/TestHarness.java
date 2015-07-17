@@ -8,7 +8,7 @@ public class TestHarness {
 	private static final class OnlySourceFiles implements FilenameFilter {
 		@Override
 		public boolean accept(File dir, String name) {
-			return name.endsWith(".flbgst");
+			return name.endsWith(".o_0");
 		}
 	}
 

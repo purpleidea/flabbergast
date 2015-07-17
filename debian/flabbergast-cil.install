@@ -2,6 +2,6 @@ usr/bin/nflabbergast
 usr/bin/nflabbergast-repl
 usr/share/flabbergast/cli
 usr/share/flabbergast/compiler/cli-build-cache
-usr/share/flabbergast/lib/*.nflbgst
+usr/share/flabbergast/lib/*.no_0
 usr/share/man/man1/nflabbergast-repl.1
 usr/share/man/man1/nflabbergast.1

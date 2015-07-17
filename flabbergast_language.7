@@ -1163,7 +1163,7 @@ During contextual lookup, a list of candidate frames is whittled down to a list 
 .SH URI NAME-SPACES AND THE STANDARD LIBRARY
 The URIs understood by the importer is implementation defined with one exception: the \fBlib:\fR schema holds the standard (installed) library. An implementation is free to fail to include this schema, but it may not be used with other semantics.
 
-On UNIX, it is recommended that importing \fBlib:foo\fR will search for \fBfoo.flbgst\fR in:
+On UNIX, it is recommended that importing \fBlib:foo\fR will search for \fBfoo.o_0\fR in:
 Any user-specified paths specified via the API or the command-line, as appropriate.
 The directories specified in the \fBFLABBERGAST_PATH\fR environment variable.
 The directories matching {$PREFIX,/usr,/usr/local}/share/flabbergast/lib where $PREFIX is the installation prefix.

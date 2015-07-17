@@ -53,7 +53,7 @@ namespace Flabbergast {
 			}
 
 			if (show_help) {
-				Console.WriteLine("Usage: " + AppDomain.CurrentDomain.FriendlyName + " input.flbgst");
+				Console.WriteLine("Usage: " + AppDomain.CurrentDomain.FriendlyName + " input.o_0");
 				Console.WriteLine("Run Flabbergast interactively.");
 				Console.WriteLine();
 				Console.WriteLine("Options:");
