@@ -26,7 +26,7 @@ You appear to believe that:
 
 Unfortunately, your language (has/lacks):
 [H] comprehensible syntax  [L] semicolons  [L] significant whitespace  [L] macros
-[L] implicit type conversion  [H] explicit casting  [1] type inference
+[H] implicit type conversion  [H] explicit casting  [1] type inference
 [L] goto  [L] exceptions  [2] closures  [L] tail recursion  [L] coroutines
 [L] reflection  [L] subtyping  [H] multiple inheritance  [L] operator overloading
 [L] algebraic datatypes  [L] recursive types  [L] polymorphic types
