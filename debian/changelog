@@ -1,3 +1,21 @@
+flabbergast (0.8~ppa0) trusty; urgency=medium
+
+  * Fix strange bug (multiple execution problem)
+  * Fix ordering in CLI version
+  * Fix parse error in anonymous “Select”
+  * Add missing error handler to string escaping
+  * Large changes to Apache Aurora library
+  * Add multi-line strings support for Python objects
+  * Add cumulative sum and product functions, clamp to library
+  * Change file extension from .flbgst to .o_0 and add MIME support
+  * Change required, informative, and removal attribute syntax
+  * Add “Now” attribute
+  * Allow trailing commas in lists
+  * Add fricassée “Accumulate” and “Let” clauses
+  * Add a list concatenation operation “Append”
+
+ -- Andre Masella <andre@masella.name>  Mon, 20 Jul 2015 07:26:56 -0400
+
 flabbergast (0.7~ppa0) trusty; urgency=medium
 
   * Fix cache building systems
