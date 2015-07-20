@@ -104,6 +104,7 @@ CLEANFILES = \
 	jflabbergast-repl \
 	compiler.manifest \
 	runtime.manifest \
+	stdlib.manifest \
 	testing.manifest \
 	$(java_DATA) \
 	flabbergast-runtime-$(VERSION)-sources.jar \
