@@ -172,6 +172,9 @@ public abstract class TaskMaster implements Iterable<Lookup> {
 	 * Add a computation to be executed.
 	 */
 	public void slot(final Computation computation) {
+		if (computations.contains(computation)) {
+			return;
+		}
 		if (computation instanceof Lookup && !inflight.contains(computation)) {
 			inflight.add((Lookup) computation);
 			computation.listen(new ConsumeResult() {

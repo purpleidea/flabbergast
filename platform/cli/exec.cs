@@ -263,6 +263,9 @@ namespace Flabbergast {
 	 */
 
 		public void Slot(Computation computation) {
+			if (computations.Contains(computation)) {
+				return;
+			}
 			if (computation is Lookup) {
 				var lookup = (Lookup) computation;
 				inflight[lookup] = true;
