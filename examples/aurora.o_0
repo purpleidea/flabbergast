@@ -1,0 +1,46 @@
+# This builds a fairly complex Apache Aurora config
+aurora_lib : From lib:apache/aurora
+cluster : "cluster1"
+role : "jrhacker"
+resources : {
+	cpu : 0.1
+	ram : 16Mi
+	disk : 16Mi
+}
+hw_file : aurora_lib.aurora_file {
+	jobs : [
+		job {
+			instances : 1
+			job_name : "hello_world"
+			task : aurora_lib.task {
+				processes : {
+					hw : process {
+						process_name : "hw"
+						command_line : [ "echo hello world\ntouch /tmp/\(job_name)" ]
+					}
+				}
+			}
+		},
+		job {
+			instances : 1
+			job_name : "foo"
+
+			echo_process : Template process {
+				command_line : [ "echo \(process_name)" ]
+			}
+
+			task : aurora_lib.task {
+				processes : {
+					foo : echo_process {
+						process_name : "foo"
+					}
+					blah : echo_process {
+						process_name : "blah"
+						blocks : [ foo ]
+					}
+				}
+			}
+		}
+	]
+}
+value : hw_file.value
