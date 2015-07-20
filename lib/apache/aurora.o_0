@@ -202,7 +202,7 @@ task : Template render_lib.python.object {
 			(For process : Container.processes, pos : Ordinal
 				Reduce
 					acc &
-					(If pos > 1 Then ",\n" Else "") &
+					(If pos > 1 Then ",\n\(python_indent)\t" Else "") &
 					process.python_value
 				With acc : "[") & "]"
 	}
