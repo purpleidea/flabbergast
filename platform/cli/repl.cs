@@ -85,7 +85,6 @@ namespace Flabbergast {
 				if (root_type != null) {
 					var computation = (Computation) Activator.CreateInstance(root_type, task_master);
 					computation.Notify(r => original = r as Frame);
-					task_master.Slot(computation);
 					task_master.Run();
 					task_master.ReportCircularEvaluation();
 				}
@@ -111,7 +110,6 @@ namespace Flabbergast {
 					object result = null;
 					var computation = (Computation) Activator.CreateInstance(run_type, new object[] { task_master, original, current, update_current, (ConsumeResult) (output => result = output), (ConsumeResult) Console.WriteLine });
 					computation.Notify(r => run = (r as bool?) ?? true);
-					task_master.Slot(computation);
 					task_master.Run();
 					if (result != null) {
 						HandleResult(result);

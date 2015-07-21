@@ -55,7 +55,7 @@ public class CharacterCategory extends Computation implements ConsumeResult {
 		public void consume(Object result) {
 			mappings.put(code, result);
 			if (interlock.decrementAndGet() == 0) {
-				master.slot(CharacterCategory.this);
+				task_master.slot(CharacterCategory.this);
 			}
 		}
 	}
@@ -64,14 +64,14 @@ public class CharacterCategory extends Computation implements ConsumeResult {
 	private AtomicInteger interlock = new AtomicInteger();
 	private String input;
 
-	private TaskMaster master;
 	private SourceReference source_reference;
 	private Context context;
 	private Frame container;
 
-	public CharacterCategory(TaskMaster master, SourceReference source_ref,
-			Context context, Frame self, Frame container) {
-		this.master = master;
+	public CharacterCategory(TaskMaster task_master,
+			SourceReference source_ref, Context context, Frame self,
+			Frame container) {
+		super(task_master);
 		this.source_reference = source_ref;
 		this.context = context;
 		this.container = self;
@@ -81,10 +81,10 @@ public class CharacterCategory extends Computation implements ConsumeResult {
 		if (result instanceof Stringish) {
 			input = result.toString();
 			if (interlock.decrementAndGet() == 0) {
-				master.slot(this);
+				task_master.slot(this);
 			}
 		} else {
-			master.reportOtherError(source_reference,
+			task_master.reportOtherError(source_reference,
 					"Input argument must be a string.");
 		}
 	}
@@ -93,22 +93,20 @@ public class CharacterCategory extends Computation implements ConsumeResult {
 	protected void run() {
 		if (mappings.size() == 0) {
 			interlock.set(categories.size() + 2);
-			Computation input_lookup = new Lookup(master, source_reference,
-					new String[]{"arg"}, context);
+			Computation input_lookup = new Lookup(task_master,
+					source_reference, new String[]{"arg"}, context);
 			input_lookup.listen(this);
-			master.slot(input_lookup);
 			for (Map.Entry<Byte, String> entry : categories.entrySet()) {
-				Computation lookup = new Lookup(master, source_reference,
+				Computation lookup = new Lookup(task_master, source_reference,
 						new String[]{entry.getValue()}, context);
 				lookup.listen(new Category(entry.getKey()));
-				master.slot(lookup);
 			}
 			if (interlock.decrementAndGet() > 0) {
 				return;
 			}
 		}
-		Frame frame = new Frame(master, master.nextId(), source_reference,
-				context, container);
+		Frame frame = new Frame(task_master, task_master.nextId(),
+				source_reference, context, container);
 		for (int it = 0; it < input.length(); it++) {
 			frame.set(TaskMaster.ordinalNameStr(it + 1),
 					mappings.get((byte) Character.getType(input.charAt(it))));

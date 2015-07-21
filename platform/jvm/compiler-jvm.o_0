@@ -1086,7 +1086,6 @@ kws : compiler_lib.kws_repl_tmpl {
 					indent : indent & name_indent,
 					code :
 						"\(sum_indent)\(generator).startInterlock(1);" &
-						"\(sum_indent)\(generator).loadTaskMaster();" &
 						"\(sum_indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(Lookup.class));" &
 						"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
 						"\(sum_indent)\(generator).loadTaskMaster();" &
@@ -1094,11 +1093,9 @@ kws : compiler_lib.kws_repl_tmpl {
 						load_names &
 						"\(sum_indent)\(source.storage_name).load(\(generator));" &
 						"\(sum_indent)\(generator).visitMethod(Lookup.class.getConstructors()[0]);" &
-						"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
 						"\(sum_indent)final FieldValue \(storage_name) = \(generator).makeField(\"lookup\", Object.class);" &
 						"\(sum_indent)\(generator).generateConsumeResult(\(storage_name));" &
 						"\(sum_indent)\(generator).visitMethod(Lookup.class.getMethod(\"listen\", ConsumeResult.class));" &
-						"\(sum_indent)\(generator).visitMethod(TaskMaster.class.getMethod(\"slot\", Computation.class));" &
 						"\(sum_indent)\(generator).stopInterlock();" &
 						code
 					)
@@ -2627,7 +2624,6 @@ compiler : compiler_lib.language_with_repl_tmpl {
 							gen_gen +: {
 									value :
 										"\(indent)\(generator).startInterlock(1);" &
-										"\(indent)\(generator).loadTaskMaster();" &
 										"\(indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(constructor.getDeclaringClass()));" &
 										"\(indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
 										"\(indent)\(generator).loadTaskMaster();" &
@@ -2636,11 +2632,9 @@ compiler : compiler_lib.language_with_repl_tmpl {
 										"\(indent)\(parameters.self_frame.storage_name).load(\(generator));" &
 										"\(indent)\(parameters.container_frame.storage_name).load(\(generator));" &
 										"\(indent)\(generator).visitMethod(constructor);" &
-										"\(indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
 										"\(indent)final FieldValue \(storage_name) = \(generator).makeField(\"xcomputation\", Object.class);" &
 										"\(indent)\(generator).generateConsumeResult(\(storage_name));" &
 										"\(indent)\(generator).visitMethod(Computation.class.getMethod(\"listen\", ConsumeResult.class));" &
-										"\(indent)\(generator).visitMethod(TaskMaster.class.getMethod(\"slot\", Computation.class));" &
 										"\(indent)\(generator).stopInterlock();" &
 										code
 							}

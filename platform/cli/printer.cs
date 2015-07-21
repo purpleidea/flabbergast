@@ -59,7 +59,7 @@ public class Printer {
 		if (run_type != null) {
 			var computation = (Computation) Activator.CreateInstance(run_type, task_master);
 			var filewriter = new PrintResult(task_master, computation, output_filename);
-			task_master.Slot(filewriter);
+			filewriter.Slot();
 			task_master.Run();
 			task_master.ReportCircularEvaluation();
 			return filewriter.Success ? 0 : 1;

@@ -24,7 +24,7 @@ class ReplGenerator extends Generator {
 
 	ReplGenerator(AstNode node, CompilationUnit<?> owner,
 			ClassVisitor type_builder, String class_name)
-			throws NoSuchMethodException {
+			throws NoSuchMethodException, NoSuchFieldException {
 		super(node, owner, type_builder, class_name, class_name,
 				new HashSet<String>());
 
@@ -37,20 +37,21 @@ class ReplGenerator extends Generator {
 		Class<?>[] construct_params = new Class<?>[]{TaskMaster.class,
 				Frame.class, Frame.class, ConsumeResult.class,
 				ConsumeResult.class, ConsumeResult.class};
-		FieldValue[] initial_information = new FieldValue[]{task_master,
-				root_frame, current_frame, update_current, escape_value,
-				print_value};
+		FieldValue[] initial_information = new FieldValue[]{root_frame,
+				current_frame, update_current, escape_value, print_value};
 
 		MethodVisitor ctor_builder = type_builder.visitMethod(
 				Opcodes.ACC_PUBLIC, "<init>",
 				makeSignature(null, construct_params), null, null);
 		ctor_builder.visitCode();
 		ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
+		ctor_builder.visitVarInsn(Opcodes.ALOAD, 1);
 		ctor_builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
-				getInternalName(Computation.class), "<init>", "()V");
+				getInternalName(Computation.class), "<init>",
+				makeSignature(null, TaskMaster.class));
 		for (int it = 0; it < initial_information.length; it++) {
 			ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
-			ctor_builder.visitVarInsn(Opcodes.ALOAD, it + 1);
+			ctor_builder.visitVarInsn(Opcodes.ALOAD, it + 2);
 			initial_information[it].store(ctor_builder);
 		}
 		ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);

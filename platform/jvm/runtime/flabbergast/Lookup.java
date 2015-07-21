@@ -34,7 +34,8 @@ public class Lookup extends Computation {
 				}
 				activateNext();
 			} else {
-				master.reportLookupError(Lookup.this, return_value.getClass());
+				task_master.reportLookupError(Lookup.this,
+						return_value.getClass());
 			}
 		}
 
@@ -45,7 +46,6 @@ public class Lookup extends Computation {
 	private final Frame[] frames;
 
 	private LinkedList<Attempt> known_attempts = new LinkedList<Attempt>();
-	private TaskMaster master;
 
 	/**
 	 * The name components in the lookup expression.
@@ -53,9 +53,9 @@ public class Lookup extends Computation {
 	private String[] names;
 	private SourceReference source_reference;
 
-	public Lookup(TaskMaster master, SourceReference source_ref,
+	public Lookup(TaskMaster task_master, SourceReference source_ref,
 			String[] names, Context context) {
-		this.master = master;
+		super(task_master);
 		this.source_reference = source_ref;
 		this.names = names;
 		frames = new Frame[context.getLength()];
@@ -75,7 +75,7 @@ public class Lookup extends Computation {
 				return;
 			}
 		}
-		master.reportLookupError(this, null);
+		task_master.reportLookupError(this, null);
 	}
 
 	public Frame get(int name, int frame) {

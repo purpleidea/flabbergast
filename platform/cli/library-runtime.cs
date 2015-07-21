@@ -100,10 +100,8 @@ namespace Flabbergast {
 		public bool Success { get; private set; }
 		private readonly string output_filename;
 		private readonly Computation source;
-		private readonly TaskMaster task_master;
 
-		public PrintResult(TaskMaster task_master, Computation source, string output_filename) {
-			this.task_master = task_master;
+		public PrintResult(TaskMaster task_master, Computation source, string output_filename) : base(task_master) {
 			this.source = source;
 			this.output_filename = output_filename;
 		}
@@ -131,7 +129,6 @@ namespace Flabbergast {
 			if (frame != null) {
 				var lookup = new Lookup(task_master, new SourceReference("printer", "<native>", 0, 0, 0, 0, null), new[] {"value"}, frame.Context);
 				lookup.Notify(HandleFinalResult);
-				task_master.Slot(lookup);
 			} else {
 				Console.Error.WriteLine("File did not contain a frame. That should be impossible.");
 			}

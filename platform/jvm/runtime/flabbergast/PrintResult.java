@@ -8,11 +8,10 @@ public class PrintResult extends Computation {
 
 	private final Computation source;
 	private boolean success;
-	private final TaskMaster task_master;
 
 	public PrintResult(TaskMaster task_master, Computation source,
 			String output_filename) {
-		this.task_master = task_master;
+		super(task_master);
 		this.source = source;
 		this.output_filename = output_filename;
 	}
@@ -75,7 +74,6 @@ public class PrintResult extends Computation {
 
 						}
 					});
-					task_master.slot(lookup);
 				} else {
 					System.err
 							.println("File did not contain a frame. That should be impossible.");
@@ -83,6 +81,5 @@ public class PrintResult extends Computation {
 
 			}
 		});
-		task_master.slot(source);
 	}
 }

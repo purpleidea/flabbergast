@@ -45,12 +45,10 @@ namespace Flabbergast
 
     public class CheckResult : Computation
     {
-        private readonly TaskMaster task_master;
         private readonly System.Type test_target;
 
-        public CheckResult(TaskMaster task_master, System.Type test_target)
+        public CheckResult(TaskMaster task_master, System.Type test_target) : base(task_master)
         {
-            this.task_master = task_master;
             this.test_target = test_target;
         }
 
@@ -60,7 +58,6 @@ namespace Flabbergast
         {
             var computation = (Computation) Activator.CreateInstance(test_target, task_master);
             computation.Notify(HandleFrameResult);
-            task_master.Slot(computation);
             return false;
         }
 
@@ -70,7 +67,6 @@ namespace Flabbergast
             {
                 var lookup = new Lookup(task_master, null, new[] {"value"}, ((Frame) result).Context);
                 lookup.Notify(HandleFinalResult);
-                task_master.Slot(lookup);
             }
         }
 
@@ -152,7 +148,7 @@ namespace Flabbergast
                     if (!success && test_type != null)
                     {
                         var tester = new CheckResult(task_master, test_type);
-                        task_master.Slot(tester);
+                        tester.Slot();
                         task_master.Run();
                         success = !tester.Success;
                     }
@@ -177,7 +173,7 @@ namespace Flabbergast
                     if (success && test_type != null)
                     {
                         var tester = new CheckResult(task_master, test_type);
-                        task_master.Slot(tester);
+                        tester.Slot();
                         task_master.Run();
                         success = tester.Success;
                     }

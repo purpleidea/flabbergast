@@ -108,7 +108,6 @@ public abstract class TaskMaster implements Iterable<Lookup> {
 						.newInstance(this);
 				external_cache.put(uri, computation);
 				computation.listen(target);
-				slot(computation);
 
 				return;
 			} catch (Exception e) {
@@ -172,12 +171,9 @@ public abstract class TaskMaster implements Iterable<Lookup> {
 	 * Add a computation to be executed.
 	 */
 	public void slot(final Computation computation) {
-		if (computations.contains(computation)) {
-			return;
-		}
 		if (computation instanceof Lookup && !inflight.contains(computation)) {
 			inflight.add((Lookup) computation);
-			computation.listen(new ConsumeResult() {
+			computation.listenDelayed(new ConsumeResult() {
 
 				@Override
 				public void consume(Object result) {

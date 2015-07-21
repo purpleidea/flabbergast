@@ -142,7 +142,7 @@ public class MainREPL {
 
 						}
 					});
-					task_master.slot(computation);
+					computation.slot();
 					task_master.run();
 				}
 			}
@@ -191,7 +191,7 @@ public class MainREPL {
 							root.get(), current.get(), current, printer,
 							raw_printer);
 					computation.listen(keep_running);
-					task_master.slot(computation);
+					computation.slot();
 					task_master.run();
 					printer.print();
 					task_master.reportCircularEvaluation();

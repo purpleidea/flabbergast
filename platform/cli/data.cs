@@ -183,7 +183,7 @@ namespace Flabbergast {
 					/*
 				 * When this computation has completed, replace its value in the frame.
 				 */
-					computation.Notify(result => {
+					computation.NotifyDelayed(result => {
 						attributes[name] = result;
 					});
 					/*
@@ -236,7 +236,7 @@ namespace Flabbergast {
 
 		/**
 	 * Access a value if available, or be notified upon completion.
-	 * Returns: true if the value was available, false if the caller should wait to be reinvoked.
+	 * Returns: true if the value was available, false if the name does not exist.
 	 */
 
 		internal bool GetOrSubscribe(string name, ConsumeResult consumer) {
@@ -278,7 +278,7 @@ namespace Flabbergast {
 
 		public void Slot() {
 			foreach (var computation in unslotted) {
-				task_master.Slot(computation);
+				computation.Slot();
 			}
 			unslotted.Clear();
 		}

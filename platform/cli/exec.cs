@@ -34,7 +34,13 @@ namespace Flabbergast {
 	 */
 		protected object result;
 
-		public Computation() {
+		protected readonly TaskMaster task_master;
+
+		private Object ex = new Object();
+		private bool virgin = true;
+
+		public Computation(TaskMaster task_master) {
+			this.task_master = task_master;
 		}
 		/**
 	 * Called by the TaskMaster to start or continue computation.
@@ -55,13 +61,27 @@ namespace Flabbergast {
 	 */
 
 		public void Notify(ConsumeResult new_consumer) {
+			Notify(new_consumer, true);
+		}
+
+		public void NotifyDelayed(ConsumeResult new_consumer) {
+			Notify(new_consumer, false);
+		}
+
+		public void Notify(ConsumeResult new_consumer, bool needs_slot) {
+			Monitor.Enter(ex);
 			if (result == null) {
 				if (consumer == null) {
 					consumer = new_consumer;
 				} else {
 					consumer += new_consumer;
 				}
+				if (needs_slot) {
+					SlotHelper();
+				}
+				Monitor.Exit(ex);
 			} else {
+				Monitor.Exit(ex);
 				new_consumer(result);
 			}
 		}
@@ -92,23 +112,39 @@ namespace Flabbergast {
 	 */
 		protected abstract bool Run();
 
+		public void Slot() {
+			Monitor.Enter(ex);
+			if (result == null) {
+				SlotHelper();
+			}
+			Monitor.Exit(ex);
+		}
+
+		private void SlotHelper() {
+			if (virgin) {
+				virgin = false;
+				task_master.Slot(this);
+			}
+		}
+
 		protected void WakeupListeners() {
 			if (result == null) {
 				throw new InvalidOperationException();
 			}
-			if (consumer != null) {
-				consumer(result);
-				consumer = null;
+			Monitor.Enter(ex);
+			var consumer_copy = consumer;
+			consumer = null;
+			Monitor.Exit(ex);
+			if (consumer_copy != null) {
+				consumer_copy(result);
 			}
 		}
 	}
 
 	public class FailureComputation : Computation {
-		private TaskMaster task_master;
 		private string message;
 		private SourceReference source_reference;
-		public FailureComputation(TaskMaster task_master, SourceReference reference, string message) {
-			this.task_master = task_master;
+		public FailureComputation(TaskMaster task_master, SourceReference reference, string message) : base(task_master) {
 			this.source_reference = reference;
 			this.message = message;
 		}
@@ -198,7 +234,6 @@ namespace Flabbergast {
 				var computation = (Computation) Activator.CreateInstance(t, this);
 				external_cache[uri] = computation;
 				computation.Notify(target);
-				Slot(computation);
 				return;
 			}
 			ReportExternalError(uri, LibraryFailure.Missing);
@@ -263,13 +298,10 @@ namespace Flabbergast {
 	 */
 
 		public void Slot(Computation computation) {
-			if (computations.Contains(computation)) {
-				return;
-			}
 			if (computation is Lookup) {
 				var lookup = (Lookup) computation;
 				inflight[lookup] = true;
-				computation.Notify(x => inflight.Remove(lookup));
+				computation.NotifyDelayed(x => inflight.Remove(lookup));
 			}
 			computations.Enqueue(computation);
 		}
@@ -352,9 +384,9 @@ namespace Flabbergast {
 					if (result_frame.GetOrSubscribe(owner.names[name + 1], next.Consume)) {
 						return;
 					}
-					owner.master.Slot(owner);
+					owner.task_master.Slot(owner);
 				} else {
-					owner.master.ReportLookupError(owner, return_value.GetType());
+					owner.task_master.ReportLookupError(owner, return_value.GetType());
 				}
 			}
 		}
@@ -403,14 +435,12 @@ namespace Flabbergast {
 
 		private LinkedList<Attempt> known_attempts = new LinkedList<Attempt>();
 
-		private readonly TaskMaster master;
 		/**
 	 * The name components in the lookup expression.
 	 */
 		private readonly string[] names;
 
-		public Lookup(TaskMaster master, SourceReference source_ref, string[] names, Context context) {
-			this.master = master;
+		public Lookup(TaskMaster task_master, SourceReference source_ref, string[] names, Context context) : base(task_master) {
 			SourceReference = source_ref;
 			this.names = names;
 
@@ -435,7 +465,7 @@ namespace Flabbergast {
 					return false;
 				}
 			}
-			master.ReportLookupError(this, null);
+			task_master.ReportLookupError(this, null);
 			return false;
 		}
 	}
@@ -447,7 +477,7 @@ namespace Flabbergast {
 		public static ComputeValue Capture(object result) {
 			return new Precomputation(result).ComputeValue;
 		}
-		public Precomputation(object result) {
+		public Precomputation(object result) : base(null) {
 			this.result = result;
 		}
 		public Computation ComputeValue(

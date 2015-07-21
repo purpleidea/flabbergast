@@ -60,7 +60,7 @@ public class MainPrinter {
 						TaskMaster.class).newInstance(task_master);
 				PrintResult filewriter = new PrintResult(task_master,
 						computation, result.getOptionValue('o'));
-				task_master.slot(filewriter);
+				filewriter.slot();
 				task_master.run();
 				task_master.reportCircularEvaluation();
 				System.exit(filewriter.getSuccess() ? 0 : 1);

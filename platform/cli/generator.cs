@@ -208,7 +208,7 @@ internal abstract class Generator {
 		this.owner_externals = owner_externals;
 		StateField = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
 		interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
-		task_master = TypeBuilder.DefineField("task_master", typeof(TaskMaster), FieldAttributes.Private);
+		task_master = typeof(Computation).GetField("task_master", BindingFlags.NonPublic | BindingFlags.Instance);
 		// Label for load externals
 		DefineState();
 		// Label for main body
@@ -699,22 +699,6 @@ internal abstract class Generator {
 		builder.Emit(OpCodes.Ldc_I4, state);
 		builder.Emit(OpCodes.Stfld, StateField);
 	}
-	/**
-	 * Slot a computation for execution by the task master.
-	 */
-	public void Slot(LoadableValue target) {
-		LoadTaskMaster();
-		target.Load(Builder);
-		Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new[] { typeof(Computation) }));
-	}
-	/**
-	 * Slot a computation for execution and stop execution.
-	 */
-	public void SlotSleep(LoadableValue target) {
-		Slot(target);
-		Builder.Emit(OpCodes.Ldc_I4_0);
-		Builder.Emit(OpCodes.Ret);
-	}
 	public void StartInterlock(int count, ILGenerator builder = null) {
 		(builder ?? Builder).Emit(OpCodes.Ldarg_0);
 		(builder ?? Builder).Emit(OpCodes.Ldc_I4, count + 1);
@@ -830,17 +814,18 @@ internal class FunctionGenerator : Generator {
 		InitialSelfFrame = new FieldValue(TypeBuilder.DefineField("self", typeof(Frame), FieldAttributes.Private));
 		InitialContainerFrame = new FieldValue(TypeBuilder.DefineField("container", typeof(Frame), FieldAttributes.Private));
 		var construct_params = new[] { typeof(TaskMaster), typeof(SourceReference), typeof(Context), typeof(Frame), typeof(Frame) };
-		var initial_information = new[] { task_master, InitialSourceReference.Field, InitialContext.Field, InitialSelfFrame.Field, InitialContainerFrame.Field };
+		var initial_information = new[] { InitialSourceReference.Field, InitialContext.Field, InitialSelfFrame.Field, InitialContainerFrame.Field };
 
 		// Create a constructor the takes all the state information provided by the
 		// caller and stores it in appropriate fields.
 		var ctor = type_builder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, construct_params);
 		var ctor_builder = ctor.GetILGenerator();
 		ctor_builder.Emit(OpCodes.Ldarg_0);
+		ctor_builder.Emit(OpCodes.Ldarg_1);
 		ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
 		for(var it = 0; it < initial_information.Length; it++) {
 			ctor_builder.Emit(OpCodes.Ldarg_0);
-			ctor_builder.Emit(OpCodes.Ldarg, it + 1);
+			ctor_builder.Emit(OpCodes.Ldarg, it + 2);
 			ctor_builder.Emit(OpCodes.Stfld, initial_information[it]);
 		}
 		ctor_builder.Emit(OpCodes.Ldarg_0);
@@ -874,7 +859,7 @@ internal class FunctionGenerator : Generator {
 			init_builder.Emit(OpCodes.Ret);
 			init_builder.MarkLabel(has_instance);
 		}
-		for (var it = 0; it < initial_information.Length; it++) {
+		for (var it = 0; it < construct_params.Length; it++) {
 			init_builder.Emit(OpCodes.Ldarg, it);
 		}
 		init_builder.Emit(OpCodes.Newobj, ctor);
@@ -885,7 +870,7 @@ internal class FunctionGenerator : Generator {
 			InitialOriginal = new FieldValue(TypeBuilder.DefineField("original", typeof(object), FieldAttributes.Private));
 			original_computation = TypeBuilder.DefineField("original_computation", typeof(Computation), FieldAttributes.Private);
 			init_builder.Emit(OpCodes.Dup);
-			init_builder.Emit(OpCodes.Ldarg, initial_information.Length);
+			init_builder.Emit(OpCodes.Ldarg, init_params.Length - 1);
 			init_builder.Emit(OpCodes.Stfld, original_computation);
 		}
 
@@ -894,13 +879,10 @@ internal class FunctionGenerator : Generator {
 		if (has_original) {
 			var state = DefineState();
 			SetState(state);
-			LoadTaskMaster();
 			Builder.Emit(OpCodes.Ldarg_0);
 			Builder.Emit(OpCodes.Ldfld, original_computation);
-			Builder.Emit(OpCodes.Dup);
 			GenerateConsumeResult(InitialOriginal, false);
 			Builder.Emit(OpCodes.Callvirt, typeof(Computation).GetMethod("Notify", new[] { typeof(ConsumeResult) }));
-			Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new[] { typeof(Computation) }));
 			Builder.Emit(OpCodes.Ldc_I4_0);
 			Builder.Emit(OpCodes.Ret);
 			MarkState(state);
@@ -922,15 +904,16 @@ class ReplGenerator : Generator {
 		EscapeValue = new FieldValue(TypeBuilder.DefineField("escape_value", typeof(ConsumeResult), FieldAttributes.Private));
 		PrintValue = new FieldValue(TypeBuilder.DefineField("print_value", typeof(ConsumeResult), FieldAttributes.Private));
 		var construct_params = new[] { typeof(TaskMaster), typeof(Frame), typeof(Frame), typeof(ConsumeResult), typeof(ConsumeResult) , typeof(ConsumeResult) };
-		var initial_information = new[] { task_master, RootFrame.Field, CurrentFrame.Field, UpdateCurrent.Field, EscapeValue.Field, PrintValue.Field };
+		var initial_information = new[] { RootFrame.Field, CurrentFrame.Field, UpdateCurrent.Field, EscapeValue.Field, PrintValue.Field };
 
 		var ctor = type_builder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, construct_params);
 		var ctor_builder = ctor.GetILGenerator();
 		ctor_builder.Emit(OpCodes.Ldarg_0);
+		ctor_builder.Emit(OpCodes.Ldarg_1);
 		ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
 		for(var it = 0; it < initial_information.Length; it++) {
 			ctor_builder.Emit(OpCodes.Ldarg_0);
-			ctor_builder.Emit(OpCodes.Ldarg, it + 1);
+			ctor_builder.Emit(OpCodes.Ldarg, it + 2);
 			ctor_builder.Emit(OpCodes.Stfld, initial_information[it]);
 		}
 		ctor_builder.Emit(OpCodes.Ldarg_0);
@@ -944,10 +927,8 @@ internal class RootGenerator : Generator {
 		var ctor = type_builder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new[] { typeof(TaskMaster) });
 		var ctor_builder = ctor.GetILGenerator();
 		ctor_builder.Emit(OpCodes.Ldarg_0);
-		ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
-		ctor_builder.Emit(OpCodes.Ldarg_0);
 		ctor_builder.Emit(OpCodes.Ldarg_1);
-		ctor_builder.Emit(OpCodes.Stfld, task_master);
+		ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
 		ctor_builder.Emit(OpCodes.Ldarg_0);
 		ctor_builder.Emit(OpCodes.Ldc_I4_0);
 		ctor_builder.Emit(OpCodes.Stfld, StateField);

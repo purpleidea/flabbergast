@@ -32,16 +32,15 @@ public class Escape extends Computation {
 	private Map<Integer, String> single_substitutions = new TreeMap<Integer, String>();
 	private List<Range> ranges = new ArrayList<Range>();
 	private String[] input;
-	private TaskMaster master;
 	private SourceReference source_ref;
 	private Context context;
 	private Frame self;
 	private AtomicInteger interlock = new AtomicInteger(3);
 	private boolean state = false;
 
-	public Escape(TaskMaster master, SourceReference source_ref,
+	public Escape(TaskMaster task_master, SourceReference source_ref,
 			Context context, Frame self, Frame container) {
-		this.master = master;
+		super(task_master);
 		this.source_ref = source_ref;
 		this.context = context;
 		this.self = self;
@@ -64,10 +63,10 @@ public class Escape extends Computation {
 								Escape.this.input[target_index] = arg
 										.toString();
 								if (interlock.decrementAndGet() == 0) {
-									master.slot(Escape.this);
+									task_master.slot(Escape.this);
 								}
 							} else {
-								master.reportOtherError(
+								task_master.reportOtherError(
 										source_ref,
 										String.format(
 												"Expected “args” to contain strings. Got %s instead.",
@@ -77,10 +76,10 @@ public class Escape extends Computation {
 					});
 				}
 				if (interlock.decrementAndGet() == 0) {
-					master.slot(Escape.this);
+					task_master.slot(Escape.this);
 				}
 			} else {
-				master.reportOtherError(source_ref, String.format(
+				task_master.reportOtherError(source_ref, String.format(
 						"Expected “args” to be a frame. Got %s instead.",
 						Stringish.hideImplementation(result.getClass())));
 			}
@@ -99,7 +98,7 @@ public class Escape extends Computation {
 							public void invoke(final String replacement) {
 								ranges.add(new Range(start, end, replacement));
 								if (interlock.decrementAndGet() == 0) {
-									master.slot(Escape.this);
+									task_master.slot(Escape.this);
 								}
 							}
 						});
@@ -118,7 +117,7 @@ public class Escape extends Computation {
 					public void invoke(final String replacement) {
 						single_substitutions.put(c, replacement);
 						if (interlock.decrementAndGet() == 0) {
-							master.slot(Escape.this);
+							task_master.slot(Escape.this);
 						}
 					}
 				});
@@ -131,7 +130,7 @@ public class Escape extends Computation {
 		public void consume(Object result) {
 			if (result instanceof Frame) {
 				final Frame frame = (Frame) result;
-				Lookup lookup = new Lookup(master, source_ref,
+				Lookup lookup = new Lookup(task_master, source_ref,
 						new String[]{"type"}, Context.prepend(frame, null));
 				lookup.listen(new ConsumeResult() {
 					@Override
@@ -147,13 +146,12 @@ public class Escape extends Computation {
 									return;
 							}
 						}
-						master.reportOtherError(source_ref,
+						task_master.reportOtherError(source_ref,
 								"Illegal transformation specified.");
 					}
 				});
-				master.slot(lookup);
 			} else {
-				master.reportOtherError(source_ref,
+				task_master.reportOtherError(source_ref,
 						"Non-frame in transformation list.");
 			}
 		}
@@ -168,14 +166,16 @@ public class Escape extends Computation {
 					input.getOrSubscribe(name, new HandleTransformation());
 				}
 				if (interlock.decrementAndGet() == 0) {
-					master.slot(Escape.this);
+					task_master.slot(Escape.this);
 				}
 			} else {
-				master.reportOtherError(
-						source_ref,
-						String.format(
-								"Expected “transformations” to be a frame. Got %s instead.",
-								Stringish.hideImplementation(result.getClass())));
+				task_master
+						.reportOtherError(
+								source_ref,
+								String.format(
+										"Expected “transformations” to be a frame. Got %s instead.",
+										Stringish.hideImplementation(result
+												.getClass())));
 			}
 		}
 	}
@@ -187,7 +187,7 @@ public class Escape extends Computation {
 				if (str.offsetByCodePoints(0, 1) == str.length()) {
 					consume.invoke(str.codePointAt(0));
 				} else {
-					master.reportOtherError(source_ref, String.format(
+					task_master.reportOtherError(source_ref, String.format(
 							"String “%s” for “%s” must be a single codepoint.",
 							str, name));
 				}
@@ -197,7 +197,7 @@ public class Escape extends Computation {
 
 	void lookupString(Frame frame, final String name,
 			final ConsumeString consume) {
-		Lookup lookup = new Lookup(master, source_ref, new String[]{name},
+		Lookup lookup = new Lookup(task_master, source_ref, new String[]{name},
 				Context.prepend(frame, null));
 		lookup.listen(new ConsumeResult() {
 			@Override
@@ -206,33 +206,30 @@ public class Escape extends Computation {
 					String str = result.toString();
 					consume.invoke(str);
 				} else {
-					master.reportOtherError(source_ref, String.format(
+					task_master.reportOtherError(source_ref, String.format(
 							"Expected “%s” to be a string. Got %s instead.",
 							name, result.getClass()));
 				}
 			}
 		});
-		master.slot(lookup);
 	}
 
 	@Override
 	protected void run() {
 		if (!state) {
-			Lookup input_lookup = new Lookup(master, source_ref,
+			Lookup input_lookup = new Lookup(task_master, source_ref,
 					new String[]{"args"}, context);
 			input_lookup.listen(new HandleArgs());
-			master.slot(input_lookup);
-			Lookup transformation_lookup = new Lookup(master, source_ref,
+			Lookup transformation_lookup = new Lookup(task_master, source_ref,
 					new String[]{"transformations"}, context);
 			transformation_lookup.listen(new HandleTransformations());
-			master.slot(transformation_lookup);
 			state = true;
 			if (interlock.decrementAndGet() > 0) {
 				return;
 			}
 		}
-		Frame output_frame = new Frame(master, master.nextId(), source_ref,
-				context, self);
+		Frame output_frame = new Frame(task_master, task_master.nextId(),
+				source_ref, context, self);
 		for (int index = 0; index < input.length; index++) {
 			StringBuilder buffer = new StringBuilder();
 			for (int it = 0; it < input[index].length(); it = input[index]

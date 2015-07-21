@@ -2,13 +2,12 @@ package flabbergast;
 
 public class CheckResult extends Computation {
 	private boolean success;
-	private TaskMaster task_master;
 
 	private Class<? extends Computation> test_target;
 
 	public CheckResult(TaskMaster task_master,
 			Class<? extends Computation> test_target) {
-		this.task_master = task_master;
+		super(task_master);
 		this.test_target = test_target;
 	}
 
@@ -42,11 +41,9 @@ public class CheckResult extends Computation {
 
 							}
 						});
-						task_master.slot(lookup);
 					}
 				}
 			});
-			task_master.slot(computation);
 		} catch (Exception e) {
 		}
 

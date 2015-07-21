@@ -63,7 +63,7 @@ public class TestHarness {
 				success = collector.isAnalyseDirty();
 				if (!success && test_type != null) {
 					CheckResult tester = new CheckResult(task_master, test_type);
-					task_master.slot(tester);
+					tester.slot();
 					task_master.run();
 					success = !tester.getSuccess();
 				}
@@ -90,7 +90,7 @@ public class TestHarness {
 						&& !collector.isParseDirty();
 				if (success && test_type != null) {
 					CheckResult tester = new CheckResult(task_master, test_type);
-					task_master.slot(tester);
+					tester.slot();
 					task_master.run();
 					success = tester.getSuccess();
 				}

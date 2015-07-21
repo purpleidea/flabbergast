@@ -21,7 +21,8 @@ class FunctionGenerator extends Generator {
 	FunctionGenerator(AstNode node, CompilationUnit<?> owner,
 			ClassVisitor type_builder, boolean has_original, String class_name,
 			String root_prefix, Set<String> owner_externals)
-			throws NoSuchMethodException, SecurityException {
+			throws NoSuchMethodException, NoSuchFieldException,
+			SecurityException {
 		super(node, owner, type_builder, class_name, root_prefix,
 				owner_externals);
 
@@ -36,7 +37,7 @@ class FunctionGenerator extends Generator {
 		Class<?>[] construct_params = new Class<?>[]{TaskMaster.class,
 				SourceReference.class, Context.class, Frame.class, Frame.class,
 				has_original ? Computation.class : null};
-		FieldValue[] initial_information = new FieldValue[]{task_master,
+		FieldValue[] initial_information = new FieldValue[]{
 				initial_source_reference, initial_context, initial_self,
 				initial_container, original};
 
@@ -48,6 +49,7 @@ class FunctionGenerator extends Generator {
 				makeSignature(null, construct_params), null, null);
 		ctor_builder.visitCode();
 		ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
+		ctor_builder.visitVarInsn(Opcodes.ALOAD, 1);
 		ctor_builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
 				getInternalName(Computation.class), "<init>", Type
 						.getConstructorDescriptor(Computation.class
@@ -56,7 +58,7 @@ class FunctionGenerator extends Generator {
 			if (initial_information[it] == null)
 				continue;
 			ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
-			ctor_builder.visitVarInsn(Opcodes.ALOAD, it + 1);
+			ctor_builder.visitVarInsn(Opcodes.ALOAD, it + 2);
 			initial_information[it].store(ctor_builder);
 		}
 		ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
@@ -112,8 +114,8 @@ class FunctionGenerator extends Generator {
 		}
 		init_builder.visitTypeInsn(Opcodes.NEW, class_name);
 		init_builder.visitInsn(Opcodes.DUP);
-		for (int it = 0; it < initial_information.length; it++) {
-			if (initial_information[it] == null)
+		for (int it = 0; it < construct_params.length; it++) {
+			if (construct_params[it] == null)
 				continue;
 			init_builder.visitVarInsn(Opcodes.ALOAD, it + 1);
 		}
@@ -127,14 +129,11 @@ class FunctionGenerator extends Generator {
 
 		if (has_original) {
 			startInterlock(1);
-			loadTaskMaster();
 			original.load(builder);
 			initial_original = makeField("initial_original", Object.class);
-			builder.visitInsn(Opcodes.DUP);
 			generateConsumeResult(initial_original);
 			visitMethod(Computation.class.getMethod("listen",
 					ConsumeResult.class));
-			visitMethod(TaskMaster.class.getMethod("slot", Computation.class));
 			stopInterlock();
 		} else {
 			initial_original = null;

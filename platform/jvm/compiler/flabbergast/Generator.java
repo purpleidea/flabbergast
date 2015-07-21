@@ -148,7 +148,7 @@ abstract class Generator {
 	Generator(AstNode node, CompilationUnit<?> owner,
 			ClassVisitor type_builder, String class_name, String root_prefix,
 			Set<String> owner_externals) throws NoSuchMethodException,
-			SecurityException {
+			NoSuchFieldException, SecurityException {
 		this.owner = owner;
 		this.type_builder = type_builder;
 		paths = 1;
@@ -160,7 +160,8 @@ abstract class Generator {
 				getDescriptor(int.class), null, null).visitEnd();
 		type_builder.visitField(0, "interlock",
 				getDescriptor(AtomicInteger.class), null, null).visitEnd();
-		task_master = makeField("task_master", TaskMaster.class);
+		task_master = new FieldValue(
+				Computation.class.getDeclaredField("task_master"));
 
 		// Label for load externals
 		defineState();
@@ -1057,18 +1058,6 @@ abstract class Generator {
 				getDescriptor(int.class));
 	}
 
-	/**
-	 * Slot a computation for execution by the task master.
-	 * 
-	 * @throws SecurityException
-	 * @throws NoSuchMethodException
-	 */
-	public void slot(LoadableValue target) throws Exception {
-		loadTaskMaster();
-		target.load(builder);
-		visitMethod(TaskMaster.class.getMethod("slot", Computation.class));
-	}
-
 	public void slotIfFrame(LoadableValue result) throws Exception {
 		if (result.getBackingType() == Frame.class
 				|| result.getBackingType() == Object.class) {
@@ -1087,17 +1076,6 @@ abstract class Generator {
 			visitMethod(Frame.class.getMethod("slot"));
 			builder.visitLabel(end);
 		}
-	}
-	/**
-	 * Slot a computation for execution and stop execution.
-	 * 
-	 * @throws SecurityException
-	 * @throws NoSuchMethodException
-	 */
-	public void slotSleep(LoadableValue target) throws Exception {
-		slot(target);
-		builder.visitInsn(Opcodes.ICONST_0);
-		builder.visitInsn(Opcodes.IRETURN);
 	}
 
 	public void startInterlock(int count) throws NoSuchMethodException,

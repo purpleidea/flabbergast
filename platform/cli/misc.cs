@@ -44,14 +44,12 @@ namespace Flabbergast {
 		private int interlock;
 		private String input;
 
-		private TaskMaster master;
 		private SourceReference source_reference;
 		private Context context;
 		private Frame container;
 
-		public CharacterCategory(TaskMaster master, SourceReference source_ref,
-				Context context, Frame self, Frame container) {
-			this.master = master;
+		public CharacterCategory(TaskMaster task_master, SourceReference source_ref,
+				Context context, Frame self, Frame container) : base(task_master) {
 			this.source_reference = source_ref;
 			this.context = context;
 			this.container = self;
@@ -59,35 +57,33 @@ namespace Flabbergast {
 		protected override bool Run() {
 			if (mappings.Count == 0) {
 				interlock = categories.Count + 2;
-				Computation input_lookup = new Lookup(master, source_reference, new []{"arg"}, context);
+				Computation input_lookup = new Lookup(task_master, source_reference, new []{"arg"}, context);
 				input_lookup.Notify(input_result => {
 					if (input_result is Stringish) {
 						input = input_result.ToString();
 						if (Interlocked.Decrement(ref interlock) == 0) {
-							master.Slot(this);
+							task_master.Slot(this);
 						}
 					} else {
-						master.ReportOtherError(source_reference, "Input argument must be a string.");
+						task_master.ReportOtherError(source_reference, "Input argument must be a string.");
 					}
 				});
-				master.Slot(input_lookup);
 
 				foreach (var entry in categories) {
-					var lookup = new Lookup(master, source_reference, new []{ entry.Value }, context);
+					var lookup = new Lookup(task_master, source_reference, new []{ entry.Value }, context);
 					lookup.Notify(cat_result => {
 						mappings[entry.Key] = cat_result;
 						if (Interlocked.Decrement(ref interlock) == 0) {
-							master.Slot(this);
+							task_master.Slot(this);
 						}
 					});
-					master.Slot(lookup);
 				}
 
 				if (Interlocked.Decrement(ref interlock) > 0) {
 					return false;
 				}
 			}
-			var frame = new Frame(master, master.NextId(), source_reference, context, container);
+			var frame = new Frame(task_master, task_master.NextId(), source_reference, context, container);
 			for(int it = 0; it < input.Length; it++) {
 				frame[TaskMaster.OrdinalNameStr(it + 1)] = mappings[Char.GetUnicodeCategory(input[it])];
 			}
@@ -99,38 +95,35 @@ namespace Flabbergast {
 		private int interlock = 2;
 		private String input;
 
-		private TaskMaster master;
 		private SourceReference source_reference;
 		private Context context;
 		private Frame container;
 
-		public StringToCodepoints(TaskMaster master, SourceReference source_ref,
-				Context context, Frame self, Frame container) {
-			this.master = master;
+		public StringToCodepoints(TaskMaster task_master, SourceReference source_ref,
+				Context context, Frame self, Frame container) : base(task_master) {
 			this.source_reference = source_ref;
 			this.context = context;
 			this.container = self;
 		}
 		protected override bool Run() {
 			if (input == null) {
-				Computation input_lookup = new Lookup(master, source_reference, new []{"arg"}, context);
+				Computation input_lookup = new Lookup(task_master, source_reference, new []{"arg"}, context);
 				input_lookup.Notify(input_result => {
 					if (input_result is Stringish) {
 						input = input_result.ToString();
 						if (Interlocked.Decrement(ref interlock) == 0) {
-							master.Slot(this);
+							task_master.Slot(this);
 						}
 					} else {
-						master.ReportOtherError(source_reference, "Input argument must be a string.");
+						task_master.ReportOtherError(source_reference, "Input argument must be a string.");
 					}
 				});
-				master.Slot(input_lookup);
 
 				if (Interlocked.Decrement(ref interlock) > 0) {
 					return false;
 				}
 			}
-			var frame = new Frame(master, master.NextId(), source_reference, context, container);
+			var frame = new Frame(task_master, task_master.NextId(), source_reference, context, container);
 			for(int it = 0; it < input.Length; it++) {
 				frame[TaskMaster.OrdinalNameStr(it + 1)] = (long) Char.ConvertToUtf32(input, it);
 			}
@@ -144,33 +137,30 @@ namespace Flabbergast {
 		private int interlock = 2;
 		private String input;
 
-		private TaskMaster master;
 		private SourceReference source_reference;
 		private Context context;
 
 		public ParseDouble(TaskMaster master, SourceReference source_ref,
-				Context context, Frame self, Frame container) {
-			this.master = master;
+				Context context, Frame self, Frame container) : base(master) {
 			this.source_reference = source_ref;
 			this.context = context;
 		}
 
 		protected override bool Run() {
 			if (input == null) {
-				var input_lookup = new Lookup(master, source_reference,
+				var input_lookup = new Lookup(task_master, source_reference,
 						new String[]{"arg"}, context);
 				input_lookup.Notify(input_result => {
 					if (input_result is Stringish) {
 						input = input_result.ToString();
 						if (Interlocked.Decrement(ref interlock) == 0) {
-							master.Slot(this);
+							task_master.Slot(this);
 						}
 					} else {
-						master.ReportOtherError(source_reference,
+						task_master.ReportOtherError(source_reference,
 								"Input argument must be a string.");
 					}
 				});
-				master.Slot(input_lookup);
 
 				if (Interlocked.Decrement(ref interlock) > 0) {
 					return false;
@@ -181,7 +171,7 @@ namespace Flabbergast {
 				result = Convert.ToDouble(input);
 				return true;
 			} catch (Exception e) {
-				master.ReportOtherError(source_reference, e.Message);
+				task_master.ReportOtherError(source_reference, e.Message);
 				return false;
 			}
 		}
@@ -193,48 +183,44 @@ namespace Flabbergast {
 		private String input;
 		private int radix;
 
-		private TaskMaster master;
 		private SourceReference source_reference;
 		private Context context;
 
-		public ParseInt(TaskMaster master, SourceReference source_ref,
-				Context context, Frame self, Frame container) {
-			this.master = master;
+		public ParseInt(TaskMaster task_master, SourceReference source_ref,
+				Context context, Frame self, Frame container) : base(task_master) {
 			this.source_reference = source_ref;
 			this.context = context;
 		}
 
 		protected override bool Run() {
 			if (input == null) {
-				var input_lookup = new Lookup(master, source_reference,
+				var input_lookup = new Lookup(task_master, source_reference,
 						new String[]{"arg"}, context);
 				input_lookup.Notify(input_result => {
 					if (input_result is Stringish) {
 						input = input_result.ToString();
 						if (Interlocked.Decrement(ref interlock) == 0) {
-							master.Slot(this);
+							task_master.Slot(this);
 						}
 					} else {
-						master.ReportOtherError(source_reference,
+						task_master.ReportOtherError(source_reference,
 								"Input argument must be a string.");
 					}
 				});
-				master.Slot(input_lookup);
 
-				var radix_lookup = new Lookup(master, source_reference,
+				var radix_lookup = new Lookup(task_master, source_reference,
 						new String[]{"radix"}, context);
 				radix_lookup.Notify(radix_result => {
 					if (radix_result is Int64) {
 						radix = (int)(long)radix_result;
 						if (Interlocked.Decrement(ref interlock) == 0) {
-							master.Slot(this);
+							task_master.Slot(this);
 						}
 					} else {
-						master.ReportOtherError(source_reference,
+						task_master.ReportOtherError(source_reference,
 								"Input argument must be a string.");
 					}
 				});
-				master.Slot(radix_lookup);
 
 				if (Interlocked.Decrement(ref interlock) > 0) {
 					return false;
@@ -245,7 +231,7 @@ namespace Flabbergast {
 				result = Convert.ToInt64(input, radix);
 				return true;
 			} catch (Exception e) {
-				master.ReportOtherError(source_reference, e.Message);
+				task_master.ReportOtherError(source_reference, e.Message);
 				return false;
 			}
 		}
@@ -267,16 +253,14 @@ namespace Flabbergast {
 		private Dictionary<int, string> single_substitutions = new Dictionary<int, string>();
 		private SortedList<int, Range> ranges = new SortedList<int, Range>();
 		private string[] input;
-		private TaskMaster master;
 		private SourceReference source_ref;
 		private Context context;
 		private Frame self;
 		private int interlock = 3;
 		private bool state = false;
 
-		public Escape(TaskMaster master, SourceReference source_ref,
-				Context context, Frame self, Frame container) {
-				this.master = master;
+		public Escape(TaskMaster task_master, SourceReference source_ref,
+				Context context, Frame self, Frame container) : base(task_master) {
 				this.source_ref = source_ref;
 				this.context = context;
 				this.self = self;
@@ -294,18 +278,18 @@ namespace Flabbergast {
 							if (arg is Stringish) {
 								this.input[target_index] = arg.ToString();
 								if (Interlocked.Decrement(ref interlock) == 0) {
-									master.Slot(this);
+									task_master.Slot(this);
 								}
 							} else {
-								master.ReportOtherError(source_ref, String.Format("Expected “args” to contain strings. Got {0} instead.", arg.GetType()));
+								task_master.ReportOtherError(source_ref, String.Format("Expected “args” to contain strings. Got {0} instead.", arg.GetType()));
 							}
 						});
 					}
 					if (Interlocked.Decrement(ref interlock) == 0) {
-						master.Slot(this);
+						task_master.Slot(this);
 					}
 				} else {
-					master.ReportOtherError(source_ref, String.Format("Expected “args” to be a frame. Got {0} instead.", Stringish.HideImplementation(result.GetType())));
+					task_master.ReportOtherError(source_ref, String.Format("Expected “args” to be a frame. Got {0} instead.", Stringish.HideImplementation(result.GetType())));
 				}
 		}
 
@@ -315,7 +299,7 @@ namespace Flabbergast {
 					LookupString(spec, "format_str", replacement => {
 						ranges.Add(start, new Range() { start = start, end = end, replacement = replacement });
 						if (Interlocked.Decrement(ref interlock) == 0) {
-							master.Slot(this);
+							task_master.Slot(this);
 						}
 					});
 				});
@@ -327,7 +311,7 @@ namespace Flabbergast {
 				LookupString(spec, "replacement", replacement => {
 					single_substitutions[c] = replacement;
 					if (Interlocked.Decrement(ref interlock) == 0) {
-						master.Slot(this);
+						task_master.Slot(this);
 					}
 				});
 			});
@@ -336,7 +320,7 @@ namespace Flabbergast {
 		private void HandleTransformation(object result) {
 			if (result is Frame) {
 				var frame = (Frame) result;
-				var lookup = new Lookup(master, source_ref, new []{"type"}, Context.Prepend(frame, null));
+				var lookup = new Lookup(task_master, source_ref, new []{"type"}, Context.Prepend(frame, null));
 				lookup.Notify(type_result => {
 					if (type_result is long) {
 						switch ((long) type_result) {
@@ -348,11 +332,10 @@ namespace Flabbergast {
 								return;
 						}
 					}
-					master.ReportOtherError(source_ref, "Illegal transformation specified.");
+					task_master.ReportOtherError(source_ref, "Illegal transformation specified.");
 				});
-				master.Slot(lookup);
 			} else {
-				master.ReportOtherError(source_ref, "Non-frame in transformation list.");
+				task_master.ReportOtherError(source_ref, "Non-frame in transformation list.");
 			}
 		}
 		private void HandleTransformations(object result) {
@@ -363,10 +346,10 @@ namespace Flabbergast {
 						input.GetOrSubscribe(name, HandleTransformation);
 					}
 					if (Interlocked.Decrement(ref interlock) == 0) {
-						master.Slot(this);
+						task_master.Slot(this);
 					}
 			} else {
-					master.ReportOtherError(source_ref, String.Format("Expected “transformations” to be a frame. Got {0} instead.", Stringish.HideImplementation(result.GetType())));
+					task_master.ReportOtherError(source_ref, String.Format("Expected “transformations” to be a frame. Got {0} instead.", Stringish.HideImplementation(result.GetType())));
 			}
 		}
 
@@ -375,38 +358,35 @@ namespace Flabbergast {
 				if (str.Length == 1 || str.Length == 2 && Char.IsSurrogatePair(str, 0)) {
 					consume(Char.ConvertToUtf32(str, 0));
 				} else {
-					master.ReportOtherError(source_ref, String.Format("String “{0}” for “{1}” must be a single codepoint.", str, name));
+					task_master.ReportOtherError(source_ref, String.Format("String “{0}” for “{1}” must be a single codepoint.", str, name));
 				}
 			});
 		}
 
 		void LookupString(Frame frame, string name, ConsumeString consume) {
-			var lookup = new Lookup(master, source_ref, new []{name}, Context.Prepend(frame, null));
+			var lookup = new Lookup(task_master, source_ref, new []{name}, Context.Prepend(frame, null));
 			lookup.Notify(result => {
 				if (result is Stringish) {
 					var str = result.ToString();
 					consume(str);
 				} else {
-					master.ReportOtherError(source_ref, String.Format("Expected “{0}” to be a string. Got {1} instead.", name, result.GetType()));
+					task_master.ReportOtherError(source_ref, String.Format("Expected “{0}” to be a string. Got {1} instead.", name, result.GetType()));
 				}
 			});
-			master.Slot(lookup);
 		}
 
 		protected override bool Run() {
 			if (!state) {
-				var input_lookup = new Lookup(master, source_ref, new []{"args"}, context);
+				var input_lookup = new Lookup(task_master, source_ref, new []{"args"}, context);
 				input_lookup.Notify(HandleArgs);
-				master.Slot(input_lookup);
-				var transformation_lookup = new Lookup(master, source_ref, new []{"transformations"}, context);
+				var transformation_lookup = new Lookup(task_master, source_ref, new []{"transformations"}, context);
 				transformation_lookup.Notify(HandleTransformations);
-				master.Slot(transformation_lookup);
 				state = true;
 				if (Interlocked.Decrement(ref interlock) > 0) {
 					return false;
 				}
 			}
-			var output_frame = new Frame(master, master.NextId(), source_ref, context, self);
+			var output_frame = new Frame(task_master, task_master.NextId(), source_ref, context, self);
 			for (var index = 0; index < input.Length; index++) {
 				var buffer = new StringBuilder();
 				for(var it = 0; it < input[index].Length; it += Char.IsSurrogatePair(input[index], it) ? 2 : 1) {

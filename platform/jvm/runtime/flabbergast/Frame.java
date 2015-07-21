@@ -149,7 +149,7 @@ public class Frame implements Iterable<String> {
 			 * When this computation has completed, replace its value in the
 			 * frame.
 			 */
-			computation.listen(new ConsumeResult() {
+			computation.listenDelayed(new ConsumeResult() {
 				@Override
 				public void consume(Object result) {
 					attributes.put(name, result);
@@ -191,7 +191,7 @@ public class Frame implements Iterable<String> {
 	 */
 	public void slot() {
 		for (Computation computation : unslotted) {
-			task_master.slot(computation);
+			computation.slot();
 		}
 		unslotted.clear();
 	}

@@ -194,7 +194,6 @@ internal abstract class NameInfo {
 	protected LoadableValue GenerateLookupField(Generator generator, LoadableValue source_reference, LoadableValue context) {
 		var lookup_result = generator.MakeField("lookup_" + Name, typeof(object));
 		generator.LoadTaskMaster();
-		generator.Builder.Emit(OpCodes.Dup);
 		source_reference.Load(generator);
 		var name_parts = Name.Split('.');
 		generator.Builder.Emit(OpCodes.Ldc_I4, name_parts.Length);
@@ -207,10 +206,8 @@ internal abstract class NameInfo {
 		}
 		context.Load(generator);
 		generator.Builder.Emit(OpCodes.Newobj, typeof(Lookup).GetConstructors()[0]);
-		generator.Builder.Emit(OpCodes.Dup);
 		generator.GenerateConsumeResult(lookup_result, true);
 		generator.Builder.Emit(OpCodes.Call, typeof(Lookup).GetMethod("Notify", new[] { typeof(ConsumeResult) }));
-		generator.Builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new[] { typeof(Computation) }));
 		return lookup_result;
 	}
 }

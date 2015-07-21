@@ -74,7 +74,7 @@ public abstract class CompilationUnit<T> {
 	private FunctionGenerator createFunctionGenerator(AstNode node,
 			String name, boolean has_original, String root_prefix,
 			Set<String> owner_externals) throws NoSuchMethodException,
-			SecurityException {
+			NoSuchFieldException, SecurityException {
 		ClassVisitor type_builder = defineClass(Opcodes.ACC_FINAL, name,
 				Computation.class);
 		type_builder.visitSource(node.getFileName(), null);

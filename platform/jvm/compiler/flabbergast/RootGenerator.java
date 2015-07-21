@@ -13,7 +13,7 @@ class RootGenerator extends Generator {
 
 	RootGenerator(AstNode node, CompilationUnit<?> owner,
 			ClassVisitor type_builder, String class_name)
-			throws NoSuchMethodException {
+			throws NoSuchMethodException, NoSuchFieldException {
 		super(node, owner, type_builder, class_name, class_name,
 				new HashSet<String>());
 
@@ -22,12 +22,10 @@ class RootGenerator extends Generator {
 				makeSignature(null, TaskMaster.class), null, null);
 		ctor_builder.visitCode();
 		ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
+		ctor_builder.visitVarInsn(Opcodes.ALOAD, 1);
 		ctor_builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
-				getInternalName(Computation.class), "<init>", "()V");
-		ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
-		ctor_builder.visitVarInsn(Opcodes.ALOAD, 1);
-		task_master.store(ctor_builder);
-		ctor_builder.visitVarInsn(Opcodes.ALOAD, 1);
+				getInternalName(Computation.class), "<init>",
+				makeSignature(null, TaskMaster.class));
 		ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
 		ctor_builder.visitInsn(Opcodes.ICONST_0);
 		ctor_builder.visitFieldInsn(Opcodes.PUTFIELD, class_name, "state",

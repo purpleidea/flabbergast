@@ -1007,16 +1007,13 @@ kws : compiler_lib.kws_repl_tmpl {
 					code :
 						"\(sum_indent)\(generator).StartInterlock(1);" &
 						"\(sum_indent)\(generator).LoadTaskMaster();" &
-						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
 						"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));" &
 						load_names &
 						"\(sum_indent)\(source.storage_name).Load(\(generator));" &
 						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(Lookup).GetConstructors()[0]);" &
-						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
 						"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"lookup\", typeof(object));" &
 						"\(sum_indent)\(generator).GenerateConsumeResult(\(storage_name), true);" &
 						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Lookup).GetMethod(\"Notify\", new System.Type[] { typeof(ConsumeResult) }));" &
-						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(TaskMaster).GetMethod(\"Slot\", new System.Type[] { typeof(Computation) }));" &
 						"\(sum_indent)\(generator).StopInterlock();" &
 						code
 					)
@@ -2525,17 +2522,14 @@ compiler : compiler_lib.language_with_repl_tmpl {
 									value :
 										"\(indent)\(generator).StartInterlock(1);" &
 										"\(indent)\(generator).LoadTaskMaster();" &
-										"\(indent)\(generator).LoadTaskMaster();" &
 										"\(indent)\(parameters.source_reference.storage_name).Load(\(generator));" &
 										"\(indent)\(parameters.context.storage_name).Load(\(generator));" &
 										"\(indent)\(parameters.self_frame.storage_name).Load(\(generator));" &
 										"\(indent)\(parameters.container_frame.storage_name).Load(\(generator));" &
 										"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, constructor);" &
-										"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
 										"\(indent)var \(storage_name) = \(generator).MakeField(\"xcomputation\", typeof(object));" &
 										"\(indent)\(generator).GenerateConsumeResult(\(storage_name), true);" &
 										"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Computation).GetMethod(\"Notify\", new[] { typeof(ConsumeResult) }));" &
-										"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(TaskMaster).GetMethod(\"Slot\", new[] { typeof(Computation) }));" &
 										"\(indent)\(generator).StopInterlock();" &
 										code
 							}
