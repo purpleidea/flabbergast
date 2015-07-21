@@ -35,12 +35,24 @@ There are two editions of the language: one which uses the Java Virtual Machine 
 
 For efficiency, Flabbergast allows pre-compilation of libraries. This can be done using `update-flabbergast`. It can only update directories writable by the user; but it is automatically trigged upon installation of new packages containing Flabbergast code. You may wish to keep a set of your own libraries in `~/.local/share/flabbergast/lib`, and it will manage those too.
 
+Maven users can get the Java edition from [The Central Repository](http://search.maven.org/#search|ga|1|g%3A%22com.github.apmasell.flabbergast%22). The dependencies are:
+
+    <dependency><groupId>com.github.apmasell.flabbergast</groupId><artifactId>stdlib</artifactId><version>$VERSION</version><scope>runtime</scope></dependency>
+    <dependency><groupId>com.github.apmasell.flabbergast</groupId><artifactId>compiler</artifactId><version>$VERSION</version><scope>runtime</scope></dependency>
+
+or you can download the JARs alone using:
+
+    mvn -DgroupId=com.github.apmasell.flabbergast -DartifactId=stdlib -Dversion=$VERSION dependency:get
+    mvn -DgroupId=com.github.apmasell.flabbergast -DartifactId=compiler -Dversion=$VERSION dependency:get
+
+substituting `$VESRION` as appropriate. To run it, invoke Java on the JARs and run `flabbergast.MainPrinter` to run the default interface, which simply runs the provided script and dumps the output, or `flabbergast.MainREPL` to access the interactive debugger.
+
 ## Building
-To build Flabbergast, you will need to have an existing copy of Flabbergast or obtain the generated compiler sources directly. You will need GNU AutoTools, Flabbergast, Make, and the preqrequistes to build one of either the JVM edition or the CLI edition. For the JVM edition, you will need the JVM 1.7 or later, [ObjectWeb ASM](http://asm.ow2.org), [JLine](http://jline.sourceforge.net/), and [Commons CLI](https://commons.apache.org/cli/). If you are building the CLI edition, you will need either Mono or the Common Language Runtime, the C# compiler, and either MSBuild or XBuild.
+To build Flabbergast, you will need to have an existing copy of Flabbergast or obtain the generated compiler sources directly. You will need GNU AutoTools, Flabbergast, Make, rsync, and the preqrequistes to build one of either the JVM edition or the CLI edition. For the JVM edition, you will need the JVM 1.7 or later, [ObjectWeb ASM](http://asm.ow2.org), [JLine](http://jline.sourceforge.net/), and [Commons CLI](https://commons.apache.org/cli/). If you are building the CLI edition, you will need either Mono or the Common Language Runtime, the C# compiler, and either MSBuild or XBuild.
 
 To install all these packages on Ubuntu/Debian, do:
 
-    sudo apt-get install java7-jdk autotools-dev libasm4-java libjline-java libcommons-cli-java mono-xbuild mono-mcs
+    sudo apt-get install java7-jdk autotools-dev libasm4-java libjline-java libcommons-cli-java mono-xbuild mono-mcs rsync
 
 To build the compiler, run the bootstrap step:
 
