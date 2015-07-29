@@ -11,6 +11,10 @@ Another way to think about that language is that it is a system where dependency
 
 For more background on the complexity of configuration languages, take a look at [Configuration Pinocchio](https://www.usenix.org/conference/srecon15europe/program/presentation/masella), presented at SREcon15 Europe, and the [companion paper](http://www.masella.name/~andre/2015-srecon-andre_masella.pdf).
 
+## Quick Notes on Syntax
+
+To make adoption easier, Flabbergast tries to be like other popular languages in the inconsequential stuff. If compared to any mainstream language, the arithmetic operators are going to behave like “normal”. Flabbergast also tries to use words over symbols. Granted, it has the provincial assumption that everyone knows English, but the goal is to avoid looking like line noise. The unusual symbols are: `:` for definition (like JSON), `&` for string join, and `??` for null coalescence (like C#), and `+:` for overriding (a unique property of the language).
+
 ## Getting Started
 
 As general background, this guide assumes some previous experience programming. Familiarity with one functional language, including Scheme, LISP, Haskell, or ML, and one object-oriented language is almost essential or experience with R, as it has elements of both. A deeper understanding of a dynamically-typed object-oriented language like Python, Perl, Ruby, or JavaScript can be extremely helpful, though not necessary. Use of a macro processor, such as the C Pre-Processor or M4 might provide some extra insights.
