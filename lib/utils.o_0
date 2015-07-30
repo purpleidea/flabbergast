@@ -65,6 +65,18 @@ enabled : Template {
 			Select arg_name : arg
 }
 
+# Flatten a list of lists into a single list.
+flatten : flattenifier(base : identity)
+
+# Convert a function-like template from one that returns a list of lists to one
+# that returns a list.
+flattenifier : Template {
+	base : Required
+	value : Template base {
+		value +original: For item : original Reduce acc Append item With acc : []
+	}
+}
+
 # Return the first argument supplied.
 first : firstifier(base : identity)
 
@@ -97,18 +109,6 @@ frame : Template {
 	# The name to use
 	name : Required
 	value : For arg : args Select name : arg
-}
-
-# Return the last argument supplied.
-last : lastifier(base : identity)
-
-# Convert a function-like template from one that returns a list of non-null
-# values into one that returns the last non-null value.
-lastifier : Template {
-	base : Required
-	value : Template base {
-		value +original: For item : original Reduce item ?? acc With acc : Null
-	}
 }
 
 # Function-like template that returns its arguments.
@@ -157,6 +157,19 @@ is_list : Template {
 			Reduce acc && arg_name == int_to_ordinal(arg_pos)
 			With acc : True
 }
+
+# Return the last argument supplied.
+last : lastifier(base : identity)
+
+# Convert a function-like template from one that returns a list of non-null
+# values into one that returns the last non-null value.
+lastifier : Template {
+	base : Required
+	value : Template base {
+		value +original: For item : original Reduce item ?? acc With acc : Null
+	}
+}
+
 # Finds the maximum in a list of values
 max : maxifier(base : identity)
 
@@ -246,7 +259,7 @@ productifier : Template {
 
 # Get the Unicode category for every character in a string. See
 # `str_categories_list` for details.
-str_categories : firstifier(base : str_categories_list)
+str_categories : flattenifier(base : str_categories_list)
 
 # Get the Unicode category for every character in strings. The value to be
 # returned for each category must be user-defined.
@@ -287,7 +300,7 @@ str_categories_list : Template ( From lib:utilsinterop ).str_categories_list {
 
 # Get the Unicode category name for every character in a string. See
 # `str_categories_list` for details.
-str_categories_spec : firstifier(base : str_categories_spec_list)
+str_categories_spec : flattenifier(base : str_categories_spec_list)
 
 # Get the Unicode category name for every character in a string. The names are
 # from the Unicode specification. See `str_categories_list` for details.
@@ -325,7 +338,7 @@ str_categories_spec_list : Template str_categories_list {
 }
 
 # Convert a string into a list of codepoints (integers) for each character.
-str_codepoints : firstifier(base : str_codepoints_list)
+str_codepoints : flattenifier(base : str_codepoints_list)
 
 # Convert strings into lists of codepoints (integers) for each character.
 str_codepoints_list : Template ( From lib:utilsinterop ).str_codepoints_list {
