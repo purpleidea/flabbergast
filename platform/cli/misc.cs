@@ -289,7 +289,7 @@ namespace Flabbergast {
 						task_master.Slot(this);
 					}
 				} else {
-					task_master.ReportOtherError(source_ref, String.Format("Expected “args” to be a frame. Got {0} instead.", Stringish.HideImplementation(result.GetType())));
+					task_master.ReportOtherError(source_ref, String.Format("Expected “args” to be a frame. Got {0} instead.", Stringish.NameForType(result.GetType())));
 				}
 		}
 
@@ -349,7 +349,7 @@ namespace Flabbergast {
 						task_master.Slot(this);
 					}
 			} else {
-					task_master.ReportOtherError(source_ref, String.Format("Expected “transformations” to be a frame. Got {0} instead.", Stringish.HideImplementation(result.GetType())));
+					task_master.ReportOtherError(source_ref, String.Format("Expected “transformations” to be a frame. Got {0} instead.", Stringish.NameForType(result.GetType())));
 			}
 		}
 

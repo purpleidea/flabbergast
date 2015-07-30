@@ -81,7 +81,7 @@ public class Escape extends Computation {
 			} else {
 				task_master.reportOtherError(source_ref, String.format(
 						"Expected “args” to be a frame. Got %s instead.",
-						Stringish.hideImplementation(result.getClass())));
+						Stringish.nameForClass(result.getClass())));
 			}
 		}
 	}
@@ -174,7 +174,7 @@ public class Escape extends Computation {
 								source_ref,
 								String.format(
 										"Expected “transformations” to be a frame. Got %s instead.",
-										Stringish.hideImplementation(result
+										Stringish.nameForClass(result
 												.getClass())));
 			}
 		}

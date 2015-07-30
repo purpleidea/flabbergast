@@ -206,9 +206,9 @@ abstract class Generator {
 		if (left.getBackingType() == Object.class
 				|| right.getBackingType() == Object.class) {
 			throw new IllegalArgumentException(String.format(
-					"Can't compare values of type %s and %s.", left
-							.getBackingType().getSimpleName(), right
-							.getBackingType().getSimpleName()));
+					"Can't compare values of type %s and %s.",
+					Stringish.nameForClass(left.getBackingType()),
+					Stringish.nameForClass(right.getBackingType())));
 		}
 		if (left.getBackingType() != right.getBackingType()) {
 			if (isNumeric(left.getBackingType())
@@ -239,7 +239,7 @@ abstract class Generator {
 				if (boolean.class != condition.getBackingType())
 					throw new IllegalArgumentException(String.format(
 							"Use of non-Boolean type %s in conditional.",
-							condition.getBackingType().getSimpleName()));
+							Stringish.nameForClass(condition.getBackingType())));
 				condition.load(Generator.this);
 				Label else_label = new Label();
 				builder.visitJumpInsn(Opcodes.IFEQ, else_label);
@@ -394,7 +394,7 @@ abstract class Generator {
 		for (int it = 0; it < types.size(); it++) {
 			if (it > 0)
 				error_message.append(" or ");
-			error_message.append(types.get(it).getSimpleName());
+			error_message.append(Stringish.nameForClass(types.get(it)));
 		}
 		if (original.getBackingType() != Object.class) {
 			for (Class<?> type : types) {
@@ -406,7 +406,7 @@ abstract class Generator {
 			loadTaskMaster();
 			source_reference.load(builder);
 			builder.visitLdcInsn(String.format(error_message.toString(),
-					original.getBackingType().getSimpleName()));
+					Stringish.nameForClass(original.getBackingType())));
 			visitMethod(TaskMaster.class.getMethod("reportOtherError",
 					SourceReference.class, String.class));
 			builder.visitInsn(Opcodes.ICONST_0);
@@ -444,12 +444,12 @@ abstract class Generator {
 			if (data[it].getBackingType() == Object.class) {
 				data[it].load(builder);
 				visitMethod(Object.class.getMethod("getClass"));
-				visitMethod(Stringish.class.getMethod("hideImplementation",
+				visitMethod(Stringish.class.getMethod("nameForClass",
 						Class.class));
 
 			} else {
-				builder.visitLdcInsn(Stringish.hideImplementation(
-						data[it].getBackingType()).getSimpleName());
+				builder.visitLdcInsn(Stringish.nameForClass(data[it]
+						.getBackingType()));
 			}
 			builder.visitInsn(Opcodes.AASTORE);
 		}

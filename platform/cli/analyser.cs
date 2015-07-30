@@ -534,7 +534,7 @@ internal class Environment : CodeRegion {
 			lookup_result.Value.Load(generator);
 			generator.Builder.Emit(OpCodes.Isinst, lookup_result.Types[0]);
 			generator.Builder.Emit(OpCodes.Brtrue, label);
-			generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", lookup_result.Types[0], lookup_result.NameInfo.Name, "{0}"), lookup_result.Value);
+			generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", Stringish.NameForType(lookup_result.Types[0]), lookup_result.NameInfo.Name, "{0}"), lookup_result.Value);
 			generator.Builder.MarkLabel(label);
 		}
 		var permutable_caches = lookup_results.Where(x => !x.SinglyTyped && !x.DirectCopy).ToArray();
@@ -560,7 +560,7 @@ internal class Environment : CodeRegion {
 			generator.Builder.Emit(OpCodes.Isinst, values[index].Types[it]);
 			generator.Builder.Emit(OpCodes.Brtrue, labels[it]);
 		}
-		generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", String.Join(" or ", (object[]) values[index].Types), values[index].NameInfo.Name, "{0}"), values[index].Value);
+		generator.EmitTypeError(source_reference, String.Format("Expected type {0} for “{1}”, but got {2}.", String.Join(" or ", from t in values[index].Types select Stringish.NameForType(t)), values[index].NameInfo.Name, "{0}"), values[index].Value);
 		for (var it = 0; it < labels.Length; it++) {
 			generator.Builder.MarkLabel(labels[it]);
 			var sub_cache = new LookupCache(cache);
@@ -655,7 +655,7 @@ internal class Environment : CodeRegion {
 			generator.Builder = builder;
 			generator.Builder.MarkLabel(next_label);
 		}
-		generator.EmitTypeError(source_reference, String.Format("Expected type {0} for {1}, but got {2}.", String.Join("or", (object[]) types), node.PrettyName, "{0}"), original);
+		generator.EmitTypeError(source_reference, String.Format("Expected type {0} for {1}, but got {2}.", String.Join(" or ", from t in types select Stringish.NameForType(t)), node.PrettyName, "{0}"), original);
 	}
 }
 }

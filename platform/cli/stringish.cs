@@ -54,8 +54,15 @@ namespace Flabbergast {
 			return null;
 		}
 
-		public static Type HideImplementation(Type t) {
-			return typeof(Stringish).IsAssignableFrom(t) ? typeof(Stringish) : t;
+		public static string NameForType(Type t) {
+			if (typeof(Frame) == t) return "Frame";
+			if (typeof(Stringish).IsAssignableFrom(t)) return "Str";
+			if (typeof(Template) == t) return "Template";
+			if (typeof(Unit) == t) return "Null";
+			if (typeof(bool) == t) return "Bool";
+			if (typeof(double) == t) return "Float";
+			if (typeof(long) == t) return "Int";
+			return t.ToString();
 		}
 
 		public long OffsetByCodePoints(long offset) {

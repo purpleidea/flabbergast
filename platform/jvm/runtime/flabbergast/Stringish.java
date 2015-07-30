@@ -47,8 +47,22 @@ public abstract class Stringish
 		return null;
 	}
 
-	public static Class<?> hideImplementation(Class<?> t) {
-		return Stringish.class.isAssignableFrom(t) ? Stringish.class : t;
+	public static String nameForClass(Class<?> t) {
+		if (Stringish.class.isAssignableFrom(t))
+			return "Str";
+		if (t == Boolean.class || t == boolean.class)
+			return "Bool";
+		if (t == Double.class || t == double.class)
+			return "Float";
+		if (t == Frame.class)
+			return "Frame";
+		if (t == Long.class || t == long.class)
+			return "Int";
+		if (t == Template.class)
+			return "Template";
+		if (t == Unit.class)
+			return "Null";
+		return t.getSimpleName();
 	}
 
 	@Override

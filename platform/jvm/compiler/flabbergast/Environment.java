@@ -246,8 +246,9 @@ class Environment implements CodeRegion {
 					getInternalName(required_type));
 			generator.getBuilder().visitJumpInsn(Opcodes.IFNE, label);
 			generator.emitTypeError(source_reference, String.format(
-					"Expected type %s for “%s”, but got %s.", required_type,
-					lookup_result.getNameInfo().getName(), "%s"), lookup_result
+					"Expected type %s for “%s”, but got %s.", Stringish
+							.nameForClass(required_type), lookup_result
+							.getNameInfo().getName(), "%s"), lookup_result
 					.getValue());
 			generator.getBuilder().visitLabel(label);
 		}
@@ -300,8 +301,8 @@ class Environment implements CodeRegion {
 			if (type_it > 0) {
 				error_message.append(" or ");
 			}
-			error_message.append(values.get(index).getTypes().get(type_it)
-					.getSimpleName());
+			error_message.append(Stringish.nameForClass(values.get(index)
+					.getTypes().get(type_it)));
 		}
 		error_message.append(" for “");
 		error_message.append(values.get(index).getNameInfo().getName());
@@ -403,7 +404,7 @@ class Environment implements CodeRegion {
 		for (int it = 0; it < types.size(); it++) {
 			if (it > 0)
 				error_message.append(" or ");
-			error_message.append(types.get(it).getSimpleName());
+			error_message.append(Stringish.nameForClass(types.get(it)));
 		}
 		error_message.append(" for ");
 		error_message.append(node.getPrettyName());

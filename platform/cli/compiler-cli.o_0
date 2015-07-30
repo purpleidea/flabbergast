@@ -573,6 +573,7 @@ known_types : compiler_lib.known_types_tmpl {
 	bool : {
 		union_type : "Flabbergast.Type.Bool"
 		real_type : "bool"
+		name : "Bool"
 		max : "true"
 		min : "false"
 		constant_creator : "BoolConstant"
@@ -581,6 +582,7 @@ known_types : compiler_lib.known_types_tmpl {
 	float : {
 		union_type : "Flabbergast.Type.Float"
 		real_type : "double"
+		name : "Float"
 		max : "System.Double.MaxValue"
 		min : "System.Double.MinValue"
 		constant_creator : "FloatConstant"
@@ -589,11 +591,13 @@ known_types : compiler_lib.known_types_tmpl {
 	frame : {
 		union_type : "Flabbergast.Type.Frame"
 		real_type : "Flabbergast.Frame"
+		name : "Frame"
 		unbox : True
 	}
 	int : {
 		union_type : "Flabbergast.Type.Int"
 		real_type : "long"
+		name : "Int"
 		max : "System.Int64.MaxValue"
 		min : "System.Int64.MinValue"
 		constant_creator : "IntConstant"
@@ -602,26 +606,29 @@ known_types : compiler_lib.known_types_tmpl {
 	str : {
 		union_type : "Flabbergast.Type.Str"
 		real_type : "Flabbergast.Stringish"
+		name : "Str"
 		unbox : False
 	}
 	template : {
 		union_type : "Flabbergast.Type.Template"
 		real_type : "Flabbergast.Template"
+		name : "Template"
 		unbox : True
 	}
 	unit : {
 		union_type : "Flabbergast.Type.Unit"
 		real_type : "Flabbergast.Unit"
+		name : "Null"
 		unbox : True
 	}
 }
 # These are types known by the KWS VM that are not found in the Flabbergast
 # language. Therefore, they have a `real_type`, but not a `union_type`.
 known_vm_types : compiler_lib.known_vm_types_tmpl {
-	any : { real_type : "object"  union_type : "Flabbergast.NameInfo.AnyType" }
-	list : { real_type : "Flabbergast.Context" }
-	function : { real_type : "Flabbergast.ComputeValue" }
-	override_function : { real_type : "Flabbergast.ComputeOverride" }
+	any : { real_type : "object"  union_type : "Flabbergast.NameInfo.AnyType"  name : "Any" }
+	list : { real_type : "Flabbergast.Context"  name : "List" }
+	function : { real_type : "Flabbergast.ComputeValue"  name : "Function" }
+	override_function : { real_type : "Flabbergast.ComputeOverride"  name : "Override" }
 }
 # The mechanism code to do type checking in the compiler. Each syntax element
 # is told what types it may return and it propagates this type information to
@@ -770,7 +777,7 @@ kws : compiler_lib.kws_repl_tmpl {
 				For arg : arguments
 					Reverse
 					Reduce
-						"\(sum_indent)if (\(arg.value.storage_name).BackingType != typeof(\(arg.type.real_type))) throw new System.InvalidOperationException(System.String.Format(\"Expected {0} but got {1} in \(opcode).\", typeof(\(arg.type.real_type)), \(arg.value.storage_name).BackingType));" &
+						"\(sum_indent)if (\(arg.value.storage_name).BackingType != typeof(\(arg.type.real_type))) throw new System.InvalidOperationException(System.String.Format(\"Expected  \(arg.type.name) but got {0} in \(opcode).\", Stringish.NameForType(\(arg.value.storage_name).BackingType)));" &
 						"\(sum_indent)\(arg.value.storage_name).Load(\(builder));" &
 						acc
 						With acc : ""
@@ -1452,7 +1459,7 @@ kws : compiler_lib.kws_repl_tmpl {
 								indent : indent,
 								code :
 									"\(indent)\(item.extra_indent)\(array).Load(\(generator));" &
-									"\(indent)\(item.extra_indent)if (!typeof(IAttributeNames).IsAssignableFrom(\(item.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Use of non-collection {0} in iteration.\", \(item.storage_name).BackingType));" &
+									"\(indent)\(item.extra_indent)if (!typeof(IAttributeNames).IsAssignableFrom(\(item.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Use of non-collection {0} in iteration.\", Stringish.NameForType(\(item.storage_name).BackingType)));" &
 									"\(indent)\(item.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(index - 1));" &
 									"\(indent)\(item.extra_indent)\(item.storage_name).Load(\(generator));" &
 									"\(indent)\(item.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem, typeof(IAttributeNames));" &
