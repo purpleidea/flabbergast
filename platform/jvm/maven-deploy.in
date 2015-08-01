@@ -28,7 +28,7 @@ DEP_CLI="
 DEP_FL_R="
 		<dependency>
 			<groupId>com.github.apmasell.flabbergast</groupId>
-			<artifactId>runtime</artifactId>
+			<artifactId>flabbergast-runtime</artifactId>
 			<version>${VERSION}</version>
 			<scope>runtime</scope>
 		</dependency>"
