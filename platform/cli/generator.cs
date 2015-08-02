@@ -352,7 +352,7 @@ internal abstract class Generator {
 			Builder = builder;
 			Builder.MarkLabel(label);
 		}
-		EmitTypeError(source_reference, String.Format("Unexpected type {0} instead of {1}.", "{0}", all_type_names, original));
+		EmitTypeError(source_reference, String.Format("Unexpected type {0} instead of {1}.", "{0}", all_type_names), original);
 	}
 	/**
 	 * Create a new state and put it in the dispatch logic.
