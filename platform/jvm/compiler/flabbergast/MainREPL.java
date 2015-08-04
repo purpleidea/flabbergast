@@ -2,8 +2,8 @@ package flabbergast;
 
 import java.io.IOException;
 
-import jline.ConsoleReader;
-import jline.SimpleCompletor;
+import jline.console.ConsoleReader;
+import jline.console.completer.StringsCompleter;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -34,7 +34,7 @@ public class MainREPL {
 
 		@Override
 		protected void write(String string) throws IOException {
-			reader.printString(string);
+			reader.print(string);
 		}
 
 	}
@@ -49,8 +49,7 @@ public class MainREPL {
 		@Override
 		public void consume(Object result) {
 			try {
-				reader.printString(result.toString());
-				reader.printNewline();
+				reader.println(result.toString());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -161,7 +160,7 @@ public class MainREPL {
 
 		try {
 			ConsoleReader reader = new ConsoleReader();
-			reader.addCompletor(new SimpleCompletor(new String[]{"args",
+			reader.addCompleter(new StringsCompleter("args",
 					"value", "Append", "Bool", "By", "Container", "Each",
 					"Else", "Enforce", "Error", "False", "Finite", "Float",
 					"FloatMax", "FloatMin", "For", "Frame", "From",
@@ -169,10 +168,10 @@ public class MainREPL {
 					"IntMax", "IntMin", "Is", "Length", "Let", "Lookup", "NaN",
 					"Name", "Null", "Order", "Ordinal", "Reduce", "Reverse",
 					"Select", "Str", "Template", "Then", "This", "Through",
-					"To", "True", "Where", "With"}));
-			reader.setDefaultPrompt("‽ ");
-			reader.setUseHistory(true);
-			reader.setUsePagination(true);
+					"To", "True", "Where", "With"));
+			reader.setPrompt("‽ ");
+			reader.setHistoryEnabled(true);
+			reader.setPaginationEnabled(true);
 			String line;
 			int id = 0;
 			KeepRunning keep_running = new KeepRunning();

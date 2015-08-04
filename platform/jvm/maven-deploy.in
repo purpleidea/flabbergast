@@ -15,7 +15,7 @@ DEP_JLINE="
 		<dependency>
 			<groupId>jline</groupId>
 			<artifactId>jline</artifactId>
-			<version>2.12.1</version>
+			<version>2.11</version>
 			<scope>runtime</scope>
 		</dependency>"
 DEP_CLI="
