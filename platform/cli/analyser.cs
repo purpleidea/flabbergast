@@ -104,7 +104,7 @@ internal abstract class AstTypeableNode : AstNode {
 			return Type.Float;
 		} else if (clr_type == typeof(string) || clr_type == typeof(Stringish)) {
 			return Type.Str;
-		} else if (clr_type == typeof(Frame)) {
+		} else if (typeof(Frame).IsAssignableFrom(clr_type)) {
 			return Type.Frame;
 		} else if (clr_type == typeof(Template)) {
 			return Type.Template;

@@ -777,7 +777,7 @@ abstract class Generator {
 		builder.visitVarInsn(Opcodes.ALOAD, 0);
 		for (int it = 0; it < arguments.size(); it++) {
 			arguments.get(it).load(this);
-			if (arguments.get(it).getBackingType() != method_arguments[it]) {
+			if (!method_arguments[it].isAssignableFrom(arguments.get(it).getBackingType())) {
 				if (method_arguments[it] == byte.class
 						|| method_arguments[it] == short.class
 						|| method_arguments[it] == int.class) {
@@ -820,7 +820,7 @@ abstract class Generator {
 			}
 		}
 		visitMethod(best_method);
-		if (result.getBackingType() != best_method.getReturnType()) {
+		if (!result.getBackingType().isAssignableFrom(best_method.getReturnType())) {
 			if (result.getBackingType() == long.class) {
 				builder.visitInsn(Opcodes.I2L);
 			} else if (result.getBackingType() == double.class) {
@@ -849,7 +849,7 @@ abstract class Generator {
 
 	private boolean invokeParameterPenalty(Class<?> method, Class<?> given,
 			Ptr<Integer> penalty) {
-		if (method == given) {
+		if (method.isAssignableFrom(given)) {
 			return true;
 		}
 		if (method == String.class && given == Stringish.class) {
@@ -892,7 +892,7 @@ abstract class Generator {
 	public void loadReboxed(LoadableValue source, Class<?> target_type)
 			throws Exception {
 		source.load(builder);
-		if (source.getBackingType() != target_type) {
+		if (!target_type.isAssignableFrom(source.getBackingType())) {
 			if (target_type == Object.class) {
 				if (source.getBackingType() == boolean.class
 						|| source.getBackingType() == double.class
@@ -1059,7 +1059,7 @@ abstract class Generator {
 	}
 
 	public void slotIfFrame(LoadableValue result) throws Exception {
-		if (result.getBackingType() == Frame.class
+		if (Frame.class.isAssignableFrom(result.getBackingType())
 				|| result.getBackingType() == Object.class) {
 			Label end = new Label();
 			if (result.getBackingType() == Object.class) {

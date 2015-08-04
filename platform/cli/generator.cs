@@ -480,7 +480,7 @@ internal abstract class Generator {
 		}
 	}
 	private bool InvokeParameterPenalty(System.Type method, System.Type given, ref int penalty) {
-		if (method == given) {
+		if (method.IsAssignableFrom(given)) {
 			return true;
 		}
 		if (method == typeof(string) && given == typeof(Stringish)) {
@@ -551,7 +551,7 @@ internal abstract class Generator {
 				Builder.Emit(OpCodes.Stloc, local);
 				Builder.Emit(OpCodes.Ldloca, local);
 			}
-			if (arguments[it].BackingType != method_arguments[it]) {
+			if (!method_arguments[it].IsAssignableFrom(arguments[it].BackingType)) {
 				if (method_arguments[it] == typeof(sbyte) || method_arguments[it] == typeof(byte)) {
 					Builder.Emit(OpCodes.Conv_I1);
 				} else if (method_arguments[it] == typeof(short) || method_arguments[it] == typeof(ushort)) {
@@ -569,7 +569,7 @@ internal abstract class Generator {
 			}
 		}
 		Builder.Emit(best_method.IsVirtual || best_method.IsAbstract ? OpCodes.Callvirt : OpCodes.Call, best_method);
-		if (result.BackingType != best_method.ReturnType) {
+		if (!result.BackingType.IsAssignableFrom(best_method.ReturnType)) {
 				if (result.BackingType == typeof(long)) {
 					Builder.Emit(OpCodes.Conv_I8);
 				} else if (result.BackingType == typeof(double)) {
@@ -590,7 +590,7 @@ internal abstract class Generator {
 	 */
 	public void LoadReboxed(LoadableValue source, System.Type target_type) {
 		source.Load(Builder);
-		if (source.BackingType != target_type) {
+		if (!target_type.IsAssignableFrom(source.BackingType) || target_type.IsValueType != source.BackingType.IsValueType) {
 			if (target_type == typeof(object)) {
 				if (source.BackingType == typeof(bool) || source.BackingType == typeof(double) ||source.BackingType == typeof(long)) {
 					Builder.Emit(OpCodes.Box, source.BackingType);
@@ -735,7 +735,7 @@ internal abstract class Generator {
 		Builder.Emit(OpCodes.Ret);
 	}
 	public void SlotIfFrame(LoadableValue result) {
-		if (result.BackingType == typeof(Frame) || result.BackingType == typeof(object)) {
+		if (typeof(Frame).IsAssignableFrom(result.BackingType) || result.BackingType == typeof(object)) {
 			var end = Builder.DefineLabel();
 			if (result.BackingType == typeof(object)) {
 				result.Load(Builder);

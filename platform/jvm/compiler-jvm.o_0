@@ -808,7 +808,7 @@ kws : compiler_lib.kws_repl_tmpl {
 				For arg : arguments
 					Reverse
 					Reduce
-						"\(sum_indent)if (\(arg.value.storage_name).getBackingType() != \(arg.type.real_type).class) throw new java.lang.IllegalStateException(java.lang.String.format(\"Expected \(arg.type.name) but got %s in \(rule_name).\", \(arg.value.storage_name).getBackingType().getSimpleName()));" &
+						"\(sum_indent)if (!\(arg.type.real_type).class.isAssignableFrom(\(arg.value.storage_name).getBackingType())) throw new java.lang.IllegalStateException(java.lang.String.format(\"Expected \(arg.type.name) but got %s in \(rule_name).\", Stringish.nameForClass(\(arg.value.storage_name).getBackingType())));" &
 						"\(sum_indent)\(arg.value.storage_name).load(\(builder));" &
 						acc
 						With acc : ""
@@ -1220,7 +1220,7 @@ kws : compiler_lib.kws_repl_tmpl {
 					code :
 						"\(sum_indent)\(into.storage_name).load(\(generator));" &
 						load_name &
-						"\(sum_indent)Class<?> \(Id)_boxed_type = \(into.storage_name).getBackingType() == Frame.class ? Object.class : ComputeValue.class;" &
+						"\(sum_indent)Class<?> \(Id)_boxed_type = Frame.class.isAssignableFrom(\(into.storage_name).getBackingType()) ? Object.class : ComputeValue.class;" &
 						"\(sum_indent)\(generator).loadReboxed(\(with.storage_name), \(Id)_boxed_type);" &
 						"\(sum_indent)\(generator).visitMethod(\(into.storage_name).getBackingType().getMethod(\"set\", String.class, \(Id)_boxed_type));" &
 						code

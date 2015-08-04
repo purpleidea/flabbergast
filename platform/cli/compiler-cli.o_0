@@ -777,7 +777,7 @@ kws : compiler_lib.kws_repl_tmpl {
 				For arg : arguments
 					Reverse
 					Reduce
-						"\(sum_indent)if (\(arg.value.storage_name).BackingType != typeof(\(arg.type.real_type))) throw new System.InvalidOperationException(System.String.Format(\"Expected  \(arg.type.name) but got {0} in \(opcode).\", Stringish.NameForType(\(arg.value.storage_name).BackingType)));" &
+						"\(sum_indent)if (!typeof(\(arg.type.real_type)).IsAssignableFrom(\(arg.value.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Expected  \(arg.type.name) but got {0} in \(opcode).\", Stringish.NameForType(\(arg.value.storage_name).BackingType)));" &
 						"\(sum_indent)\(arg.value.storage_name).Load(\(builder));" &
 						acc
 						With acc : ""
@@ -1138,7 +1138,7 @@ kws : compiler_lib.kws_repl_tmpl {
 					code :
 						"\(sum_indent)\(into.storage_name).Load(\(generator));" &
 						load_name &
-						"\(sum_indent)var \(Id)_boxed_type = \(into.storage_name).BackingType == typeof(Frame) ? typeof(object) : typeof(ComputeValue);" &
+						"\(sum_indent)var \(Id)_boxed_type = typeof(Frame).IsAssignableFrom(\(into.storage_name).BackingType) ? typeof(object) : typeof(ComputeValue);" &
 						"\(sum_indent)\(generator).LoadReboxed(\(with.storage_name), \(Id)_boxed_type);" &
 						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, \(into.storage_name).BackingType.GetMethod(\"set_Item\", new System.Type[] { typeof(string), \(Id)_boxed_type }));" &
 						code
