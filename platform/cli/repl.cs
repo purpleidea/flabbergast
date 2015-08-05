@@ -90,7 +90,7 @@ namespace Flabbergast {
 				}
 			}
 			if (original == null) {
-				original = new Frame(task_master, task_master.NextId(), new SourceReference("<repl>", "<native>", 0, 0, 0, 0, null), null, null);
+				original = new MutableFrame(task_master, new SourceReference("<repl>", "<native>", 0, 0, 0, 0, null), null, null);
 			}
 
 			var id = 0;

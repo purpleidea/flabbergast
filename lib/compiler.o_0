@@ -264,6 +264,7 @@ known_types_tmpl : Template {
 }
 known_vm_types_tmpl : Template {
 	any : Required
+	mutable_frame : Required
 	list : Required
 	function : Required
 	override_function : Required
@@ -1542,7 +1543,7 @@ language_tmpl : Template {
 							choice_tmpl {
 								type : known_types.template
 								action : kws.iterator {
-									accumulator_type : known_types.frame
+									accumulator_type : known_vm_types.mutable_frame
 									input : input_list {
 										items : [ converted_result ]
 									}
@@ -1657,7 +1658,7 @@ language_tmpl : Template {
 		}
 	}
 	fricassee_iterator : Template codegen.bind {
-		accumulator_type : known_types.frame
+		accumulator_type : known_vm_types.mutable_frame
 		start : Required
 		step : Required
 
@@ -1748,7 +1749,7 @@ language_tmpl : Template {
 								source_template : emptiness
 							}
 							in : codegen.collapse_others {
-								type : known_types.frame
+								type : known_vm_types.mutable_frame
 								target_flavour : codegen.flavour_attribute_accumulate
 								field : $attributes
 								initial : kws.frame_new {
@@ -2124,7 +2125,7 @@ language_tmpl : Template {
 							input_frame : codegen.other_code { field : $selector }
 						}
 						in : Template kws.ordered_iterator {
-							accumulator_type : known_types.frame
+							accumulator_type : known_vm_types.mutable_frame
 
 							modify_source_reference : True
 							input : input_list {
@@ -2300,7 +2301,7 @@ language_tmpl : Template {
 						field : $definitions
 					}
 					code_value : fricassee_iterator {
-						accumulator_type : known_types.frame
+						accumulator_type : known_vm_types.mutable_frame
 						start : Template kws.frame_new {
 							creation_method : pretty_name
 							container : parameters.self_frame
@@ -2327,7 +2328,7 @@ language_tmpl : Template {
 								}
 								in : Template codegen.push_source_reference {
 									in : kws.iterator {
-										accumulator_type : known_types.frame
+										accumulator_type : known_vm_types.mutable_frame
 										input : input_list {
 											items : [ parameters.current_itr_frame ]
 										}
@@ -2557,7 +2558,7 @@ language_tmpl : Template {
 						}
 					]
 					code_value : kws.iterator {
-						accumulator_type : known_types.frame
+						accumulator_type : known_vm_types.mutable_frame
 						input : input_merge { field : $inputs }
 						cases : []
 						initial : kws.frame_new {
@@ -3294,7 +3295,7 @@ language_tmpl : Template {
 								}
 							}
 							in : Template kws.iterator {
-								accumulator_type : known_types.frame
+								accumulator_type : known_vm_types.mutable_frame
 								input : input_list { items : [ parameters.right_input ] }
 								initial : parameters.output_frame
 								default_case : kws.set_frame_or_tmpl {
@@ -3898,7 +3899,7 @@ language_tmpl : Template {
 						ensure_type_of : ensure_type.propagate { fields : [ $source ] }
 					}
 					code_value : perform_overrides {
-						accumulator_type : known_types.frame
+						accumulator_type : known_vm_types.mutable_frame
 						new_item : Template kws.frame_new {
 							creation_method : "instantiated"
 							container : parameters.self_frame
@@ -3976,7 +3977,7 @@ language_tmpl : Template {
 						in : codegen.empty_parameter {
 							parameters : { source_template : emptiness }
 							in : codegen.collapse_others {
-								type : known_types.frame
+								type : known_vm_types.mutable_frame
 								target_flavour : codegen.flavour_attribute_accumulate
 								field : $attributes
 								initial : kws.frame_new {

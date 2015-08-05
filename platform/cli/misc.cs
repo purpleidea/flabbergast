@@ -83,9 +83,9 @@ namespace Flabbergast {
 					return false;
 				}
 			}
-			var frame = new Frame(task_master, task_master.NextId(), source_reference, context, container);
+			var frame = new MutableFrame(task_master, source_reference, context, container);
 			for(int it = 0; it < input.Length; it++) {
-				frame[TaskMaster.OrdinalNameStr(it + 1)] = mappings[Char.GetUnicodeCategory(input[it])];
+				frame.Set(it + 1, mappings[Char.GetUnicodeCategory(input[it])]);
 			}
 			result = frame;
 			return true;
@@ -123,9 +123,9 @@ namespace Flabbergast {
 					return false;
 				}
 			}
-			var frame = new Frame(task_master, task_master.NextId(), source_reference, context, container);
+			var frame = new MutableFrame(task_master, source_reference, context, container);
 			for(int it = 0; it < input.Length; it++) {
-				frame[TaskMaster.OrdinalNameStr(it + 1)] = (long) Char.ConvertToUtf32(input, it);
+				frame.Set(it + 1, (long) Char.ConvertToUtf32(input, it));
 			}
 			result = frame;
 			return true;
@@ -386,7 +386,7 @@ namespace Flabbergast {
 					return false;
 				}
 			}
-			var output_frame = new Frame(task_master, task_master.NextId(), source_ref, context, self);
+			var output_frame = new MutableFrame(task_master, source_ref, context, self);
 			for (var index = 0; index < input.Length; index++) {
 				var buffer = new StringBuilder();
 				for(var it = 0; it < input[index].Length; it += Char.IsSurrogatePair(input[index], it) ? 2 : 1) {
@@ -412,7 +412,7 @@ namespace Flabbergast {
 						}
 					}
 				}
-				output_frame[TaskMaster.OrdinalNameStr(index)] = new SimpleStringish(buffer.ToString());
+				output_frame.Set(index, new SimpleStringish(buffer.ToString()));
 			}
 			result = output_frame;
 			return true;

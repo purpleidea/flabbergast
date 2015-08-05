@@ -443,14 +443,13 @@ internal class Environment : CodeRegion {
 		var lookup_results = new List<LoadableCache>();
 		if (specials != null) {
 			var child_context = generator.MakeField("anon_ctxt", typeof(Context));
-			var child_frame = generator.MakeField("anon_frame", typeof(Frame));
+			var child_frame = generator.MakeField("anon_frame", typeof(MutableFrame));
 			generator.Builder.Emit(OpCodes.Ldarg_0);
 			generator.LoadTaskMaster();
-			generator.GenerateNextId();
 			source_reference.Load(generator);
 			context.Load(generator);
 			self_frame.Load(generator);
-			generator.Builder.Emit(OpCodes.Newobj, typeof(Frame).GetConstructors()[0]);
+			generator.Builder.Emit(OpCodes.Newobj, typeof(MutableFrame).GetConstructors()[0]);
 			generator.Builder.Emit(OpCodes.Stfld, child_frame.Field);
 
 			generator.Builder.Emit(OpCodes.Ldarg_0);
@@ -472,7 +471,7 @@ internal class Environment : CodeRegion {
 					child_frame.Load(generator.Builder);
 					generator.Builder.Emit(OpCodes.Ldstr, entry.Item1.Name);
 					generator.LoadReboxed(result, typeof(object));
-					generator.Builder.Emit(OpCodes.Call, typeof(Frame).GetMethod("set_Item", new[] { typeof(string), typeof(object) }));
+					generator.Builder.Emit(OpCodes.Call, typeof(MutableFrame).GetMethod("Set", new[] { typeof(string), typeof(object) }));
 					generator.CopyField(result, field);
 					generator.JumpToState(next);
 					known_types |= AstTypeableNode.TypeFromClrType(result.BackingType);

@@ -651,6 +651,7 @@ known_types : compiler_lib.known_types_tmpl {
 # language. Therefore, they have a `real_type`, but not a `union_type`.
 known_vm_types : compiler_lib.known_vm_types_tmpl {
 	any : { real_type : "Object"  union_type : "flabbergast.TypeSet.ALL"  name : "Any" }
+	mutable_frame : { real_type : "flabbergast.MutableFrame"  name : "Frame" }
 	list : { real_type : "flabbergast.Context"  name : "List" }
 	function : { real_type : "flabbergast.ComputeValue"  name : "Function" }
 	override_function : { real_type : "flabbergast.ComputeOverride"  name : "Override"}
@@ -997,16 +998,15 @@ kws : compiler_lib.kws_repl_tmpl {
 		gen_gen +: {
 			sum_indent : indent & extra_indent
 			base_code :
-				"\(sum_indent)final FieldValue \(storage_name) = \(generator).makeField(\"\(rule_name)_new_frame\", Frame.class);" &
+				"\(sum_indent)final FieldValue \(storage_name) = \(generator).makeField(\"\(rule_name)_new_frame\", MutableFrame.class);" &
 				"\(sum_indent)\(generator).getBuilder().visitVarInsn(org.objectweb.asm.Opcodes.ALOAD, 0);" &
-				"\(sum_indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(Frame.class));" &
+				"\(sum_indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(MutableFrame.class));" &
 				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
 				"\(sum_indent)\(generator).loadTaskMaster();" &
-				"\(sum_indent)\(generator).generateNextId();" &
 				"\(sum_indent)\(generator).amendSourceReference(\(class_name).this, \"\(creation_method)\", \(parameters.source_reference.storage_name), \(If source Is Null Then "null" Else source.storage_name));" &
 				"\(sum_indent)\(context.storage_name).load(\(generator));" &
 				"\(sum_indent)\(container.storage_name).load(\(generator));" &
-				"\(sum_indent)\(generator).visitMethod(Frame.class.getConstructors()[0]);" &
+				"\(sum_indent)\(generator).visitMethod(MutableFrame.class.getConstructors()[0]);" &
 				"\(sum_indent)\(storage_name).store(\(generator));" &
 				code
 			value : context.gen_gen(indent : indent, code : container.gen_gen(indent : indent & context.extra_indent, code : base_code))
@@ -1020,13 +1020,12 @@ kws : compiler_lib.kws_repl_tmpl {
 				"\(sum_indent)final FieldValue \(storage_name) = \(generator).makeField(\"\(rule_name)_new_frame\", Frame.class);" &
 				"\(sum_indent)\(generator).getBuilder().visitVarInsn(org.objectweb.asm.Opcodes.ALOAD, 0);" &
 				"\(sum_indent)\(generator).loadTaskMaster();" &
-				"\(sum_indent)\(generator).generateNextId();" &
 				"\(sum_indent)\(parameters.source_reference.storage_name).load(\(generator));" &
 				"\(sum_indent)\(start.storage_name).load(\(generator));" &
 				"\(sum_indent)\(end.storage_name).load(\(generator));" &
 				"\(sum_indent)\(context.storage_name).load(\(generator));" &
 				"\(sum_indent)\(container.storage_name).load(\(generator));" &
-				"\(sum_indent)\(generator).visitMethod(Frame.class.getMethod(\"through\", TaskMaster.class, long.class, SourceReference.class, long.class, long.class, Context.class, Frame.class));" &
+				"\(sum_indent)\(generator).visitMethod(Frame.class.getMethod(\"through\", TaskMaster.class, SourceReference.class, long.class, long.class, Context.class, Frame.class));" &
 				"\(sum_indent)\(storage_name).store(\(generator));" &
 				code
 			value : container.gen_gen(
@@ -1220,7 +1219,9 @@ kws : compiler_lib.kws_repl_tmpl {
 					code :
 						"\(sum_indent)\(into.storage_name).load(\(generator));" &
 						load_name &
-						"\(sum_indent)Class<?> \(Id)_boxed_type = Frame.class.isAssignableFrom(\(into.storage_name).getBackingType()) ? Object.class : ComputeValue.class;" &
+						"\(sum_indent)boolean \(Id)_is_frame = Frame.class.isAssignableFrom(\(into.storage_name).getBackingType());" &
+						"\(sum_indent)if (!\(Id)_is_frame && !flabbergast.Template.class.isAssignableFrom(\(into.storage_name).getBackingType())) throw new java.lang.IllegalStateException(java.lang.String.format(\"Use of non-mutable collection %s in modification.\", Stringish.nameForClass(\(into.storage_name).getBackingType())));" &
+						"\(sum_indent)Class<?> \(Id)_boxed_type = \(Id)_is_frame ? Object.class : ComputeValue.class;" &
 						"\(sum_indent)\(generator).loadReboxed(\(with.storage_name), \(Id)_boxed_type);" &
 						"\(sum_indent)\(generator).visitMethod(\(into.storage_name).getBackingType().getMethod(\"set\", String.class, \(Id)_boxed_type));" &
 						code
@@ -1557,16 +1558,15 @@ kws : compiler_lib.kws_repl_tmpl {
 				extra_indent : ""
 				gen_gen +: {
 					value :
-						"\(indent)final FieldValue \(storage_name) = \(generator).makeField(\"\(rule_name)_merge_frame\", Frame.class);" &
+						"\(indent)final FieldValue \(storage_name) = \(generator).makeField(\"\(rule_name)_merge_frame\", MutableFrame.class);" &
 						"\(indent)\(generator).getBuilder().visitVarInsn(org.objectweb.asm.Opcodes.ALOAD, 0);" &
-						"\(indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(Frame.class));" &
+						"\(indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.NEW, org.objectweb.asm.Type.getInternalName(MutableFrame.class));" &
 						"\(indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
 						"\(indent)\(generator).loadTaskMaster();" &
-						"\(indent)\(generator).generateNextId();" &
 						"\(indent)\(parameters.source_reference.storage_name).load(\(generator));" &
 						"\(indent)\(parameters.context.storage_name).load(\(generator));" &
 						"\(indent)\(parameters.self_frame.storage_name).load(\(generator));" &
-						"\(indent)\(generator).visitMethod(Frame.class.getConstructors()[0]);" &
+						"\(indent)\(generator).visitMethod(MutableFrame.class.getConstructors()[0]);" &
 						"\(indent)\(storage_name).store(\(generator));" &
 						"\(indent)for(fricassee_merge_input \(Id) : \(field)) {" &
 						"\(indent)\t\(Id).prepareValue(\(argument_list)\(matched_frames).containsKey(\(Id)) ? new MatchedFrameValue(\(matched_frames).get(\(Id)), \(array)) : null, \(current_ordinal.storage_name), \(current_name.storage_name), \(storage_name));" &
@@ -1994,7 +1994,7 @@ codegen : compiler_lib.codegen_tmpl {
 				"\(indent)\t\t\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.I2L);" &
 				"\(indent)\t\t\(generator).visitMethod(TaskMaster.class.getMethod(\"ordinalNameStr\", long.class));" &
 				"\(indent)\t\t\(generator).loadReboxed(\(Id)_result, Object.class);" &
-				"\(indent)\t\t\(generator).visitMethod(Frame.class.getMethod(\"set\", String.class, Object.class));" &
+				"\(indent)\t\t\(generator).visitMethod(MutableFrame.class.getMethod(\"set\", String.class, Object.class));" &
 				"\(indent)\t\t\(generator).jumpToState(\(Id)_next);" &
 				"\(indent)\t} } );" &
 				"\(indent)\t\(generator).markState(\(Id)_next);" &

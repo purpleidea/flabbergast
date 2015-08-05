@@ -735,18 +735,18 @@ internal abstract class Generator {
 		Builder.Emit(OpCodes.Ret);
 	}
 	public void SlotIfFrame(LoadableValue result) {
-		if (typeof(Frame).IsAssignableFrom(result.BackingType) || result.BackingType == typeof(object)) {
+		if (typeof(MutableFrame).IsAssignableFrom(result.BackingType) || result.BackingType == typeof(object)) {
 			var end = Builder.DefineLabel();
 			if (result.BackingType == typeof(object)) {
 				result.Load(Builder);
-				Builder.Emit(OpCodes.Isinst, typeof(Frame));
+				Builder.Emit(OpCodes.Isinst, typeof(MutableFrame));
 				Builder.Emit(OpCodes.Brfalse, end);
 				result.Load(Builder);
-				Builder.Emit(OpCodes.Castclass, typeof(Frame));
+				Builder.Emit(OpCodes.Castclass, typeof(MutableFrame));
 			} else {
 				result.Load(Builder);
 			}
-			Builder.Emit(OpCodes.Call, typeof(Frame).GetMethod("Slot"));
+			Builder.Emit(OpCodes.Call, typeof(MutableFrame).GetMethod("Slot"));
 			Builder.MarkLabel(end);
 		}
 	}

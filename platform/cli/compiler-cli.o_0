@@ -626,6 +626,7 @@ known_types : compiler_lib.known_types_tmpl {
 # language. Therefore, they have a `real_type`, but not a `union_type`.
 known_vm_types : compiler_lib.known_vm_types_tmpl {
 	any : { real_type : "object"  union_type : "Flabbergast.NameInfo.AnyType"  name : "Any" }
+	mutable_frame : { real_type : "Flabbergast.MutableFrame"  name : "Frame" }
 	list : { real_type : "Flabbergast.Context"  name : "List" }
 	function : { real_type : "Flabbergast.ComputeValue"  name : "Function" }
 	override_function : { real_type : "Flabbergast.ComputeOverride"  name : "Override" }
@@ -905,14 +906,13 @@ kws : compiler_lib.kws_repl_tmpl {
 		gen_gen +: {
 			sum_indent : indent & extra_indent
 			base_code :
-				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_new_frame\", typeof(Frame));" &
+				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_new_frame\", typeof(MutableFrame));" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
 				"\(sum_indent)\(generator).LoadTaskMaster();" &
-				"\(sum_indent)\(generator).GenerateNextId();" &
 				"\(sum_indent)\(generator).AmendSourceReference(this, \"\(creation_method)\", \(parameters.source_reference.storage_name), \(If source Is Null Then "null" Else source.storage_name));" &
 				"\(sum_indent)\(context.storage_name).Load(\(generator));" &
 				"\(sum_indent)\(container.storage_name).Load(\(generator));" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(Frame).GetConstructors()[0]);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(MutableFrame).GetConstructors()[0]);" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);" &
 				code
 			value : context.gen_gen(indent : indent, code : container.gen_gen(indent : indent & context.extra_indent, code : base_code))
@@ -926,13 +926,12 @@ kws : compiler_lib.kws_repl_tmpl {
 				"\(sum_indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_new_frame\", typeof(Frame));" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
 				"\(sum_indent)\(generator).LoadTaskMaster();" &
-				"\(sum_indent)\(generator).GenerateNextId();" &
 				"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));" &
 				"\(sum_indent)\(start.storage_name).Load(\(generator));" &
 				"\(sum_indent)\(end.storage_name).Load(\(generator));" &
 				"\(sum_indent)\(context.storage_name).Load(\(generator));" &
 				"\(sum_indent)\(container.storage_name).Load(\(generator));" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Frame).GetMethod(\"Through\", new System.Type[] { typeof(TaskMaster), typeof(long), typeof(SourceReference), typeof(long), typeof(long), typeof(Context), typeof(Frame) }));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Frame).GetMethod(\"Through\", new System.Type[] { typeof(TaskMaster), typeof(SourceReference), typeof(long), typeof(long), typeof(Context), typeof(Frame) }));" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);" &
 				code
 			value : container.gen_gen(
@@ -1136,11 +1135,13 @@ kws : compiler_lib.kws_repl_tmpl {
 				code : with.gen_gen(
 					indent : indent & into.extra_indent & string_indent,
 					code :
+							"\(sum_indent)if (!typeof(Template).IsAssignableFrom(\(into.storage_name).BackingType) && !typeof(MutableFrame).IsAssignableFrom(\(into.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Use of non-mutable collection {0} in iteration.\", Stringish.NameForType(\(into.storage_name).BackingType)));" &
 						"\(sum_indent)\(into.storage_name).Load(\(generator));" &
 						load_name &
-						"\(sum_indent)var \(Id)_boxed_type = typeof(Frame).IsAssignableFrom(\(into.storage_name).BackingType) ? typeof(object) : typeof(ComputeValue);" &
+						"\(sum_indent)var \(Id)_is_frame = typeof(MutableFrame).IsAssignableFrom(\(into.storage_name).BackingType);" &
+						"\(sum_indent)var \(Id)_boxed_type = \(Id)_is_frame ? typeof(object) : typeof(ComputeValue);" &
 						"\(sum_indent)\(generator).LoadReboxed(\(with.storage_name), \(Id)_boxed_type);" &
-						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, \(into.storage_name).BackingType.GetMethod(\"set_Item\", new System.Type[] { typeof(string), \(Id)_boxed_type }));" &
+						"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, \(into.storage_name).BackingType.GetMethod(\(Id)_is_frame ? \"Set\" : \"set_Item\", new System.Type[] { typeof(string), \(Id)_boxed_type }));" &
 						code
 					)
 				)
@@ -1480,14 +1481,13 @@ kws : compiler_lib.kws_repl_tmpl {
 				extra_indent : ""
 				gen_gen +: {
 					value :
-						"\(indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_merge_frame\", typeof(Frame));" &
+						"\(indent)var \(storage_name) = \(generator).MakeField(\"\(rule_name)_merge_frame\", typeof(MutableFrame));" &
 						"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
 						"\(indent)\(generator).LoadTaskMaster();" &
-						"\(indent)\(generator).GenerateNextId();" &
 						"\(indent)\(parameters.source_reference.storage_name).Load(\(generator));" &
 						"\(indent)\(parameters.context.storage_name).Load(\(generator));" &
 						"\(indent)\(parameters.self_frame.storage_name).Load(\(generator));" &
-						"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(Frame).GetConstructors()[0]);" &
+						"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, typeof(MutableFrame).GetConstructors()[0]);" &
 						"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stfld, \(storage_name).Field);" &
 						"\(indent)foreach(var \(Id) in \(field)) {" &
 						"\(indent)\t\(Id).PrepareValue(\(argument_list)\(matched_frames).ContainsKey(\(Id)) ? new MatchedFrameValue(\(matched_frames)[\(Id)], \(array)) : null, \(current_ordinal.storage_name), \(current_name.storage_name), \(storage_name));" &
@@ -1905,7 +1905,7 @@ codegen : compiler_lib.codegen_tmpl {
 				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I8, (long) \(Id)_index + 1);" &
 				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(TaskMaster).GetMethod(\"OrdinalNameStr\", new System.Type[] { typeof(long) }));" &
 				"\(indent)\t\t\(generator).LoadReboxed(\(Id)_result, typeof(object));" &
-				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Frame).GetMethod(\"set_Item\", new System.Type[] { typeof(string), typeof(object) }));" &
+				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(MutableFrame).GetMethod(\"Set\", new System.Type[] { typeof(string), typeof(object) }));" &
 				"\(indent)\t\t\(generator).JumpToState(\(Id)_label);" &
 				"\(indent)\t});" &
 				"\(indent)}" &

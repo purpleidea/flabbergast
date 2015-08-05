@@ -111,22 +111,22 @@ class Environment implements CodeRegion {
 			FieldValue child_context = generator.makeField("anon_ctxt",
 					Context.class);
 			final FieldValue child_frame = generator.makeField("anon_frame",
-					Frame.class);
+					MutableFrame.class);
 			generator.getBuilder().visitVarInsn(Opcodes.ALOAD, 0);
 			generator.getBuilder().visitTypeInsn(Opcodes.NEW,
-					getInternalName(Frame.class));
+					getInternalName(MutableFrame.class));
 			generator.getBuilder().visitInsn(Opcodes.DUP);
 			generator.loadTaskMaster();
-			generator.generateNextId();
 			source_reference.load(generator);
 			context.load(generator);
 			self_frame.load(generator);
 			generator.getBuilder().visitMethodInsn(
 					Opcodes.INVOKESPECIAL,
-					getInternalName(Frame.class),
+					getInternalName(MutableFrame.class),
 					"<init>",
-					org.objectweb.asm.Type.getConstructorDescriptor(Frame.class
-							.getConstructors()[0]));
+					org.objectweb.asm.Type
+							.getConstructorDescriptor(MutableFrame.class
+									.getConstructors()[0]));
 			child_frame.store(generator);
 
 			generator.getBuilder().visitVarInsn(Opcodes.ALOAD, 0);
@@ -161,8 +161,9 @@ class Environment implements CodeRegion {
 								generator.getBuilder().visitLdcInsn(
 										restrictable.getName());
 								generator.loadReboxed(result, Object.class);
-								generator.visitMethod(Frame.class.getMethod(
-										"set", String.class, Object.class));
+								generator.visitMethod(MutableFrame.class
+										.getMethod("set", String.class,
+												Object.class));
 								generator.copyField(result, field);
 								generator.jumpToState(next);
 								known_types.add(TypeSet.fromNative(result

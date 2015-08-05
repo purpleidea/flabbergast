@@ -105,10 +105,10 @@ public class CharacterCategory extends Computation implements ConsumeResult {
 				return;
 			}
 		}
-		Frame frame = new Frame(task_master, task_master.nextId(),
-				source_reference, context, container);
+		MutableFrame frame = new MutableFrame(task_master, source_reference,
+				context, container);
 		for (int it = 0; it < input.length(); it++) {
-			frame.set(TaskMaster.ordinalNameStr(it + 1),
+			frame.set(it + 1,
 					mappings.get((byte) Character.getType(input.charAt(it))));
 		}
 		result = frame;

@@ -777,7 +777,8 @@ abstract class Generator {
 		builder.visitVarInsn(Opcodes.ALOAD, 0);
 		for (int it = 0; it < arguments.size(); it++) {
 			arguments.get(it).load(this);
-			if (!method_arguments[it].isAssignableFrom(arguments.get(it).getBackingType())) {
+			if (!method_arguments[it].isAssignableFrom(arguments.get(it)
+					.getBackingType())) {
 				if (method_arguments[it] == byte.class
 						|| method_arguments[it] == short.class
 						|| method_arguments[it] == int.class) {
@@ -820,7 +821,8 @@ abstract class Generator {
 			}
 		}
 		visitMethod(best_method);
-		if (!result.getBackingType().isAssignableFrom(best_method.getReturnType())) {
+		if (!result.getBackingType().isAssignableFrom(
+				best_method.getReturnType())) {
 			if (result.getBackingType() == long.class) {
 				builder.visitInsn(Opcodes.I2L);
 			} else if (result.getBackingType() == double.class) {
@@ -1059,21 +1061,21 @@ abstract class Generator {
 	}
 
 	public void slotIfFrame(LoadableValue result) throws Exception {
-		if (Frame.class.isAssignableFrom(result.getBackingType())
+		if (MutableFrame.class.isAssignableFrom(result.getBackingType())
 				|| result.getBackingType() == Object.class) {
 			Label end = new Label();
 			if (result.getBackingType() == Object.class) {
 				result.load(builder);
 				builder.visitTypeInsn(Opcodes.INSTANCEOF,
-						getInternalName(Frame.class));
+						getInternalName(MutableFrame.class));
 				builder.visitJumpInsn(Opcodes.IFEQ, end);
 				result.load(builder);
 				builder.visitTypeInsn(Opcodes.CHECKCAST,
-						getInternalName(Frame.class));
+						getInternalName(MutableFrame.class));
 			} else {
 				result.load(builder);
 			}
-			visitMethod(Frame.class.getMethod("slot"));
+			visitMethod(MutableFrame.class.getMethod("slot"));
 			builder.visitLabel(end);
 		}
 	}

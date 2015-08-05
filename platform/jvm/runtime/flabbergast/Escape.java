@@ -228,8 +228,8 @@ public class Escape extends Computation {
 				return;
 			}
 		}
-		Frame output_frame = new Frame(task_master, task_master.nextId(),
-				source_ref, context, self);
+		MutableFrame output_frame = new MutableFrame(task_master, source_ref,
+				context, self);
 		for (int index = 0; index < input.length; index++) {
 			StringBuilder buffer = new StringBuilder();
 			for (int it = 0; it < input[index].length(); it = input[index]
@@ -265,8 +265,7 @@ public class Escape extends Computation {
 					}
 				}
 			}
-			output_frame.set(TaskMaster.ordinalNameStr(index),
-					new SimpleStringish(buffer.toString()));
+			output_frame.set(index, new SimpleStringish(buffer.toString()));
 		}
 		result = output_frame;
 	}

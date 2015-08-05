@@ -152,7 +152,7 @@ namespace Flabbergast {
  * A Frame in the Flabbergast language.
  */
 
-	public class Frame : DynamicObject, IAttributeNames {
+	public abstract class Frame : DynamicObject, IAttributeNames {
 		/**
 	 * The containing frame, or null for file-level frames.
 	 */
@@ -161,77 +161,36 @@ namespace Flabbergast {
 	 * The lookup context when this frame was created and any of its ancestors.
 	 */
 		public Context Context { get; private set; }
-		public long Count { get { return attributes.Count; } }
+		public abstract long Count { get; }
 		public Stringish Id { get; private set; }
 		/**
 	 * Access the functions in the frames. Frames should not be mutated, but this
 	 * policy is not enforced by this class; it must be done in the calling code.
 	 */
 
-		public object this[string name] {
-			get { return attributes.ContainsKey(name) ? attributes[name] : null; }
-			set {
-				if (value == null) {
-					return;
-				}
-				if (attributes.ContainsKey(name)) {
-					throw new InvalidOperationException("Redefinition of attribute " + name + ".");
-				}
-				if (value is ComputeValue) {
-					var computation = ((ComputeValue) value)(task_master, SourceReference, Context, this, Container);
-					attributes[name] = computation;
-					/*
-				 * When this computation has completed, replace its value in the frame.
-				 */
-					computation.NotifyDelayed(result => {
-						attributes[name] = result;
-					});
-					/*
-				 * If the value is a computation, it cannot be slotted for execution
-				 * since it might depend on lookups that reference this frame. Therefore, put
-				 * it in a queue for later activation.
-				 */
-					unslotted.Add(computation);
-				} else {
-					if (value is Frame) {
-						/*
-					 * If the value added is a frame, it might be in a complicated
-					 * slotting arrangement. The safest thing to do is to steal its
-					 * unslotted children and slot them when we are slotted (or absorbed
-					 * into another frame.
-					 */
-
-						var other = (Frame) value;
-						unslotted.AddRange(other.unslotted);
-						other.unslotted = unslotted;
-					}
-					attributes[name] = value;
-				}
-			}
+		public abstract object this[string name] {
+			get;
 		}
+
+		protected readonly TaskMaster task_master;
 
 		/**
 	 * The stack trace when this frame was created.
 	 */
 		public SourceReference SourceReference { get; private set; }
-		private readonly IDictionary<string, Object> attributes = new SortedDictionary<string, Object>();
-		private readonly TaskMaster task_master;
-		private List<Computation> unslotted = new List<Computation>();
 
-		public Frame(TaskMaster task_master, long id, SourceReference source_ref, Context context, Frame container) {
+		public Frame(TaskMaster task_master, SourceReference source_ref, Context context, Frame container) {
 			this.task_master = task_master;
 			SourceReference = source_ref;
 			Context = Context.Prepend(this, context);
 			Container = container ?? this;
-			Id = TaskMaster.OrdinalName(id);
+			Id = TaskMaster.OrdinalName(task_master.NextId());
 		}
 
-		public IEnumerable<string> GetAttributeNames() {
-			return attributes.Keys;
-		}
+		public abstract IEnumerable<string> GetAttributeNames();
 
 		public override IEnumerable<string> GetDynamicMemberNames() {
-			return attributes.Keys;
+			return GetAttributeNames();
 		}
 
 		/**
@@ -240,56 +199,35 @@ namespace Flabbergast {
 	 */
 
 		internal bool GetOrSubscribe(string name, ConsumeResult consumer) {
-			// If this frame is being looked at, then all its pending attributes should
-			// be slotted.
-			Slot();
-			object value;
-			if (attributes.TryGetValue(name, out value)) {
-				if (value is Computation) {
-					((Computation) value).Notify(consumer);
-				} else {
-					consumer(value);
-				}
-				return true;
+			var result = this[name];
+			if (result == null) {
+				return false;
 			}
-			return false;
+
+			if (result is Computation) {
+				((Computation) result).Notify(consumer);
+			} else {
+				consumer(result);
+			}
+			return true;
 		}
 
 		/**
 	 * Check if an attribute name is present in the frame.
 	 */
-		public bool Has(string name) {
-			return attributes.ContainsKey(name);
-		}
+		public abstract bool Has(string name);
 
 		public bool Has(Stringish name) {
 			return Has(name.ToString());
 		}
 
-		/**
-	 * Trigger any unfinished computations contained in this frame to be executed.
-	 *
-	 * When a frame is being filled, unfinished computations may be added. They
-	 * cannot be started immediately, since the frame may still have members to
-	 * be added and those changes will be visible to the lookup environments of
-	 * those computations. Only when a frame is “returned” can the computations
-	 * be started. This should be called before returning to trigger computation.
-	 */
-
-		public void Slot() {
-			foreach (var computation in unslotted) {
-				computation.Slot();
-			}
-			unslotted.Clear();
-		}
-
-		public static Frame Through(TaskMaster task_master, long id, SourceReference source_ref, long start, long end,
+		public static Frame Through(TaskMaster task_master, SourceReference source_ref, long start, long end,
 			Context context, Frame container) {
-			var result = new Frame(task_master, id, source_ref, context, container);
+			var result = new MutableFrame(task_master, source_ref, context, container);
 			if (end < start)
 				return result;
 			for (long it = 0; it <= (end - start); it++) {
-				result[TaskMaster.OrdinalNameStr(it + 1)] = start + it;
+				result.Set(TaskMaster.OrdinalNameStr(it + 1), start + it);
 			}
 			return result;
 		}
@@ -311,7 +249,90 @@ namespace Flabbergast {
 			if (binder.IgnoreCase && char.IsUpper(name, 0)) {
 				name = char.ToLower(name[0]) + name.Substring(1);
 			}
-			return attributes.TryGetValue(name, out result);
+			result = this[name];
+			return result != null;
+		}
+	}
+	public class MutableFrame : Frame {
+		public override long Count { get { return attributes.Count; } }
+		private readonly IDictionary<string, Object> attributes = new SortedDictionary<string, Object>();
+		private List<Computation> unslotted = new List<Computation>();
+
+		public override object this[string name] {
+			get {
+				// If this frame is being looked at, then all its pending attributes should
+				// be slotted.
+				Slot();
+				object result;
+				attributes.TryGetValue(name, out result);
+				return result;
+			}
+		}
+		public MutableFrame(TaskMaster task_master, SourceReference source_ref, Context context, Frame container) : base (task_master, source_ref, context, container) { }
+		public override IEnumerable<string> GetAttributeNames() {
+			return attributes.Keys;
+		}
+		public override bool Has(string name) {
+			return attributes.ContainsKey(name);
+		}
+
+		public void Set(int ordinal, object value) {
+			Set(TaskMaster.OrdinalNameStr(ordinal), value);
+		}
+		public void Set(string name, object value) {
+			if (value == null) {
+				return;
+			}
+			if (attributes.ContainsKey(name)) {
+				throw new InvalidOperationException("Redefinition of attribute " + name + ".");
+			}
+			if (value is ComputeValue) {
+				var computation = ((ComputeValue) value)(task_master, SourceReference, Context, this, Container);
+				attributes[name] = computation;
+				/*
+			 * When this computation has completed, replace its value in the frame.
+			 */
+				computation.NotifyDelayed(result => {
+					attributes[name] = result;
+				});
+				/*
+			 * If the value is a computation, it cannot be slotted for execution
+			 * since it might depend on lookups that reference this frame. Therefore, put
+			 * it in a queue for later activation.
+			 */
+				unslotted.Add(computation);
+			} else {
+				if (value is MutableFrame) {
+					/*
+				 * If the value added is a frame, it might be in a complicated
+				 * slotting arrangement. The safest thing to do is to steal its
+				 * unslotted children and slot them when we are slotted (or absorbed
+				 * into another frame.
+				 */
+
+					var other = (MutableFrame) value;
+					unslotted.AddRange(other.unslotted);
+					other.unslotted = unslotted;
+				}
+				attributes[name] = value;
+			}
+		}
+
+		/**
+	 * Trigger any unfinished computations contained in this frame to be executed.
+	 *
+	 * When a frame is being filled, unfinished computations may be added. They
+	 * cannot be started immediately, since the frame may still have members to
+	 * be added and those changes will be visible to the lookup environments of
+	 * those computations. Only when a frame is “returned” can the computations
+	 * be started. This should be called before returning to trigger computation.
+	 */
+
+		public void Slot() {
+			foreach (var computation in unslotted) {
+				computation.Slot();
+			}
+			unslotted.Clear();
 		}
 	}
 }
