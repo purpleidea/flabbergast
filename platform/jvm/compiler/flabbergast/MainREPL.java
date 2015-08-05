@@ -157,15 +157,15 @@ public class MainREPL {
 
 		try {
 			ConsoleReader reader = new ConsoleReader();
-			reader.addCompleter(new StringsCompleter("args",
-					"value", "Append", "Bool", "By", "Container", "Each",
-					"Else", "Enforce", "Error", "False", "Finite", "Float",
-					"FloatMax", "FloatMin", "For", "Frame", "From",
-					"GenerateId", "Id", "If", "In", "Infinity", "Int",
-					"IntMax", "IntMin", "Is", "Length", "Let", "Lookup", "NaN",
-					"Name", "Null", "Order", "Ordinal", "Reduce", "Reverse",
-					"Select", "Str", "Template", "Then", "This", "Through",
-					"To", "True", "Where", "With"));
+			reader.addCompleter(new StringsCompleter("args", "value", "Append",
+					"Bool", "By", "Container", "Drop", "Each", "Else", "Enforce",
+					"Error", "False", "Finite", "Float", "FloatMax",
+					"FloatMin", "For", "Frame", "From", "GenerateId", "Id",
+					"If", "In", "Infinity", "Int", "IntMax", "IntMin", "Is",
+					"Length", "Let", "Lookup", "NaN", "Name", "Now", "Null", "Order",
+					"Ordinal", "Reduce", "Required", "Reverse", "Select", "Str",
+					"Template", "Then", "This", "Through", "To", "True","Used",
+					"Where", "With"));
 			reader.setPrompt("‽ ");
 			reader.setHistoryEnabled(true);
 			reader.setPaginationEnabled(true);

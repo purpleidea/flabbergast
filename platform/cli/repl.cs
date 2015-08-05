@@ -9,7 +9,7 @@ using NDesk.Options;
 
 namespace Flabbergast {
 	public class Completables {
-		private readonly string[] keywords = {"args", "value", "Append", "Bool", "By", "Container", "Each", "Else", "Enforce", "Error", "False", "Finite", "Float", "FloatMax", "FloatMin", "For", "Frame", "From", "GenerateId", "Id", "If", "In", "Infinity", "Int", "IntMax", "IntMin", "Is", "Length", "Let", "Lookup", "NaN", "Name", "Null", "Order", "Ordinal", "Reduce", "Reverse", "Select", "Str", "Template", "Then", "This", "Through", "To", "True", "Where", "With"};
+		private readonly string[] keywords = {"args", "value", "Append", "Bool", "By", "Container", "Drop", "Each", "Else", "Enforce", "Error", "False", "Finite", "Float", "FloatMax", "FloatMin", "For", "Frame", "From", "GenerateId", "Id", "If", "In", "Infinity", "Int", "IntMax", "IntMin", "Is", "Length", "Let", "Lookup", "NaN", "Name", "Now", "Null", "Order", "Ordinal", "Reduce", "Required", "Reverse", "Select", "Str", "Template", "Then", "This", "Through", "To", "True", "Used", "Where", "With"};
 
 		public LineEditor.Completion Handler(string text, int pos) {
 			var start = pos;
