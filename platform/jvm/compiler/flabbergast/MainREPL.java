@@ -150,8 +150,8 @@ public class MainREPL {
 			e.printStackTrace();
 		}
 		if (root.get() == null) {
-			root.set(new MutableFrame(task_master, new SourceReference(
-					"<repl>", "<native>", 0, 0, 0, 0, null), null, null));
+			root.set(new MutableFrame(task_master, new NativeSourceReference(
+					"REPL"), null, null));
 		}
 		CurrentFrame current = new CurrentFrame(root.get());
 

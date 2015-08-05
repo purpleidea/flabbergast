@@ -30,9 +30,8 @@ public class PrintResult extends Computation {
 				if (result instanceof Frame) {
 					Frame frame = (Frame) result;
 					Lookup lookup = new Lookup(task_master,
-							new SourceReference("printer", "<native>", 0, 0, 0,
-									0, null), new String[]{"value"}, frame
-									.getContext());
+							new NativeSourceReference("printer"),
+							new String[]{"value"}, frame.getContext());
 					lookup.listen(new ConsumeResult() {
 
 						@Override

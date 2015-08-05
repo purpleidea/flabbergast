@@ -10,7 +10,7 @@ import java.util.Set;
  * These are typical of instantiation and attribute overriding that have both a
  * container and an ancestor.
  */
-public class JunctionReference extends SourceReference {
+public class JunctionReference extends BasicSourceReference {
 	private SourceReference junction;
 
 	public JunctionReference(String message, String filename, int start_line,

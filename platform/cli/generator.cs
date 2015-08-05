@@ -647,7 +647,7 @@ internal abstract class Generator {
 		} else {
 			original_reference.Load(this);
 		}
-		Builder.Emit(OpCodes.Newobj, typeof(SourceReference).GetConstructors()[0]);
+		Builder.Emit(OpCodes.Newobj, typeof(BasicSourceReference).GetConstructors()[0]);
 	}
 	public LoadableValue PushSourceReference(AstNode node, LoadableValue original_reference) {
 		var reference = MakeField("source_reference", typeof(SourceReference));

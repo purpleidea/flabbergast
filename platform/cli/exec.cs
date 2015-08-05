@@ -94,14 +94,14 @@ namespace Flabbergast {
 			int end_column, ComputeOverride wrapper, ComputeValue original) {
 			if (original == null) {
 				return (task_master, reference, context, self, container) =>
-					new FailureComputation(task_master, new SourceReference("used by override", filename,
+					new FailureComputation(task_master, new BasicSourceReference("used by override", filename,
 						start_line, start_column, end_line, end_column, reference), "override of non-existant attribute");
 			}
 			return
 				(task_master, reference, context, self, container) =>
 					wrapper(task_master, reference, context, self, container,
 						original(task_master,
-							new SourceReference("used by override", filename, start_line, start_column, end_line,
+							new BasicSourceReference("used by override", filename, start_line, start_column, end_line,
 								end_column, reference), context, self, container));
 		}
 

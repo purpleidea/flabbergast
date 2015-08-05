@@ -23,7 +23,7 @@ public abstract class Computation {
 			public Computation invoke(TaskMaster task_master,
 					SourceReference reference, Context context, Frame self,
 					Frame container) {
-				SourceReference inner_reference = new SourceReference(
+				SourceReference inner_reference = new BasicSourceReference(
 						"used by override", filename, start_line, start_column,
 						end_line, end_column, reference);
 				if (original == null) {

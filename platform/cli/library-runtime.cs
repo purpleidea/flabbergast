@@ -127,7 +127,7 @@ namespace Flabbergast {
 		private void HandleFrameResult(object result) {
 			var frame = result as Frame;
 			if (frame != null) {
-				var lookup = new Lookup(task_master, new SourceReference("printer", "<native>", 0, 0, 0, 0, null), new[] {"value"}, frame.Context);
+				var lookup = new Lookup(task_master, new NativeSourceReference("printer"), new[] {"value"}, frame.Context);
 				lookup.Notify(HandleFinalResult);
 			} else {
 				Console.Error.WriteLine("File did not contain a frame. That should be impossible.");

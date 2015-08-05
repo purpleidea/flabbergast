@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace Flabbergast {
@@ -10,7 +11,10 @@ namespace Flabbergast {
  * when needed.
  */
 
-	public class SourceReference {
+	public abstract class SourceReference {
+		public abstract void Write(TextWriter writer, string prefix, Dictionary<SourceReference, bool> seen);
+	}
+	public class BasicSourceReference : SourceReference {
 		public SourceReference Caller { get; private set; }
 		public int EndColumn { get; private set; }
 		public int EndLine { get; private set; }
@@ -19,7 +23,7 @@ namespace Flabbergast {
 		public int StartColumn { get; private set; }
 		public int StartLine { get; private set; }
 
-		public SourceReference(string message, string filename, int start_line, int start_column, int end_line,
+		public BasicSourceReference(string message, string filename, int start_line, int start_column, int end_line,
 			int end_column, SourceReference caller) {
 			Message = message;
 			FileName = filename;
@@ -34,7 +38,7 @@ namespace Flabbergast {
 	 * Write the current stack trace.
 	 */
 
-		public virtual void Write(TextWriter writer, string prefix, Dictionary<SourceReference, bool> seen) {
+		public override void Write(TextWriter writer, string prefix, Dictionary<SourceReference, bool> seen) {
 			writer.Write(prefix);
 			writer.Write(Caller == null ? "└ " : "├ ");
 			WriteMessage(writer);
@@ -77,7 +81,7 @@ namespace Flabbergast {
  * container and an ancestor.
  */
 
-	public class JunctionReference : SourceReference {
+	public class JunctionReference : BasicSourceReference {
 		/**
 		 * The stack trace of the non-local component. (i.e., the ancestor's stack trace).
 		 */
@@ -108,6 +112,43 @@ namespace Flabbergast {
 				Junction.Write(writer, prefix + (Caller == null ? "  " : "│ "), seen);
 				if (Caller != null)
 					Caller.Write(writer, prefix, seen);
+			}
+		}
+	}
+	public class NativeSourceReference : SourceReference {
+		private readonly string name;
+		public NativeSourceReference(string name) {
+			this.name = name;
+		}
+		public override void Write(TextWriter writer, string prefix, Dictionary<SourceReference, bool> seen) {
+			writer.Write(prefix);
+			writer.Write("└ <");
+			writer.Write(name);
+			writer.Write(">\n");
+		}
+	}
+	public class ClrSourceReference : SourceReference {
+		private const int SKIP = 2;
+		private readonly StackTrace trace;
+		public ClrSourceReference() {
+			trace = new StackTrace();
+		}
+		public override void Write(TextWriter writer, string prefix, Dictionary<SourceReference, bool> seen) {
+			bool before = seen.ContainsKey(this);
+			seen[this] = true;
+
+			var length = before ? SKIP + 1 : trace.FrameCount;
+
+			for (int it = SKIP; it < length; it++) {
+				writer.Write(prefix);
+				writer.Write(it < trace.FrameCount - 1 ? "├ " : "└ ");
+				writer.Write(trace.GetFrame(it).ToString());
+				if (before) {
+					writer.Write(" (previously mentioned)\n");
+					writer.Write(prefix);
+					writer.Write("┊");
+				}
+				writer.Write("\n");
 			}
 		}
 	}

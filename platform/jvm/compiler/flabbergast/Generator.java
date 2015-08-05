@@ -1015,8 +1015,8 @@ abstract class Generator {
 			original_reference.load(this);
 		}
 		builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
-				getInternalName(SourceReference.class), "<init>", Type
-						.getConstructorDescriptor(SourceReference.class
+				getInternalName(BasicSourceReference.class), "<init>", Type
+						.getConstructorDescriptor(BasicSourceReference.class
 								.getConstructors()[0]));
 		reference.store(builder);
 		return reference;
@@ -1025,7 +1025,7 @@ abstract class Generator {
 	private void pushSourceReferenceStart() {
 		builder.visitVarInsn(Opcodes.ALOAD, 0);
 		builder.visitTypeInsn(Opcodes.NEW,
-				getInternalName(SourceReference.class));
+				getInternalName(BasicSourceReference.class));
 		builder.visitInsn(Opcodes.DUP);
 	}
 
