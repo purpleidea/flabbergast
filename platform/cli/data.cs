@@ -335,4 +335,64 @@ namespace Flabbergast {
 			unslotted.Clear();
 		}
 	}
+
+/**
+ * A Frame wrapper over a CLR object.
+ */
+	public class ReflectedFrame : Frame {
+
+		private readonly IDictionary<String, Object> attributes;
+
+		public object Backing { get; private set; }
+
+		public override long Count { get { return attributes.Count; } }
+
+		public static ReflectedFrame Create<T>(TaskMaster task_master, T backing,
+				IDictionary<string, Func<T, object>> accessors) {
+			var attributes = accessors.ToDictionary(pair => pair.Key, pair => {
+				object result = pair.Value(backing);
+				if (result == null) {
+					result = Unit.NULL;
+				} else if (result is Boolean || result is Double
+						|| result is Int64 || result is Frame
+						|| result is Stringish
+						|| result is Template || result is Unit) {
+				} else if (result is string) {
+					result = new SimpleStringish((String) result);
+				} else {
+					throw new InvalidCastException("Value for " + pair.Key
+							+ " is non-Flabbergast type "
+							+ result.GetType() + ".");
+				}
+				return result;
+			});
+			return new ReflectedFrame(task_master, new ClrSourceReference(),
+					backing, attributes);
+		}
+
+		private ReflectedFrame(TaskMaster task_master, SourceReference source_ref,
+				Object backing, IDictionary<string, object> attributes) : base(task_master, source_ref, null, null) {
+			Backing = backing;
+			this.attributes = attributes;
+		}
+
+		public override object this[string name] {
+			get {
+				object result;
+				attributes.TryGetValue(name, out result);
+				return result;
+			}
+		}
+
+		/**
+		 * Check if an attribute name is present in the frame.
+		 */
+		public override bool Has(string name) {
+			return attributes.ContainsKey(name);
+		}
+
+		public override IEnumerable<string> GetAttributeNames() {
+			return attributes.Keys;
+		}
+	}
 }
