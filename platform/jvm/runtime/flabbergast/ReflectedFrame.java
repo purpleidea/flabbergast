@@ -1,6 +1,5 @@
 package flabbergast;
 
-import java.lang.invoke.MethodHandle;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -14,11 +13,14 @@ public class ReflectedFrame extends Frame {
 	private final Object backing;
 
 	private final TreeMap<String, Object> attributes;
+	public interface Transform<T> {
+		Object invoke(T src);
+	}
 
-	public static ReflectedFrame create(TaskMaster task_master, Object backing,
-			Map<String, MethodHandle> accessors) throws Throwable {
+	public static <T> ReflectedFrame create(TaskMaster task_master, T backing,
+			Map<String, Transform<T>> accessors) {
 		TreeMap<String, Object> attributes = new TreeMap<String, Object>();
-		for (Entry<String, MethodHandle> entry : accessors.entrySet()) {
+		for (Entry<String, Transform<T>> entry : accessors.entrySet()) {
 			Object result = entry.getValue().invoke(backing);
 			if (result == null) {
 				result = Unit.NULL;
