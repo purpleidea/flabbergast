@@ -121,7 +121,7 @@ namespace Flabbergast {
 		}
 
 		private void SlotHelper() {
-			if (virgin) {
+			if (virgin && task_master != null) {
 				virgin = false;
 				task_master.Slot(this);
 			}
@@ -157,7 +157,31 @@ namespace Flabbergast {
 
 	public interface UriHandler {
 		string UriName { get; }
+		Computation ResolveUri(TaskMaster task_master, string uri, out LibraryFailure reason);
+	}
+
+	public interface UriLoader {
+		string UriName { get; }
 		Type ResolveUri(string uri, out LibraryFailure reason);
+	}
+
+	public class UriInstaniator : UriHandler {
+		private UriLoader loader;
+		public UriInstaniator(UriLoader loader) {
+			this.loader = loader;
+		}
+		public string UriName { get { return loader.UriName; } }
+		public Computation ResolveUri(TaskMaster task_master, string uri, out LibraryFailure reason) {
+			var type = loader.ResolveUri(uri, out reason);
+			if (reason != LibraryFailure.None || type == null) {
+				return null;
+			}
+			if (!typeof(Computation).IsAssignableFrom(type)) {
+				throw new InvalidCastException(String.Format(
+					"Class {0} for URI {1} from {2} is not a computation.", type, uri, UriName));
+			}
+			return (Computation) Activator.CreateInstance(type, task_master);
+		}
 	}
 
 /**
@@ -190,6 +214,10 @@ namespace Flabbergast {
 			handlers.Add(handler);
 		}
 
+		public void AddUriHandler(UriLoader loader) {
+			handlers.Add(new UriInstaniator(loader));
+		}
+
 		private static char[] CreateOrdinalSymbols() {
 			var array = new char[26];
 			for (var it = 0; it < 26; it++) {
@@ -206,11 +234,13 @@ namespace Flabbergast {
 			}
 			if (uri.StartsWith("lib:")) {
 				if (uri.Length < 5) {
+					external_cache[uri] = BlackholeComputation.INSTANCE;
 					ReportExternalError(uri, LibraryFailure.BadName);
 					return;
 				}
 				for (var it = 5; it < uri.Length; it++) {
 					if (uri[it] != '/' && !char.IsLetterOrDigit(uri[it])) {
+						external_cache[uri] = BlackholeComputation.INSTANCE;
 						ReportExternalError(uri, LibraryFailure.BadName);
 						return;
 					}
@@ -219,23 +249,20 @@ namespace Flabbergast {
 
 			foreach (var handler in handlers) {
 				LibraryFailure reason;
-				var t = handler.ResolveUri(uri, out reason);
+				var computation = handler.ResolveUri(this, uri, out reason);
 				if (reason == LibraryFailure.Missing) {
 					continue;
 				}
-				if (reason != LibraryFailure.None || t == null) {
+				if (reason != LibraryFailure.None || computation == null) {
+					external_cache[uri] = BlackholeComputation.INSTANCE;
 					ReportExternalError(uri, reason);
 					return;
 				}
-				if (!typeof(Computation).IsAssignableFrom(t)) {
-					throw new InvalidCastException(String.Format(
-						"Class {0} for URI {1} from {2} is not a computation.", t, uri, handler.UriName));
-				}
-				var computation = (Computation) Activator.CreateInstance(t, this);
 				external_cache[uri] = computation;
 				computation.Notify(target);
 				return;
 			}
+			external_cache[uri] = BlackholeComputation.INSTANCE;
 			ReportExternalError(uri, LibraryFailure.Missing);
 		}
 
@@ -486,6 +513,18 @@ namespace Flabbergast {
 		}
 		protected override bool Run() {
 			return true;
+		}
+	}
+
+	/**
+	 * A computation that never completes.
+	 */
+	public class BlackholeComputation : Computation {
+		public readonly static Computation INSTANCE = new BlackholeComputation();
+		private BlackholeComputation() : base(null) {
+		}
+		protected override bool Run() {
+			return false;
 		}
 	}
 }

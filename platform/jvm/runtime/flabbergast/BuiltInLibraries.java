@@ -2,7 +2,7 @@ package flabbergast;
 
 import flabbergast.TaskMaster.LibraryFailure;
 
-public class BuiltInLibraries implements UriHandler {
+public class BuiltInLibraries implements UriLoader {
 	public static final BuiltInLibraries INSTANCE = new BuiltInLibraries();
 
 	private BuiltInLibraries() {

@@ -113,7 +113,7 @@ public abstract class Computation {
 	}
 
 	private void slotHelper() {
-		if (virgin) {
+		if (virgin && task_master != null) {
 			virgin = false;
 			task_master.slot(this);
 		}

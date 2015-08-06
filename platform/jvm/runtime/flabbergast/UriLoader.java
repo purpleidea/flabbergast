@@ -2,9 +2,9 @@ package flabbergast;
 
 import flabbergast.TaskMaster.LibraryFailure;
 
-public interface UriHandler {
+public interface UriLoader {
 	String getUriName();
 
-	Computation resolveUri(TaskMaster task_master, String uri,
+	Class<? extends Computation> resolveUri(String uri,
 			Ptr<LibraryFailure> reason);
 }

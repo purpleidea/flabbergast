@@ -11,7 +11,7 @@ namespace Flabbergast {
 		Corrupt,
 		BadName
 	}
-	public class BuiltInLibraries : UriHandler {
+	public class BuiltInLibraries : UriLoader {
 		public static readonly BuiltInLibraries INSTANCE = new BuiltInLibraries();
 		private BuiltInLibraries() {}
 
@@ -34,7 +34,7 @@ namespace Flabbergast {
 		}
 	}
 
-	public abstract class LoadLibraries : UriHandler {
+	public abstract class LoadLibraries : UriLoader {
 		protected readonly List<string> paths = GenerateDefaultPaths();
 		public abstract string UriName { get; }
 		public abstract Type ResolveUri(string uri, out LibraryFailure reason);

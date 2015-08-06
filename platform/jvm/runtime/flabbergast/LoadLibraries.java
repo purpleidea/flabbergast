@@ -5,7 +5,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class LoadLibraries implements UriHandler {
+public abstract class LoadLibraries implements UriLoader {
 	public static List<String> GenerateDefaultPaths() {
 		List<String> paths = new ArrayList<String>();
 		String env_var = System.getenv("FLABBERGAST_PATH");
