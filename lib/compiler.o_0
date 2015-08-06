@@ -4187,7 +4187,7 @@ language_tmpl : Template {
 													parser.range { from : "A"  to : "Z" },
 													parser.range { from : "a"  to : "z" },
 													parser.range { from : "0"  to : "9" },
-													parser.single { char : "~=-,;!?/.'()[]@$*&#%+" }
+													parser.single { char : "~=-,;!?/.'()[]@$*&#%+:" }
 												]
 											}
 										}
