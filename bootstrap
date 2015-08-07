@@ -2,8 +2,14 @@
 # -*- makefile -*-
 
 FLABBERGAST_PATH = lib
+NULL=
 
-all: platform/jvm/compiler/flabbergast/compiler-jvm.java platform/cli/compiler-cli.cs
+MAGIC_TARGETS = \
+	platform/cli/compiler-cli.cs \
+	platform/jvm/compiler/flabbergast/compiler-jvm.java \
+	$(NULL)
+
+all: $(MAGIC_TARGETS)
 
 platform/jvm/compiler/flabbergast/compiler-jvm.java: platform/jvm/compiler-jvm.o_0 lib/compiler.o_0
 	FLABBERGAST_PATH=$(FLABBERGAST_PATH) flabbergast -p -o $@ $(firstword $^)
@@ -12,6 +18,6 @@ platform/cli/compiler-cli.cs: platform/cli/compiler-cli.o_0 lib/compiler.o_0
 	FLABBERGAST_PATH=$(FLABBERGAST_PATH) flabbergast -p -o $@ $(firstword $^)
 
 almost-clean:
-	git clean -f -x -e platform/cli/compiler-cli.cs -e platform/jvm/compiler/flabbergast/compiler-jvm.java
+	git clean -f -x $(addprefix -e , $(MAGIC_TARGETS))
 
 .PHONY: almost-clean all
