@@ -128,21 +128,26 @@ namespace Flabbergast {
 		}
 	}
 	public class ClrSourceReference : SourceReference {
-		private const int SKIP = 2;
-		private readonly StackTrace trace;
+		private const int SKIP = 1;
+		private readonly List<string> trace = new List<string>();
 		public ClrSourceReference() {
-			trace = new StackTrace();
+			var trace = new StackTrace(true);
+			for(var it = SKIP; it < trace.FrameCount; it++) {
+					if (typeof(TaskMaster).IsAssignableFrom(trace.GetFrame(it).GetMethod().DeclaringType))
+						break;
+					this.trace.Add(string.Format("{0}:{1}", trace.GetFrame(it).GetMethod().DeclaringType.ToString(), trace.GetFrame(it).ToString()));
+			}
 		}
 		public override void Write(TextWriter writer, string prefix, Dictionary<SourceReference, bool> seen) {
 			bool before = seen.ContainsKey(this);
 			seen[this] = true;
 
-			var length = before ? SKIP + 1 : trace.FrameCount;
+			var length = before ? 1 : trace.Count;
 
-			for (int it = SKIP; it < length; it++) {
+			for (int it = 0; it < length; it++) {
 				writer.Write(prefix);
-				writer.Write(it < trace.FrameCount - 1 ? "├ " : "└ ");
-				writer.Write(trace.GetFrame(it).ToString());
+				writer.Write(it < trace.Count - 1 ? "├ " : "└ ");
+				writer.Write(trace[it]);
 				if (before) {
 					writer.Write(" (previously mentioned)\n");
 					writer.Write(prefix);
