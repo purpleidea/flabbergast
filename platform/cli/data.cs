@@ -276,7 +276,7 @@ namespace Flabbergast {
 			return attributes.ContainsKey(name);
 		}
 
-		public void Set(int ordinal, object value) {
+		public void Set(long ordinal, object value) {
 			Set(TaskMaster.OrdinalNameStr(ordinal), value);
 		}
 		public void Set(string name, object value) {
@@ -393,6 +393,13 @@ namespace Flabbergast {
 
 		public override IEnumerable<string> GetAttributeNames() {
 			return attributes.Keys;
+		}
+
+		public void Set(string name, object value) {
+			if (attributes.ContainsKey(name)) {
+				throw new InvalidOperationException();
+			}
+			attributes[name] = value;
 		}
 	}
 }

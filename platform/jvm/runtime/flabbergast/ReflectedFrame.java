@@ -79,4 +79,11 @@ public class ReflectedFrame extends Frame {
 	public Iterator<String> iterator() {
 		return attributes.keySet().iterator();
 	}
+
+	public void set(String name, Object value) {
+		if (attributes.containsKey(name)) {
+			throw new IllegalArgumentException();
+		}
+		attributes.put(name, value);
+	}
 }
