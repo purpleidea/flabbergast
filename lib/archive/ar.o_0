@@ -37,13 +37,13 @@ file_tmpl : Template {
 	file_header : If file_name_length > 16 Then "#1/" & file_name_length Else file_name
 	header_suffix : If file_name_length > 16 Then file_name Else ""
 	header_perms :
-		utils_lib.str_pad(length : 6, input : uid) &
-		utils_lib.str_pad(length : 6, input : gid) &
-		utils_lib.str_pad(length : 8, input : user & group & other)
+		utils_lib.str_pad(uid, length : 6) &
+		utils_lib.str_pad(gid, length : 6) &
+		utils_lib.str_pad(user & group & other, length : 8)
 	value :
-		utils_lib.str_pad(length : 16, input : file_header) &
-		utils_lib.str_pad(length : 12, input : mtime) &
+		utils_lib.str_pad(file_header, length : 16) &
+		utils_lib.str_pad(mtime, length : 12) &
 		header_perms &
-		utils_lib.str_pad(length : 10, input : utils_lib.str_utf8_length(contents, header_suffix)) &
+		utils_lib.str_pad(utils_lib.str_utf8_length(contents, header_suffix), length : 10) &
 		"`\n" & header_suffix & contents
 }
