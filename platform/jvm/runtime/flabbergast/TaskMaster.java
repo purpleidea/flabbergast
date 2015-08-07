@@ -187,7 +187,7 @@ public abstract class TaskMaster implements Iterable<Lookup> {
 	}
 
 	public static boolean verifySymbol(Stringish strish) {
-		return verifySymbol(strish, new ReportError() {
+		return verifySymbol(strish.toString(), new ReportError() {
 			@Override
 			public void invoke(String error_msg) {
 			}
@@ -195,15 +195,18 @@ public abstract class TaskMaster implements Iterable<Lookup> {
 	}
 	public boolean verifySymbol(final SourceReference source_reference,
 			Stringish strish) {
-		return verifySymbol(strish, new ReportError() {
+		return verifySymbol(source_reference, strish.toString());
+	}
+	public boolean verifySymbol(final SourceReference source_reference,
+			String str) {
+		return verifySymbol(str, new ReportError() {
 			@Override
 			public void invoke(String error_msg) {
 				reportOtherError(source_reference, error_msg);
 			}
 		});
 	}
-	private static boolean verifySymbol(Stringish strish, ReportError error) {
-		String str = strish.toString();
+	private static boolean verifySymbol(String str, ReportError error) {
 		if (str.length() < 1) {
 			error.invoke("An attribute name cannot be empty.");
 			return false;

@@ -336,13 +336,18 @@ namespace Flabbergast {
 		private delegate void ReportError(string error_msg);
 
 		public static bool VerifySymbol(Stringish strish) {
-			return VerifySymbol(strish, error_msg => {});
+			return VerifySymbol(strish.ToString());
+		}
+		public static bool VerifySymbol(string str) {
+			return VerifySymbol(str, error_msg => {});
 		}
 		public bool VerifySymbol(SourceReference source_reference, Stringish strish) {
-			return VerifySymbol(strish, msg => ReportOtherError(source_reference, msg));
+			return VerifySymbol(source_reference, strish.ToString());
 		}
-		private static bool VerifySymbol(Stringish strish, ReportError error) {
-			var str = strish.ToString();
+		public bool VerifySymbol(SourceReference source_reference, string str) {
+			return VerifySymbol(str, msg => ReportOtherError(source_reference, msg));
+		}
+		private static bool VerifySymbol(string str, ReportError error) {
 			if (str.Length < 1) {
 				error("An attribute name cannot be empty.");
 				return false;
