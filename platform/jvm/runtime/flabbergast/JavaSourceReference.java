@@ -9,11 +9,23 @@ import java.util.Set;
  */
 public class JavaSourceReference extends SourceReference {
 	private static final int SKIP = 2;
-
+	private final String task_master_name = TaskMaster.class.getName();
 	private final StackTraceElement[] trace;
 
 	public JavaSourceReference() {
-		trace = Thread.currentThread().getStackTrace();
+		StackTraceElement[] stack_trace = Thread.currentThread()
+				.getStackTrace();
+		int end;
+		for (end = SKIP; end < stack_trace.length; end++) {
+			if (stack_trace[end].getClassName().equals(task_master_name)) {
+				break;
+			}
+		}
+
+		trace = new StackTraceElement[end - SKIP];
+		for (int it = 0; it < trace.length; it++) {
+			trace[it] = stack_trace[it + SKIP];
+		}
 	}
 
 	@Override
@@ -22,9 +34,9 @@ public class JavaSourceReference extends SourceReference {
 		boolean before = seen.contains(this);
 		seen.add(this);
 
-		int length = before ? SKIP + 1 : trace.length;
+		int length = before ? 1 : trace.length;
 
-		for (int it = SKIP; it < length; it++) {
+		for (int it = 0; it < length; it++) {
 			writer.write(prefix);
 			writer.write(it < trace.length - 1 ? "├ " : "└ ");
 			writer.write(trace[it].toString());
