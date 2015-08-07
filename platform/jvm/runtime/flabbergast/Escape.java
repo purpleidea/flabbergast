@@ -70,7 +70,8 @@ public class Escape extends Computation {
 										source_ref,
 										String.format(
 												"Expected “args” to contain strings. Got %s instead.",
-												arg.getClass()));
+												Stringish.nameForClass(arg
+														.getClass())));
 							}
 						}
 					});
@@ -208,7 +209,7 @@ public class Escape extends Computation {
 				} else {
 					task_master.reportOtherError(source_ref, String.format(
 							"Expected “%s” to be a string. Got %s instead.",
-							name, result.getClass()));
+							name, Stringish.nameForClass(result.getClass())));
 				}
 			}
 		});

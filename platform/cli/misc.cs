@@ -281,7 +281,7 @@ namespace Flabbergast {
 									task_master.Slot(this);
 								}
 							} else {
-								task_master.ReportOtherError(source_ref, String.Format("Expected “args” to contain strings. Got {0} instead.", arg.GetType()));
+								task_master.ReportOtherError(source_ref, String.Format("Expected “args” to contain strings. Got {0} instead.", Stringish.NameForType(arg.GetType())));
 							}
 						});
 					}
@@ -370,7 +370,7 @@ namespace Flabbergast {
 					var str = result.ToString();
 					consume(str);
 				} else {
-					task_master.ReportOtherError(source_ref, String.Format("Expected “{0}” to be a string. Got {1} instead.", name, result.GetType()));
+					task_master.ReportOtherError(source_ref, String.Format("Expected “{0}” to be a string. Got {1} instead.", name, Stringish.NameForType(result.GetType())));
 				}
 			});
 		}

@@ -68,7 +68,8 @@ public class PrintResult extends Computation {
 							} else {
 								System.err
 										.printf("Cowardly refusing to print result of type %s.\n",
-												result.getClass());
+												Stringish.nameForClass(result
+														.getClass()));
 							}
 
 						}

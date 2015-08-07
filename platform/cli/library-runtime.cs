@@ -120,7 +120,7 @@ namespace Flabbergast {
 					File.WriteAllText(output_filename, result.ToString(), Encoding.UTF8);
 				}
 			} else {
-				Console.Error.WriteLine("Cowardly refusing to print result of type {0}.", result.GetType());
+				Console.Error.WriteLine("Cowardly refusing to print result of type {0}.", Stringish.NameForType(result.GetType()));
 			}
 		}
 
