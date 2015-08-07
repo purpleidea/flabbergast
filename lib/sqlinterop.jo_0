@@ -1,0 +1,3 @@
+retrieve : Template {
+	value : XComputation flabbergast.JdbcQuery
+}

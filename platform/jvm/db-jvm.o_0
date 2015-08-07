@@ -1,0 +1,43 @@
+db_lib : From lib:db
+
+driver_config : db_lib.driver_config_tmpl {
+	driver_tmpl +: {
+		tail : Required
+		parse : Required
+
+		value :
+			"if (provider.equals(\"\(provider)\")) {\n" &
+			parse Enforce Str &
+			"\tif (!Arrays.asList(\(param_list Enforce Str)).containsAll(in_properties.stringPropertyNames())) { err.set(\"Unknown parameters specified.\"); return null; }\n" &
+			(For param : params, param_name : Name
+				Reduce acc & "\tif (in_properties.containsKey(\"\(param_name)\")) out_properties.setProperty(\"\(param.jdbc_param)\", in_properties.getProperty(\"\(param_name)\"));\n"
+				With acc : "") &
+			"\treturn \"jdbc:\(jdbc_name Enforce Str):\"\(tail Enforce Str);\n}\n"
+
+	}
+
+	file_driver +: {
+		parse : "\nif (uri_fragment.length() == 0) { err.set(\"No file specified.\"); return null; }\n"
+		tail : " + uri_fragment"
+	}
+
+	url_driver +: {
+		parse :
+			"\tString db_fragment = JdbcUriHandler.parseUri(uri_fragment, out_properties, \"\(jdbc_user_param)\", \"\(jdbc_password_param)\", \(If jdbc_db_param Is Null Then "null" Else "\"\(jdbc_db_param)\""), err);\n\tif(db_fragment == null) return null;\n"
+		tail : " + db_fragment"
+	}
+}
+
+value : "package flabbergast;
+import java.util.Properties;
+import java.util.Arrays;
+class JdbcParser {
+public static String parse(String provider, String uri_fragment, Properties in_properties, Properties out_properties, Ptr<String> err) {
+" &
+driver_config.value &
+"
+err.set(String.format(\"Unknown database provider “%s”.\", provider));
+return null;
+}
+}
+"

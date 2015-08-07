@@ -1,0 +1,87 @@
+driver_config_tmpl : Template {
+	driver_tmpl : Template {
+		friendly_name : Required
+		jdbc_name : Required
+		ado_net_name : Required
+		ado_net_assembly : Required
+		params : Required
+
+		param_list :
+			For param : params, param_name : Name, pos : Ordinal
+				Reduce (If pos > 1 Then acc & ", " Else "") & "\"\(param_name)\""
+				With acc : ""
+	}
+
+	file_driver : Template driver_tmpl {
+		ado_net_file_param : Required
+	}
+
+	url_driver : Template driver_tmpl {
+		jdbc_db_param : Null
+		jdbc_user_param : "user"
+		jdbc_password_param : "password"
+		ado_net_server_param : "Server"
+		ado_net_port_param : "Port"
+		ado_net_db_param : "Database"
+		ado_net_user_param : "User Id"
+		ado_net_password_param : "Password"
+	}
+
+	param_tmpl : Template {
+		jdbc_param : Required
+		ado_net_param : Required
+		man : Required
+	}
+
+	bool_param : Template param_tmpl {
+		help : Required
+		man : help & " May be \\fBtrue\\fR or \\fBfalse\\fR."
+	}
+
+	drivers : Template {
+		mssql : Template url_driver {
+			friendly_name : "Microsoft SQL Server"
+			jdbc_name : "sqlserver"
+			ado_net_name : "System.Data.SqlConnection"
+			ado_net_assembly : "System.Data"
+			jdbc_db_param : "databaseName"
+			params : {}
+		}
+		mysql : Template url_driver {
+			friendly_name : "Oracle mySQL"
+			jdbc_name : "mysql"
+			ado_net_name : "MySql.Data.MySqlConnection"
+			ado_net_assembly : "MySql.Data"
+			ado_net_user_param : "Uid"
+			ado_net_password_param : "Pwd"
+			params : {}
+		}
+		sqlite : Template file_driver {
+			friendly_name : "SQLite"
+			jdbc_name : "sqlite"
+			ado_net_name : "System.Data.SQLite.SQLiteConnection"
+			ado_net_assembly : "System.Data.SQLite"
+			ado_net_file_param : "Data Source"
+			params : {}
+		}
+		postgresql : Template url_driver {
+			friendly_name : "PostgreSQL"
+			jdbc_name : "postgresql"
+			ado_net_name : "Npgsql.NpgsqlConnection"
+			ado_net_assembly : "Npgsql"
+			params : {
+				ssl : bool_param {
+					jdbc_param : "ssl"
+					ado_net_param : "SSL"
+					help : "Requires SSL encrpytion with server."
+				}
+			}
+		}
+	}
+
+	value :
+		For driver : drivers {}, provider : Name
+			Reduce acc & (driver {}).value
+			With acc : ""
+
+}

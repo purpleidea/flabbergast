@@ -6,3 +6,4 @@ compiler/flabbergast/compiler-jvm.java
 flabbergast-*.jar
 manifest
 maven-deploy
+runtime/flabbergast/db-jvm.java

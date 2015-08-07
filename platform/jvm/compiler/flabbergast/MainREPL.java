@@ -120,6 +120,7 @@ public class MainREPL {
 		DynamicCompiler compiler = new DynamicCompiler(collector);
 		ConsoleTaskMaster task_master = new ConsoleTaskMaster();
 		task_master.addUriHandler(BuiltInLibraries.INSTANCE);
+		task_master.addUriHandler(JdbcUriHandler.INSTANCE);
 		if (!result.hasOption('p')) {
 			task_master.addUriHandler(new LoadPrecompiledLibraries());
 		}
