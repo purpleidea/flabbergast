@@ -20,15 +20,15 @@ namespace Flabbergast {
 		}
 
 		public Type ResolveUri(string uri, out LibraryFailure reason) {
-			reason = LibraryFailure.None;
+			reason = LibraryFailure.Missing;
 			if (!uri.StartsWith("lib:"))
 				return null;
 			var type_name = "Flabbergast.Library." + uri.Substring(4).Replace('/', '.');
 			var result = Type.GetType(type_name, false);
 			if (result == null) {
-				reason = LibraryFailure.Missing;
 				return null;
 			} else {
+				reason = LibraryFailure.None;
 				return result;
 			}
 		}
