@@ -25,6 +25,7 @@ man1_MANS = \
 
 man7_MANS = \
 	flabbergast_language.7 \
+	flabbergast_sql.7 \
 	$(NULL)
 
 mime_DATA = flabbergast.xml
