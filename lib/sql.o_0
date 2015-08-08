@@ -1,0 +1,15 @@
+# Query an SQL database in and produce a frame containing a frame for each row.
+#
+# The names of the columns, which must be valid Flabbergast identifiers, will
+# be the attribute names in each “row” frame. The special column name
+# “ATTRNAME” will become the attribute name of the “row” frame in the
+# containing frame, otherwise, the “row” frames will be numbered. A column name
+# can be prefixed by “$” to allow lookups. In this case, the column value,
+# which must be a string, is treated as a lookup, which may contain periods,
+# and evaluated with contextual lookup semantics.
+retrieve : Template (From lib:sqlinterop ).retrieve {
+	# A connection from a `From sql:` import
+	connection : Required
+	# A string containing the implementation-specific SQL statement.
+	sql_query : Required
+}
