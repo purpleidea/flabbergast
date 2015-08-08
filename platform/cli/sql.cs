@@ -93,6 +93,14 @@ namespace Flabbergast {
 						name_chooser = (rs, it) => rs.GetString(col);
 						continue;
 					}
+					if (reader.GetName(col).StartsWith("$")) {
+						var attr_name = reader.GetName(col).Substring(1);
+						if (!task_master.VerifySymbol(source_ref, attr_name)) {
+							return false;
+						}
+						retrievers.Add((rs, frame) => frame.Set(attr_name, rs.IsDBNull(position) ? Unit.NULL : Lookup.Do(rs.GetString(col).Split('.')));
+						continue;
+					}
 					Unpacker unpacker;
 					if (!unpackers.TryGetValue(reader.GetFieldType(col), out unpacker)) {
 						task_master

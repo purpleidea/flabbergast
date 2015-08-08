@@ -1,5 +1,6 @@
 package flabbergast;
 
+import flabbergast.Lookup.DoLookup;
 import java.sql.Types;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -21,18 +22,24 @@ public class JdbcQuery extends Computation {
 				return TaskMaster.ordinalNameStr(it);
 			}
 		};
-		public abstract String invoke(ResultSet rs, long it) throws  SQLException;
+		public abstract String invoke(ResultSet rs, long it)
+				throws SQLException;
 	}
 
-	private static class Retriever {
+	private static abstract class Retriever {
+		abstract void invoke(ResultSet rs, MutableFrame frame)
+				throws SQLException;
+	}
+	private static class UnpackRetriever extends Retriever {
 		private final String name;
 		private final int position;
 		private final Unpacker unpacker;
-		Retriever(String name, int position, Unpacker unpacker) {
+		UnpackRetriever(String name, int position, Unpacker unpacker) {
 			this.name = name;
 			this.position = position;
 			this.unpacker = unpacker;
 		}
+		@Override
 		void invoke(ResultSet rs, MutableFrame frame) throws SQLException {
 			Object result = unpacker.invoke(rs, position);
 			frame.set(name, rs.wasNull() ? Unit.NULL : result);
@@ -147,10 +154,30 @@ public class JdbcQuery extends Computation {
 					final int index = col;
 					name_chooser = new NameChooser() {
 						@Override
-						public String invoke(ResultSet rs, long it) throws  SQLException {
+						public String invoke(ResultSet rs, long it)
+								throws SQLException {
 							return rs.getString(index);
 						}
 					};
+					continue;
+				}
+				if (rsmd.getColumnLabel(col).startsWith("$")) {
+					final String attr_name = rsmd.getColumnLabel(col)
+							.substring(1);
+					final int column = col;
+					if (!task_master.verifySymbol(source_ref, attr_name)) {
+						return;
+					}
+					retrievers.add(new Retriever() {
+						@Override
+						void invoke(ResultSet rs, MutableFrame frame)
+								throws SQLException {
+							String result = rs.getString(column);
+							frame.set(attr_name, rs.wasNull()
+									? Unit.NULL
+									: new DoLookup(result.split(".")));
+						}
+					});
 					continue;
 				}
 				Unpacker unpacker = unpackers.get(rsmd.getColumnType(col));
@@ -168,7 +195,7 @@ public class JdbcQuery extends Computation {
 					return;
 				}
 				String name = rsmd.getColumnLabel(col);
-				retrievers.add(new Retriever(name, col, unpacker));
+				retrievers.add(new UnpackRetriever(name, col, unpacker));
 			}
 
 			MutableFrame list = new MutableFrame(task_master, source_ref,
