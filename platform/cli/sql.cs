@@ -130,7 +130,7 @@ namespace Flabbergast {
 			{"product_name",  c => c.DataSource},
 			{"product_version",  c => c.ServerVersion},
 			{"driver_name",  c => c.GetType().Name},
-			{"driver_version",  c => c.GetType().Assembly.GetName().Version},
+			{"driver_version",  c => c.GetType().Assembly.GetName().Version.ToString()},
 			{"platform",  c => "ADO.NET"}
 		};
 
