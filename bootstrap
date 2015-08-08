@@ -7,6 +7,7 @@ NULL=
 MAGIC_TARGETS = \
 	flabbergast_sql.7 \
 	platform/cli/compiler-cli.cs \
+	platform/cli/db-cli.cs \
 	platform/jvm/compiler/flabbergast/compiler-jvm.java \
 	platform/jvm/runtime/flabbergast/db-jvm.java \
 	$(NULL)
@@ -20,6 +21,9 @@ platform/cli/compiler-cli.cs: platform/cli/compiler-cli.o_0 lib/compiler.o_0
 	FLABBERGAST_PATH=$(FLABBERGAST_PATH) flabbergast -p -o $@ $(firstword $^)
 
 platform/jvm/runtime/flabbergast/db-jvm.java: platform/jvm/db-jvm.o_0 db.o_0
+	FLABBERGAST_PATH=. flabbergast -p -o $@ $(firstword $^)
+
+platform/cli/db-cli.cs: platform/cli/db-cli.o_0 db.o_0
 	FLABBERGAST_PATH=. flabbergast -p -o $@ $(firstword $^)
 
 flabbergast_sql.7: db-man.o_0 db.o_0

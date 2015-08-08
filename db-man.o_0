@@ -39,6 +39,8 @@ queries to access table metadata
 
 With JDBC, it is the user's responsibility to add the appropriate driver JAR to the \\fBCLASSPATH\\fR.
 
+For ADO.NET, it is the user's responsibility to install the assembly into the GAC and create an appropriate entry in the \\fBmachine.config\\fR.
+
 .SH URI FORMATS
 Presently, databases take one of two URI schemes:
 .TP

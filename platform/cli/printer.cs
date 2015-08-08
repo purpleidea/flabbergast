@@ -49,6 +49,7 @@ public class Printer {
 		var collector = new ConsoleCollector();
 		var task_master = new ConsoleTaskMaster();
 		task_master.AddUriHandler(BuiltInLibraries.INSTANCE);
+		task_master.AddUriHandler(DbUriHandler.INSTANCE);
 		if (use_precompiled) {
 			task_master.AddUriHandler(new LoadPrecompiledLibraries());
 		}

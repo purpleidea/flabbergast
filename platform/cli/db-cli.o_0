@@ -1,0 +1,43 @@
+db_lib : From lib:db
+
+driver_config : db_lib.driver_config_tmpl {
+	driver_tmpl +: {
+		parse : Required
+
+		value :
+			"if (provider == \"\(provider)\") {\n\tvar builder = new DbConnectionStringBuilder();\n" &
+			parse Enforce Str &
+			"\tstring[] defined = {\(param_list Enforce Str)};\n\tif (!in_properties.Keys.All(k => defined.Contains(k))) { err = \"Unknown parameters specified.\"; return null; }\n" &
+			(For param : params, param_name : Name
+				Reduce acc & "\tif (in_properties.ContainsKey(\"\(param_name)\")) builder[\"\(param.ado_net_param)\"] = in_properties[\"\(param_name)\"];\n"
+				With acc : "") &
+			"var connection = DbProviderFactories.GetFactory(\"\(ado_net_name Enforce Str)\").CreateConnection();\n\tconnection.ConnectionString = builder.ConnectionString;\n\treturn connection;\n}\n"
+	}
+
+	file_driver +: {
+		parse : "\tif (uri_fragment.Length == 0) { err = \"No file specified.\"; return null; }\n"
+	}
+
+	url_driver +: {
+		parse :
+			"\tif (!DbUriHandler.ParseUri(uri_fragment, builder, \"\(ado_net_server_param)\", \"\(ado_net_port_param)\", \"\(ado_net_user_param)\", \"\(ado_net_password_param)\", \"\(ado_net_db_param)\", out err)) return null;\n"
+	}
+}
+value : "using System;
+using System.Collections.Generic;
+using System.Data.Common;
+using System.Linq;
+namespace Flabbergast {
+class DbParser {
+public static DbConnection Parse(string provider, string uri_fragment, Dictionary<string, string> in_properties, out string err) {
+err = null;
+" &
+driver_config.value &
+"
+err = string.Format(\"Unknown database provider “{0}”.\", provider);
+return null;
+}
+}
+}
+"
+

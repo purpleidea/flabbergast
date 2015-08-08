@@ -32,14 +32,17 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<Reference Include="System"/>
+		<Reference Include="System.Data"/>
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="data.cs"/>
+		<Compile Include="db-cli.cs"/>
 		<Compile Include="dlopen.cs"/>
 		<Compile Include="exec.cs"/>
 		<Compile Include="iterator.cs"/>
 		<Compile Include="library-runtime.cs"/>
 		<Compile Include="misc.cs"/>
+		<Compile Include="sql.cs"/>
 		<Compile Include="srcref.cs"/>
 		<Compile Include="stringish.cs"/>
 		<Compile Include="AssemblyInfo.cs"/>

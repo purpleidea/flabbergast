@@ -3,7 +3,6 @@ driver_config_tmpl : Template {
 		friendly_name : Required
 		jdbc_name : Required
 		ado_net_name : Required
-		ado_net_assembly : Required
 		params : Required
 
 		param_list :
@@ -42,16 +41,14 @@ driver_config_tmpl : Template {
 		mssql : Template url_driver {
 			friendly_name : "Microsoft SQL Server"
 			jdbc_name : "sqlserver"
-			ado_net_name : "System.Data.SqlConnection"
-			ado_net_assembly : "System.Data"
+			ado_net_name : "System.Data.SqlClient"
 			jdbc_db_param : "databaseName"
 			params : {}
 		}
 		mysql : Template url_driver {
 			friendly_name : "Oracle mySQL"
 			jdbc_name : "mysql"
-			ado_net_name : "MySql.Data.MySqlConnection"
-			ado_net_assembly : "MySql.Data"
+			ado_net_name : "MySql.Data.MySqlClient"
 			ado_net_user_param : "Uid"
 			ado_net_password_param : "Pwd"
 			params : {}
@@ -59,16 +56,14 @@ driver_config_tmpl : Template {
 		sqlite : Template file_driver {
 			friendly_name : "SQLite"
 			jdbc_name : "sqlite"
-			ado_net_name : "System.Data.SQLite.SQLiteConnection"
-			ado_net_assembly : "System.Data.SQLite"
+			ado_net_name : "System.Data.SQLite"
 			ado_net_file_param : "Data Source"
 			params : {}
 		}
 		postgresql : Template url_driver {
 			friendly_name : "PostgreSQL"
 			jdbc_name : "postgresql"
-			ado_net_name : "Npgsql.NpgsqlConnection"
-			ado_net_assembly : "Npgsql"
+			ado_net_name : "Npgsql"
 			params : {
 				ssl : bool_param {
 					jdbc_param : "ssl"

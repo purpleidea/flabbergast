@@ -6,5 +6,6 @@
 *.userprefs
 bin
 compiler-cli.cs
+db-cli.cs
 obj
 xdb.s
