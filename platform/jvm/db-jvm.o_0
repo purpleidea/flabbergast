@@ -10,7 +10,9 @@ driver_config : db_lib.driver_config_tmpl {
 			parse Enforce Str &
 			"\tif (!Arrays.asList(\(param_list Enforce Str)).containsAll(in_properties.stringPropertyNames())) { err.set(\"Unknown parameters specified.\"); return null; }\n" &
 			(For param : params, param_name : Name
-				Reduce acc & "\tif (in_properties.containsKey(\"\(param_name)\")) out_properties.setProperty(\"\(param.jdbc_param)\", in_properties.getProperty(\"\(param_name)\"));\n"
+				Reduce acc & "\tif (in_properties.containsKey(\"\(param_name)\")) {\n" &
+					(If param.validate Is Null Then "" Else "\tif (!Pattern.matches(\"\(param.validate Enforce Str)\", in_properties.getProperty(\"\(param_name)\"))) { err.set(\"The value for “\(param_name)” is not allowed.\"); return null; }\n") &
+					"\t\tout_properties.setProperty(\"\(param.jdbc_param)\", in_properties.getProperty(\"\(param_name)\"));\n\t}\n"
 				With acc : "") &
 			"\treturn \"jdbc:\(jdbc_name Enforce Str):\"\(tail Enforce Str);\n}\n"
 
@@ -29,8 +31,9 @@ driver_config : db_lib.driver_config_tmpl {
 }
 
 value : "package flabbergast;
-import java.util.Properties;
 import java.util.Arrays;
+import java.util.Properties;
+import java.util.regex.Pattern;
 class JdbcParser {
 public static String parse(String provider, String uri_fragment, Properties in_properties, Properties out_properties, Ptr<String> err) {
 " &

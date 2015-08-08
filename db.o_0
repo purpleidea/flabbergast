@@ -30,11 +30,13 @@ driver_config_tmpl : Template {
 		jdbc_param : Required
 		ado_net_param : Required
 		man : Required
+		validate : Null
 	}
 
 	bool_param : Template param_tmpl {
 		help : Required
 		man : help & " May be \\fBtrue\\fR or \\fBfalse\\fR."
+		validate : "^(true|false)$"
 	}
 
 	drivers : Template {
