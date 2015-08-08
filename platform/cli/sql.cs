@@ -86,7 +86,7 @@ namespace Flabbergast {
 				var reader = command.ExecuteReader();
 
 				var retrievers = new List<Retriever>();
-				for (int col = 0; col <= reader.FieldCount; col++) {
+				for (int col = 0; col < reader.FieldCount; col++) {
 					Unpacker unpacker;
 					if (!unpackers.TryGetValue(reader.GetFieldType(col), out unpacker)) {
 						task_master
