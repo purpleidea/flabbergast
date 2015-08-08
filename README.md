@@ -9,7 +9,7 @@ There is nothing so unutterably stupid that people won't waste their time on it.
 
 ## Community
 
-We are around on FreeNode IRC in `#flabbergast`, [Google Groups](https://groups.google.com/forum/#!forum/flabbergast-users) or [Google+](https://plus.google.com/communities/103010827049942376743). Feel free to file bugs and ask question on GitHub.
+We are around on FreeNode IRC in `#flabbergast`, [Google Groups](https://groups.google.com/forum/#!forum/flabbergast-users), [Twitter](http://twitter.com/co_0nfig) or [Google+](https://plus.google.com/communities/103010827049942376743). Feel free to file bugs and ask question on GitHub.
 
 ## Documentation
 
