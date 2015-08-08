@@ -179,7 +179,7 @@ public class JdbcQuery extends Computation {
 				for (Retriever r : retrievers) {
 					r.invoke(rs, frame);
 				}
-				list.set(it, frame);
+				list.set(name_chooser.invoke(rs, it), frame);
 			}
 			result = list;
 		} catch (SQLException e) {
