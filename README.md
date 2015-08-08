@@ -5,9 +5,11 @@ Flabbergast is a object-oriented macro system that uses contextual lookup (dynam
 
 In most languages, afterthoughts are not appreciated. However, most configurations are nothing but afterthoughts and exceptions. “I want the test version of the webserver to be the same as the production except for the database connection.” “I want the videos SMB share to be the same as the documents SMB share with a few extra users.” Flabbergast is built to service “except”, “and”, and “but”.
 
-View the [User Community](https://plus.google.com/communities/103010827049942376743).
-
 There is nothing so unutterably stupid that people won't waste their time on it. – Mark Rendle, [The Worst Programming Language Ever](http://skillsmatter.com/skillscasts/6088-the-worst-programming-language-ever). This was not explicitly about Flabbergast.
+
+## Community
+
+We are around on FreeNode IRC in `#flabbergast`, [Google Groups](https://groups.google.com/forum/#!forum/flabbergast-users) or [Google+](https://plus.google.com/communities/103010827049942376743). Feel free to file bugs and ask question on GitHub.
 
 ## Documentation
 
