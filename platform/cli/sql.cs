@@ -226,7 +226,6 @@ namespace Flabbergast {
 				reason = LibraryFailure.Missing;
 				return null;
 			}
-			SourceReference src_ref = null;
 			reason = LibraryFailure.None;
 			try {
 				var param = new Dictionary<string, string>();
@@ -264,7 +263,7 @@ namespace Flabbergast {
 				connection_proxy.Set("provider", new SimpleStringish(provider));
 				return new Precomputation(connection_proxy);
 			} catch (Exception e) {
-				return new FailureComputation(task_master, src_ref ?? new ClrSourceReference(), e.Message);
+				return new FailureComputation(task_master, new ClrSourceReference(e), e.Message);
 			}
 		}
 	}
