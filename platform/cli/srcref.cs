@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -130,8 +131,11 @@ namespace Flabbergast {
 	public class ClrSourceReference : SourceReference {
 		private const int SKIP = 1;
 		private readonly List<string> trace = new List<string>();
-		public ClrSourceReference() {
-			var trace = new StackTrace(true);
+		public ClrSourceReference() : this(new StackTrace(true)) {
+		}
+		public ClrSourceReference(Exception e) : this(new StackTrace(e, true)) {
+		}
+		public ClrSourceReference(StackTrace trace) {
 			for(var it = SKIP; it < trace.FrameCount; it++) {
 					if (typeof(TaskMaster).IsAssignableFrom(trace.GetFrame(it).GetMethod().DeclaringType))
 						break;
