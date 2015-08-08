@@ -55,13 +55,6 @@ driver_config_tmpl : Template {
 			ado_net_password_param : "Pwd"
 			params : {}
 		}
-		sqlite : Template file_driver {
-			friendly_name : "SQLite"
-			jdbc_name : "sqlite"
-			ado_net_name : "System.Data.SQLite"
-			ado_net_file_param : "Data Source"
-			params : {}
-		}
 		postgresql : Template url_driver {
 			friendly_name : "PostgreSQL"
 			jdbc_name : "postgresql"
@@ -73,6 +66,13 @@ driver_config_tmpl : Template {
 					help : "Requires SSL encrpytion with server."
 				}
 			}
+		}
+		sqlite : Template file_driver {
+			friendly_name : "SQLite"
+			jdbc_name : "sqlite"
+			ado_net_name : "System.Data.SQLite"
+			ado_net_file_param : "Data Source"
+			params : {}
 		}
 	}
 
