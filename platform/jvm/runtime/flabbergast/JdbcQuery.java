@@ -14,6 +14,16 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class JdbcQuery extends Computation {
+	private static abstract class NameChooser {
+		public final static NameChooser DEFAULT = new NameChooser() {
+			@Override
+			public String invoke(ResultSet rs, long it) throws SQLException {
+				return TaskMaster.ordinalNameStr(it);
+			}
+		};
+		public abstract String invoke(ResultSet rs, long it) throws  SQLException;
+	}
+
 	private static class Retriever {
 		private final String name;
 		private final int position;
@@ -130,8 +140,19 @@ public class JdbcQuery extends Computation {
 			ResultSet rs = stmt.executeQuery(query);
 
 			ResultSetMetaData rsmd = rs.getMetaData();
+			NameChooser name_chooser = NameChooser.DEFAULT;
 			List<Retriever> retrievers = new ArrayList<Retriever>();
 			for (int col = 1; col <= rsmd.getColumnCount(); col++) {
+				if (rsmd.getColumnLabel(col).equals("ATTRNAME")) {
+					final int index = col;
+					name_chooser = new NameChooser() {
+						@Override
+						public String invoke(ResultSet rs, long it) throws  SQLException {
+							return rs.getString(index);
+						}
+					};
+					continue;
+				}
 				Unpacker unpacker = unpackers.get(rsmd.getColumnType(col));
 				if (unpacker == null) {
 					task_master

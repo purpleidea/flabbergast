@@ -6,6 +6,7 @@ using System.Threading;
 
 namespace Flabbergast {
 	public class DbQuery : Computation {
+		private delegate string NameChooser (DbDataReader rs, long it);
 		private delegate void Retriever (DbDataReader rs, MutableFrame frame);
 		private delegate object Unpacker (DbDataReader rs, int position);
 
@@ -85,8 +86,13 @@ namespace Flabbergast {
 				command.CommandText = query; 
 				var reader = command.ExecuteReader();
 
+				NameChooser name_chooser = (rs, it) => TaskMaster.OrdinalNameStr(it);
 				var retrievers = new List<Retriever>();
 				for (int col = 0; col < reader.FieldCount; col++) {
+					if (reader.GetName(col) == "ATTRNAME") {
+						name_chooser = (rs, it) => rs.GetString(col);
+						continue;
+					}
 					Unpacker unpacker;
 					if (!unpackers.TryGetValue(reader.GetFieldType(col), out unpacker)) {
 						task_master
@@ -110,7 +116,7 @@ namespace Flabbergast {
 					foreach (var r in retrievers) {
 						r(reader, frame);
 					}
-					list.Set(it, frame);
+					list.Set(name_chooser(reader, it), frame);
 				}
 				result = list;
 				return true;
