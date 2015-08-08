@@ -8,7 +8,7 @@ import java.util.List;
  * the needed names.
  */
 public class Lookup extends Computation {
-	public class DoLookup implements ComputeValue {
+	public static class DoLookup implements ComputeValue {
 		private final String[] names;
 		public DoLookup(String... names) {
 			this.names = names;
@@ -17,6 +17,11 @@ public class Lookup extends Computation {
 		public Computation invoke(TaskMaster task_master,
 				SourceReference source_reference, Context context, Frame self,
 				Frame container) {
+			for (String name : names) {
+				if (!task_master.verifySymbol(source_reference, name)) {
+					return BlackholeComputation.INSTANCE;
+				}
+			}
 			return new Lookup(task_master, source_reference, names, context);
 		}
 	}

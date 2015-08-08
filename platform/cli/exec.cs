@@ -391,7 +391,14 @@ namespace Flabbergast {
  */
 	public class Lookup : Computation {
 		public static ComputeValue Do(params string[] names) {
-			return (task_master, reference, context, self, container) => new Lookup(task_master, reference, names, context);
+			return (task_master, reference, context, self, container) => {
+				foreach (var name : names) {
+					if (!task_master.VerifySymbol(source_ref, name)) {
+						return BlackholeComputation.INSTANCE;
+					}
+				}
+				return new Lookup(task_master, reference, names, context);
+			};
 		}
 
 		private class Attempt {
