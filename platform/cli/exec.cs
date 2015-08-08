@@ -389,8 +389,11 @@ namespace Flabbergast {
 /**
  * Do lookup by creating a grid of contexts where the value might reside and all the needed names.
  */
-
 	public class Lookup : Computation {
+		public static ComputeValue Do(params string[] names) {
+			return (task_master, reference, context, self, container) => new Lookup(task_master, reference, names, context);
+		}
+
 		private class Attempt {
 			public int frame;
 			public int name;

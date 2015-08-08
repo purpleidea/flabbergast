@@ -8,6 +8,18 @@ import java.util.List;
  * the needed names.
  */
 public class Lookup extends Computation {
+	public class DoLookup implements ComputeValue {
+		private final String[] names;
+		public DoLookup(String... names) {
+			this.names = names;
+		}
+
+		public Computation invoke(TaskMaster task_master,
+				SourceReference source_reference, Context context, Frame self,
+				Frame container) {
+			return new Lookup(task_master, source_reference, names, context);
+		}
+	}
 	private class Attempt implements ConsumeResult {
 		int frame;
 		int name;
