@@ -15,6 +15,7 @@ namespace Flabbergast {
 		}
 
 		static readonly Dictionary<System.Type, Unpacker> unpackers = new Dictionary<System.Type, Unpacker>();
+		private static readonly bool debug = (Environment.GetEnvironmentVariable("FLABBERGAST_SQL") ?? "") == "debug";
 		static DbQuery () {
 			AddUnpacker((rs, position) => {
 					var str = rs.GetString(position);
@@ -85,7 +86,9 @@ namespace Flabbergast {
 				command.CommandType = System.Data.CommandType.Text;
 				command.CommandText = query; 
 				var reader = command.ExecuteReader();
-
+				if (debug) {
+					Console.WriteLine("SQL Query to {0}: {1}", connection, query);
+				}
 				NameChooser name_chooser = (rs, it) => TaskMaster.OrdinalNameStr(it);
 				var retrievers = new List<Retriever>();
 				for (int col = 0; col < reader.FieldCount; col++) {
