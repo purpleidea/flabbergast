@@ -111,8 +111,9 @@ namespace Flabbergast {
 				NameChooser name_chooser = (rs, it) => TaskMaster.OrdinalNameStr(it);
 				var retrievers = new List<Retriever>();
 				for (int col = 0; col < reader.FieldCount; col++) {
+					var column = col;
 					if (reader.GetName(col) == "ATTRNAME") {
-						name_chooser = (rs, it) => rs.GetString(col);
+						name_chooser = (rs, it) => rs.GetString(column);
 						continue;
 					}
 					if (reader.GetName(col).StartsWith("$")) {
@@ -120,7 +121,7 @@ namespace Flabbergast {
 						if (!task_master.VerifySymbol(source_ref, attr_name)) {
 							return false;
 						}
-						retrievers.Add((rs, frame) => frame.Set(attr_name, rs.IsDBNull(col) ? Precomputation.Capture(Unit.NULL) : Lookup.Do(rs.GetString(col).Split('.'))));
+						retrievers.Add((rs, frame) => frame.Set(attr_name, rs.IsDBNull(column) ? Precomputation.Capture(Unit.NULL) : Lookup.Do(rs.GetString(column).Split('.'))));
 						continue;
 					}
 					Unpacker unpacker;
