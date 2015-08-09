@@ -1,3 +1,4 @@
+utils_lib : From lib:utils
 # Query an SQL database in and produce a frame containing a frame for each row.
 #
 # The names of the columns, which must be valid Flabbergast identifiers, will
@@ -12,4 +13,397 @@ retrieve : Template (From lib:sqlinterop ).retrieve {
 	connection : Required
 	# A string containing the implementation-specific SQL statement.
 	sql_query : Required
+}
+# Query an SQL database for the delicious records within.
+query : Template retrieve {
+	# A list of tables, selected from the `table` frame, to be included in this
+	# query.
+	tables : Required
+	# A frame of expressions or columns to be included in the resulting table.
+	columns :
+		For col : column
+			Reduce For acc_value : acc, col_value : col, name : Name
+				Select name : acc_value ?? col_value
+			With acc : {}
+	# A collection of expressions (or columns) that must be true to include a row
+	# in the results.
+	where : Template {}
+
+	# A collection of tables provided by the database. These may be reference in the `tables` list.
+	table : implementation.table_discovery(connection : connection)
+	# The collection of columns available from each of the tables specified in
+	# `tables`. These can be used in any place that accepts an expression. Given
+	# there is a column `c` in a table `t`, reference it as `column.t.c`.
+	column :
+		For t : table, name : Name
+			Select name : implementation.column_discovery(connection : connection, table : t)
+	# Provides templates for construction expressions. See `expr_tmpl` for details.
+	expr : implementation.expr
+
+	# From the connection, select the correct database provider.
+	implementation :
+		(For provider : sql_providers, provider_name : Name
+			Where provider_name == connection.provider
+			Reduce provider With acc : Null) ?? (Error "Unsupported database “\(connection.provider)”. This library must be mismatched to the Flabbergast runtime.")
+
+	# Expand the where template.
+	exp_where : where {}
+
+	# Generate the FROM clause.
+	from_clause :
+		For t : tables, pos : Ordinal
+			Reduce (If pos > 1 Then acc & ", " Else "") & t.sql_from
+			With acc : Null
+	# Generate the columns in the SELECT.
+	column_clause :
+		For col : columns, name : Name, pos : Ordinal
+			Reduce (If pos > 1 Then acc & ", " Else "") & col.sql_expr & " AS " & name
+			With acc : Null
+	# Generate the WHERE clause, if any.
+	where_clause :
+		For clause : exp_where, position : Ordinal
+			Reduce (If position > 1 Then acc & " AND " Else " WHERE ") & clause.sql_expr
+			With acc : ""
+	# Generate the total query.
+	sql_query :
+		If from_clause Is Null Then Error "No tables specified in query."
+		Else If column_clause Is Null Then Error "No columns specified in query."
+		Else "SELECT " & column_clause Enforce Str & " FROM " & from_clause & where_clause Enforce Str
+}
+
+sql_marshall : utils_lib.str_concatifier(base : sql_marshall_list, delimiter : "")
+
+# Convert a Flabbergast item to an SQL equivalent.
+sql_marshall_list : Template {
+	provider : Required
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name :
+			If arg Is Frame Then arg
+				Else If arg Is Str Then {
+						sql_expr : provider.quote_start Enforce Str & utils_lib.str_escape(arg, transformations : provider.transformations) Enforce Str & provider.quote_end Enforce Str
+						sql_type : sql_types.str
+					}
+				Else {
+					sql_expr : arg To Str
+					sql_type :
+						If arg Is Bool Then sql_types.bool
+						Else If arg Is Int Then sql_types.int
+						Else If arg Is Float Then sql_types.float
+						Else Error "Can't convert value to SQL type."
+					}
+}
+
+sql_get_types : Template {
+	value : For arg : args, arg_name : Name
+		Select arg_name :
+			If arg Is Frame Then arg.sql_type
+			Else If arg Is Bool Then sql_types.bool
+			Else If arg Is Int Then sql_types.int
+			Else If arg Is Float Then sql_types.float
+			Else If arg Is Str Then sql_types.str
+			Else 0
+}
+
+# The kinds of expressions that maybe used in an SQL query.
+expr_tmpl : Template {
+	# A base template representing an expression or column in a SQL query.
+	base_expr_tmpl : Template {
+		# A string
+		# containing the SQL code needed to access this column.
+		sql_expr : Required
+		# A member of `sql_types` that represents the Flabbergast type to which
+		# this expression will be converted.
+		sql_type : Required
+	}
+	base_infix_expr_tmpl : Template base_expr_tmpl {
+		# The expressions to be put together.
+		args : Required
+
+		# The infix operation symbol.
+		sql_op : Required
+
+		# The bits for the allowed types of arguments.
+		sql_allowed_arg_type_id : Required
+
+		sql_expr :
+			If sql_type.coerce == 0 Then Error "Cannot compute type." Else
+				(For arg : sql_marshall_list(args : args, provider : implementation), pos : Ordinal
+				Reduce acc & (If pos > 1 Then sql_op Else "") & arg
+				With acc : "(") & ")"
+
+		sql_type : {
+			id : 0
+			coerce :
+				For arg : sql_get_types(args : args), pos : Ordinal
+					Reduce
+						If acc B& arg.coerce == 0
+							Then Error "Argument \(pos) to \(sql_op) has incompatible type."
+							Else acc B& arg.coerce
+					With acc : sql_allowed_arg_type_id
+			cast :
+				For type : sql_types
+					Reduce If type.id B& coerce != 0
+						Then acc B| type.cast
+						Else acc
+					With acc : 0
+		}
+	}
+	base_function_expr_tmpl : Template base_expr_tmpl {
+		# The expressions to be put together.
+		args : Required
+
+		# The function name.
+		sql_func : Required
+		# A list of argument types
+		arg_types : Required
+
+		sql_expr :
+			(For arg : sql_marshall_list(args : args), arg_type : arg_types, pos : Ordinal
+				Reduce
+					If arg_type.id B& arg.sql_type.coerce == 0
+						Then Error "Argument \(pos) to \(sql_func) is incorrect. Should be \(arg_type.name)."
+						Else acc & (If pos > 1 Then "," Else "") & arg.sql_expr
+				With acc : sql_func & "(") & ")"
+	}
+	base_variadic_func_tmpl : Template base_expr_tmpl {
+		# The expressions aggregate.
+		args : Required
+
+		# The infix operation symbol.
+		sql_func : Required
+
+		# The bits for the allowed types of arguments.
+		sql_allowed_arg_type_id : Required
+
+		sql_expr :
+			If sql_type.coerce == 0 Then Error "Bad type in \(sql_func)." Else
+			sql_func &
+			(For arg : sql_marshall_list(args : args, provider : implementation), pos : Ordinal
+				Reduce acc & (If pos > 1 Then sql_op Else "") & arg
+				With acc : "(") & ")"
+
+		sql_type : {
+			id : 0
+			coerce :
+				For arg : sql_get_types(args : args), pos : Ordinal
+					Reduce
+						If acc B& arg.coerce == 0
+							Then Error "Argument \(pos) to \(sql_op) has incompatible type."
+							Else acc B& arg.coerce
+					With acc : sql_allowed_arg_type_id
+			cast :
+				For type : sql_types
+					Reduce If type.id B& coerce != 0
+						Then acc B| type.cast
+						Else acc
+					With acc : 0
+		}
+	}
+
+	base_compare_op_tmpl : Template base_expr_tmpl {
+		left : Required
+		right : Required
+
+		# The comparison symbol.
+		sql_op : Required
+		type_mask : sql_types.any
+
+		sql_type : sql_types.bool
+		sql_expr :
+			If left.sql_type.coerce B& right.sql_type.coerce B& type_mask == 0
+				Then Error "Incompatible types in comparison."
+				Else "(\(left.sql_expr) \(sql_op) \(right.sql_expr)"
+	}
+
+	and : Template base_infix_expr_tmpl {
+		sql_op : "AND"
+		sql_allowed_arg_type_id : sql_types.bool.id
+	}
+	avg : Template base_variadic_func_tmpl {
+		sql_func : "AVG"
+		sql_allowed_arg_type_id : sql_types.numeric
+	}
+	cast : Template base_expr_tmpl {
+		# The argument to cast.
+		arg : Required
+		# The type to change it to.
+		sql_type : Required
+		sql_expr : If sql_type.id B& arg.sql_type.cast == 0
+			Then Error "Cannot perform cast with provided types."
+			Else "(CAST(\(arg.sql_expr) AS \(sql_type.name)))"
+	}
+	count : Template base_variadic_func_tmpl {
+		sql_func : "COUNT"
+		sql_allowed_arg_type_id : Drop
+		sql_type : sql_types.int
+	}
+	equal : Template base_compare_op_tmpl {
+		sql_op : "=="
+	}
+	ge : Template base_compare_op_tmpl {
+		sql_op : ">="
+	}
+	gt : Template base_compare_op_tmpl {
+		sql_op : ">"
+	}
+	greatest : Template base_variadic_func_tmpl {
+		sql_func : "GREATEST"
+		sql_allowed_arg_type_id : sql_types.numeric
+	}
+	is_null : Template base_expr_tmpl {
+		arg : Required
+		sql_type : sql_types.bool
+		sql_expr :
+			If sql_type.coerce == 0 Then Error "Bad type in \(sql_func)." Else
+				"(\(arg.sql_expr) IS NULL)"
+	}
+	le : Template base_compare_op_tmpl {
+		sql_op : "<="
+	}
+	least : Template base_variadic_func_tmpl {
+		sql_func : "LEAST"
+		sql_allowed_arg_type_id : sql_types.numeric
+	}
+	like : Template base_compare_op_tmpl {
+		sql_op : "LIKE"
+		type_mask : sql_types.str.id
+	}
+	lt : Template base_compare_op_tmpl {
+		sql_op : "<"
+	}
+	max : Template base_variadic_func_tmpl {
+		sql_func : "MAX"
+		sql_allowed_arg_type_id : sql_types.numeric
+	}
+	min : Template base_variadic_func_tmpl {
+		sql_func : "MIN"
+		sql_allowed_arg_type_id : sql_types.numeric
+	}
+	negate : Template base_expr_tmpl {
+		arg : Required
+		sql_type : arg.sql_type
+		sql_expr :
+			If arg.sql_type.coerce B& sql_types.numeric != 0
+				Then "(- \(arg.sql_expr))"
+				Else Error "Argument to negation is not numeric."
+	}
+	not : Template base_expr_tmpl {
+		arg : Required
+		sql_type : sql_types.bool
+		sql_expr :
+			If arg.sql_type.coerce B& sql_types.bool.id != 0
+				Then "(NOT \(arg.sql_expr))"
+				Else Error "Argument to NOT expression is not Boolean."
+	}
+	or : Template base_infix_expr_tmpl {
+		sql_op : "OR"
+		sql_allowed_arg_type_id : sql_types.bool.id
+	}
+	str_join : Template base_infix_expr_tmpl {
+		sql_op : "||"
+		sql_allowed_arg_type_id : sql_types.any
+	}
+	sum : Template base_variadic_func_tmpl {
+		sql_func : "SUM"
+		sql_allowed_arg_type_id : sql_types.numeric
+	}
+	unequal : Template base_compare_op_tmpl {
+		sql_op : "<>"
+	}
+}
+
+sql_types : {
+	bool : {
+		name : "BOOLEAN"
+		id : 1
+		cast : bool.id B| int.id B| str.id
+		coerce : bool.id B| str.id
+	}
+	float : {
+		name : "DOUBLE"
+		id : 2
+		cast : int.id B| str.id
+		coerce : float.id B| str.id
+	}
+	int : {
+		name : "INTEGER"
+		id : 4
+		cast : bool.id B| float.id B| str.id
+		coerce : float.id B| str.id
+	}
+	str : {
+		name : "TEXT"
+		id : 8
+		cast : bool.id B| int.id B| float.id B| str.id
+		coerce : 0
+	}
+	any : bool.id B| int.id B| float.id B| str.id
+	numeric : int.id B| float.id
+}
+
+# A template for implementing a new SQL provider.
+sql_provider : Template {
+	# An implementation of `expr_tmpl` suited to this provider.
+	expr : Required
+	# A transformation set for string escaping. Yes, this is not standard.
+	transformations : Required
+	# The preamble starting a string.
+	quote_start : "'"
+	# The postamble end a string.
+	quote_end : "'"
+	# An SQL statement that returns tables and views as a frame of frames with a
+	# `sql_from` containing the string needed to include this entity in a FROM
+	# clause. Other implementation-specific attributes are permitted.
+	table_discovery : Template retrieve {}
+	# An SQL statement that will return the columns for a particular table or
+	# view as a frame of frames extending `expr.base_expr_tmpl`. Other
+	# implementation-specific attributes are permitted.
+	column_discovery : Template retrieve {
+		table : Required
+	}
+}
+sql_providers : {
+	sqlite : sql_provider {
+		table_discovery +: {
+			sql_query : "SELECT name AS \"ATTRNAME\", tbl_name AS sql_from FROM sqlite_master WHERE type = 'table'"
+		}
+		column_discovery +: {
+			sql_query : "PRAGMA table_info(\(table.sql_from))"
+			# SQLite doesn't give us the power to control the format of the data we
+			# get back, so we get to do it locally. Fun.
+			value +orig:
+				For col : orig
+					Select col.name : {
+						sql_expr : "\(table.sql_from).\(col.name)"
+						sql_type :
+							If col.type Is Null Then sql_types.str
+								Else If
+									col.type == "BOOLEAN" Then sql_types.bool
+								Else If
+									col.type == "INT" ||
+									col.type == "INTEGER" ||
+									col.type == "TINYINT" ||
+									col.type == "SMALLINT" ||
+									col.type == "MEDIUMINT" ||
+									col.type == "BIGINT" ||
+									col.type == "UNSIGNED BIG INT" ||
+									col.type == "INT2" ||
+									col.type == "INT8" Then sql_types.int
+								Else If
+									col.type == "REAL" ||
+									col.type == "DOUBLE" ||
+									col.type == "DOUBLE PRECISION" ||
+									col.type == "FLOAT" Then sql_types.float
+								Else sql_types.str
+					}
+		}
+		transformations : {
+			# This is kind of scary, but what's actually listed in the SQL92 spec and
+			# the SQLite tokenizer. It's unclear how it will deal with UTF-8
+			# surrogate pairs.
+			quote : utils_lib.str_transform.char_tmpl { char : "'"  replacement : "''" }
+		}
+		expr : expr_tmpl { }
+	}
 }

@@ -1194,28 +1194,31 @@ The mathematics library contains all the usual functions for:
 
 Much like `lib:utils`, there are `_list` variants of these. The trigonometric functions are a bit unique: by setting `angle_unit`, the units used for angles can be changed between degrees, gradians, radians, and turns; the default is radians.
 
-### Relational Database Access (`lib:sql`)
-TODO
-Much like regular expression, different underlying database libraries are present, but templates can be used to smooth out the wrinkles. The query-building templates are uniform across databases, but the drivers will be unique to each database. Moreover, while most databases have a concept of a connection that is held open by the application until the database is no longer needed, this has little parity in a Flabbergast program. Much more responsibility falls to the library implementation to manage the connections. In the case of in-application access, it might be best if the database connection is simply provided via `From`. The schema for the database should be provided.
+### Relational Database Access (`lib:sql` and `sql:`)
+Flabbergast provides access to SQL-like databases available through JDBC and ADO.NET providers. Fundamentally, this system exists in two parts: `lib:sql` provides mechanisms for composing queries and the `sql:` URIs connect to databases. When accessing a URI, for instance, `sql:sqlite:foo.sqlite`, Flabbergast scans the database metadata and provides that as a structure of frames. The `lib:sql` library can then be used to compose a query, checking that the query is valid given the format of the database, and converts the results to a list of matching rows. This format is easily ingested by `For Each`.
+
+Not all SQL data types can be converted to Flabbergast. The templates in the library smooth out the differences between different data source providers. This means that some functionality might not be available for all different database types.
 
     sql_lib : From lib:sql
-    employee_tbl : From db:employee
-    payroll_tbl : From db:payroll
-    my_query : Template sql_lib.query {
-      results : {
-        name : from.employee.name
-        salary : from.payroll.salary
+    results : sql_lib.retrieve {
+       source : From sql:postgresql:pgdb.example.com/human_resources
+       tables : [ table.employees, table.payroll ]
+       columns : {
+        name : expr.str_join { args : [ column.employee.first_name, " ", column.employee.last_name ] }
+        salary : column.payroll.salary
       }
-      from : {
-        employee : employee_tbl {}
-        payroll : payroll_tbl {}
-      }
-      join : [ inner_join(from.employee.id, from.payroll.id) ]
-      where : [ greater_than(left : from.employee.id, right : 30) ]
+      where : [ expr.equal { left : column.employee.emp_id  right : column.payroll.emp_id } ]
     }
-    employees : For Each my_query() Select "\(name) makes $\(salary) per year."
+    report :
+      For Each result.value
+        Reduce acc & "\(name) makes $\(salary) per year.\n"
+        With acc : ""
 
-This is very specialised and the mechanism to access databases is going to vary based on the host platform and the host application, if any. This should generally not be depended upon.
+This is not intended as a general interface to relational databases. In particular, the column and table names really need to be Flabbergast identifiers, which is not generally true. The complexity of the queries is also limited since the system tries to work on multiple databases seamlessly. It might be best to create a view in a compatible format.
+
+Flabbergast has a standard format for database connection strings, due to the fact that no one else does. That format is: `sql:<provider>:<file path>` or `sql:<provider>:[<user>[:<password>]@]host[:<port>]/<catalog>` optionally suffixed by a `?` and various ampersand-separated key-value pairs. The format used depends on the database (_e.g._, SQLite uses the former, PostgreSQL uses the latter). Additional libraries are required for each different database provider.
+
+For a list of supported databases and their options, view `man flabbergast_sql`. Currently, only a handful of databases are supported. Patches for new databases are welcome.
 
 ### Parsing (`lib:parse`)
 TODO
