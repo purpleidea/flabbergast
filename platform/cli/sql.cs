@@ -24,6 +24,25 @@ namespace Flabbergast {
 			AddUnpacker((rs, position) => rs.GetInt64(position), typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong));
 			AddUnpacker((rs, position) => rs.GetDouble(position), typeof(float), typeof(double));
 			AddUnpacker((rs, position) => rs.GetBoolean(position), typeof(bool));
+			AddUnpacker((rs, position) => {
+				var result = rs.GetValue(position);
+				if (result == null) {
+					return Unit.NULL;
+				}
+				if (result is string) {
+					return new SimpleStringish((string)result);
+				}
+				if (result is sbyte || result is short || result is ushort || result is int || result is uint || result is long || result is ulong) {
+					return (long) result;
+				}
+				if (result is bool) {
+					return result;
+				}
+				if (result is float || result is double) {
+					return (double)result;
+				}
+				return Unit.NULL;
+			}, typeof(object));
 		}
 
 		static void AddUnpacker(Unpacker unpacker, params System.Type[] sql_types) {
