@@ -98,7 +98,7 @@ namespace Flabbergast {
 						if (!task_master.VerifySymbol(source_ref, attr_name)) {
 							return false;
 						}
-						retrievers.Add((rs, frame) => frame.Set(attr_name, rs.IsDBNull(position) ? Unit.NULL : Lookup.Do(rs.GetString(col).Split('.')));
+						retrievers.Add((rs, frame) => frame.Set(attr_name, rs.IsDBNull(col) ? Precomputation.Capture(Unit.NULL) : Lookup.Do(rs.GetString(col).Split('.'))));
 						continue;
 					}
 					Unpacker unpacker;
