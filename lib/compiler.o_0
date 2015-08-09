@@ -281,6 +281,9 @@ ensure_type_tmpl : Template {
 	frame : Template filter {
 		types : [ known_types.frame ]
 	}
+	int : Template filter {
+		types : [ known_types.int ]
+	}
 	number : Template filter {
 		types : [ known_types.float, known_types.int ]
 	}
@@ -385,6 +388,20 @@ kws_tmpl : Template {
 		]
 		return_type : known_types.int
 	}
+	int_and : Template base_tmpl {
+		left : Required
+		right : Required
+		arguments : [
+			{ value : left  type : known_types.int },
+			{ value : right  type : known_types.int }
+		]
+		return_type : known_types.int
+	}
+	int_complement : Template base_tmpl {
+		source : Required
+		arguments : [ { value : source  type : known_types.int } ]
+		return_type : known_types.int
+	}
 	int_divide : Template base_tmpl {
 		left : Required
 		right : Required
@@ -417,7 +434,25 @@ kws_tmpl : Template {
 		arguments : [ { value : source  type : known_types.int } ]
 		return_type : known_types.int
 	}
+	int_or : Template base_tmpl {
+		left : Required
+		right : Required
+		arguments : [
+			{ value : left  type : known_types.int },
+			{ value : right  type : known_types.int }
+		]
+		return_type : known_types.int
+	}
 	int_subtract : Template base_tmpl {
+		left : Required
+		right : Required
+		arguments : [
+			{ value : left  type : known_types.int },
+			{ value : right  type : known_types.int }
+		]
+		return_type : known_types.int
+	}
+	int_xor : Template base_tmpl {
 		left : Required
 		right : Required
 		arguments : [
@@ -1457,7 +1492,7 @@ language_tmpl : Template {
 		]
 	}
 	function_tmpl : Template expression_tmpl {
-		level : 17
+		level : 20
 		has_anon_args : Required
 		has_named_args : Required
 		parse_anonymous : Template parser.accumulate_list {
@@ -2854,7 +2889,7 @@ language_tmpl : Template {
 		}
 
 		arithmetic_disjunction_term : Template syntax_group {
-			level : 8
+			level : 11
 			environment_enabled : True
 			is_typeable : True
 			generation_flavour : codegen.flavour_aware_accumulate
@@ -2878,7 +2913,7 @@ language_tmpl : Template {
 		}
 
 		arithmetic_conjunction_term : Template syntax_group {
-			level : 9
+			level : 12
 			environment_enabled : True
 			is_typeable : True
 			generation_flavour : codegen.flavour_aware_accumulate
@@ -2917,7 +2952,7 @@ language_tmpl : Template {
 			common +: {
 				comment : common_fields.str
 			}
-			max_level : 19
+			max_level : 22
 			rules +: {
 				let : Template expression_tmpl {
 					pretty_name : "name binding"
@@ -3438,21 +3473,72 @@ language_tmpl : Template {
 					}
 				}
 
+				bitwise_disjunction : Template binary_operator {
+					pretty_name : "bit-wise disjunction"
+					level : 8
+					operator : "B|"
+					right_operand : Template sibling_expression {}
+					apply_environment_to : [
+						environment.other_elements { fields : [ $left, $right ] }
+					]
+					ensure_type_is : ensure_type.int {
+						ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
+					}
+					code_value : kws.int_or {
+						left : codegen.other_code { field : $left }
+						right : codegen.other_code { field : $right }
+					}
+				}
+
+				bitwise_symdiff : Template binary_operator {
+					pretty_name : "bit-wise symmetric difference"
+					level : 9
+					operator : "B^"
+					right_operand : Template sibling_expression {}
+					apply_environment_to : [
+						environment.other_elements { fields : [ $left, $right ] }
+					]
+					ensure_type_is : ensure_type.int {
+						ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
+					}
+					code_value : kws.int_xor {
+						left : codegen.other_code { field : $left }
+						right : codegen.other_code { field : $right }
+					}
+				}
+
+				bitwise_conjunction : Template binary_operator {
+					pretty_name : "bit-wise conjunction"
+					level : 10
+					operator : "B&"
+					right_operand : Template sibling_expression {}
+					apply_environment_to : [
+						environment.other_elements { fields : [ $left, $right ] }
+					]
+					ensure_type_is : ensure_type.int {
+						ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
+					}
+					code_value : kws.int_and {
+						left : codegen.other_code { field : $left }
+						right : codegen.other_code { field : $right }
+					}
+				}
+
 				arithmetic_disjunction : Template long_expression_tmpl {
 					pretty_name : "arithmetic disjunction"
-					level : 8
+					level : 11
 					term_type : $arithmetic_disjunction_term
 				}
 
 				arithmetic_conjunction : Template long_expression_tmpl {
 					pretty_name : "arithmetic conjunction"
-					level : 9
+					level : 12
 					term_type : $arithmetic_conjunction_term
 				}
 
 				range : Template binary_operator {
 					pretty_name : "integral range"
-					level : 10
+					level : 13
 					operator : "Through"
 					ensure_type_is : ensure_type.frame { }
 					type_demand : ensure_type.filter {
@@ -3471,7 +3557,7 @@ language_tmpl : Template {
 
 				coerce : Template type_operator {
 					pretty_name : "type coercion"
-					level : 11
+					level : 14
 					operator : "To"
 					ensure_type_is : ensure_type.dynamic {
 						field : $right
@@ -3634,7 +3720,7 @@ language_tmpl : Template {
 				}
 				enforce : Template type_operator {
 					pretty_name : "type enforcement"
-					level : 11
+					level : 14
 					operator : "Enforce"
 					ensure_type_is : ensure_type.dynamic {
 						field : $right
@@ -3672,7 +3758,7 @@ language_tmpl : Template {
 				}
 				check : Template type_operator {
 					pretty_name : "type check"
-					level : 11
+					level : 14
 					operator : "Is"
 					ensure_type_is : ensure_type.bool {}
 					type_demand : ensure_type.propagate {
@@ -3708,7 +3794,7 @@ language_tmpl : Template {
 				}
 				is_finite : Template is_suffix_operator {
 					pretty_name : "finite check"
-					level : 11
+					level : 14
 					suffix : "Finite"
 					ensure_type_is : ensure_type.bool {}
 					type_demand : ensure_type.number {
@@ -3736,7 +3822,7 @@ language_tmpl : Template {
 				}
 				is_nan : Template is_suffix_operator {
 					pretty_name : "not-a-number check"
-					level : 11
+					level : 14
 					suffix : "NaN"
 					ensure_type_is : ensure_type.bool {}
 					type_demand : ensure_type.number {
@@ -3764,7 +3850,7 @@ language_tmpl : Template {
 				}
 				is_null : Template is_suffix_operator {
 					pretty_name : "null check"
-					level : 11
+					level : 14
 					suffix : "Null"
 					ensure_type_is : ensure_type.bool {}
 					type_demand : ensure_type.propagate {
@@ -3790,7 +3876,7 @@ language_tmpl : Template {
 
 				error : Template unary_tmpl {
 					pretty_name : "raise error"
-					level : 12
+					level : 15
 					operator : "Error"
 					ensure_type_is : ensure_type.stop {}
 					type_demand : ensure_type.filter {
@@ -3806,7 +3892,7 @@ language_tmpl : Template {
 				}
 				length : Template unary_tmpl {
 					pretty_name : "string length"
-					level : 12
+					level : 15
 					operator : "Length"
 					ensure_type_is : ensure_type.stop {}
 					type_demand : ensure_type.filter {
@@ -3823,7 +3909,7 @@ language_tmpl : Template {
 
 				remote_lookup : Template expression_tmpl {
 					pretty_name : "remote contextual lookup"
-					level : 13
+					level : 16
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "Lookup" },
@@ -3862,7 +3948,7 @@ language_tmpl : Template {
 
 				instantiation : Template expression_tmpl {
 					pretty_name : "template instantiation"
-					level : 14
+					level : 17
 					pattern : parser.sequence {
 						of : [
 							child_expression { field : $source },
@@ -3910,7 +3996,7 @@ language_tmpl : Template {
 
 				coalesce : Template binary_operator {
 					pretty_name : "null coalescence"
-					level : 15
+					level : 18
 					operator : "??"
 					apply_environment_to : [
 						environment.other_elements { fields : [ $left ] },
@@ -3945,7 +4031,7 @@ language_tmpl : Template {
 
 				literal_frame : Template expression_tmpl {
 					pretty_name : "literal frame"
-					level : 16
+					level : 19
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "{" },
@@ -3990,16 +4076,25 @@ language_tmpl : Template {
 				}
 				not : Template unary_tmpl {
 					pretty_name : "logical negation"
-					level : 16
+					level : 19
 					operator : "!"
 					ensure_type_is : ensure_type.bool { ensure_type_of : propagate { fields : [ $expr ] } }
 					code_value : kws.bool_negate {
 						source : codegen.other_code { field : $expr }
 					}
 				}
+				bitwise_not : Template unary_tmpl {
+					pretty_name : "bit-wise complementation"
+					level : 19
+					operator : "B!"
+					ensure_type_is : ensure_type.int { ensure_type_of : propagate { fields : [ $expr ] } }
+					code_value : kws.int_complement {
+						source : codegen.other_code { field : $expr }
+					}
+				}
 				negation : Template unary_tmpl {
 					pretty_name : "numeric negation"
-					level : 16
+					level : 19
 					operator : "-"
 					ensure_type_is : ensure_type.number { ensure_type_of : propagate { fields : [ $expr ] } }
 					code_value : codegen.type_dispatch {
@@ -4022,7 +4117,7 @@ language_tmpl : Template {
 				}
 				generate_id : Template unary_tmpl {
 					pretty_name : "unique frame identifier"
-					level : 16
+					level : 19
 					operator : "GenerateId"
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
 					type_demand : ensure_type.frame {
@@ -4034,7 +4129,7 @@ language_tmpl : Template {
 				}
 				template_new : Template expression_tmpl {
 					pretty_name : "define new template"
-					level : 16
+					level : 19
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "Template" },
@@ -4077,7 +4172,7 @@ language_tmpl : Template {
 				}
 				template_extend : Template expression_tmpl {
 					pretty_name : "extend existing template"
-					level : 16
+					level : 19
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "Template" },
@@ -4139,7 +4234,7 @@ language_tmpl : Template {
 
 				contextual_lookup : Template expression_tmpl {
 					pretty_name : "contextual lookup"
-					level : 18
+					level : 21
 					pattern : parser.accumulate_list {
 						field : $parts
 						type : $identifier
@@ -4160,7 +4255,7 @@ language_tmpl : Template {
 				}
 				from : Template expression_tmpl {
 					pretty_name : "external import"
-					level : 18
+					level : 21
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "From" },
@@ -4206,7 +4301,7 @@ language_tmpl : Template {
 				}
 				direct_lookup : Template expression_tmpl {
 					pretty_name : "direct lookup"
-					level : 18
+					level : 21
 					pattern : parser.sequence {
 						of : [
 							child_expression { field : $expr },

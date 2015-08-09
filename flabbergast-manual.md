@@ -55,6 +55,8 @@ Integers also have a few special suffixes for dealing with large values, includi
     b : 5G # Yields 5000 000 000
     c : 1h2m5s # Yields 3725
 
+Integers also have bit-wise operators `B&` (and), `B|` (or), `B^` (xor), and `B!` (complement).
+
 Booleans are very much as expected, with `!` for logical negation, `&&` for short-circuiting conjunction, and `||` for short-circuiting disjunction. The comparison operators also work; one quirk is that they all work, not just equal and not equal. This means that truth is greater than falsehood–don't read too much into it.
 
     a : True && False # Yields False

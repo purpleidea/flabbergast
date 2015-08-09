@@ -38,7 +38,7 @@ syn keyword flabbergastFrom From
 syn keyword flabbergastFricassee By Each For Name Order Ordinal Reduce Reverse Select With
 syn keyword flabbergastConditional If Then Else
 syn keyword flabbergastKeyword Accumulate Append Container Enforce Error Finite GenerateId Id In Is Length Let Lookup Template This Through To Where
-syn match flabbergastOperators '\(<=\=\|<=>\|>=\=\|==\|||\|-\|!=\=\|/\|\*\|&\|&&\|%\|+\|??\)' display
+syn match flabbergastOperators '\(<=\=\|<=>\|>=\=\|==\|||\|-\|!=\=\|/\|\*\|&\|&&\|%\|+\|??\|B|\|B^\|B&\|B!\)' display
 syn keyword flabbergastTodo contained containedin=flabbergastComment TODO FIXME XXX
 syn keyword flabbergastType Bool Float Frame Int Str
 syn match flabbergastImplDefined "\<X[a-zA-Z0-9]*\>" display

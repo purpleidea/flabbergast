@@ -861,11 +861,15 @@ kws : compiler_lib.kws_repl_tmpl {
 	float_subtract +: { opcode : "Sub" }
 	float_to_int +: { opcode : "Conv_I8" }
 	int_add +: { opcode : "Add" }
+	int_and +: { opcode : "And" }
+	int_complement +: { opcode : "Not" }
 	int_divide +: { opcode : "Div" }
 	int_modulus +: { opcode : "Rem" }
 	int_multiply +: { opcode : "Mul" }
 	int_negate +: { opcode : "Neg" }
+	int_or +: { opcode : "Or" }
 	int_subtract +: { opcode : "Sub" }
+	int_xor +: { opcode : "Xor" }
 	int_to_bool +: {
 		opcode : "Conv_I4"
 		gen_gen +: {

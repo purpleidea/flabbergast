@@ -184,6 +184,11 @@ Add `left` and `right`.
 
     r : Int = int_add(left : Int, right : Int)
 
+#### Bit-wise AND Integral Numbers
+Produce the bit-wise AND of `left` and `right`.
+
+    r : Int = int_and(left : Int, right : Int)
+
 #### Convert to Boolean
 Convert integer `value` to Boolean by comparing it to `reference`. If `value` and `reference` are equal, true is returned, false otherwise.
 
@@ -193,6 +198,11 @@ Convert integer `value` to Boolean by comparing it to `reference`. If `value` an
 Compare `left` and `right`, returning the sign of the difference, or zero if they are identical.
 
     r : Int = int_compare(left : Int, right : Int)
+
+#### Bit-wise Complement of Integral Number
+Produce the bit-wise NOT of `value`.
+
+    r : Int = int_complement(value : Int)
 
 #### Integral Number Constant
 Returns the integral constant provided at compile-time.
@@ -234,6 +244,11 @@ Produce the additive inverse of `value`.
 
     r : Int = int_negate(value : Int)
 
+#### Bit-wise OR Integral Numbers
+Produce the bit-wise OR of `left` and `right`.
+
+    r : Int = int_or(left : Int, right : Int)
+
 #### String from Integral Number
 Create a string representation of an integral number.
 
@@ -243,6 +258,11 @@ Create a string representation of an integral number.
 Subtract `right` from `left`.
 
     r : Int = int_subtract(left : Int, right : Int)
+
+#### Bit-wise Exclusive-OR Integral Numbers
+Produce the bit-wise XOR of `left` and `right`.
+
+    r : Int = int_xor(left : Int, right : Int)
 
 ### Frame Operations
 For all operations, the names provided must be valid Flabbergast identifiers.

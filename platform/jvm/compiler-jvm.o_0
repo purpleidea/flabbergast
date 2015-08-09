@@ -922,6 +922,19 @@ kws : compiler_lib.kws_repl_tmpl {
 		opcode : "LADD"
 		emit_method : "visitInsn"
 	}
+	int_and +: {
+		opcode : "LAND"
+		emit_method : "visitInsn"
+	}
+	int_complement +: {
+		opcode : "LXOR"
+		emit_method : "visitInsn"
+		gen_gen +: {
+			extra_load :
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.ICONST_M1);" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.I2L);"
+		}
+	}
 	int_divide +: {
 		opcode : "LDIV"
 		emit_method : "visitInsn"
@@ -938,8 +951,16 @@ kws : compiler_lib.kws_repl_tmpl {
 		opcode : "LNEG"
 		emit_method : "visitInsn"
 	}
+	int_or +: {
+		opcode : "LOR"
+		emit_method : "visitInsn"
+	}
 	int_subtract +: {
 		opcode : "LSUB"
+		emit_method : "visitInsn"
+	}
+	int_xor +: {
+		opcode : "LXOR"
 		emit_method : "visitInsn"
 	}
 	int_to_bool +: {

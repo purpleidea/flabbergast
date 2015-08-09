@@ -327,6 +327,36 @@ T}
 
 Note that string comparison is locale-dependent.
 
+.SS EXPRESSION SYNTAX (E) – BIT-WISE DISJUNCTION
+.TP
+Bit-wise disjunction
+
+.SEM Γ ⊢ a:E\*<+\*> \fB||\fR b:E ↓ BITWISE_OR(v, w) :: Int
+Γ ⊢ a ↓ v :: Int,
+
+Γ ⊢ b ↓ w :: Int
+.SEME
+
+.SS EXPRESSION SYNTAX (E) – BIT-WISE SYMMETRIC DIFFERENCE
+.TP
+Bit-wise symmetric difference (exclusive or)
+
+.SEM Γ ⊢ a:E\*<+\*> \fB||\fR b:E ↓ BITWISE_XOR(v, w) :: Int
+Γ ⊢ a ↓ v :: Int,
+
+Γ ⊢ b ↓ w :: Int
+.SEME
+
+.SS EXPRESSION SYNTAX (E) – BIT-WISE CONJUNCTION
+.TP
+Bit-wise conjunction
+
+.SEM Γ ⊢ a:E\*<+\*> \fB||\fR b:E ↓ BITWISE_AND(v, w) :: Int
+Γ ⊢ a ↓ v :: Int,
+
+Γ ⊢ b ↓ w :: Int
+.SEME
+
 .SS EXPRESSION SYNTAX (E) – ARITHMETIC DISJUNCTION
 .TP
 Addition and Subtraction
@@ -576,6 +606,12 @@ Extend a template
 .SEME
 
 Create a template that inherits from an existing template. It contains all the attributes of the existing template unless amended by the specified attributes. The specified attributes can add, replace, amend, or remove attributes from the existing template. Any unmentioned attributes are inherited directly. The new template has the lookup context of the context where the modification was performed followed by the context of the existing template.
+
+.TP
+Bit-wise negation
+.SEM Γ ⊢ \fB-\fR expr:E\*<+\*> ↓ BITWISE_COMP(v) :: Int
+Γ ⊢ expr ↓ v :: Int
+.SEME
 
 .TP
 Logical negation
