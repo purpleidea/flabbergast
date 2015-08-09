@@ -193,6 +193,7 @@ public class JdbcQuery extends Computation {
 											"Cannot convert SQL type “%s” for column “%s” into Flabbergast type.",
 											rsmd.getColumnTypeName(col),
 											rsmd.getColumnLabel(col)));
+					return;
 				}
 				if (!task_master.verifySymbol(source_ref,
 						rsmd.getColumnLabel(col))) {
