@@ -180,6 +180,10 @@ public class JdbcQuery extends Computation {
 					});
 					continue;
 				}
+				if (rsmd.getColumnType(col) == Types.NULL) {
+					// This is here because SQLite like to pass weird data.
+					continue;
+				}
 				Unpacker unpacker = unpackers.get(rsmd.getColumnType(col));
 				if (unpacker == null) {
 					task_master
