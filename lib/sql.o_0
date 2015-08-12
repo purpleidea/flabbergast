@@ -336,7 +336,7 @@ sql_types : {
 		name : "TEXT"
 		id : 8
 		cast : bool.id B| int.id B| float.id B| str.id
-		coerce : 0
+		coerce : str.id
 	}
 	any : bool.id B| int.id B| float.id B| str.id
 	numeric : int.id B| float.id
