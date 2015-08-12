@@ -221,6 +221,56 @@ expr_tmpl : Template {
 		sql_func : "AVG"
 		sql_allowed_arg_type_id : sql_types.numeric
 	}
+	base_case_tmpl : Template base_expr_tmpl {
+		cases : Required
+		else : Null
+
+		when : Template {
+			test : Required
+			result : Required
+
+			when_specials : sql_marshall_list(args : { t : test  r : result }, provider : implementation)
+
+			sql_type : when_specials.r.sql_type
+			sql_when :
+				If when_specials.t.sql_type.coerce B& sql_allowed_test_type.coerce == 0
+					Then Error "Incompatible type \(when_specials.t.sql_tpe.name) used in test for WHERE. Expected \(sql_allowed_test_type.name)."
+					Else "WHEN \(when_specials.t.sql_expr) THEN \(when_specials.r.sql_expr)"
+		}
+
+		specials : Template {
+			e : else
+		}
+		sql_specials : sql_marshall_list(args : specials {}, provider : implementation)
+
+		sql_expr :
+			(For case : cases
+				Reduce acc & case.sql_when
+				With acc : "(CASE " & input_expr) &
+			(If sql_specials.e Is Null Then "" Else " ELSE " & sql_specials.e.sql_expr) &
+			" END)"
+
+		sql_type : synthetic_sql_type {
+			coerce :
+				For case : cases, pos : Ordinal
+					Reduce
+						If acc B& case.sql_type.coerce == 0
+							Then Error "WHEN block \(pos) has incompatible type \(case.sql_type.name)."
+							Else acc B& case.sql_type.coerce
+					With acc : If sql_specials.e Is Null Then sql_types.any Else sql_specials.e.coerce
+		}
+	}
+	case_bool : Template base_case_tmpl {
+		sql_allowed_test_type : sql_types.bool
+		input_expr : ""
+	}
+	case_input : Template base_expr_tmpl {
+		input : Required
+
+		specials +: { i : input }
+		input_expr : special_expr.i
+		sql_allowed_test_type : special_types.i
+	}
 	cast : Template base_expr_tmpl {
 		# The argument to cast.
 		arg : Required
