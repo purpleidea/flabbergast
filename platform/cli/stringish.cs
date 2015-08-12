@@ -55,7 +55,7 @@ namespace Flabbergast {
 		}
 
 		public static string NameForType(Type t) {
-			if (typeof(Frame) == t) return "Frame";
+			if (typeof(Frame).IsAssignableFrom(t)) return "Frame";
 			if (typeof(Stringish).IsAssignableFrom(t)) return "Str";
 			if (typeof(Template) == t) return "Template";
 			if (typeof(Unit) == t) return "Null";
