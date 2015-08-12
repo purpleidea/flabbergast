@@ -30,6 +30,12 @@ man7_MANS = \
 
 mime_DATA = flabbergast.xml
 
+pkgdata_DATA = \
+	o_0.css \
+	o_0.js \
+	o_0.xsl \
+	$(NULL)
+
 install-data-hook:
 	@for f in $$(find lib -name '*.o_0' -o -name '*.?o_0' -type f); do \
 		$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/$$(dirname $$f); \
