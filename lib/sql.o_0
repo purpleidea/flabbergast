@@ -95,6 +95,24 @@ sql_marshall_list : Template {
 				}
 }
 
+synthetic_sql_type : Template {
+	coerce : Required
+	id : 0
+	cast :
+		For type : sql_types
+			Where type Is Frame
+			Reduce If type.id B& coerce != 0
+				Then acc B| type.cast
+				Else acc
+			With acc : 0
+	name :
+		(For type : sql_types
+			Where type Is Frame && type.id B& coerce != 0
+			Reduce If acc Is Null
+				Then type.name
+				Else acc & " or " & type.name
+			With acc : Null) ?? "none"
+}
 
 # The kinds of expressions that maybe used in an SQL query.
 expr_tmpl : Template {
@@ -124,21 +142,14 @@ expr_tmpl : Template {
 				Reduce acc & (If pos > 1 Then sql_op Else "") & arg.sql_expr
 				With acc : "(") & ")"
 
-		sql_type : {
-			id : 0
+		sql_type : synthetic_sql_type {
 			coerce :
 				For arg : sql_args, pos : Ordinal
 					Reduce
 						If acc B& arg.sql_type.coerce == 0
-							Then Error "Argument \(pos) to \(sql_op) has incompatible type."
+							Then Error "Argument \(pos) to \(sql_op) has incompatible type \(arg.sql_type.name)."
 							Else acc B& arg.coerce
 					With acc : sql_allowed_arg_type_id
-			cast :
-				For type : sql_types
-					Reduce If type.id B& coerce != 0
-						Then acc B| type.cast
-						Else acc
-					With acc : 0
 		}
 	}
 	base_function_expr_tmpl : Template base_expr_tmpl {
@@ -154,7 +165,7 @@ expr_tmpl : Template {
 			(For arg : sql_marshall_list(args : args), arg_type : arg_types, pos : Ordinal
 				Reduce
 					If arg_type.id B& arg.sql_type.coerce == 0
-						Then Error "Argument \(pos) to \(sql_func) is incorrect. Should be \(arg_type.name)."
+						Then Error "Incompatible type \(arg.sql_type.name) for argument \(pos) to \(sql_func). Expected \(arg_type.name)."
 						Else acc & (If pos > 1 Then "," Else "") & arg.sql_expr
 				With acc : sql_func & "(") & ")"
 	}
@@ -176,21 +187,14 @@ expr_tmpl : Template {
 				Reduce acc & (If pos > 1 Then sql_op Else "") & arg.sql_expr
 				With acc : "(") & ")"
 
-		sql_type : {
-			id : 0
+		sql_type : synthetic_sql_type {
 			coerce :
 				For arg : sql_args, pos : Ordinal
 					Reduce
 						If acc B& arg.sql_type.coerce == 0
-							Then Error "Argument \(pos) to \(sql_op) has incompatible type."
+							Then Error "Argument \(pos) to \(sql_op) has incompatible type \(arg.sql_type.name)."
 							Else acc B& arg.sql_type.coerce
 					With acc : sql_allowed_arg_type_id
-			cast :
-				For type : sql_types
-					Reduce If type.id B& coerce != 0
-						Then acc B| type.cast
-						Else acc
-					With acc : 0
 		}
 	}
 
