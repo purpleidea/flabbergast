@@ -79,31 +79,22 @@ sql_marshall_list : Template {
 	value :
 		For arg : args, arg_name : Name
 		Select arg_name :
-			If arg Is Frame Then arg
-				Else If arg Is Str Then {
-						sql_expr : provider.quote_start Enforce Str & utils_lib.str_escape(arg, transformations : provider.transformations) Enforce Str & provider.quote_end Enforce Str
-						sql_type : sql_types.str
-					}
-				Else {
+			If arg Is Null Then Null
+			Else If arg Is Frame Then arg
+			Else If arg Is Str Then {
+					sql_expr : provider.quote_start Enforce Str & utils_lib.str_escape(arg, transformations : provider.transformations) Enforce Str & provider.quote_end Enforce Str
+					sql_type : sql_types.str
+				}
+			Else {
 					sql_expr : arg To Str
 					sql_type :
 						If arg Is Bool Then sql_types.bool
 						Else If arg Is Int Then sql_types.int
 						Else If arg Is Float Then sql_types.float
 						Else Error "Can't convert value to SQL type."
-					}
+				}
 }
 
-sql_get_types : Template {
-	value : For arg : args, arg_name : Name
-		Select arg_name :
-			If arg Is Frame Then arg.sql_type
-			Else If arg Is Bool Then sql_types.bool
-			Else If arg Is Int Then sql_types.int
-			Else If arg Is Float Then sql_types.float
-			Else If arg Is Str Then sql_types.str
-			Else 0
-}
 
 # The kinds of expressions that maybe used in an SQL query.
 expr_tmpl : Template {
@@ -126,18 +117,19 @@ expr_tmpl : Template {
 		# The bits for the allowed types of arguments.
 		sql_allowed_arg_type_id : Required
 
+		sql_args : sql_marshall_list(args : args, provider : implementation)
 		sql_expr :
 			If sql_type.coerce == 0 Then Error "Cannot compute type." Else
-				(For arg : sql_marshall_list(args : args, provider : implementation), pos : Ordinal
-				Reduce acc & (If pos > 1 Then sql_op Else "") & arg
+				(For arg : sql_args, pos : Ordinal
+				Reduce acc & (If pos > 1 Then sql_op Else "") & arg.sql_expr
 				With acc : "(") & ")"
 
 		sql_type : {
 			id : 0
 			coerce :
-				For arg : sql_get_types(args : args), pos : Ordinal
+				For arg : sql_args, pos : Ordinal
 					Reduce
-						If acc B& arg.coerce == 0
+						If acc B& arg.sql_type.coerce == 0
 							Then Error "Argument \(pos) to \(sql_op) has incompatible type."
 							Else acc B& arg.coerce
 					With acc : sql_allowed_arg_type_id
@@ -176,21 +168,22 @@ expr_tmpl : Template {
 		# The bits for the allowed types of arguments.
 		sql_allowed_arg_type_id : Required
 
+		sql_args : sql_marshall_list(args : args, provider : implementation)
 		sql_expr :
 			If sql_type.coerce == 0 Then Error "Bad type in \(sql_func)." Else
 			sql_func &
-			(For arg : sql_marshall_list(args : args, provider : implementation), pos : Ordinal
-				Reduce acc & (If pos > 1 Then sql_op Else "") & arg
+			(For arg : sql_args, pos : Ordinal
+				Reduce acc & (If pos > 1 Then sql_op Else "") & arg.sql_expr
 				With acc : "(") & ")"
 
 		sql_type : {
 			id : 0
 			coerce :
-				For arg : sql_get_types(args : args), pos : Ordinal
+				For arg : sql_args, pos : Ordinal
 					Reduce
-						If acc B& arg.coerce == 0
+						If acc B& arg.sql_type.coerce == 0
 							Then Error "Argument \(pos) to \(sql_op) has incompatible type."
-							Else acc B& arg.coerce
+							Else acc B& arg.sql_type.coerce
 					With acc : sql_allowed_arg_type_id
 			cast :
 				For type : sql_types
