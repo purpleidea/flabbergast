@@ -425,24 +425,24 @@ sql_providers : {
 						sql_expr : "\(table.sql_from).\(col.name)"
 						sql_type :
 							If col.type Is Null Then sql_types.str
-								Else If
-									col.type == "BOOLEAN" Then sql_types.bool
-								Else If
-									col.type == "INT" ||
-									col.type == "INTEGER" ||
-									col.type == "TINYINT" ||
-									col.type == "SMALLINT" ||
-									col.type == "MEDIUMINT" ||
-									col.type == "BIGINT" ||
-									col.type == "UNSIGNED BIG INT" ||
-									col.type == "INT2" ||
-									col.type == "INT8" Then sql_types.int
-								Else If
-									col.type == "REAL" ||
-									col.type == "DOUBLE" ||
-									col.type == "DOUBLE PRECISION" ||
-									col.type == "FLOAT" Then sql_types.float
-								Else sql_types.str
+							Else If
+								col.type == "BOOLEAN" Then sql_types.bool
+							Else If
+								col.type == "INT" ||
+								col.type == "INTEGER" ||
+								col.type == "TINYINT" ||
+								col.type == "SMALLINT" ||
+								col.type == "MEDIUMINT" ||
+								col.type == "BIGINT" ||
+								col.type == "UNSIGNED BIG INT" ||
+								col.type == "INT2" ||
+								col.type == "INT8" Then sql_types.int
+							Else If
+								col.type == "REAL" ||
+								col.type == "DOUBLE" ||
+								col.type == "DOUBLE PRECISION" ||
+								col.type == "FLOAT" Then sql_types.float
+							Else sql_types.str
 					}
 		}
 		transformations : {
