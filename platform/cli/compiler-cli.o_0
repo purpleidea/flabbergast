@@ -64,8 +64,8 @@ parser : compiler_lib.parser_tmpl {
 	# the error flag is checked and the appropriate `parse_complete` is invoked.
 	sequence +: {
 		id : Id
-		class_gen : For x : of Reduce acc & x.class_gen With acc : ""
-		copy_instance : For x : of Reduce acc & x.copy_instance With acc : ""
+		class_gen : For x : of Where !(x Is Null) Reduce acc & x.class_gen With acc : ""
+		copy_instance : For x : of Where !(x Is Null) Reduce acc & x.copy_instance With acc : ""
 
 		parent_parse_complete : Lookup parse_complete In Container
 		parse_complete : Template {
@@ -74,7 +74,7 @@ parser : compiler_lib.parser_tmpl {
 		}
 		parser_gen :
 			"\(indent)bool _sequence_fail_\(id) = false;" &
-			(For x : of Reduce acc & x.parser_gen With acc : "") &
+			(For x : of Where !(x Is Null) Reduce acc & x.parser_gen With acc : "") &
 			"\(indent)_sequence_end_\(id):" &
 			"\(indent)if (_sequence_fail_\(id)) {"&
 			parent_parse_complete(ok : False, indent : indent & "\t") &

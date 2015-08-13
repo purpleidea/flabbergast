@@ -69,8 +69,8 @@ parser : compiler_lib.parser_tmpl {
 	# the error flag is checked and the appropriate `parse_complete` is invoked.
 	sequence +: {
 		id : Id
-		class_gen : For x : of Reduce acc & x.class_gen With acc : ""
-		copy_instance : For x : of Reduce acc & x.copy_instance With acc : ""
+		class_gen : For x : of Where !(x Is Null) Reduce acc & x.class_gen With acc : ""
+		copy_instance : For x : of Where !(x Is Null) Reduce acc & x.copy_instance With acc : ""
 
 		parent_indent : Lookup indent In Container
 		indent : parent_indent & "\t"
@@ -84,7 +84,7 @@ parser : compiler_lib.parser_tmpl {
 			"\(parent_indent)boolean _sequence_fail_\(id) = false;" &
 			"\(parent_indent)_sequence_\(id):" &
 			"\(parent_indent)do {" &
-			(For x : of Reduce acc & x.parser_gen With acc : "") &
+			(For x : of Where !(x Is Null) Reduce acc & x.parser_gen With acc : "") &
 			"\(parent_indent)} while(false);" &
 			"\(parent_indent)if (_sequence_fail_\(id)) {"&
 			parent_parse_complete(ok : False, indent : indent & "\t") &
