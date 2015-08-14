@@ -14,6 +14,9 @@ MAGIC_TARGETS = \
 
 all: $(MAGIC_TARGETS)
 
+bootstrap.tar.bz2: all
+	tar cfj $@ $(MAGIC_TARGETS)
+
 platform/jvm/compiler/flabbergast/compiler-jvm.java: platform/jvm/compiler-jvm.o_0 lib/compiler.o_0
 	FLABBERGAST_PATH=$(FLABBERGAST_PATH) flabbergast -p -o $@ $(firstword $^)
 
