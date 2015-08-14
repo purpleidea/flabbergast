@@ -1,5 +1,5 @@
 # The Flabbergast Programming Language
-![](https://rawgithub.com/apmasell/flabbergast/master/flabbergast.svg)
+![](https://rawgithub.com/flabbergast-config/flabbergast/master/flabbergast.svg)
 
 Flabbergast is a object-oriented macro system that uses contextual lookup (dynamic scope) and inheritance to making writing complex configurations easy.
 
