@@ -56,9 +56,13 @@ To install all these packages on Ubuntu/Debian, do:
 
     sudo apt-get install java7-jdk autotools-dev libasm4-java libjline-java libcommons-cli-java mono-xbuild mono-mcs rsync
 
-To build the compiler, run the bootstrap step:
+To build the compiler, if Flabbergast is installed, run the bootstrap step:
 
     ./bootstrap
+
+If it is not available, download the matching bootstrap package from the Internet using:
+
+    ./bootstrap-from-web
 
 Then perform a normal AutoTools install:
 
