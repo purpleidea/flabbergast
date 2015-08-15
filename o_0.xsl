@@ -27,7 +27,7 @@
             </div>
           </div>
         </div>
-        <xsl:copy-of select="o_0:lib/o_0:description/*|o_0:lib/o_0:description/text()"/>
+        <xsl:apply-templates select="o_0:lib/o_0:description/*|o_0:lib/o_0:description/text()"/>
         <div id="references">
           <xsl:for-each select="//o_0:ref/text()[not(contains(., 'interop')) and generate-id() = generate-id(key('refs', .)[1])]">
             <a href="{concat('doc-', translate(., '/', '_'), '.xml')}">lib:<xsl:value-of select="."/></a>
@@ -50,7 +50,7 @@
       <xsl:value-of select="@name"/>
     </dt>
     <dd>
-      <xsl:copy-of select="o_0:description/*|o_0:description/text()"/>
+      <xsl:apply-templates select="o_0:description/*|o_0:description/text()"/>
       <div class="info">
         <xsl:for-each select="o_0:use">
           <span onclick="{concat('showDef(', $apos, translate(text(), '.', '-'), $apos, ');')}" title="Find definitions" class="deflink">
@@ -93,5 +93,24 @@
   </xsl:template>
   <xsl:template match="o_0:type[text()='Template']">
     <span class="type" title="Template">⬚</span>
+  </xsl:template>
+  <xsl:template match="o_0:use">
+    <span onclick="{concat('showDef(', $apos, text(), $apos, ');')}" title="Find definitions" class="show">
+      <xsl:value-of select="text()"/>
+    </span>
+  </xsl:template>
+  <xsl:template match="o_0:ref[not(contains(text(), 'interop'))]">
+    <a href="{concat('doc-', translate(text(), '/', '_'), '.xml')}">lib:<xsl:value-of select="text()"/></a>
+  </xsl:template>
+  <xsl:template match="o_0:ref">
+    <span class="show" title="Documentation not available.">lib:<xsl:value-of select="text()"/></span>
+  </xsl:template>
+  <xsl:template match="text()|*[namespace-uri() = 'http://www.w3.org/1999/xhtml']">
+    <xsl:element name="{local-name()}">
+      <xsl:apply-templates select="*|@*|text()"/>
+    </xsl:element>
+  </xsl:template>
+  <xsl:template match="text()|@*">
+    <xsl:copy-of select="."/>
   </xsl:template>
 </xsl:stylesheet>

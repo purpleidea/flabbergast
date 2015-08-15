@@ -1,14 +1,14 @@
-a {
+a,.show {
 outline:0;
 transition:color .5s ease-in-out;
 color:#888;
 }
 
-a:visited,a:link,a:hover,a:active,a:focus {
+a:visited,a:link,a:hover,a:active,a:focus,.show {
 text-decoration:none;
 }
 
-a:hover,a:active,a:focus {
+a:hover,a:active,a:focus,.show {
 color:#36648B;
 }
 
