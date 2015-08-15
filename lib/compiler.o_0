@@ -144,7 +144,6 @@ parser_tmpl : Template {
 		# the current list.
 		field : Required
 	}
-
 }
 # Environments are domains in which lookups always yield the same value. They
 # are used to break generated code into chunks where lookups occur only in the
@@ -1490,6 +1489,35 @@ language_tmpl : Template {
 			space { preferred : True },
 			value_pattern { }
 		]
+	}
+	uri : Template parser.accumulate_string {
+		field : $uri
+		in : parser.sequence {
+			accumulate : True
+			of : [
+				parser.many {
+					of : parser.alternate {
+						of : [
+							parser.range { from : "A"  to : "Z" },
+							parser.range { from : "a"  to : "z" },
+							parser.range { from : "0"  to : "9" },
+							parser.single { char : "-.+" }
+						]
+					}
+				},
+				parser.single { char : ":" },
+				parser.many {
+					of : parser.alternate {
+						of : [
+							parser.range { from : "A"  to : "Z" },
+							parser.range { from : "a"  to : "z" },
+							parser.range { from : "0"  to : "9" },
+							parser.single { char : "~=-,;!?/.'()[]@$*&#%+:" }
+						]
+					}
+				}
+			]
+		}
 	}
 	function_tmpl : Template expression_tmpl {
 		level : 20
@@ -4260,35 +4288,7 @@ language_tmpl : Template {
 						of : [
 							parser.exact { word : "From" },
 							space { mandatory : True },
-							parser.accumulate_string {
-								field : $uri
-								in : parser.sequence {
-									accumulate : True
-									of : [
-										parser.many {
-											of : parser.alternate {
-												of : [
-													parser.range { from : "A"  to : "Z" },
-													parser.range { from : "a"  to : "z" },
-													parser.range { from : "0"  to : "9" },
-													parser.single { char : "-.+" }
-												]
-											}
-										},
-										parser.single { char : ":" },
-										parser.many {
-											of : parser.alternate {
-												of : [
-													parser.range { from : "A"  to : "Z" },
-													parser.range { from : "a"  to : "z" },
-													parser.range { from : "0"  to : "9" },
-													parser.single { char : "~=-,;!?/.'()[]@$*&#%+:" }
-												]
-											}
-										}
-									]
-								}
-							}
+							uri {}
 						]
 					}
 					apply_environment_to : []
