@@ -15,7 +15,7 @@
         <script type="text/javascript">function getTerms() { return [ <xsl:for-each select="(//o_0:def/text()|//o_0:use/text())[generate-id() = generate-id(key('terms', .)[1])]"> "<xsl:value-of select="translate(., '.', '-')"/>", </xsl:for-each> ]; } </script>
       </head>
       <body onload="pageLoad();">
-        <h1>lib:<xsl:value-of select="o_0:lib/@name"/></h1>
+        <h1><a href=".">⌂</a> lib:<xsl:value-of select="o_0:lib/@name"/></h1>
         <div id="searchpane">
           <div id="searcharea">
             <input type="text" id="search" onchange="searchChange();" onkeypress="searchChange();" onpaste="searchChange();" oninput="searchChange();"/>
