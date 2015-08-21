@@ -8,7 +8,7 @@ using NDesk.Options;
 
 namespace Flabbergast {
 	public class Compiler {
-		public static void Main(string[] args) {
+		public static int Main(string[] args) {
 			var trace = false;
 			var show_help = false;
 			var options = new OptionSet {
@@ -23,7 +23,7 @@ namespace Flabbergast {
 				Console.Write(AppDomain.CurrentDomain.FriendlyName + ": ");
 				Console.WriteLine(e.Message);
 				Console.WriteLine("Try “" + AppDomain.CurrentDomain.FriendlyName + " --help” for more information.");
-				return;
+				return 1;
 			}
 
 			if (show_help) {
@@ -32,11 +32,11 @@ namespace Flabbergast {
 				Console.WriteLine();
 				Console.WriteLine("Options:");
 				options.WriteOptionDescriptions(Console.Out);
-				return;
+				return 0;
 			}
 			if (files.Count == 0) {
 				Console.WriteLine("Perhaps you wish to compile some source files?");
-				return;
+				return 1;
 			}
 			var collector = new ConsoleCollector();
 			foreach (var filename in files) {
@@ -55,6 +55,7 @@ namespace Flabbergast {
 					assembly_builder.Save(dll_name);
 				}
 			}
+			return 0;
 		}
 	}
 }
