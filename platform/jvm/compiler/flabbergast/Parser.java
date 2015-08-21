@@ -260,7 +260,7 @@ public class Parser {
 		 * Mark an error at the current position.
 		 */
 		void update(String message, String syntax_name) {
-			if (index > Parser.this.index + 1) {
+			if (index > Parser.this.index) {
 				Parser.this.message = "Expected " + message + " while parsing "
 						+ syntax_name + " but got "
 						+ Parser.toLiteral("" + peekLast()) + " instead.";

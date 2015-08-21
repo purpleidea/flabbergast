@@ -301,7 +301,7 @@ internal class ParserPosition {
 	 * Mark an error at the current position.
 	 */
 	internal void Update(string message, string syntax_name) {
-		if (Index > Parser.Index + 1) {
+		if (Index > Parser.Index) {
 			Parser.Message = "Expected " + message + " while parsing " + syntax_name + " but got " + Parser.ToLiteral(PeekLast().ToString()) + " instead.";
 			Parser.Row = Row;
 			Parser.Column = Column;
