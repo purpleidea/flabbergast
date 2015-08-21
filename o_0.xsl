@@ -60,7 +60,7 @@
         <xsl:apply-templates select="o_0:type"/>
         <xsl:choose>
           <xsl:when test="/o_0:lib/@github">
-            <a href="{concat(/o_0:lib/@github, '/', /o_0:lib/@name, '.o_0#L', @startline)}">
+            <a href="{concat(/o_0:lib/@github, '/', /o_0:lib/@name, '.o_0#L', @startline, '-L', @endline)}">
               <xsl:value-of select="concat(/o_0:lib/@name, '.o_0:', @startline, ':', @startcol, '-', @endline, ':', @endcol)"/>
             </a>
           </xsl:when>
