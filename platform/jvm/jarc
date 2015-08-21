@@ -2,6 +2,12 @@
 
 set -eux
 
+for i in 1 2 15
+do
+	trap 'rm -rf .build; trap - '$i'; kill -s '$i' $$' $i
+done
+trap 'EC=$?; rm -rf .build; exit $EC' EXIT
+
 test -d "$1"
 rm -rf .build
 
