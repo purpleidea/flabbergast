@@ -91,6 +91,9 @@
   <xsl:template match="o_0:type[text()='Null']">
     <span class="type" title="Null">∅</span>
   </xsl:template>
+  <xsl:template match="o_0:type[text()='Str']">
+    <span class="type" title="Str">A</span>
+  </xsl:template>
   <xsl:template match="o_0:type[text()='Template']">
     <span class="type" title="Template">⬚</span>
   </xsl:template>
