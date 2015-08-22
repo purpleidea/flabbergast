@@ -2204,6 +2204,69 @@ codegen : compiler_lib.codegen_tmpl {
 	}
 }
 
+apigen : compiler_lib.apigen_tmpl {
+	add_name +: {
+		value : "\t\t\(current_api).RegisterUse(\(field).Select(\(Id) => \(Id).ToString());\n"
+	}
+	add_reference +: {
+		value : "\t\t\(current_api).RegisterRef(\(field).ToString());\n"
+	}
+	create_node +: {
+		name_field : Required
+		actions : Required
+		parent_api : Lookup current_api In Container
+		current_api : Id & "_api"
+		inferred_type :
+			If is_typeable Then "this.InferredType"
+			Else If informative || main_field Is Null Then "0"
+			Else main_field & ".InferredType"
+		value :
+			For action : actions
+				Reduce acc & action.value
+				With acc :
+					"\t\tvar \(current_api) = _collect_names ? \(parent_api).CreateChild(\(name_field).ToString(), this, \(inferred_type), \(If informative Then "true" Else "false")) : \(parent_api);\n\t\tforeach(var \(Id) in \(description_field)) \(Id).GenerateApi(\(current_api), true);\n"
+	}
+	description_text +: {
+		value : "\t\t\(current_api).AppendDescriptionText(\(contents_field).ToString());\n"
+	}
+	description_tag_tmpl +: {
+		value :
+			(For a : attr, n : Name
+				Reduce acc & "\t\t\(Id).SetAttribute(\"\(n)\", \(a).ToString());\n"
+				With acc :
+					"\t\t#pragma warning disable 219\n" &
+					"\t\tvar \(Id)_contents = \(contents);\n" &
+					(If require_prefix Is Null
+						Then ""
+						Else "\t\tif (\(Id)_contents.StartsWith(\"\(require_prefix)\")) {\n\t\t\(Id)_contents = \(Id)_contents.Substring(\(Length require_prefix));\n") &
+					"\t\tvar \(Id) = \(current_api).AppendDescriptionTag(\"\(xmlns)\", \"\(tag)\", \(Id)_contents);\n\t\t#pragma warning restore 219\n") &
+					(If require_prefix Is Null
+						Then ""
+						Else "\t\t}\n")
+	}
+	description_tag +: {
+		contents : contents_field & ".ToString()"
+	}
+	description_tag_collapse +: {
+		contents : "System.String.Join(\"\(delimiter)\", \(field).Select(\(Id)_item => \(Id)_item.ToString()))"
+	}
+	many +: {
+		value :
+			For action : actions
+				Reduce acc & action.value
+				With acc : ""
+	}
+	other +: {
+		value :
+			For field : fields
+				Reduce acc & "\t\t\(field).GenerateApi(\(current_api), \(If collect_names Then "_collect_names" Else "false"));\n"
+				With acc : ""
+	}
+	other_list : Template {
+		value : "\t\tforeach(var \(Id) in \(field)) \t\t\t\(Id).GenerateApi(\(current_api), \(If collect_names Then "_collect_names" Else "false"));\n"
+	}
+}
+
 # The compiler!
 compiler : compiler_lib.language_with_repl_tmpl {
 	# Since each syntax element corresponds to a class, it should know how to
@@ -2246,7 +2309,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 		current_type : "_type"
 		current_unbox : "_needs_unbox"
 		type_assurance : If is_typeable
-			Then "\tpublic override Type EnsureType(ErrorCollector _collector, Type _type, ref bool _success, bool _needs_unbox) {\n\(ensure_type_is.value)\n\t\treturn \(ensure_type_is.result);\n\t}\n"
+			Then "\tpublic override Type EnsureType(ErrorCollector _collector, Type _type, ref bool _success, bool _needs_unbox) {\n\(ensure_type_is.value)\n\t\tInferredType = \(ensure_type_is.result);\t\treturn \(ensure_type_is.result);\n\t}\n"
 			Else ""
 		type_demands : If environment_enabled
 			Then "\tinternal override void MakeTypeDemands(ErrorCollector _collector, ref bool _success) {\n" &
@@ -2257,6 +2320,12 @@ compiler : compiler_lib.language_with_repl_tmpl {
 				type_demand.value &
 				"\n\t}\n"
 			Else ""
+		current_api : "_api_gen"
+		api_gen :
+			"\tpublic override void GenerateApi(ApiGenerator _api_gen, bool _collect_names) {\n" &
+			(If is_typeable Then "\t\t_api_gen.CollectEnvironment(Environment);\n" Else "") &
+			api_value.value &
+			"\t}\n"
 
 		generator : "_generator"
 		generation_environment : "Environment"
@@ -2280,6 +2349,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 			type_assurance &
 			type_demands &
 			code_gen &
+			api_gen &
 			class_extra &
 			"\tinternal \(class_name) Clone() {\n" &
 			"\t\tvar _obj = new \(class_name)();\n" &
@@ -2526,6 +2596,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 							}
 						]
 					}
+					api_value : apigen.nop {}
 					code_value : codegen.return_intrinsic_dispatch {
 						of : codegen.gen_tmpl {
 							extra_indent : ""
@@ -2606,6 +2677,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 						value : "\(indent)var \(Id) = CheckReflectedMethod(_collector, this, Methods, arguments, \(current_type), ref _success);"
 						result : Id
 					}
+					api_value : apigen.other_list { field : $arguments }
 					code_value : codegen.gen_tmpl {
 						extra_indent : "\t\t"
 						argument_list : "\(generator), " &

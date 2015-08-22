@@ -12,6 +12,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flabbergast-repl", "flabber
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flabbergast-printer", "flabbergast-printer.csproj", "{D1D4485E-9CD6-4E06-B1D3-60BEF67AAB0B}"
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flabbergast-build", "flabbergast-build.csproj", "{1A561574-9CEA-4E88-AC51-7BACE3F27DAB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flabbergast-documenter", "flabbergast-documenter.csproj", "{4F4C287F-F945-487D-84FF-3C2409722008}"
 
 EndProject
 Global
@@ -48,5 +49,9 @@ Global
 		{1A561574-9CEA-4E88-AC51-7BACE3F27DAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1A561574-9CEA-4E88-AC51-7BACE3F27DAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1A561574-9CEA-4E88-AC51-7BACE3F27DAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F4C287F-F945-487D-84FF-3C2409722008}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F4C287F-F945-487D-84FF-3C2409722008}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F4C287F-F945-487D-84FF-3C2409722008}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F4C287F-F945-487D-84FF-3C2409722008}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

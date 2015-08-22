@@ -55,6 +55,10 @@ public class TypeSet {
 		return classes;
 	}
 
+	public boolean hasAll() {
+		return flags == ALL.flags;
+	}
+
 	public TypeSet horrendousMerge(TypeSet original) {
 		/*
 		 * This mostly revolves around null coalesence. Imagine we want to

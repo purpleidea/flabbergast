@@ -159,6 +159,9 @@ environment_tmpl : Template {
 	# Collect the current environment and provide it to any containing
 	# `other_with_result` rules.
 	collect : Template application_action {}
+	document : Template application_action {
+		documentation_field : Null
+	}
 	# Apply environment to other syntax elements that support environments.
 	other_elements : Template application_action {
 		# A list of fields to absorb the current environment
@@ -1017,6 +1020,55 @@ codegen_tmpl : Template {
 	# For use in the REPL. There is a root frame and a current frame.
 	flavour_repl : Required
 }
+# All the things to produce API XML files.
+apigen_tmpl : Template {
+	collect_names : False
+	add_name : Template {
+		field : Required
+	}
+	add_reference : Template {
+		field : Required
+	}
+	create_node : Template {
+		name_field : Required
+		main_field : $expression
+		description_field : $intro
+		informative : False
+		actions : Required
+	}
+	description_text : Template {
+		contents_field : Required
+	}
+	description_tag_tmpl : Template {
+		tag : Required
+		xmlns : xmlns_xhtml
+		attr : {}
+		require_prefix : Null
+	}
+	description_tag : Template description_tag_tmpl {
+		contents_field : Required
+	}
+	description_tag_collapse : Template description_tag_tmpl {
+		field : Required
+		delimiter : Required
+	}
+	many : Template {
+		actions : Required
+	}
+	nop : Template many {
+		actions : []
+	}
+	other : Template {
+		fields : Required
+		collect_names : Used
+	}
+	other_list : Template {
+		field : Required
+		collect_names : Used
+	}
+	xmlns_xhtml : "http://www.w3.org/1999/xhtml"
+	xmlns_api : "http://flabbergast.org/api"
+}
 # The syntax of the Flabbergast language
 language_tmpl : Template {
 	# The templates to generate the parser, as per `parser_tmpl`.
@@ -1109,6 +1161,33 @@ language_tmpl : Template {
 			Select rule_name : static_rule ?? (rule_tmpl {})
 		expanded_common : For common_tmpl : common {}, field_name : Name
 			Select field_name : common_tmpl {}
+	}
+
+	description : Template parser.optional {
+		start_word : ""
+		accumulate : False
+		of : parser.sequence {
+			of : [
+				space {},
+				parser.exact {
+					word : start_word & "{{{"
+				},
+				parser.accumulate_list {
+					type : $documentation
+					field : $intro
+					in : parser.many {
+						of : parser.other {
+							accumulate : True
+							type : $documentation
+							field : Null
+						}
+					}
+				},
+				parser.exact {
+					word : "}}}"
+				}
+			]
+		}
 	}
 
 	pure_space : Template parser.many {
@@ -1216,6 +1295,7 @@ language_tmpl : Template {
 				right_operand { field : $right }
 				]
 		}
+		api_value : apigen.other { fields : [ $left, $right ] }
 	}
 	# A binary operator that compare results
 	compare_operator : Template binary_operator {
@@ -1247,6 +1327,7 @@ language_tmpl : Template {
 		suffix : Required
 		operator : "Is"
 		apply_environment_to : [ environment.other_elements { fields : [ $left ] } ]
+		api_value : apigen.other { fields : [ $left ] }
 		right_operand : Template parser.exact { word : suffix }
 	}
 	# A unary expression preceded by a token
@@ -1261,18 +1342,21 @@ language_tmpl : Template {
 				child_expression { field : $expr }
 			]
 		}
+		api_value : apigen.other { fields : [ $expr ] }
 	}
 	# A expression which is a single word
 	literal_tmpl : Template expression_tmpl {
 		level : max_level
 		apply_environment_to : []
 		name : Required
+		api_value : apigen.nop {}
 		pattern : parser.exact { word : name }
 	}
 	int_with_unit_expr_tmpl : Template expression_tmpl {
 		level : max_level
 		unit : Required
 		symbol : Required
+		api_value : apigen.nop {}
 		pattern : int_with_unit_tmpl {}
 		pretty_name : "integral value with unit \(symbol)"
 		apply_environment_to : [ ]
@@ -1321,6 +1405,12 @@ language_tmpl : Template {
 				]
 			}
 		}
+		api_value : apigen.many {
+			actions : [
+				apigen.other { fields : [ $start_expr ] },
+				apigen.other_list { field : $terms }
+			]
+		}
 		code_value : codegen.fold_others {
 			field : $terms
 			initial : codegen.other_code { field : $start_expr }
@@ -1356,6 +1446,7 @@ language_tmpl : Template {
 				}
 			]
 		}
+		api_value : apigen.other { fields : [ $expression ] }
 		code_value : codegen.type_dispatch {
 			of : parameters.accumulator
 			left_operation : converted_result
@@ -1476,12 +1567,14 @@ language_tmpl : Template {
 	}
 	# The general pattern for normal attribute definitions
 	attribute_pattern : Template parser.sequence {
+		allow_description : False
 		value_pattern : Template parser.other {
 			type : $expression
 			alternate : $expression0
 			field : $expression
 		}
 		of : [
+			If allow_description Then description {} Else Null,
 			space { preferred : True },
 			valid_identifier { field : $name },
 			space { preferred : True },
@@ -1517,6 +1610,33 @@ language_tmpl : Template {
 					}
 				}
 			]
+		}
+	}
+	doc_text : Template parser.accumulate_string {
+		field : $str
+		accumulate : True
+		in : parser.many {
+			nonempty : True
+			of : parser.alternate {
+				of : [
+					parser.single {
+						char : "\\\\}"
+						invert_match : True
+					},
+					parser.collect_codepoint {
+						codepoint : 0x40
+						in : parser.exact {
+							word : "\\\\\\\\"
+						}
+					},
+					parser.collect_codepoint {
+						codepoint : 0x3E
+						in : parser.exact {
+							word : "\\\\}"
+						}
+					}
+				]
+			}
 		}
 	}
 	function_tmpl : Template expression_tmpl {
@@ -1593,6 +1713,17 @@ language_tmpl : Template {
 				If has_named_args
 					Then ensure_type.propagate_all { needs_unbox : False  field : $named_args }
 					Else ensure_type.stop {}
+			]
+		}
+		api_value : apigen.many {
+			actions : [
+				apigen.other { fields : [ $func_expr ] },
+				If has_anon_args
+					Then apigen.other_list { field : $anon_args }
+					Else apigen.nop {},
+				If has_named_args
+					Then apigen.other_list { field : $named_args }
+					Else apigen.nop {}
 			]
 		}
 		code_value : codegen.return_intrinsic_dispatch {
@@ -1772,11 +1903,18 @@ language_tmpl : Template {
 		file : Template syntax_group {
 			environment_enabled : True
 			generation_flavour : codegen.flavour_empty
+			collect_names : True
+			common +: {
+				comment : common_fields.str
+			}
 			rules +: {
 				file : Template syntax_element {
 					pretty_name : "file contents"
 					pattern : parser.sequence {
 						of : [
+							description {
+								start_word : "Introduction"
+							},
 							parser.accumulate_list {
 								field : $attributes
 								type : $attribute
@@ -1802,6 +1940,12 @@ language_tmpl : Template {
 						field : $attributes
 						top_level : True
 					} ]
+					api_value : apigen.many {
+						actions : [
+							apigen.other_list { field : $intro },
+							apigen.other_list { field : $attributes }
+						]
+					}
 					code_value : codegen.push_source_reference {
 						inherit : False
 						in : codegen.empty_parameter {
@@ -1826,11 +1970,119 @@ language_tmpl : Template {
 				}
 			}
 		}
+		documentation : Template syntax_group {
+			environment_enabled : False
+			generation_flavour : Null
+			rules +: {
+				emph : Template syntax_element {
+					pretty_name : "attribute"
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "\\\\Emph{" },
+							doc_text {},
+							parser.exact { word : "}" }
+						]
+					}
+					api_value : apigen.description_tag {
+						tag : "em"
+						contents_field : $str
+					}
+				}
+				from : Template syntax_element {
+					pretty_name : "attribute"
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "\\\\From{" },
+							uri {},
+							parser.exact { word : "}" }
+						]
+					}
+					api_value : apigen.many {
+						actions : [
+							apigen.add_reference { field : $uri },
+							apigen.description_tag {
+								tag : "o_0:use"
+								xmlns : xmlns_api
+								require_prefix : "lib:"
+								contents_field : $uri
+							}
+						]
+					}
+				}
+				link : Template syntax_element {
+					pretty_name : "attribute"
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "\\\\Link{" },
+							uri {},
+							parser.exact { word : "|" },
+							doc_text {},
+							parser.exact { word : "}" }
+						]
+					}
+					api_value : apigen.description_tag {
+						tag : "a"
+						contents_field : $str
+						attr : {
+							href : $uri
+						}
+					}
+				}
+				lookup : Template syntax_element {
+					pretty_name : "attribute"
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "\\\\{" },
+							parser.accumulate_list {
+								type : $identifier
+								field : $names
+								in : parser.many_word {
+									of : parser.other {
+										type : $identifier
+										field : Null
+									}
+									separator_word : "."
+								}
+							},
+							parser.exact { word : "}" }
+						]
+					}
+					api_value : apigen.description_tag_collapse {
+						field : $names
+						tag : "o_0:use"
+						xmlns : xmlns_api
+						delimiter : "."
+					}
+				}
+				mono : Template syntax_element {
+					pretty_name : "attribute"
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "\\\\Mono{" },
+							doc_text {},
+							parser.exact { word : "}" }
+						]
+					}
+					api_value : apigen.description_tag {
+						tag : "tt"
+						contents_field : $str
+					}
+				}
+				text : Template syntax_element {
+					pretty_name : "attribute"
+					pattern : doc_text {}
+					api_value : apigen.description_text {
+						contents_field : $str
+					}
+				}
+			}
+		}
 
 		attribute : Template syntax_group {
 			include_base_parser : False
 			environment_enabled : True
 			generation_flavour : codegen.flavour_attribute
+			collect_names : True
 			common +: {
 				comment : common_fields.str
 				name : common_fields.str
@@ -1839,7 +2091,7 @@ language_tmpl : Template {
 				plain_attribute : Template syntax_element {
 					pretty_name : "attribute"
 					alternatives : { new_tmpl_attributes : Null  extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
-					pattern : attribute_pattern { }
+					pattern : attribute_pattern { allow_description : True }
 					apply_environment_to : [
 						environment.modified_environment {
 							apply_to : [ environment.other_elements { fields : [ $expression ] } ]
@@ -1851,6 +2103,12 @@ language_tmpl : Template {
 					type_demand : ensure_type.propagate {
 						fields : [ $expression ]
 						needs_unbox : False
+					}
+					api_value : apigen.create_node {
+						name_field : $name
+						actions : [
+							apigen.other { fields : [ $expression ] }
+						]
 					}
 					code_value : kws.set_frame_or_tmpl_from_field {
 						name_field : $name
@@ -1874,6 +2132,7 @@ language_tmpl : Template {
 					alternatives : { extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
 					pattern : parser.sequence {
 						of : [
+							description {},
 							space { preferred : True },
 							valid_identifier { field : $name },
 							space { preferred : True },
@@ -1902,6 +2161,12 @@ language_tmpl : Template {
 					type_demand : ensure_type.propagate {
 						fields : [ $expression ]
 						needs_unbox : False
+					}
+					api_value : apigen.create_node {
+						name_field : $name
+						actions : [
+							apigen.other { fields : [ $expression ] }
+						]
 					}
 					code_value : kws.set_frame_or_tmpl_from_field {
 						name_field : $name
@@ -1937,6 +2202,7 @@ language_tmpl : Template {
 
 					pattern : parser.sequence {
 						of : [
+							description {},
 							space { preferred : True },
 							valid_identifier { field : $name },
 							space { preferred : True },
@@ -1962,6 +2228,13 @@ language_tmpl : Template {
 							space { preferred : True },
 							parser.exact { word : "}" },
 							space { preferred : True }
+						]
+					}
+					api_value : apigen.create_node {
+						name_field : $name
+						main_field : Null
+						actions : [
+							apigen.other_list { field : $overrides }
 						]
 					}
 					apply_environment_to : [ environment.list_independent { field : $overrides } ]
@@ -1992,6 +2265,7 @@ language_tmpl : Template {
 					alternatives : { new_tmpl_attributes : Null  extend_tmpl_attributes : Null }
 					pattern : parser.sequence {
 						of : [
+							description {},
 							space { preferred : True },
 							valid_identifier { field : $name },
 							space { preferred : True },
@@ -2001,6 +2275,11 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ ]
+					api_value : apigen.create_node {
+						name_field : $name
+						main_field : Null
+						actions : [ ]
+					}
 					code_value : kws.set_frame_or_tmpl_from_field {
 						name_field : $name
 						returns : into
@@ -2025,6 +2304,7 @@ language_tmpl : Template {
 					alternatives : { extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
 					pattern : parser.sequence {
 						of : [
+							description {},
 							space { preferred : True },
 							valid_identifier { field : $name },
 							space { preferred : True },
@@ -2034,6 +2314,11 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ ]
+					api_value : apigen.create_node {
+						name_field : $name
+						informative : True
+						actions : []
+					}
 					code_value : kws.set_frame_or_tmpl_from_field {
 						name_field : $name
 						returns : into
@@ -2053,7 +2338,7 @@ language_tmpl : Template {
 					alternatives : { extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
 					pattern : parser.sequence {
 						of : [
-							space { preferred : True },
+							description {},
 							valid_identifier { field : $name },
 							space { preferred : True },
 							parser.exact { word : ":" },
@@ -2062,6 +2347,11 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ ]
+					api_value : apigen.create_node {
+						name_field : $name
+						informative : True
+						actions : []
+					}
 					code_value : parameters.target
 				}
 				eager_attribute : Template syntax_element {
@@ -2069,6 +2359,7 @@ language_tmpl : Template {
 					alternatives : { new_tmpl_attributes : Null  extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
 					pattern : parser.sequence {
 						of : [
+							description {},
 							space { preferred : True },
 							valid_identifier { field : $name },
 							space { preferred : True },
@@ -2094,6 +2385,12 @@ language_tmpl : Template {
 					type_demand : ensure_type.propagate {
 						fields : [ $expression ]
 						needs_unbox : False
+					}
+					api_value : apigen.create_node {
+						name_field : $name
+						actions : [
+							apigen.other { fields : [ $expression ] }
+						]
 					}
 					code_value : kws.set_frame_or_tmpl_from_field {
 						name_field : $name
@@ -2129,6 +2426,7 @@ language_tmpl : Template {
 					pattern : attribute_pattern {}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.any { ensure_type_of : propagate { fields : [ $expression ] } }
+					api_value : apigen.other { fields : [ $expression ] }
 					code_value : codegen.other_code { field : $expression }
 				}
 			}
@@ -2183,6 +2481,7 @@ language_tmpl : Template {
 							]
 						}
 					}
+					api_value : apigen.other { fields : [ $selector, $expression ] }
 					code_value : codegen.bind {
 						define : {
 							input_frame : codegen.other_code { field : $selector }
@@ -2256,6 +2555,7 @@ language_tmpl : Template {
 							]
 						}
 					]
+					api_value : apigen.other { fields : [ $selector ] }
 					code_value : fricassee_iterator {
 						start : Template kws.frame_new {
 							container : parameters.self_frame
@@ -2306,6 +2606,7 @@ language_tmpl : Template {
 					type_demand : ensure_type.bool {
 						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
 					}
+					api_value : apigen.other { fields : [ $selector, $expression ] }
 					code_value : fricassee_iterator {
 						start : Template kws.frame_new {
 							container : parameters.self_frame
@@ -2362,6 +2663,12 @@ language_tmpl : Template {
 					]
 					type_demand : ensure_type.propagate_all {
 						field : $definitions
+					}
+					api_value : apigen.many {
+						actions : [
+							apigen.other { fields : [ $selector ] },
+							apigen.other_list { field : $definitions }
+						]
 					}
 					code_value : fricassee_iterator {
 						accumulator_type : known_vm_types.mutable_frame
@@ -2477,6 +2784,7 @@ language_tmpl : Template {
 							]
 						}
 					]
+					api_value : apigen.other { fields : [ $selector, $initial_expr, $reduce_expr ] }
 					type_demand : ensure_type.propagate {
 						fields : [ $reduce_expr, $initial_expr ]
 						needs_unbox : False
@@ -2589,6 +2897,7 @@ language_tmpl : Template {
 					type_demand : ensure_type.frame {
 						ensure_type_of : ensure_type.propagate { fields : [ $each_expr ] }
 					}
+					api_value : apigen.other { fields : [ $each_expr ] }
 					code_value : codegen.other_code { field : $each_expr }
 				}
 				merge : Template selector_tmpl {
@@ -2620,6 +2929,7 @@ language_tmpl : Template {
 							apply_to : [ environment.collect { } ]
 						}
 					]
+					api_value : apigen.other_list { field : $inputs }
 					code_value : kws.iterator {
 						accumulator_type : known_vm_types.mutable_frame
 						input : input_merge { field : $inputs }
@@ -2662,6 +2972,7 @@ language_tmpl : Template {
 					type_demand : ensure_type.frame {
 						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
 					}
+					api_value : apigen.other { fields : [ $expression ] }
 					code_value : codegen.other_code { field : $expression }
 					prepare_value : kws.set_frame_or_tmpl {
 						name : kws.string_constant_from_field { field : $name }
@@ -2689,6 +3000,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
+					api_value : apigen.nop {}
 					code_value : codegen.not_implemented {}
 					prepare_value : kws.set_frame_or_tmpl {
 						name : kws.string_constant_from_field { field : $name }
@@ -2703,6 +3015,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					api_value : apigen.nop {}
 					code_value : codegen.not_implemented {}
 					prepare_value : kws.set_frame_or_tmpl {
 						name : kws.string_constant_from_field { field : $name }
@@ -2720,6 +3033,7 @@ language_tmpl : Template {
 				type : Required
 				pattern : parser.exact { word : friendly_name }
 				pretty_name : friendly_name & " type"
+				api_value : apigen.nop {}
 			}
 			rules +: {
 				bool : Template type_element {
@@ -2761,6 +3075,7 @@ language_tmpl : Template {
 				unit : Required
 				symbol : Required
 				pattern : int_with_unit_tmpl {}
+				api_value : apigen.nop {}
 				code_value : kws.int_add {
 					left : parameters.accumulator
 					right : kws.numeric_constant_units {
@@ -2863,6 +3178,7 @@ language_tmpl : Template {
 						}
 					}
 					apply_environment_to : [ ]
+					api_value : apigen.nop {}
 					code_value : kws.string_concatenate {
 						first : parameters.accumulator
 						second : kws.string_constant_from_field { field : $text }
@@ -2889,6 +3205,7 @@ language_tmpl : Template {
 						types : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
 						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
 					}
+					api_value : apigen.other { fields : [ $expression ] }
 					code_value : kws.string_concatenate {
 						first : parameters.accumulator
 						second : kws.cast_to_string {
@@ -2912,6 +3229,7 @@ language_tmpl : Template {
 							valid_identifier { field : $name }
 						]
 					}
+					api_value : apigen.nop {}
 				}
 			}
 		}
@@ -3021,6 +3339,12 @@ language_tmpl : Template {
 					type_demand : ensure_type.propagate_all {
 						field : $definitions
 					}
+					api_value : apigen.many {
+						actions : [
+							apigen.other { fields : [ $expression ] },
+							apigen.other_list { field : $definitions }
+						]
+					}
 					code_value : codegen.prepare_lookup_cache {
 						in : codegen.other_code { field : $expression }
 						name : $inner_environment
@@ -3056,6 +3380,7 @@ language_tmpl : Template {
 						fields : [ $expression ]
 						needs_unbox : False
 					}
+					api_value : apigen.other { fields : [ $selector, $expression ] }
 					code_value : fricassee_iterator {
 						start : Template kws.frame_new {
 							creation_method : pretty_name
@@ -3116,6 +3441,7 @@ language_tmpl : Template {
 							}
 						]
 					}
+					api_value : apigen.other { fields : [ $selector, $name_expr, $value_expr ] }
 					code_value : fricassee_iterator {
 						start : Template kws.frame_new {
 							creation_method : pretty_name
@@ -3225,6 +3551,7 @@ language_tmpl : Template {
 							}
 						]
 					}
+					api_value : apigen.other { fields : [ $selector, $reduce_expr, $initial_expr ] }
 					code_value : kws.dynamic_type_dispatch_from_stored_mask {
 						type_storage : $bottleneck_type
 						of : fricassee_iterator {
@@ -3279,6 +3606,7 @@ language_tmpl : Template {
 					type_demand : ensure_type.bool {
 						ensure_type_of : ensure_type.propagate { fields : [ $cond_expr ] }
 					}
+					api_value : apigen.other { fields : [ $cond_expr, $then_expr, $else_expr ] }
 					code_value : kws.conditional {
 						condition : codegen.other_code { field : $cond_expr }
 						true_action : codegen.prepare_lookup_cache {
@@ -3964,6 +4292,7 @@ language_tmpl : Template {
 					type_demand : ensure_type.frame {
 						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
 					}
+					api_value : apigen.other { fields : [ $expression ] }
 					code_value : codegen.return_intrinsic_dispatch {
 						of : kws.lookup_field {
 							field : $names
@@ -4011,6 +4340,15 @@ language_tmpl : Template {
 					type_demand : ensure_type.filter {
 						types : [ known_types.template ]
 						ensure_type_of : ensure_type.propagate { fields : [ $source ] }
+					}
+					api_value : apigen.many {
+						actions : [
+							apigen.other { fields : [ $source ] },
+							apigen.other_list {
+								field : $overrides
+								collect_names : True
+							}
+						]
 					}
 					code_value : perform_overrides {
 						accumulator_type : known_vm_types.mutable_frame
@@ -4087,6 +4425,10 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.list_independent { field : $attributes } ]
 					ensure_type_is : ensure_type.frame {}
+					api_value : apigen.other_list {
+						field : $attributes
+						collect_names : True
+					}
 					code_value : codegen.push_source_reference {
 						in : codegen.empty_parameter {
 							parameters : { source_template : emptiness }
@@ -4186,6 +4528,10 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.list_independent { field : $attributes } ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.template ] }
+					api_value : apigen.other_list {
+						field : $attributes
+						collect_names : True
+					}
 					code_value : codegen.empty_parameter {
 						parameters : { source_template : emptiness }
 						in : codegen.collapse_others {
@@ -4237,6 +4583,15 @@ language_tmpl : Template {
 						types : [ known_types.template ]
 						ensure_type_of : propagate { fields : [ $source ] }
 					}
+					api_value : apigen.many {
+						actions : [
+							apigen.other { fields : [ $source ] },
+							apigen.other_list {
+								field : $overrides
+								collect_names : True
+							}
+						]
+					}
 					code_value : perform_overrides {
 						accumulator_type : known_types.template
 						new_item : kws.tmpl_new
@@ -4279,6 +4634,7 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.stored {
 						field : $parts
 					}
+					api_value : apigen.nop {}
 					code_value : codegen.lookup_cached { field : $parts }
 				}
 				from : Template expression_tmpl {
@@ -4293,6 +4649,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : []
 					ensure_type_is : ensure_type.intrinsic { needs_unbox : False }
+					api_value : apigen.add_reference { field : $uri }
 					code_value : codegen.return_intrinsic_dispatch {
 						of : kws.external_from_field {
 							field : $uri
@@ -4326,6 +4683,7 @@ language_tmpl : Template {
 					type_demand : ensure_type.frame {
 						ensure_type_of : ensure_type.propagate { fields : [ $expr ] }
 					}
+					api_value : apigen.nop {}
 					code_value : codegen.return_intrinsic_dispatch {
 						of : kws.lookup_field {
 							field : $names
@@ -4354,6 +4712,7 @@ language_tmpl : Template {
 						needs_unbox : False
 						fields : [ $expression ]
 					}
+					api_value : apigen.other { fields : [ $expression ] }
 					code_value : codegen.other_code { field : $expression }
 				}
 				literal_list : Template expression_tmpl {
@@ -4394,6 +4753,7 @@ language_tmpl : Template {
 						field : $items
 						needs_unbox : False
 					}
+					api_value : apigen.other_list { field : $items }
 					code_value : codegen.push_source_reference {
 						in : codegen.mash_into_frame {
 							field : $items
@@ -4512,6 +4872,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					api_value : apigen.nop {}
 					code_value : codegen.fold_others {
 						target_flavour : codegen.flavour_accumulate
 						field : $parts
@@ -4535,6 +4896,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.int, known_types.float ] }
+					api_value : apigen.nop {}
 					code_value : kws.numeric_constant {
 						type : known_types.int
 						number : $amount
@@ -4557,6 +4919,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					api_value : apigen.nop {}
 					code_value : kws.numeric_constant {
 						type : known_types.int
 						number : $amount
@@ -4597,6 +4960,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
+					api_value : apigen.nop {}
 					code_value : kws.numeric_constant {
 						type : known_types.float
 						number : $value
@@ -4614,6 +4978,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
+					api_value : apigen.nop {}
 					code_value : kws.string_constant_from_field {
 						field : $name
 					}
@@ -4639,6 +5004,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.list_of { field : $parts } ]
 					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
+					api_value : apigen.other_list { field : $parts }
 					code_value : codegen.collapse_others {
 						type : known_types.str
 						field : $parts
@@ -4667,6 +5033,7 @@ language_with_repl_tmpl : Template language_tmpl {
 		pretty_name : keyword & " in REPL"
 		keyword : Required
 		help : Required
+		api_value : apigen.nop {}
 	}
 	repl_simple_tmpl : Template repl_tmpl {
 		arg_help : ""
@@ -4826,6 +5193,7 @@ language_with_repl_tmpl : Template language_tmpl {
 							space {}
 						]
 					}
+					api_value : apigen.other { fields : [ $expr ] }
 					code_value : kws.print {
 						escape : True
 						item : adapt_repl_environment {

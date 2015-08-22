@@ -5,12 +5,11 @@
 		<Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
 		<ProductVersion>10.0.0</ProductVersion>
 		<SchemaVersion>2.0</SchemaVersion>
-		<ProjectGuid>{349DC095-A2A2-4245-862A-9C348D994656}</ProjectGuid>
-		<OutputType>Library</OutputType>
+		<ProjectGuid>{4F4C287F-F945-487D-84FF-3C2409722008}</ProjectGuid>
+		<OutputType>Exe</OutputType>
 		<RootNamespace>Flabbergast</RootNamespace>
-		<AssemblyName>Flabbergast.Compiler</AssemblyName>
+		<AssemblyName>flabbergast-documenter</AssemblyName>
 		<AssemblyOriginatorKeyFile>flabbergast.snk</AssemblyOriginatorKeyFile>
-		<SignAssembly>true</SignAssembly>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
 		<DebugSymbols>true</DebugSymbols>
@@ -20,7 +19,7 @@
 		<DefineConstants>DEBUG;</DefineConstants>
 		<ErrorReport>prompt</ErrorReport>
 		<WarningLevel>4</WarningLevel>
-		<ConsolePause>false</ConsolePause>
+		<Externalconsole>true</Externalconsole>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
 		<DebugType>full</DebugType>
@@ -28,26 +27,21 @@
 		<OutputPath>bin\Release</OutputPath>
 		<ErrorReport>prompt</ErrorReport>
 		<WarningLevel>4</WarningLevel>
-		<ConsolePause>false</ConsolePause>
+		<Externalconsole>true</Externalconsole>
 	</PropertyGroup>
 	<ItemGroup>
 		<Reference Include="System"/>
 		<Reference Include="System.Xml"/>
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="compiler-cli.cs"/>
-		<Compile Include="analyser.cs"/>
-		<Compile Include="dlcompile.cs"/>
-		<Compile Include="library-compiler.cs"/>
-		<Compile Include="generator.cs"/>
-		<Compile Include="parser.cs"/>
-		<Compile Include="AssemblyInfo.cs"/>
+		<Compile Include="doc-main.cs"/>
+		<Compile Include="Options.cs"/>
 	</ItemGroup>
 	<Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets"/>
 	<ItemGroup>
-		<ProjectReference Include="flabbergast-runtime.csproj">
-			<Project>{B54764C8-8812-4DC0-BB5D-88890F1DB5BC}</Project>
-			<Name>flabbergast-runtime</Name>
+		<ProjectReference Include="flabbergast-compilerservices.csproj">
+			<Project>{349DC095-A2A2-4245-862A-9C348D994656}</Project>
+			<Name>flabbergast-compilerservices</Name>
 		</ProjectReference>
 	</ItemGroup>
 </Project>

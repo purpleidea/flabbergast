@@ -83,6 +83,14 @@ class Environment implements CodeRegion {
 		return info;
 	}
 
+	public void collectUses(ApiGenerator apigen) {
+		for (NameInfo child : children.values()) {
+			if (child != null) {
+				child.collectUses(apigen);
+			}
+		}
+	}
+
 	TypeSet ensureIntrinsic(ErrorCollector collector, AstNode node,
 			TypeSet type, boolean must_unbox, Ptr<Boolean> success) {
 		if (intrinsics.containsKey(node)) {

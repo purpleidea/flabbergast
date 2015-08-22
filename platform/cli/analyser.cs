@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Xml;
 
 namespace Flabbergast {
 [Flags]
@@ -18,6 +19,7 @@ public enum Type {
 internal abstract class AstTypeableNode : AstNode {
 	protected Environment Environment;
 	internal virtual int EnvironmentPriority { get { return Environment.Priority; } }
+	internal Type InferredType { get; set; }
 	internal abstract Environment PropagateEnvironment(ErrorCollector collector, List<AstTypeableNode> queue, Environment environment, ref bool success);
 	internal abstract void MakeTypeDemands(ErrorCollector collector, ref bool _success);
 	public bool Analyse(ErrorCollector collector) {
@@ -161,6 +163,8 @@ internal abstract class NameInfo {
 			child.AddAll(target);
 		}
 	}
+	public virtual void CollectUses(ApiGenerator apigen) {
+	}
 	internal NameInfo Lookup(ErrorCollector collector, string name, ref bool success) {
 		EnsureType(collector, Type.Frame, ref success, false);
 		if (!Children.ContainsKey(name)) {
@@ -218,6 +222,12 @@ internal class OpenNameInfo : NameInfo {
 	public OpenNameInfo(Environment environment, string name) {
 		Environment = environment;
 		Name = name;
+	}
+	public override void CollectUses(ApiGenerator apigen) {
+		apigen.RegisterUse(Name);
+		foreach (var child in Children.Values) {
+				child.CollectUses(apigen);
+		}
 	}
 	public override Type EnsureType(ErrorCollector collector, Type type, ref bool success, bool must_unbox) {
 		this.must_unbox |= must_unbox;
@@ -438,6 +448,13 @@ internal class Environment : CodeRegion {
 		Children[name] = null;
 	}
 	public delegate void Block(LoadableValue context, LookupCache cache);
+	public void CollectUses(ApiGenerator apigen) {
+		foreach (var child in Children.Values) {
+			if (child != null)
+				child.CollectUses(apigen);
+		}
+	}
+
 	internal void GenerateLookupCache(Generator generator, IEnumerable<Tuple<RestrictableType, Generator.ParameterisedBlock<Generator.ParameterisedBlock<LoadableValue>>>> specials, LookupCache current, LoadableValue source_reference, LoadableValue context, LoadableValue self_frame, Block block) {
 		generator.DebugPosition(this);
 		var lookup_results = new List<LoadableCache>();
@@ -655,6 +672,100 @@ internal class Environment : CodeRegion {
 			generator.Builder.MarkLabel(next_label);
 		}
 		generator.EmitTypeError(source_reference, String.Format("Expected type {0} for {1}, but got {2}.", String.Join(" or ", from t in types select Stringish.NameForType(t)), node.PrettyName, "{0}"), original);
+	}
+}
+internal class ApiGenerator {
+	public static ApiGenerator Create(string library_name, string github) {
+		var doc = new XmlDocument();
+		doc.AppendChild(doc.CreateXmlDeclaration("1.0", "UTF-8", null));
+		doc.AppendChild(doc.CreateProcessingInstruction("xml-stylesheet", "href=\"o_0-index.xsl\" type=\"text/xsl\""));
+		var node = doc.CreateElement("o_0:lib", "http://flabbergast.org/api");
+		node.SetAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+		node.SetAttribute("name", library_name);
+		if (github != null) {
+			node.SetAttribute("github", github + "/" + library_name + ".o_0");
+		}
+		doc.AppendChild(node);
+		return new ApiGenerator(doc, node);
+	}
+	private readonly XmlNode node;
+	public XmlDocument Document { get; private set; }
+	private XmlNode _desc = null;
+
+	private XmlNode Description {
+		get {
+			if (_desc == null) {
+				_desc = Document.CreateElement("o_0:description", Document.DocumentElement.NamespaceURI);
+				node.AppendChild(_desc);
+			}
+			return _desc;
+		}
+	}
+
+	private readonly Dictionary<Environment, bool> environments = new Dictionary<Environment, bool>();
+	private readonly Dictionary<string, XmlNode> refs = new Dictionary<string, XmlNode>();
+	private readonly Dictionary<string, XmlNode> uses = new Dictionary<string, XmlNode>();
+
+	private ApiGenerator(XmlDocument doc, XmlNode node) {
+		Document = doc;
+		this.node = node;
+	}
+
+	public void AppendDescriptionText(string text) {
+		var node = Document.CreateTextNode(text);
+		Description.AppendChild(node);
+	}
+	public XmlElement AppendDescriptionTag(string xmlns, string tag, string text) {
+		var node = Document.CreateElement(tag, xmlns);
+		node.AppendChild(Document.CreateTextNode(text));
+		Description.AppendChild(node);
+		return node;
+	}
+	public void CollectEnvironment(Environment environment) {
+		if (!environments.ContainsKey(environment)) {
+			environments[environment] = true;
+			environment.CollectUses(this);
+		}
+	}
+	public ApiGenerator CreateChild(string name, CodeRegion region, Type type, bool informative) {
+		var node = Document.CreateElement("o_0:attr", Document.DocumentElement.NamespaceURI);
+		node.SetAttribute("name", name);
+		node.SetAttribute("startline", region.StartRow.ToString());
+		node.SetAttribute("startcol", region.StartColumn.ToString());
+		node.SetAttribute("endline", region.EndRow.ToString());
+		node.SetAttribute("endcol", region.EndColumn.ToString());
+		node.SetAttribute("informative", informative ? "true" : "false");
+		this.node.AppendChild(node);
+		if (type != NameInfo.AnyType) {
+			foreach(var t in Enum.GetValues(typeof(Type)).Cast<Type>()) {
+				if ((type & t) == 0)
+					continue;
+				var type_node = Document.CreateElement("o_0:type", Document.DocumentElement.NamespaceURI);
+				type_node.AppendChild(Document.CreateTextNode(t == Type.Unit ? "Null" : t.ToString()));
+				node.AppendChild(type_node);
+			}
+		}
+		return new ApiGenerator(Document, node);
+	}
+	private void Register(Dictionary<string, XmlNode> known, string tag, string content) {
+		if (known.ContainsKey(content)) {
+			return;
+		}
+		var node = Document.CreateElement(tag, Document.DocumentElement.NamespaceURI);
+		node.AppendChild(Document.CreateTextNode(content));
+		known[tag] = node;
+		this.node.AppendChild(node);
+	}
+	public void RegisterRef(string uri) {
+		if (uri.StartsWith("lib:")) {
+			Register(refs, "o_0:ref", uri.Substring(4));
+		}
+	}
+	public void RegisterUse(IEnumerable<string> names) {
+		RegisterUse(string.Join(".", names));
+	}
+	public void RegisterUse(string name) {
+		Register(uses, "o_0:use", name);
 	}
 }
 }

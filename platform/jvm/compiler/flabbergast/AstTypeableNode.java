@@ -86,6 +86,7 @@ abstract class AstTypeableNode extends AstNode {
 	}
 
 	protected Environment environment;
+	protected TypeSet inferred_type;
 
 	public boolean analyse(ErrorCollector collector) {
 		Environment environment = new Environment(getFileName(), getStartRow(),
@@ -113,6 +114,10 @@ abstract class AstTypeableNode extends AstNode {
 
 	public int getEnvironmentPriority() {
 		return environment.getPriority();
+	}
+
+	public TypeSet getInferredType() {
+		return inferred_type;
 	}
 
 	abstract void makeTypeDemands(ErrorCollector collector, Ptr<Boolean> success);

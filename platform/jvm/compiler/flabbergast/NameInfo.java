@@ -26,6 +26,9 @@ abstract class NameInfo {
 		return null;
 	}
 
+	public void collectUses(ApiGenerator apigen) {
+	}
+
 	public abstract void createChild(ErrorCollector collector, String name,
 			String root, Ptr<Boolean> success);
 

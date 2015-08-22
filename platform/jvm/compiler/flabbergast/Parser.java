@@ -6,8 +6,11 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.xml.parsers.ParserConfigurationException;
 
 import flabbergast.Generator.ParameterisedBlock;
+
+import org.w3c.dom.Document;
 
 /**
  * The input being parsed along with all the memorised information from the
@@ -328,6 +331,22 @@ public class Parser {
 	public Parser(String filename, String input) {
 		file_name = filename;
 		this.input = input;
+	}
+	public Document documentFile(ErrorCollector collector, String lib_name,
+			String github) throws ParserConfigurationException {
+		Ptr<file> result = new Ptr<file>();
+		Ptr<Position> position = new Ptr<Position>(new Position(collector));
+		if (file.parseRule_Base(position, result)
+				&& position.get().isFinished()) {
+			if (result.get().analyse(collector)) {
+				ApiGenerator api = ApiGenerator.create(lib_name, github);
+				result.get().generateApi(api, true);
+				return api.getDocument();
+			}
+		} else {
+			collector.reportParseError(file_name, index, row, column, message);
+		}
+		return null;
 	}
 
 	/**

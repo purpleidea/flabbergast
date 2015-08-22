@@ -11,6 +11,14 @@ class OpenNameInfo extends NameInfo {
 	}
 
 	@Override
+	public void collectUses(ApiGenerator apigen) {
+		apigen.registerUse(getName());
+		for (NameInfo child : children.values()) {
+			child.collectUses(apigen);
+		}
+	}
+
+	@Override
 	public void createChild(ErrorCollector collector, String name, String root,
 			Ptr<Boolean> success) {
 		children.put(name, new OpenNameInfo(environment, root + "." + name));

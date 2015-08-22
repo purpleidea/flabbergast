@@ -32,6 +32,7 @@ debian/flabbergast-common
 debian/flabbergast-java
 debian/tmp
 debian/vim-flabbergast
+doc-*.xml
 flabbergast_sql.7
 libtool
 platform/*/*-build-cache

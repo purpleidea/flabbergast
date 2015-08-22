@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Xml;
 namespace Flabbergast {
 
 /**
@@ -21,6 +22,8 @@ internal abstract class AstNode : CodeRegion {
 	public string FileName { get; internal set; }
 
 	public abstract string PrettyName { get; }
+
+	public abstract void GenerateApi(ApiGenerator api_gen, bool collect_names);
 }
 /**
  * The input being parsed along with all the memorised information from the pack-rat parsing.
@@ -87,6 +90,20 @@ public class Parser {
 	public Parser(string filename, string input) {
 		FileName = filename;
 		Input = input;
+	}
+	public XmlDocument DocumentFile(ErrorCollector collector, string lib_name, string github) {
+		file result;
+		var position = new ParserPosition(this, collector);
+		if (file.ParseRule_Base(ref position, out result) && position.Finished) {
+			if (result.Analyse(collector)) {
+				var api = ApiGenerator.Create(lib_name, github);
+				result.GenerateApi(api, true);
+				return api.Document;
+			}
+		} else {
+			collector.ReportParseError(FileName, Index, Row, Column, Message);
+		}
+		return null;
 	}
 	/**
 	 * Parse in the “file” context defined in the language specification.
