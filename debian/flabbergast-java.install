@@ -1,7 +1,5 @@
-usr/bin/jflabbergast
-usr/bin/jflabbergast-repl
+usr/bin/jflabbergast*
 usr/share/flabbergast/compiler/jvm-build-cache
 usr/share/java
 usr/share/flabbergast/lib/*.jo_0
-usr/share/man/man1/jflabbergast-repl.1
-usr/share/man/man1/jflabbergast.1
+usr/share/man/man1/jflabbergast*.1

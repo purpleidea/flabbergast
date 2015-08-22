@@ -2,10 +2,12 @@
 set -e
 case "$1" in
 	configure)
-		update-alternatives --quiet --install /usr/bin/flabbergast flabbergast /usr/bin/nflabbergast 30 \
+		update-alternatives --quiet --install /usr/bin/flabbergast flabbergast /usr/bin/nflabbergast 50 \
 			--slave /usr/bin/flabbergast-repl flabbergast-repl /usr/bin/nflabbergast-repl \
+			--slave /usr/bin/flabbergast-docgen flabbergast-docgen /usr/bin/nflabbergast-docgen \
 			--slave /usr/share/man/man1/flabbergast.1.gz flabbergast.1.gz /usr/share/man/man1/nflabbergast.1.gz \
-			--slave /usr/share/man/man1/flabbergast-repl.1.gz flabbergast-repl.1.gz /usr/share/man/man1/nflabbergast-repl.1.gz
+			--slave /usr/share/man/man1/flabbergast-repl.1.gz flabbergast-repl.1.gz /usr/share/man/man1/nflabbergast-repl.1.gz \
+			--slave /usr/share/man/man1/flabbergast-docgen.1.gz flabbergast-docgen.1.gz /usr/share/man/man1/nflabbergast-docgen.1.gz
 		update-alternatives --quiet --auto flabbergast
 		;;
 	abort-upgrade|abort-remove|abort-deconfigure)

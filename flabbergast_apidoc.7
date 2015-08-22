@@ -1,0 +1,55 @@
+.\" Authors: Andre Masella
+.TH flabbergast 1 "August 2015" "0.8" "MISCELLANEOUS"
+.SH NAME
+flabbergast_apidoc \- The API documentation XML format of the Flabbergast language
+.SH SYNOPSIS
+Flabbergast has a built-in documentation system and the documentation and limited information about the code can be extracted and stored in an XML document for display.
+
+This document is the specification for the documentation format.
+
+.SH FILE NAMES AND XML
+The documentation for libraries is stored as an XML document named \fBdoc-\fIname\fB.xml\fR where \fIname\fR is the library name with \fB/\fR replaced by \fB-\fR. For instance, \fBlib:foo/bar\fR would be stored in \fBdoc-foo-bar.xml\fR.
+
+The documents are mixed Flabbergast API, in the namespace \fBhttp://flabbergast.org/api\fR assigned to the prefix \fBo_0\fR, and XHTML, in the namespace \fBhttp://www.w3.org/1999/xhtml\fR assigned to the default prefix.
+
+The root element is \fBo_0:lib\fR which has the attribute \fBname\fR containing the library name (\fIe.g.\fR, \fBfoo/bar\fR). It may have a \fBgithub\fR attribute containing the URL to the GitHub URL for this file.
+
+The root element may contain a \fBo_0:description\fR element and one or more \fBo_0:attr\fB elements.
+
+.SH DESCRIPTION ELEMENTS
+A description is a \fBo_0:description\fR element containing any combination of text, XHTML elements, \fBo_0:use\fR elements, and \fBo_0:ref\fR elements.
+
+.SH ATTRIBUTE ELEMENTS
+An attribute is a \fBo_0:attr\fR element describing a Flabbergast attribute. It has several XML attributes:
+
+.TP
+name
+The Flabbergast attribute name
+.TP
+startline
+The line in the source file where the Flabbergast attribute begins, including the documentation.
+.TP
+startcol
+The column on the source line where the Flabbergast attribute begins, including the documentation.
+.TP
+endline
+The line in the source file where the Flabbergast attribute finishes.
+.TP
+endcol
+The column on the source line where the Flabbergast attribute finishes.
+.TP
+informative
+A Boolean value indicating whether the attribute will not appear in the output frame or template. This is only true for \fBUsed\fR and \fBDrop\fR attributes.
+
+The element contains a single, optional, \fBo_0:description\fR element, a number of \fBo_0:type\fR elements contain the name of a Flabbergast type, any number \fBo_0:use\fR elements, any number of \fBo_0:ref\fR elements,  and more \fBo_0:attribute\fR elements for its children. The type information is advisory and may be missing.
+
+.SH USAGE ELEMENTS
+A usage element, \fBo_0:use\fR indicates that a lookup occurs allowing cross referencing. The contents will be a valid Flabbergast contextual lookup.
+
+.SH REFERENCE Elements
+A reference element, \fBo_0:ref\fR indicates that another library is imported with \fBFrom\fR. It contains only the library name and does not use other URI.
+
+.SH SEE ALSO
+.BR flabbergast_language (7),
+.BR jflabbergast-docgen (7),
+.BR nflabbergast-docgen (7).

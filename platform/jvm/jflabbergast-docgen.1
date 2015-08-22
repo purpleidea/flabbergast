@@ -1,0 +1,28 @@
+.\" Authors: Andre Masella
+.TH flabbergast 1 "August 2015" "0.9" "USER COMMANDS"
+.SH NAME 
+jflabbergast-docgen \- Extract documentation from Flabbergast files using the Common Language Infrastructure
+.SH SYNOPSIS
+.B jflabbergast-docgen
+[
+.B \-g
+.I url
+] [
+.B \-o
+.I directory
+]
+.I directory
+.SH DESCRIPTION
+Scans \fIdirectory\fR for Flabbergast files ending in \fB.o_0\fR, extracts the frame and template structure and the corresponding documentation, and writes it to an XML file.
+
+.SH OPTIONS
+.TP
+\-g
+The URL to a GitHub repository holding the files. This will make the source references hyperlinks to the source with GitHub-style fragment identifiers to highlight to correct lines.
+.TP
+\-o
+A directory to save the output. If unspecified, the current directory is used.
+
+.SH SEE ALSO
+.BR flabbergast_api (7),
+.BR jflabbergast (1).

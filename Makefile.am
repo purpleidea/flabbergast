@@ -24,6 +24,7 @@ man1_MANS = \
 	$(NULL)
 
 man7_MANS = \
+	flabbergast_apidoc.7 \
 	flabbergast_language.7 \
 	flabbergast_sql.7 \
 	$(NULL)

@@ -38,4 +38,5 @@ libtool
 platform/*/*-build-cache
 platform/*/?flabbergast
 platform/*/?flabbergast-repl
+platform/*/?flabbergast-docgen
 update-flabbergast
