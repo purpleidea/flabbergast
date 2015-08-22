@@ -45,6 +45,12 @@ syn match flabbergastImplDefined "\<X[a-zA-Z0-9]*\>" display
 syn match flabbergastConstant "\<\d\+[kMG]i\=\>" display
 syn match flabbergastConstant "\<\(\d\+[dhms]\)\+\>" display
 
+syn region flabbergastDescription matchgroup=flabbergastDescDelimiter start="\(Introduction\)\?{{{" end="}}}" contains=flabbergastDescDelimiter,flabbergastDescEscape,@Spell
+syn match flabbergastDescDelimiter contained "\\}" display
+syn region flabbergastDescEscape contained containedin=flabbergastDescription matchgroup=flabbergastDescDelimiter start="\\Emph{" end="}" skip="\\}" contains=@Spell
+syn region flabbergastDescEscape contained containedin=flabbergastDescription matchgroup=flabbergastDescDelimiter start="\\\(From\|Link\|Mono\)\?{" end="}" skip="\\}"
+syn keyword flabbergastDescDelimiter contained containedin=flabbergastDescription Info Introduction Emph From Link Mono
+
 hi def link flabbergastAttribute	Statement
 hi def link flabbergastBadKeyword	Error
 hi def link flabbergastBool		Boolean
@@ -52,6 +58,8 @@ hi def link flabbergastComment		Comment
 hi def link flabbergastConditional	Conditional
 hi def link flabbergastConstant		Constant
 hi def link flabbergastDelimiter	Delimiter
+hi def link flabbergastDescDelimiter	Delimiter
+hi def link flabbergastDescription	Comment
 hi def link flabbergastEscape		SpecialChar
 hi def link flabbergastEscapeError	Error
 hi def link flabbergastFloat		Float
