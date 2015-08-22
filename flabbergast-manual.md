@@ -1232,6 +1232,39 @@ Configures jobs for running on the Apache Aurora framework, which managers long-
 ### Cron Specifiers (`lib:unix/cron`)
 Allows generating the time specifications in for `crontab` entries.
 
+## Automatic Documentation
+
+Flabbergast has a built-in documentation system. Unlike, say JavaDoc, Flabbergast documentation is parsed by the compiler and certain checks are done on it. To add documentation to code is extremely easy. There are two major elements: an introduction and attribute documentation.
+
+An introduction is associated with a whole file and appears at the top of a file:
+
+    Introduction{{{A library of templates for doing useful things.}}}
+
+Before each attribute, a description of the attribute can be inserted in triple braces:
+
+    {{{The URL for the Flabbergast project.}}}
+    flabbergast_url : "http://flabbergast.org"
+
+That will continue inside literal frames and templates:
+
+    {{{All the URLs.}}}
+    urls : {
+      {{{The URL for the Flabbergast project.}}}
+      flabbergast : "http://flabbergast.org"
+      {{{The URL for the Flabbergast project.}}}
+      github : "https://github.com"
+    }
+
+But it won't traverse other expressions:
+
+    {{{This will be in the documentation.}}}
+    thingie : If x Then {
+     {{{This will never be displayed}}}
+     saddness : True
+    } Else Null
+
+Inside documentation, there are text formatting tags: `\Emph{x}` will add emphasis to the text, and `\Mono{x}` will type set it in a fixed-width font. Hyperlinks can also be inserted using `\Link{http://flabbergast.org/|Click to go to the Flabbergast page}`. Cross-references to other attributes can be created using `\{urls.github}` or to other libraries `\From{lib:x}`.
+
 ## Questions of Varying Frequency
 
 The following answers are universally discouraging of certain ideas as these ideas are not congruent with normal Flabbergast use.
