@@ -1,8 +1,11 @@
-# Return the conjunction (and) of the arguments.
+Introduction{{{Miscellaneous helper functions. Consider this the standard
+library of Flabbergast.}}}
+
+{{{Return the conjunction (and) of the arguments.}}}
 all : allifier(base : identity)
 
-# Convert a function-like template from one that returns a list of Booleans to
-# a conjunctions (and).
+{{{Convert a function-like template from one that returns a list of Booleans to
+a conjunctions (and).}}}
 allifier : Template {
 	base : Required
 	value : Template base {
@@ -10,11 +13,11 @@ allifier : Template {
 	}
 }
 
-# Return the disjunction (or) of the arguments.
+{{{Return the disjunction (or) of the arguments.}}}
 any : anyifier(base : identity)
 
-# Convert a function-like template from one that returns a list of Booleans to
-# a disjunction (or).
+{{{Convert a function-like template from one that returns a list of Booleans to
+a disjunction (or).}}}
 anyifier : Template {
 	base : Required
 	value : Template base {
@@ -22,16 +25,18 @@ anyifier : Template {
 	}
 }
 
-# Limits the range of a list of values. For details, see `clampifier`.
+{{{Limits the range of a list of values. For details, see \{clampifier}.}}}
 clamp_list : clampifier(base : identity)
 
-# Convert a function-like template from one that returns a list of values into
-# one that returns a list of values clipped between the inclusive range `lower`
-# to `upper`.
+{{{Convert a function-like template from one that returns a list of values into
+one that returns a list of values clipped between the inclusive range \{lower}
+to \{upper}.}}}
 clampifier : Template {
 	base : Required
 	value : Template base {
+		{{{The minimum threshold value.}}}
 		lower : Used
+		{{{The maximum threshold value.}}}
 		upper : Used
 		value +original:
 			For item : original, item_name : Name
@@ -44,10 +49,10 @@ clampifier : Template {
 }
 
 
-# Count the number of items in a frame.
+{{{Count the number of items in a frame.}}}
 count : firstifier(base : count_list)
 
-# Count the number of item in a list of frames.
+{{{Count the number of item in a list of frames.}}}
 count_list : Template {
 	args : Used
 	value :
@@ -56,7 +61,7 @@ count_list : Template {
 			arg_name : (For x : arg Reduce k + 1 With k : 0)
 }
 
-# Selects all frames which have `enabled` set to true in the values in a frame.
+{{{Selects all frames which have \{enabled} set to true in the values in a frame.}}}
 enabled : Template {
 	args : Used
 	value :
@@ -65,11 +70,11 @@ enabled : Template {
 			Select arg_name : arg
 }
 
-# Flatten a list of lists into a single list.
+{{{Flatten a list of lists into a single list.}}}
 flatten : flattenifier(base : identity)
 
-# Convert a function-like template from one that returns a list of lists to one
-# that returns a list.
+{{{Convert a function-like template from one that returns a list of lists to
+one that returns a list.}}}
 flattenifier : Template {
 	base : Required
 	value : Template base {
@@ -77,11 +82,11 @@ flattenifier : Template {
 	}
 }
 
-# Return the first argument supplied.
+{{{Return the first argument supplied.}}}
 first : firstifier(base : identity)
 
-# Convert a function-like template from one that returns a list of non-null
-# values into one that returns the first non-null value.
+{{{Convert a function-like template from one that returns a list of non-null
+values into one that returns the first non-null value.}}}
 firstifier : Template {
 	base : Required
 	value : Template base {
@@ -89,67 +94,67 @@ firstifier : Template {
 	}
 }
 
-# Convert a float into a string with precision control. See `float_to_str_list`
-# for details.
+{{{Convert a float into a string with precision control. See
+\{float_to_str_list} for details.}}}
 float_to_str : str_concatifier(base : float_to_str_list, delimiter : "")
 
-# Convert floats into strings with precision control.
+{{{Convert floats into strings with precision control.}}}
 float_to_str_list : Template ( From lib:utilsinterop ).float_to_str_list {
 	args : Used
-	# Use scientific/exponential notation instead of fixed-point.
+	{{{Use scientific/exponential notation instead of fixed-point.}}}
 	exponential : False
-	# The number of decimal digits to use.
+	{{{The number of decimal digits to use.}}}
 	digits : 0
 }
 
-# Create a frame with the specified attribute name and value.
+{{{Create a frame with the specified attribute name and value.}}}
 frame : Template {
-	# The value to be used. Only one may be specified.
+	{{{The value to be used. Only one may be specified.}}}
 	args : Used
-	# The name to use
+	{{{The name to use}}}
 	name : Required
 	value : For arg : args Select name : arg
 }
 
-# Function-like template that returns its arguments.
+{{{Function-like template that returns its arguments.}}}
 identity : Template {
 	args : Used
 	value : args
 }
 
-# Convert a Unicode codepoint (integer) into a string.
+{{{Convert a Unicode codepoint (integer) into a string.}}}
 int_to_char : str_concatifier(base : int_to_char_list, delimiter : "")
 
-# Convert a list of Unicode codepoints (integers) into a list of strings.
+{{{Convert a list of Unicode codepoints (integers) into a list of strings.}}}
 int_to_char_list : Template ( From lib:utilsinterop ).int_to_char_list {
 	args : Used
 }
 
-# Convert an integer to a valid identifier. See `int_to_ordinal_list` for
-# details.
+{{{Convert an integer to a valid identifier. See \{int_to_ordinal_list} for
+details.}}}
 int_to_ordinal : str_concatifier(base : int_to_ordinal_list, delimiter : "")
 
-# Convert integers to a valid identifiers.
+{{{Convert integers to a valid identifiers.}}}
 int_to_ordinal_list : Template ( From lib:utilsinterop ).int_to_ordinal_list {
 	args : Used
 }
 
-# Convert an integer to a string with precision control. See `int_to_str` for
-# details.
+{{{Convert an integer to a string with precision control. See \{int_to_str} for
+details.}}}
 int_to_str : str_concatifier(base : int_to_str_list, delimiter : "")
 
-# Convert integers to strings with precision control.
+{{{Convert integers to strings with precision control.}}}
 int_to_str_list : Template ( From lib:utilsinterop ).int_to_str_list {
 	args : Used
-	# The number of digits to display. If the number is too small, it will be
-	# padded with zeros.
+	{{{The number of digits to display. If the number is too small, it will be
+	padded with zeros.}}}
 	digits : 0
-	# Display in hexadecimal, instead of decimal.
+	{{{Display in hexadecimal, instead of decimal.}}}
 	hex : False
 }
 
-# Checks if `args` is an automatically generated list, rather than a frame with
-# user-defined names.
+{{{Checks if \{args} is an automatically generated list, rather than a frame
+with user-defined names.}}}
 is_list : Template {
 	args : Used
 	value :
@@ -158,11 +163,11 @@ is_list : Template {
 			With acc : True
 }
 
-# Return the last argument supplied.
+{{{Return the last argument supplied.}}}
 last : lastifier(base : identity)
 
-# Convert a function-like template from one that returns a list of non-null
-# values into one that returns the last non-null value.
+{{{Convert a function-like template from one that returns a list of non-null
+values into one that returns the last non-null value.}}}
 lastifier : Template {
 	base : Required
 	value : Template base {
@@ -170,11 +175,11 @@ lastifier : Template {
 	}
 }
 
-# Finds the maximum in a list of values
+{{{Finds the maximum in a list of values.}}}
 max : maxifier(base : identity)
 
-# Convert a function-like template from one that returns a list of homogeneous
-# values into one that returns the largest value.
+{{{Convert a function-like template from one that returns a list of homogeneous
+values into one that returns the largest value.}}}
 maxifier : Template {
 	base : Required
 	value : Template base {
@@ -189,11 +194,11 @@ maxifier : Template {
 	}
 }
 
-# Finds the minimum in a list of values
+{{{Finds the minimum in a list of values.}}}
 min : minifier(base : identity)
 
-# Convert a function-like template from one that returns a list of homogeneous
-# values into one that returns the largest value.
+{{{Convert a function-like template from one that returns a list of homogeneous
+values into one that returns the largest value.}}}
 minifier : Template {
 	base : Required
 	value : Template base {
@@ -208,7 +213,7 @@ minifier : Template {
 	}
 }
 
-# Selects all non-null values in a frame.
+{{{Selects all non-null values in a frame.}}}
 non_null : Template {
 	args : Used
 	value :
@@ -217,39 +222,39 @@ non_null : Template {
 			Select arg_name : arg
 }
 
-# Replaces all null values in a frame with `default`.
+{{{Replaces all null values in a frame with \{default}.}}}
 or_default : Template {
 	args : Used
-	# The default value to use instead of Null.
+	{{{The default value to use instead of \Mono{Null}.}}}
 	default : Required
 	value :
 		For arg : args, arg_name : Name
 			Select arg_name : arg ?? default
 }
 
-# Convert a string containing digits and stuff into a floating-point number.
+{{{Convert a string containing digits and stuff into a floating-point number.}}}
 parse_float : firstifier(base : parse_float_list)
 
-# Convert strings containing digits into integers.
+{{{Convert strings containing digits into integers.}}}
 parse_float_list : Template ( From lib:utilsinterop ).parse_float_list {
 	args : Used
 }
 
-# Convert a string containing digits into an integer.
+{{{Convert a string containing digits into an integer.}}}
 parse_int : firstifier(base : parse_int_list)
 
-# Convert strings containing digits into integers.
+{{{Convert strings containing digits into integers.}}}
 parse_int_list : Template ( From lib:utilsinterop ).parse_int_list {
 	args : Used
 	# The radix to use for the digits. The limits of this are platform-dependant.
 	radix : 10
 }
 
-# Multiply a list of numbers.
+{{{Multiply a list of numbers.}}}
 product : productifier(base : identity)
 
-# Convert a function-like template from one that returns a list of numbers to a
-# single product.
+{{{Convert a function-like template from one that returns a list of numbers to
+a single product.}}}
 productifier : Template {
 	base : Required
 	value : Template base {
@@ -257,12 +262,12 @@ productifier : Template {
 	}
 }
 
-# Get the Unicode category for every character in a string. See
-# `str_categories_list` for details.
+{{{Get the Unicode category for every character in a string. See
+\{str_categories_list} for details.}}}
 str_categories : flattenifier(base : str_categories_list)
 
-# Get the Unicode category for every character in strings. The value to be
-# returned for each category must be user-defined.
+{{{Get the Unicode category for every character in strings. The value to be
+returned for each category must be user-defined.}}}
 str_categories_list : Template ( From lib:utilsinterop ).str_categories_list {
 	args : Used
 
@@ -298,12 +303,12 @@ str_categories_list : Template ( From lib:utilsinterop ).str_categories_list {
 	symbol_other : Used
 }
 
-# Get the Unicode category name for every character in a string. See
-# `str_categories_list` for details.
+{{{Get the Unicode category name for every character in a string. See
+\{str_categories_list} for details.}}}
 str_categories_spec : flattenifier(base : str_categories_spec_list)
 
-# Get the Unicode category name for every character in a string. The names are
-# from the Unicode specification. See `str_categories_list` for details.
+{{{Get the Unicode category name for every character in a string. The names are
+from the Unicode specification. See \{str_categories_list} for details.}}}
 str_categories_spec_list : Template str_categories_list {
 	letter_lower : "Ll"
 	letter_modifier : "Lm"
@@ -337,23 +342,23 @@ str_categories_spec_list : Template str_categories_list {
 	symbol_other : "So"
 }
 
-# Convert a string into a list of codepoints (integers) for each character.
+{{{Convert a string into a list of codepoints (integers) for each character.}}}
 str_codepoints : flattenifier(base : str_codepoints_list)
 
-# Convert strings into lists of codepoints (integers) for each character.
+{{{Convert strings into lists of codepoints (integers) for each character.}}}
 str_codepoints_list : Template ( From lib:utilsinterop ).str_codepoints_list {
 	args : Used
 }
 
-# Concatenate the arguments.
+{{{Concatenate the arguments.}}}
 str_concat : str_concatifier(base : identity, delimiter : "")
 
-# Convert a function-like template from one that returns a list of strings to a
-# single string with the `delimiter` between them.
+{{{Convert a function-like template from one that returns a list of strings to
+a single string with the \{delimiter} between them.}}}
 str_concatifier : Template {
 	base : Required
 	value : Template base {
-		# A string to place between items.
+		{{{A string to place between items.}}}
 		delimiter : Used
 		value +original:
 			For item : original, pos : Ordinal
@@ -364,75 +369,76 @@ str_concatifier : Template {
 	}
 }
 
-# Escape a string based on the provided transformation. See `str_escape_list`
-# for details.
+{{{Escape a string based on the provided transformation. See \{str_escape_list}
+for details.}}}
 str_escape : str_concatifier(base : str_escape_list, delimiter : "")
 
-# Escape strings based on the provided transformation.
+{{{Escape strings based on the provided transformation.}}}
 str_escape_list : Template ( From lib:utilsinterop ).str_escape_list {
-	# A list of transformations to be done on the string, from `str_transform`.
+	args : Used
+	{{{A list of transformations to be done on the string, from \{str_transform}.}}}
 	transformations : Required
 }
 
-# Transformations that can be done on a string to escape it.
+{{{Transformations that can be done on a string to escape it.}}}
 str_transform : {
-	# Transform a single character into an arbitrary escaped form.
+	{{{Transform a single character into an arbitrary escaped form.}}}
 	char_tmpl : Template ( From lib:utilsinterop ).str_transform.char_tmpl {
-		# A single-character string to use as input.
+		{{{A single-character string to use as input.}}}
 		char : Required
-		# The string to use in the escaped result.
+		{{{The string to use in the escaped result.}}}
 		replacement : Required
 	}
-	# Transform a range of characters into a numeric escape sequence.
+	{{{Transform a range of characters into a numeric escape sequence.}}}
 	range_tmpl : Template ( From lib:utilsinterop ).str_transform.range_tmpl {
-		# The inclusive lower bound of the range of characters to escape as a
-		# single-character string.
+		{{{The inclusive lower bound of the range of characters to escape as a
+		single-character string.}}}
 		start : Required
-		# The inclusive upper bound of the range of characters to escape as a
-		# single-character string.
+		{{{The inclusive upper bound of the range of characters to escape as a
+		single-character string.}}}
 		end : Required
-		# A list of strings and encoded numbers to output in the escaped string.
+		{{{A list of strings and encoded numbers to output in the escaped string.}}}
 		replacement : Required
-		# The mode for encoded numbers to appear in the output.
+		{{{The mode for encoded numbers to appear in the output.}}}
 		mode : mode_hex_upper
 
-		# Encode numbers as padded upper-case hexadecimal.
+		{{{Encode numbers as padded upper-case hexadecimal.}}}
 		mode_hex_upper : Used
-		# Encode numbers as padded lower-case hexadecimal.
+		{{{Encode numbers as padded lower-case hexadecimal.}}}
 		mode_hex_lower : Used
-		# Encode numbers as unpadded decimal.
+		{{{Encode numbers as unpadded decimal.}}}
 		mode_decimal : Used
 
-		# A single 32-bit number representing the entire Unicode codepoint.
+		{{{A single 32-bit number representing the entire Unicode codepoint.}}}
 		utf32 : Used
-		# A 16-bit number with the first half of a UTF-16 pair.
+		{{{A 16-bit number with the first half of a UTF-16 pair.}}}
 		utf16_0 : Used
-		# A 16-bit number with the second half of a UTF-16 pair.
+		{{{A 16-bit number with the second half of a UTF-16 pair.}}}
 		utf16_1 : Used
-		# A 8-bit number with the first quarter of a UTF-8 quartet.
+		{{{A 8-bit number with the first quarter of a UTF-8 quartet.}}}
 		utf8_0 : Used
-		# A 8-bit number with the second quarter of a UTF-8 quartet.
+		{{{A 8-bit number with the second quarter of a UTF-8 quartet.}}}
 		utf8_1 : Used
-		# A 8-bit number with the third quarter of a UTF-8 quartet.
+		{{{A 8-bit number with the third quarter of a UTF-8 quartet.}}}
 		utf8_2 : Used
-		# A 8-bit number with the fourth quarter of a UTF-8 quartet.
+		{{{A 8-bit number with the fourth quarter of a UTF-8 quartet.}}}
 		utf8_3 : Used
 	}
 }
 
-# Find the position of `str` in the argument. See `str_find_list` for details.
+{{{Find the position of \{str} in the argument. See \{str_find_list} for details.}}}
 str_find : firstifier(base : str_find_list)
 
-# Find the position of `str` in the arguments or null if it isn't found.
+{{{Find the position of \{str} in the arguments or null if it isn't found.}}}
 str_find_list : Template ( From lib:utilsinterop ).str_find_list {
-	# The arguments to check (a.k.a., the haystack).
+	{{{The arguments to check (a.k.a., the haystack).}}}
 	args : Used
-	# The string to find (a.k.a., the needle).
+	{{{The string to find (a.k.a., the needle).}}}
 	str : Required
-	# The position to begin searching from. If the position is negative, the
-	# position is relative to the end of the string, rather than the beginning.
+	{{{The position to begin searching from. If the position is negative, the
+	position is relative to the end of the string, rather than the beginning.}}}
 	start : 0
-	# Search from the end of the string towards the beginning.
+	{{{Search from the end of the string towards the beginning.}}}
 	backward : False
 
 	str_args :
@@ -448,34 +454,35 @@ str_find_list : Template ( From lib:utilsinterop ).str_find_list {
 		}
 }
 
-# Checks if a string is a valid identifier.
+{{{Checks if a string is a valid identifier.}}}
 str_is_identifier : allifier(base : str_is_identifier_list)
 
-# Checks if strings are valid identifiers.
+{{{Checks if strings are valid identifiers.}}}
 str_is_identifier_list : Template ( From lib:utilsinterop ).str_is_identifier_list {
-	# The strings to check.
+	{{{A list of strings to check.}}}
 	args : Used
 }
 
-# convert a string to lower case.
+{{{convert a string to lower case.}}}
 str_lower_case : str_concatifier(base : str_lower_case_list)
-# convert strings to lower case.
+
+{{{convert strings to lower case.}}}
 str_lower_case_list : Template ( From lib:utilsinterop ).str_lower_case_list {
 	# The strings to manipulate.
 	args : Used
 }
 
-# Pad a string to `length` by adding the string `padding` to the end. If
-# multiple arguments are supplied, they are then concatentated after padding.
+{{{Pad a string to \{length} by adding the string \{padding} to the end. If
+multiple arguments are supplied, they are then concatentated after padding.}}}
 str_pad : str_concatifier(base : str_pad_list)
 
-# Pad strings to `length` by adding the string `padding` to the end. If the
-# string is too long, it is unmodified.
+{{{Pad strings to \{length} by adding the string \{padding} to the end. If the
+string is too long, it is unmodified.}}}
 str_pad_list : Template {
-	# The padding characters to use. If this is not a multiple of the difference
-	# in lengths, it may pad slightly longer.
+	{{{The padding characters to use. If this is not a multiple of the difference
+	in lengths, it may pad slightly longer.}}}
 	padding : " "
-	# The target length of the string.
+	{{{The target length of the string.}}}
 	length : Required
 
 	value :
@@ -486,44 +493,44 @@ str_pad_list : Template {
 					Else arg
 }
 
-# Check if a string starts with `str`.
+{{{Check if a string starts with \{str}.}}}
 str_prefixed : allifier(base : str_prefixed_list)
 
-# Check if a string starts with `str`.
+{{{Check if a string starts with \{str}.}}}
 str_prefixed_list : Template ( From lib:utilsinterop ).str_prefixed_list {
-	# The strings to check.
+	{{{A list of strings to check.}}}
 	args : Used
 }
 
-# Replace occurrences of string `str` in a string to `with`. See
-# `str_replace_list` for details.
+{{{Replace occurrences of string \{str} in a string to \{with}. See
+\{str_replace_list} for details.}}}
 str_replace : firstifier(base : str_replace_list)
 
-# Replace occurrences of string `str` in strings to `with`.
+{{{Replace occurrences of string \{str} in strings to \{with}.}}}
 str_replace_list : Template ( From lib:utilsinterop ).str_replace_list {
-	# The strings to manipulate (a.k.a., the haystack).
+	{{{The strings to manipulate (a.k.a., the haystack).}}}
 	args : Used
-	# The string for which to search (a.k.a., the needle).
+	{{{The string for which to search (a.k.a., the needle).}}}
 	str : Required
-	# The replacement string.
+	{{{The replacement string.}}}
 	with : ""
 }
 
-# Extract an internal span of a string. See `str_slice_list`.
+{{{Extract an internal span of a string. See \{str_slice_list}.}}}
 str_slice : str_concatifier(base : str_slice_list)
 
-# Extract an internal span of strings.
+{{{Extract an internal span of strings.}}}
 str_slice_list : Template ( From lib:utilsinterop ).str_slice_list {
-	# The position at which to begin the extraction.
+	{{{The position at which to begin the extraction.}}}
 	start : 0
-	# The position at which to end the extraction. If this is beyond the end of
-	# the string, the entire string is kept. This or `length` must be provided.
+	{{{The position at which to end the extraction. If this is beyond the end of
+	the string, the entire string is kept. This or \{length} must be provided.}}}
 	end : start + length
-	# The length of the extraction. If this is beyond the end of the string, the
-	# entire string is kept. This or `end` must be provided.
+	{{{The length of the extraction. If this is beyond the end of the string, the
+	entire string is kept. This or \{end} must be provided.}}}
 	length : end - start
-	# If extraction begins after the end of the string, this value will be
-	# returned.
+	{{{If extraction begins after the end of the string, this value will be
+	returned.}}}
 	empty : ""
 
 	str_args :
@@ -543,50 +550,38 @@ str_slice_list : Template ( From lib:utilsinterop ).str_slice_list {
 				})
 }
 
-# Check if a string ends with `str`.
+{{{Check if a string ends with \{str}.}}}
 str_suffixed : allifier(base : str_suffixed_list)
 
-# Check if strings ends with `str`.
+{{{Check if strings ends with \{str}.}}}
 str_suffixed_list : Template ( From lib:utilsinterop ).str_suffixed_list {
-	# The strings to check.
+	{{{A list of strings to check.}}}
 	args : Used
 }
 
-# Remove leading and trailing whitespace from a string.
+{{{Remove leading and trailing whitespace from a string.}}}
 str_trim : str_concatifier(base : str_trim_list)
 
-# Remove leading and trailing whitespace from strings.
+{{{Remove leading and trailing whitespace from strings.}}}
 str_trim_list : Template ( From lib:utilsinterop ).str_trim_list {
-	# The strings to manipulate.
+	{{{A ist of strings to manipulate.}}}
 	args : Used
 }
 
-# Get the UTF-8 length of a string.
-str_utf8_length : sumifier(base : str_utf8_length_list)
+{{{Get the UTF-8 length of a string.}}}
+str_utf8_length : (From lib:math ).sumifier(base : str_utf8_length_list)
 
-# Get the UTF-8 length of strings.
+{{{Get the UTF-8 length of strings.}}}
 str_utf8_length_list : Template ( From lib:utilsinterop ).str_utf8_length_list {
-	# The strings to measure.
+	{{{A list of strings to measure.}}}
 	args : Used
 }
 
-# CONVERT A STRING TO UPPER CASE.
+{{{CONVERT A STRING TO UPPER CASE.}}}
 str_upper_case : str_concatifier(base : str_upper_case_list)
 
-# CONVERT STRINGS TO UPPER CASE.
+{{{CONVERT STRINGS TO UPPER CASE.}}}
 str_upper_case_list : Template ( From lib:utilsinterop ).str_upper_case_list {
-	# The strings to manipulate.
+	{{{A list of strings to manipulate.}}}
 	args : Used
-}
-
-# Sum a list of numbers.
-sum : sumifier(base : identity)
-
-# Convert a function-like template from one that returns a list of numbers to a
-# single sum.
-sumifier : Template {
-	base : Required
-	value : Template base {
-		value +original: For item : original Reduce acc + item With acc : 0
-	}
 }

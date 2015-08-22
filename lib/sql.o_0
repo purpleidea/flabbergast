@@ -1,79 +1,83 @@
+Introduction{{{Support for interface with SQL relational databases}}}
+
 utils_lib : From lib:utils
-# Query an SQL database in and produce a frame containing a frame for each row.
-#
-# The names of the columns, which must be valid Flabbergast identifiers, will
-# be the attribute names in each “row” frame. The special column name
-# “ATTRNAME” will become the attribute name of the “row” frame in the
-# containing frame, otherwise, the “row” frames will be numbered. A column name
-# can be prefixed by “$” to allow lookups. In this case, the column value,
-# which must be a string, is treated as a lookup, which may contain periods,
-# and evaluated with contextual lookup semantics.
+{{{Query an SQL database in and produce a frame containing a frame for each row.
+
+The names of the columns, which must be valid Flabbergast identifiers, will be
+the attribute names in each “row” frame. The special column name
+\Mono{ATTRNAME} will become the attribute name of the “row” frame in the
+containing frame, otherwise, the “row” frames will be numbered. A column name
+can be prefixed by \Mono{$} to allow lookups. In this case, the column value,
+which must be a string, is treated as a lookup, which may contain periods, and
+evaluated with contextual lookup semantics.}}}
 retrieve : Template (From lib:sqlinterop ).retrieve {
-	# A connection from a `From sql:` import
+	{{{A connection from a \Mono{From sql:} import}}}
 	connection : Required
-	# A string containing the implementation-specific SQL statement.
+	{{{A string containing the implementation-specific SQL statement.}}}
 	sql_query : Required
 }
-# Query an SQL database for the delicious records within.
+{{{Query an SQL database for the delicious records within.}}}
 query : Template retrieve {
-	# A list of tables, selected from the `table` frame, to be included in this
-	# query.
+	{{{A list of tables, selected from the \{table} frame, to be included in this
+	query.}}}
 	tables : Required
-	# A frame of expressions or columns to be included in the resulting table.
+	{{{A frame of expressions or columns to be included in the resulting table.}}}
 	columns :
 		For col : column
 			Reduce For acc_value : acc, col_value : col, name : Name
 				Select name : acc_value ?? col_value
 			With acc : {}
-	# A collection of expressions (or columns) that must be true to include a row
-	# in the results.
+	{{{A collection of expressions (or columns) that must be true to include a
+	row in the results.}}}
 	where : Template {}
 
-	# A collection of tables provided by the database. These may be reference in the `tables` list.
+	{{{A collection of tables provided by the database. These may be reference in the \{tables} list.}}}
 	table : implementation.table_discovery(connection : connection)
-	# The collection of columns available from each of the tables specified in
-	# `tables`. These can be used in any place that accepts an expression. Given
-	# there is a column `c` in a table `t`, reference it as `column.t.c`.
+	{{{The collection of columns available from each of the tables specified in
+	\{tables}. These can be used in any place that accepts an expression. Given
+	there is a column \Mono{c} in a table \Mono{t}, reference it as
+	\Mono{column.t.c}.}}}
 	column :
 		For t : table, name : Name
 			Select name : implementation.column_discovery(connection : connection, table : t)
-	# Provides templates for construction expressions. See `expr_tmpl` for details.
+	{{{Provides templates for construction expressions. See \{expr_tmpl} for details.}}}
 	expr : implementation.expr
 
-	# From the connection, select the correct database provider.
+	{{{From the connection, select the correct database provider.}}}
 	implementation :
 		(For provider : sql_providers, provider_name : Name
 			Where provider_name == connection.provider
 			Reduce provider With acc : Null) ?? (Error "Unsupported database “\(connection.provider)”. This library must be mismatched to the Flabbergast runtime.")
 
-	# Expand the where template.
+	{{{Expand the where template.}}}
 	exp_where : where {}
 
-	# Generate the FROM clause.
+	{{{Generate the \Mono{FROM} clause.}}}
 	from_clause :
 		For t : tables, pos : Ordinal
 			Reduce (If pos > 1 Then acc & ", " Else "") & t.sql_from
 			With acc : Null
-	# Generate the columns in the SELECT.
+	{{{Generate the columns in the \Mono{SELECT}.}}}
 	column_clause :
 		For col : columns, name : Name, pos : Ordinal
 			Reduce (If pos > 1 Then acc & ", " Else "") & col.sql_expr & " AS " & name
 			With acc : Null
-	# Generate the WHERE clause, if any.
+	{{{Generate the \Mono{WHERE} clause, if any.}}}
 	where_clause :
 		For clause : exp_where, position : Ordinal
 			Reduce (If position > 1 Then acc & " AND " Else " WHERE ") & clause.sql_expr
 			With acc : ""
-	# Generate the total query.
+	{{{Generate the total query.}}}
 	sql_query :
 		If from_clause Is Null Then Error "No tables specified in query."
 		Else If column_clause Is Null Then Error "No columns specified in query."
 		Else "SELECT " & column_clause Enforce Str & " FROM " & from_clause & where_clause Enforce Str
 }
 
+{{{Convert a value into a SQL expression if possible.}}}
 sql_marshall : utils_lib.str_concatifier(base : sql_marshall_list, delimiter : "")
 
-# Convert a Flabbergast item to an SQL equivalent.
+{{{Convert a Flist of labbergast items to an SQL expression.}}}
 sql_marshall_list : Template {
 	provider : Required
 	value :
@@ -95,6 +99,7 @@ sql_marshall_list : Template {
 				}
 }
 
+{{{Compute the SQL type of a complex expression.}}}
 synthetic_sql_type : Template {
 	coerce : Required
 	id : 0
@@ -114,25 +119,24 @@ synthetic_sql_type : Template {
 			With acc : Null) ?? "none"
 }
 
-# The kinds of expressions that maybe used in an SQL query.
+{{{The kinds of expressions that maybe used in an SQL query.}}}
 expr_tmpl : Template {
-	# A base template representing an expression or column in a SQL query.
+	{{{A base template representing an expression or column in a SQL query.}}}
 	base_expr_tmpl : Template {
-		# A string
-		# containing the SQL code needed to access this column.
+		{{{A string containing the SQL code needed to access this column.}}}
 		sql_expr : Required
-		# A member of `sql_types` that represents the Flabbergast type to which
-		# this expression will be converted.
+		{{{A member of \{sql_types} that represents the Flabbergast type to which
+		this expression will be converted.}}}
 		sql_type : Required
 	}
 	base_infix_expr_tmpl : Template base_expr_tmpl {
-		# The expressions to be put together.
+		{{{The expressions to be put together.}}}
 		args : Required
 
-		# The infix operation symbol.
+		{{{The infix operation symbol.}}}
 		sql_op : Required
 
-		# The bits for the allowed types of arguments.
+		{{{The bits for the allowed types of arguments.}}}
 		sql_allowed_arg_type_id : Required
 
 		sql_args : sql_marshall_list(args : args, provider : implementation)
@@ -153,12 +157,12 @@ expr_tmpl : Template {
 		}
 	}
 	base_function_expr_tmpl : Template base_expr_tmpl {
-		# The expressions to be put together.
+		{{{The expressions to be put together.}}}
 		args : Required
 
-		# The function name.
+		{{{The function name.}}}
 		sql_func : Required
-		# A list of argument types
+		{{{A list of argument types.}}}
 		arg_types : Required
 
 		sql_expr :
@@ -170,13 +174,13 @@ expr_tmpl : Template {
 				With acc : sql_func & "(") & ")"
 	}
 	base_variadic_func_tmpl : Template base_expr_tmpl {
-		# The expressions aggregate.
+		{{{The expressions aggregate.}}}
 		args : Required
 
-		# The infix operation symbol.
+		{{{The infix operation symbol.}}}
 		sql_func : Required
 
-		# The bits for the allowed types of arguments.
+		{{{The bits for the allowed types of arguments.}}}
 		sql_allowed_arg_type_id : Required
 
 		sql_args : sql_marshall_list(args : args, provider : implementation)
@@ -202,7 +206,7 @@ expr_tmpl : Template {
 		left : Required
 		right : Required
 
-		# The comparison symbol.
+		{{{The comparison symbol.}}}
 		sql_op : Required
 		type_mask : sql_types.any
 
@@ -272,9 +276,9 @@ expr_tmpl : Template {
 		sql_allowed_test_type : special_types.i
 	}
 	cast : Template base_expr_tmpl {
-		# The argument to cast.
+		{{{The argument to cast.}}}
 		arg : Required
-		# The type to change it to.
+		{{{The type to change it to.}}}
 		sql_type : Required
 		sql_expr : If sql_type.id B& arg.sql_type.cast == 0
 			Then Error "Cannot perform cast with provided types."
@@ -389,23 +393,23 @@ sql_types : {
 	numeric : int.id B| float.id
 }
 
-# A template for implementing a new SQL provider.
+{{{A template for implementing a new SQL provider.}}}
 sql_provider : Template {
-	# An implementation of `expr_tmpl` suited to this provider.
+	{{{An implementation of \{expr_tmpl} suited to this provider.}}}
 	expr : Required
-	# A transformation set for string escaping. Yes, this is not standard.
+	{{{A transformation set for string escaping. Yes, this is not standard.}}}
 	transformations : Required
-	# The preamble starting a string.
+	{{{The preamble starting a string.}}}
 	quote_start : "'"
-	# The postamble end a string.
+	{{{The postamble end a string.}}}
 	quote_end : "'"
-	# An SQL statement that returns tables and views as a frame of frames with a
-	# `sql_from` containing the string needed to include this entity in a FROM
-	# clause. Other implementation-specific attributes are permitted.
+	{{{An SQL statement that returns tables and views as a frame of frames with a
+	\{sql_from} containing the string needed to include this entity in a
+	\Mono{FROM} clause. Other implementation-specific attributes are permitted.}}}
 	table_discovery : Template retrieve {}
-	# An SQL statement that will return the columns for a particular table or
-	# view as a frame of frames extending `expr.base_expr_tmpl`. Other
-	# implementation-specific attributes are permitted.
+	{{{An SQL statement that will return the columns for a particular table or
+	view as a frame of frames extending \{expr.base_expr_tmpl}. Other
+	# implementation-specific attributes are permitted.}}}
 	column_discovery : Template retrieve {
 		table : Required
 	}

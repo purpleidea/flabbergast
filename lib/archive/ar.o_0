@@ -1,29 +1,30 @@
+Introduction{{{Templates for generating UNIX \Mono{ar} archives, which are conveniently text-only.}}}
 utils_lib : From lib:utils
 
-# A BSD `ar` style archive
+{{{A BSD \Mono{ar} style archive}}}
 archive_tmpl : Template {
-	# The collection of `file_tmpl` files.
+	{{{The collection of \{file_tmpl} files.}}}
 	args : Required
 	value : For file : args Reduce acc & file.value With acc : "!<arch>\n"
-	# The default user ID to create files.
+	{{{The default user ID to create files.}}}
 	uid : 0
-	# The default group ID to create files.
+	{{{The default group ID to create files.}}}
 	gid : 0
-	# The default modification time, as a UNIX epoch time.
+	{{{The default modification time, as a UNIX epoch time.}}}
 	mtime : 0
-	# The user permission bits.
+	{{{The user permission bits.}}}
 	user : 6
-	# The group permission bits.
+	{{{The group permission bits.}}}
 	group : 4
-	# The other permission bits.
+	{{{The other permission bits.}}}
 	other : 4
 }
 
-# A file in a compressed archive
+{{{A file in a compressed archive}}}
 file_tmpl : Template {
-	# The file name.
+	{{{The file name.}}}
 	file_name : Required
-	# The file contents.
+	{{{The file contents.}}}
 	contents : Required
 	uid : Used
 	gid : Used

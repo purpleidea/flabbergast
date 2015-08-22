@@ -1,22 +1,24 @@
-# All the days, for convience of not remembering them numerically.
+Introduction{{{Generate configuration stamps for those ever confusing \Mono{cron} schedules.}}}
+
+{{{All the days, for convience of not remembering them numerically.}}}
 days : For day : [ $sun, $mon, $tues, $wed, $thurs, $fri, $sat ], num : Ordinal Select day : num - 1
-# All the months, for convience of not remembering them numerically.
+{{{All the months, for convience of not remembering them numerically.}}}
 months : For month : [ $jan, $feb, $mar, $apr, $may, $jun, $jul, $aug, $sep, $oct, $nov, $dec ], num : Ordinal Select month : num
 
-# A crontab-compatible scheduling string.
+{{{A crontab-compatible scheduling string.}}}
 schedule : Template {
-	# The minute to run the cron job.
+	{{{The minute to run the cron job.}}}
 	minute : anywhen
-	# The minute to run the cron job.
+	{{{The minute to run the cron job.}}}
 	hour : anywhen
-	# The day_of_month to run the cron job.
+	{{{The day_of_month to run the cron job.}}}
 	day_of_month : anywhen
-	# The month to run the cron job.
+	{{{The month to run the cron job.}}}
 	month : anywhen
-	# The day of the week to run the cron job.
+	{{{The day of the week to run the cron job.}}}
 	day_of_week : anywhen
 
-	# The computed cron scheduling specifier.
+	{{{The computed cron scheduling specifier.}}}
 	cron_value :
 		For part : [
 			{ name : $minutes  value : minute  min : 0  max : 59 },
@@ -37,15 +39,15 @@ schedule : Template {
 		With acc : ""
 }
 
-# A scheduling specifier for any time.
+{{{A scheduling specifier for any time.}}}
 anywhen : {
 	cron_spec : "*"
 	cron_max : Null
 	cron_min : Null
 }
-# A collection of times.
+{{{A collection of times.}}}
 list : Template {
-	# A list of times, either as integers or other specifier templates.
+	{{{A list of times, either as integers or other specifier templates.}}}
 	of : Required
 
 	cron_spec :
@@ -69,13 +71,13 @@ list : Template {
 				In If min Is Null || v < min Then v Else min
 			With min : Null
 }
-# A scheduling specifier for a range of times.
+{{{A scheduling specifier for a range of times.}}}
 range : Template {
-	# The start time.
+	{{{The start time.}}}
 	from : Required
-	# The end time.
+	{{{The end time.}}}
 	to : Required
-	# The increment over the range.
+	{{{The increment over the range.}}}
 	by : Null
 
 	cron_spec :
@@ -92,31 +94,31 @@ range : Template {
 	cron_min : from
 }
 
-# A specification for doing something the first Monday of the year.
+{{{A specification for doing something the first Monday of the year.}}}
 yearly : schedule {
 	minute : 0
 	hour : 0
 	day_of_month : 1
 	month : 1
 }
-# A specification for doing something the first day of the month.
+{{{A specification for doing something the first day of the month.}}}
 monthly : schedule {
 	minute : 0
 	hour : 0
 	day_of_month : 1
 }
-# A specification for doing something every Sunday.
+{{{A specification for doing something every Sunday.}}}
 weekly : schedule {
 	minute : 0
 	hour : 0
 	day_of_week : 0
 }
-# A specification for doing something every midnight.
+{{{A specification for doing something every midnight.}}}
 daily : schedule {
 	minute : 0
 	hour : 0
 }
-# A specification for doing something at the start of every hour.
+{{{A specification for doing something at the start of every hour.}}}
 hourly : schedule {
 	minute : 0
 }

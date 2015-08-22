@@ -1,3 +1,4 @@
+Introduction{{{Apache Aurora framework configuration templates.}}}
 render_lib : From lib:render
 utils_lib : From lib:utils
 
@@ -9,9 +10,9 @@ max_task_failures : 1
 min_process_restart_duration : 15
 priority : 0
 production : False
-# The job scheduling constraints. Each attribute may be set to null to disable,
-# a number for a minimum constraint, or a list of strings with each permitted
-# resource.
+{{{The job scheduling constraints. Each attribute may be set to null to
+disable, a number for a minimum constraint, or a list of strings with each
+permitted resource.}}}
 constraint : {
 	host : Null
 	rack : Null
@@ -22,57 +23,57 @@ resources : {
 	ram : Null
 }
 
-# The configuration of the health checking system.
+{{{The configuration of the health checking system.}}}
 health_check : {
-	# Initial delay for performing an HTTP health check.
+	{{{Initial delay for performing an HTTP health check.}}}
 	initial_interval_secs : 15s
-	# Interval on which to check the task's health via HTTP.
+	{{{Interval on which to check the task's health via HTTP.}}}
 	interval_secs : 10s
-	# HTTP request timeout.
+	{{{HTTP request timeout.}}}
 	timeout_secs : 1s
-	# Maximum number of consecutive failures that tolerated before considering a task unhealthy.
+	{{{Maximum number of consecutive failures that tolerated before considering a task unhealthy.}}}
 	max_consecutive_failures : 0
 }
 
-# The configuration for updating instances within a job.
+{{{The configuration for updating instances within a job.}}}
 update : {
-	# Maximum number of instances to be updated in one iteration.
+	{{{Maximum number of instances to be updated in one iteration.}}}
 	batch_size : 1
-	# Maximum number of seconds before a instance must move into the running state before considered a failure.
+	{{{Maximum number of seconds before a instance must move into the running state before considered a failure.}}}
 	restart_threshold : 1m
-	# Minimum number of seconds a shard must remain in running state before considered a success.
+	{{{Minimum number of seconds a shard must remain in running state before considered a success.}}}
 	watch_secs : 45s
-	# Maximum number of restarts per shard during update. Increments total failure count when this limit is exceeded.
+	{{{Maximum number of restarts per shard during update. Increments total failure count when this limit is exceeded.}}}
 	max_per_shard_failures : 0
-	# Maximum number of shard failures to be tolerated in total during an update.
+	{{{Maximum number of shard failures to be tolerated in total during an update.}}}
 	max_total_failures : 0
-	# Automatically revert modified instances upon failure.
+	{{{Automatically revert modified instances upon failure.}}}
 	rollback_on_failure : True
-	# All threads from a given batch will be blocked from picking up new instances until the entire batch is updated. This essentially simulates the legacy sequential updater algorithm.
+	{{{All threads from a given batch will be blocked from picking up new instances until the entire batch is updated. This essentially simulates the legacy sequential updater algorithm.}}}
 	wait_for_batch_completion : False
-	# Indicates a coordinated update. If no pulses are received within the provided interval the update will be blocked.
+	{{{Indicates a coordinated update. If no pulses are received within the provided interval the update will be blocked.}}}
 	pulse_interval_secs : Null
 }
-# The environments in which jobs may be run.
+{{{The environments in which jobs may be run.}}}
 environments : {
 	prod : "prod"
 	devel : "devel"
 	test : "test"
 	staging : "staging"
 }
-# The policies used when scheduling cron jobs
+{{{The policies used when scheduling cron jobs}}}
 cron_policy : {
 	cancel_new : "CANCEL_NEW"
 	kill_existing : "KILL_EXISTING"
 }
 
-# Top-level container for generating an Aurora configuration file.
+{{{Top-level container for generating an Aurora configuration file.}}}
 aurora_file : Template {
-	# A list of job frames.
+	{{{A list of job frames.}}}
 	jobs : Required
 
 	python_indent : "\t"
-	# The rendered Aurora file
+	{{{The rendered Aurora file}}}
 	value :
 		(For job : jobs
 			Where !(job Is Null)
@@ -80,27 +81,27 @@ aurora_file : Template {
 			With acc : "jobs = [\n") & "\t]\n"
 }
 
-# An Aurora process, defining a binary to run inside a task.
+{{{An Aurora process, defining a binary to run inside a task.}}}
 process : Template render_lib.python.object {
-	# The process name will be made available from the attribute name.
+	{{{The process name will be made available from the attribute name.}}}
 	process_name : Used
-	# The command line, or any string of BASH commands to start the process.
+	{{{The command line, or any string of BASH commands to start the process.}}}
 	command_line : Required
-	# Maximum number of non-zero exit status this process may encounter before
-	# being marked as permanently failed.
+	{{{Maximum number of non-zero exit status this process may encounter before
+	being marked as permanently failed.}}}
 	max_process_failures : Used
-	# Automatically respawn the process, even if it exists successfully.
+	{{{Automatically respawn the process, even if it exists successfully.}}}
 	daemon : False
-	# This process does not determine the success or exit of a task. This is used
-	# for helper processes, such as log savers.
+	{{{This process does not determine the success or exit of a task. This is
+	used for helper processes, such as log savers.}}}
 	ephemeral : False
-	# Minimum number of seconds between process restarts.
+	{{{Minimum number of seconds between process restarts.}}}
 	min_process_restart_duration : Used
-	# This process should run after all non-final processes in a task.
+	{{{This process should run after all non-final processes in a task.}}}
 	final : False
-	# The processes that must be run after this one.
+	{{{The processes that must be run after this one.}}}
 	blocks : []
-	# The processes that must be run before this one.
+	{{{The processes that must be run before this one.}}}
 	requires : []
 
 	python_type : "Process"
@@ -134,30 +135,30 @@ process : Template render_lib.python.object {
 			Reduce "\(acc)\(python_indent)Constraint(order=['\(process_name)', '\(other_process)']),\n"
 			With acc : "")
 }
-# An Aurora task, container of multiple processes.
+{{{An Aurora task, container of multiple processes.}}}
 task : Template render_lib.python.object {
-	# A frame containing a frame for each process that runs inside this task.
+	{{{A frame containing a frame for each process that runs inside this task.}}}
 	processes : Required
-	# The maximum number of times a task can fail before being marked.
+	{{{The maximum number of times a task can fail before being marked.}}}
 	max_task_failures : Used
-	# The maximum number of concurrent processes, or null for unlimited.
+	{{{The maximum number of concurrent processes, or null for unlimited.}}}
 	max_concurrent_processes : Used
-	# How long to wait for processes marked with `final`.
+	{{{How long to wait for processes marked with \{final}.}}}
 	finalization_wait : Used
-	# A frame containing all the resources needed by the task.
+	{{{A frame containing all the resources needed by the task.}}}
 	resources : Used
-	# This defines all the ports used by this task. A port can be an alias, by
-	# defining it to be `$other_port` or null to create a unique end-point.
+	{{{This defines all the ports used by this task. A port can be an alias, by
+	defining it to be \Mono{$other_port} or null to create a unique end-point.}}}
 	port_defs : Template {
 		aurora : $http
 		http : Null
 	}
-	# The primary port.
+	{{{The primary port.}}}
 	primary_port : ports.http
 
-	# This variable will insert the current instance number into commands and such.
+	{{{This variable will insert the current instance number into commands and such.}}}
 	current_instance : { command_line_value : "{{mesos.instance}}" }
-	# This variable will insert the current task ID into commands and such when using Thermos.
+	{{{This variable will insert the current task ID into commands and such when using Thermos.}}}
 	current_task_id : { command_line_value : "{{thermos.task_id}}" }
 	ports :
 		For port_alias : port_defs {}, port_name : Name
@@ -208,28 +209,28 @@ task : Template render_lib.python.object {
 	}
 	string_attrs : {}
 }
-# An Aurora job, which runs a task
+{{{An Aurora job, which runs a task}}}
 job : Template render_lib.python.object {
 	job_name : Used
-	# The task to run in this job.
+	{{{The task to run in this job.}}}
 	task : Required
-	# The user account as whom this job will be scheduled.
+	{{{The user account as whom this job will be scheduled.}}}
 	role : Used
-	# The cluster in which this job will be scheduled.
+	{{{The cluster in which this job will be scheduled.}}}
 	cluster : Used
-	# The environment in which to schedule this job. See `environments`.
+	{{{The environment in which to schedule this job. See \{environments}.}}}
 	environment : Used
-	# The number of instances of this task to schedule.
+	{{{The number of instances of this task to schedule.}}}
 	instances : Required
-	# The cron rescheduling policy, set from `cron_policy`.
+	{{{The cron rescheduling policy, set from \{cron_policy}.}}}
 	cron_collision_policy : Null
-	# The maximum number of task failures to permit.
+	{{{The maximum number of task failures to permit.}}}
 	max_task_failures : Used
-	# The priority of this job when pre-empting other jobs in the scheduler.
+	{{{The priority of this job when pre-empting other jobs in the scheduler.}}}
 	priority : Used
-	# An optional container to use.
+	{{{An optional container to use.}}}
 	container : Null
-	# An optional cron schedule to use, from `lib:unix/cron`
+	{{{An optional cron schedule to use, from \From{lib:unix/cron}}}}
 	cron_schedule : Null
 
 	python_type : "Job"
@@ -341,9 +342,9 @@ job : Template render_lib.python.object {
 				In If x Is Null Then Null Else x.cron_value
 	}
 }
-# A Docker container for a job.
+{{{A Docker container for a job.}}}
 docker_container : Template {
-	# The Docker container to be pulled.
+	{{{The Docker container to be pulled.}}}
 	image : Required
 
 	python_value : "Docker(image = \"" & utils_lib.str_escape(image, transformations : render_lib.python.escape_transform) & "\")"
