@@ -1223,9 +1223,6 @@ For a list of supported databases and their options, view `man flabbergast_sql`.
 ### Parsing (`lib:parse`)
 TODO
 
-### Self-Hosting Compiler (`lib:compiler`)
-There is a compiler capable of generating a real compiler in a target language that implements the KWS VM. Although this should be available on every platform to have supported that platform, it is rather useless for in-application settings.
-
 ### Apache Aurora (`lib:apache/aurora`)
 Configures jobs for running on the Apache Aurora framework, which managers long-running jobs on Mesos.
 
