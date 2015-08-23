@@ -84,12 +84,12 @@ function showUse(term) {
 function showTerm(term, prefix) {
     var termcss = document.getElementById('termcss');
     var visible = [];
-    var hidden = [];
+    var hidden = ["#terms a." + prefix + "none"];
     var known_terms = getTerms();
     for (var it = 0; it < known_terms.length; it++) {
         (known_terms[it] == term ? visible : hidden).push("#terms a." + prefix + "_" + known_terms[it]);
     }
-    termcss.innerHTML = cssForArray(visible, (prefix == "def" ? "color: #4F94CD; " : "") + "font-weight: bold; display: block !important;") + cssForArray(hidden, "display: none;");
+    termcss.innerText = cssForArray(visible, (prefix == "def" ? "color: #4F94CD; " : "") + "font-weight: bold; display: block !important;") + cssForArray(hidden, "display: none;");
 }
 
 function showHide(roller) {

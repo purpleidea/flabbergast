@@ -41,20 +41,20 @@
     </html>
   </xsl:template>
   <xsl:template match="o_0:attr" mode="searchpane">
-    <xsl:element name="a"><xsl:attribute name="href">#<xsl:value-of select="generate-id()"/></xsl:attribute><xsl:attribute name="class"><xsl:for-each select="o_0:def|o_0:use"><xsl:value-of select="concat(local-name(), '_', translate(text(), '.', '-'), ' ')"/></xsl:for-each></xsl:attribute><xsl:for-each select="ancestor::attr"><xsl:value-of select="concat(@name, substring(' .', 1 + count(o_0:type[text() = 'Frame']), 1))"/></xsl:for-each><xsl:value-of select="@name"/>
+    <xsl:element name="a"><xsl:attribute name="href">#<xsl:value-of select="generate-id()"/></xsl:attribute><xsl:attribute name="class"><xsl:for-each select="o_0:def|o_0:use|o_0:description//o_0:use"><xsl:value-of select="concat(local-name(), '_', translate(text(), '.', '-'), ' ')"/></xsl:for-each><xsl:if test="not(o_0:use|o_0:description//o_0:use)">usenone</xsl:if></xsl:attribute><xsl:for-each select="ancestor::attr"><xsl:value-of select="concat(@name, substring(' .', 1 + count(o_0:type[text() = 'Frame']), 1))"/></xsl:for-each><xsl:value-of select="@name"/>
 			(<xsl:value-of select="concat(@startline, ':', @startcol, '-', @endline, ':', @endcol)"/>)
 		</xsl:element>
   </xsl:template>
   <xsl:template match="o_0:attr">
     <dt>
-      <xsl:if test="not(.//o_0:description)">
+      <xsl:if test="not(.//o_0:description | ./o_0:attr)">
         <xsl:attribute name="class">hidden</xsl:attribute>
       </xsl:if>
       <xsl:choose>
-        <xsl:when test="not(.//o_0:description)">
+        <xsl:when test="./o_0:attr|./o_0:use and not(.//o_0:description)">
           <span class="roll" onclick="showHide(this);">▶</span>
         </xsl:when>
-        <xsl:when test="./o_0:attr">
+        <xsl:when test="./o_0:attr|./o_0:use">
           <span class="roll" onclick="showHide(this);">▼</span>
         </xsl:when>
         <xsl:otherwise>
