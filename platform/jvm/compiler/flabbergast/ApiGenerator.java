@@ -21,7 +21,7 @@ class ApiGenerator {
 		Document doc = docBuilder.newDocument();
 		doc.setXmlVersion("1.0");
 		doc.appendChild(doc.createProcessingInstruction("xml-stylesheet",
-				"href=\"o_0-index.xsl\" type=\"text/xsl\""));
+				"href=\"o_0.xsl\" type=\"text/xsl\""));
 		Element node = doc.createElementNS("http://flabbergast.org/api",
 				"o_0:lib");
 		node.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");

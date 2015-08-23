@@ -678,7 +678,7 @@ internal class ApiGenerator {
 	public static ApiGenerator Create(string library_name, string github) {
 		var doc = new XmlDocument();
 		doc.AppendChild(doc.CreateXmlDeclaration("1.0", "UTF-8", null));
-		doc.AppendChild(doc.CreateProcessingInstruction("xml-stylesheet", "href=\"o_0-index.xsl\" type=\"text/xsl\""));
+		doc.AppendChild(doc.CreateProcessingInstruction("xml-stylesheet", "href=\"o_0.xsl\" type=\"text/xsl\""));
 		var node = doc.CreateElement("o_0:lib", "http://flabbergast.org/api");
 		node.SetAttribute("xmlns", "http://www.w3.org/1999/xhtml");
 		node.SetAttribute("name", library_name);
