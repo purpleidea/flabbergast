@@ -30,19 +30,21 @@ class ApiGenerator {
 			node.setAttribute("github", github + "/" + library_name + ".o_0");
 		}
 		doc.appendChild(node);
-		return new ApiGenerator(doc, node);
+		return new ApiGenerator(doc, node, new String[0]);
 	}
 	private final Node node;
 	private final Document document;
 	private Element _desc = null;
 
+	private final String[] names;
 	private final Map<Environment, Boolean> environments = new HashMap<Environment, Boolean>();
 	private final Map<String, Node> refs = new HashMap<String, Node>();
 	private final Map<String, Node> uses = new HashMap<String, Node>();
 
-	private ApiGenerator(Document doc, Node node) {
+	private ApiGenerator(Document doc, Node node, String[] names) {
 		document = doc;
 		this.node = node;
+		this.names = names;
 	}
 
 	public void appendDescriptionText(String text) {
@@ -72,6 +74,27 @@ class ApiGenerator {
 		node.setAttribute("endcol", Integer.toString(region.getEndColumn()));
 		node.setAttribute("informative", informative ? "true" : "false");
 		this.node.appendChild(node);
+
+		String base_name = name;
+		int it = 0;
+		do {
+			Element def_node = document.createElementNS(document
+					.getDocumentElement().getNamespaceURI(), "o_0:def");
+			def_node.appendChild(document.createTextNode(base_name));
+			node.appendChild(def_node);
+			if (it < names.length) {
+				base_name = names[it] + "." + base_name;
+			}
+		} while (it++ < names.length);
+		String[] new_names;
+		if (!type.contains(Type.Template)) {
+			new_names = new String[0];
+		} else {
+			new_names = new String[names.length + 1];
+			System.arraycopy(names, 0, new_names, 0, names.length);
+			new_names[names.length] = name;
+		}
+
 		if (!type.hasAll()) {
 			for (Type t : Type.values()) {
 				if (!type.contains(t))
@@ -84,7 +107,7 @@ class ApiGenerator {
 				node.appendChild(type_node);
 			}
 		}
-		return new ApiGenerator(document, node);
+		return new ApiGenerator(document, node, new String[0]);
 	}
 	private Element getDescription() {
 		if (_desc == null) {

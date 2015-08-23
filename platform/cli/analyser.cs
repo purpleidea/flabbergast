@@ -686,7 +686,7 @@ internal class ApiGenerator {
 			node.SetAttribute("github", github + "/" + library_name + ".o_0");
 		}
 		doc.AppendChild(node);
-		return new ApiGenerator(doc, node);
+		return new ApiGenerator(doc, node, new string[0]);
 	}
 	private readonly XmlNode node;
 	public XmlDocument Document { get; private set; }
@@ -702,13 +702,15 @@ internal class ApiGenerator {
 		}
 	}
 
+	private readonly string[] names;
 	private readonly Dictionary<Environment, bool> environments = new Dictionary<Environment, bool>();
 	private readonly Dictionary<string, XmlNode> refs = new Dictionary<string, XmlNode>();
 	private readonly Dictionary<string, XmlNode> uses = new Dictionary<string, XmlNode>();
 
-	private ApiGenerator(XmlDocument doc, XmlNode node) {
+	private ApiGenerator(XmlDocument doc, XmlNode node, string[] names) {
 		Document = doc;
 		this.node = node;
+		this.names = names;
 	}
 
 	public void AppendDescriptionText(string text) {
@@ -736,6 +738,26 @@ internal class ApiGenerator {
 		node.SetAttribute("endcol", region.EndColumn.ToString());
 		node.SetAttribute("informative", informative ? "true" : "false");
 		this.node.AppendChild(node);
+
+		string base_name = name;
+		var it = 0;
+		do {
+			var def_node = Document.CreateElement("o_0:def", Document.DocumentElement.NamespaceURI);
+			def_node.AppendChild(Document.CreateTextNode(base_name));
+			node.AppendChild(def_node);
+			if (it < names.Length) {
+				base_name = names[it] + "." + base_name;
+			}
+		} while (it++ < names.Length);
+		string[] new_names;
+		if ((type & Type.Template) != 0) {
+			new_names = new string[0];
+		} else {
+			new_names = new string[names.Length + 1];
+			names.CopyTo(new_names, 0);
+			new_names[names.Length] = name;
+		}
+
 		if (type != NameInfo.AnyType) {
 			foreach(var t in Enum.GetValues(typeof(Type)).Cast<Type>()) {
 				if ((type & t) == 0)
@@ -745,7 +767,7 @@ internal class ApiGenerator {
 				node.AppendChild(type_node);
 			}
 		}
-		return new ApiGenerator(Document, node);
+		return new ApiGenerator(Document, node, new_names);
 	}
 	private void Register(Dictionary<string, XmlNode> known, string tag, string content) {
 		if (known.ContainsKey(content)) {
