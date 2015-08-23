@@ -48,18 +48,18 @@
   </xsl:template>
   <xsl:template match="o_0:attr">
     <dt id="{generate-id()}">
-      <xsl:if test="not(.//o_0:description | ./o_0:attr)">
+      <xsl:if test="not(.//o_0:description) and ./o_0:attr">
         <xsl:attribute name="class">hidden</xsl:attribute>
       </xsl:if>
       <xsl:choose>
-        <xsl:when test="./o_0:attr|./o_0:use and not(.//o_0:description)">
-          <span class="roll" onclick="showHide(this);">▶</span>
+        <xsl:when test="not(./o_0:attr)">
+          <span class="roll">■</span>
         </xsl:when>
-        <xsl:when test="./o_0:attr|./o_0:use">
+        <xsl:when test="./o_0:description">
           <span class="roll" onclick="showHide(this);">▼</span>
         </xsl:when>
         <xsl:otherwise>
-          <span class="roll">■</span>
+          <span class="roll" onclick="showHide(this);">▶</span>
         </xsl:otherwise>
       </xsl:choose>
       <span class="use" onclick="{concat('showUse(', $apos, @name, $apos, ');')}" title="Find uses">
