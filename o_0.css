@@ -13,29 +13,35 @@ color:#36648B;
 }
 
 dt {
-float:left;
-clear:left;
-text-align:right;
+border:1px solid #fff;
+margin-top:.2em;
+margin-bottom:.2em;
+padding:.2em .2em .4em;
+}
+
+dt:hover {
+border:1px solid #4F94CD;
+border-radius:.2em;
+transition:border-color .5s ease-in-out;
+}
+
+dt span {
 color:#36648B;
-width:5em;
 cursor:pointer;
 }
 
-dt:after {
-content:":";
-}
-
 dd {
-margin:0 0 2em 6em;
 padding:.2em;
 }
 
 .info {
+float:right;
+clear:left;
 text-align:right;
 padding:.2em;
 }
 
-.info .deflink {
+.uses .deflink {
 color:#36648B;
 margin-left:1em;
 margin-right:1em;
@@ -46,7 +52,7 @@ cursor:pointer;
 color:#4F94CD;
 border:1px solid #4F94CD;
 border-radius:.2em;
-font-size:120%;
+font-size:80%;
 box-shadow:.1em .1em .3em 0 rgba(0,0,0,0.45);
 margin:.5em;
 padding:.3em;

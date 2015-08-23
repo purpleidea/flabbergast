@@ -46,17 +46,11 @@
 		</xsl:element>
   </xsl:template>
   <xsl:template match="o_0:attr">
-    <dt onclick="{concat('showUse(', $apos, @name, $apos, ');')}" id="{generate-id()}" title="Find uses">
-      <xsl:value-of select="@name"/>
-    </dt>
-    <dd>
-      <xsl:apply-templates select="o_0:description/*|o_0:description/text()"/>
+    <dt>
+      <span onclick="{concat('showUse(', $apos, @name, $apos, ');')}" id="{generate-id()}" title="Find uses">
+        <xsl:value-of select="@name"/>
+      </span>
       <div class="info">
-        <xsl:for-each select="o_0:use">
-          <span onclick="{concat('showDef(', $apos, translate(text(), '.', '-'), $apos, ');')}" title="Find definitions" class="deflink">
-            <xsl:value-of select="text()"/>
-          </span>
-        </xsl:for-each>
         <xsl:apply-templates select="o_0:type"/>
         <xsl:choose>
           <xsl:when test="/o_0:lib/@github">
@@ -69,6 +63,14 @@
           </xsl:otherwise>
         </xsl:choose>
       </div>
+    </dt>
+    <dd>
+      <xsl:apply-templates select="o_0:description/*|o_0:description/text()"/>
+      <xsl:if test="o_0:use">
+        <div class="uses">Uses:
+        <xsl:for-each select="o_0:use"><span onclick="{concat('showDef(', $apos, translate(text(), '.', '-'), $apos, ');')}" title="Find definitions" class="deflink"><xsl:value-of select="text()"/></span></xsl:for-each>
+      </div>
+      </xsl:if>
       <xsl:if test="o_0:attr">
         <dl>
           <xsl:apply-templates select="o_0:attr"/>
