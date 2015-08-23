@@ -24,6 +24,7 @@
           <div id="terms">
             <div>
               <xsl:apply-templates mode="searchpane" select="o_0:lib//o_0:attr"/>
+              <div id="nomatches" style="display: none">No matches.</div>
             </div>
           </div>
         </div>

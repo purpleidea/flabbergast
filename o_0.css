@@ -132,6 +132,16 @@ background-color:#F2DEDE;
 border-color:#AA4542;
 }
 
+#terms #nomatches {
+border:none;
+font-weight:700;
+text-align:center;
+vertical-align:middle;
+height:50%;
+padding-top:30%;
+overflow-y:hidden;
+}
+
 #terms {
 display:table-row;
 height:100%;

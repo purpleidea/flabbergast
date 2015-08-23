@@ -1,5 +1,17 @@
 var validLookup = /^([a-z][a-zA-Z0-9_]*(\.[a-z][a-zA-Z0-9_]*)*)?$/;
 
+function checkNoMatches() {
+    var searchlist = document.getElementById('terms').getElementsByTagName('div')[0].getElementsByTagName('a');
+    var any_visible = false;
+    for (var it = 0; it < searchlist.length; it++) {
+        if (window.getComputedStyle(searchlist[it]).getPropertyValue('display') != 'none') {
+            any_visible = true;
+            break;
+        }
+    }
+    document.getElementById('nomatches').style.display = any_visible ? 'none' : 'block';
+}
+
 function cssForArray(arr, css) {
     if (arr.length == 0) {
         return "";
@@ -69,6 +81,7 @@ function searchChange() {
         } else {
             termcss.innerHTML = cssForArray(contains_defs, "font-weight: bold; color: #4F94CD; display: block !important;") + cssForArray(contains_uses, "font-weight: bold; display: block !important;") + cssForArray(unmatched, "display: none;");
         }
+        checkNoMatches();
     } else {
         searchbox.className = "error";
     }
@@ -92,6 +105,7 @@ function showTerm(term, prefix) {
         (known_terms[it] == term ? visible : hidden).push("#terms a." + prefix + "_" + known_terms[it]);
     }
     termcss.innerText = cssForArray(visible, (prefix == "def" ? "color: #4F94CD; " : "") + "font-weight: bold; display: block !important;") + cssForArray(hidden, "display: none;");
+    checkNoMatches();
 }
 
 function showHide(roller) {
