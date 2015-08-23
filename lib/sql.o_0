@@ -77,7 +77,7 @@ query : Template retrieve {
 {{{Convert a value into a SQL expression if possible.}}}
 sql_marshall : utils_lib.str_concatifier(base : sql_marshall_list, delimiter : "")
 
-{{{Convert a Flist of labbergast items to an SQL expression.}}}
+{{{Convert a list of Flabbergast items to an SQL expression.}}}
 sql_marshall_list : Template {
 	provider : Required
 	value :
