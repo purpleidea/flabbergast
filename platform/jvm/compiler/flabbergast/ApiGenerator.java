@@ -105,7 +105,7 @@ class ApiGenerator {
 		Element node = document.createElementNS(document.getDocumentElement()
 				.getNamespaceURI(), tag);
 		node.appendChild(document.createTextNode(content));
-		known.put(tag, node);
+		known.put(content, node);
 		this.node.appendChild(node);
 	}
 	public void registerRef(String uri) {

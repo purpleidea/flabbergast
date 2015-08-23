@@ -753,7 +753,7 @@ internal class ApiGenerator {
 		}
 		var node = Document.CreateElement(tag, Document.DocumentElement.NamespaceURI);
 		node.AppendChild(Document.CreateTextNode(content));
-		known[tag] = node;
+		known[content] = node;
 		this.node.AppendChild(node);
 	}
 	public void RegisterRef(string uri) {
