@@ -15,7 +15,6 @@
         <script type="text/javascript">function getTerms() { return [ <xsl:for-each select="(//o_0:def/text()|//o_0:use/text())[generate-id() = generate-id(key('terms', .)[1])]"> "<xsl:value-of select="translate(., '.', '-')"/>", </xsl:for-each> ]; } </script>
       </head>
       <body onload="pageLoad();">
-        <h1><a href=".">⌂</a> lib:<xsl:value-of select="o_0:lib/@name"/></h1>
         <div id="searchpane">
           <div id="searcharea">
             <input type="text" id="search" onchange="searchChange();" onkeypress="searchChange();" onpaste="searchChange();" oninput="searchChange();"/>
@@ -28,7 +27,8 @@
             </div>
           </div>
         </div>
-        <xsl:apply-templates select="o_0:lib/o_0:description/*|o_0:lib/o_0:description/text()"/>
+        <h1><a href=".">⌂</a> lib:<xsl:value-of select="o_0:lib/@name"/></h1>
+        <p><xsl:apply-templates select="o_0:lib/o_0:description/*|o_0:lib/o_0:description/text()"/></p>
         <div id="references">
           <xsl:for-each select="//o_0:ref/text()[not(contains(., 'interop')) and generate-id() = generate-id(key('refs', .)[1])]">
             <a href="{concat('doc-', translate(., '/', '-'), '.xml')}">lib:<xsl:value-of select="."/></a>

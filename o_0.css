@@ -95,6 +95,10 @@ text-align:justify;
 hyphens:auto;
 }
 
+h1 + p {
+font-size:120%;
+}
+
 #searchpane {
 position:fixed;
 top:0;
