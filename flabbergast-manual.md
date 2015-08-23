@@ -1156,6 +1156,8 @@ So, the Flabbergast libraries look like they do to avoid I/O and minimise the en
 
 There are platform specific libraries, which end in `interop`, to provide access to the underlying libraries. Do not access these libraries directly. Instead, using the corresponding platform-independent library (_e.g._, `utils` rather than `utilsinterop`). These libraries enhance the functionality of these base libraries, but the originals may still be visible in stack traces; consider them an implementation detail.
 
+Complete, up-to-date documentation is available on the [Flabbergast Documentation](http://docs.flabbergast.org/) site.
+
 ### General Utilities (`lib:utils`)
 This library is a collection of convenience function-like templates. It has several broad categories of functions:
 
