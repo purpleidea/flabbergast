@@ -104,7 +104,7 @@ function showTerm(term, prefix) {
     for (var it = 0; it < known_terms.length; it++) {
         (known_terms[it] == term ? visible : hidden).push("#terms a." + prefix + "_" + known_terms[it]);
     }
-    termcss.innerText = cssForArray(visible, (prefix == "def" ? "color: #4F94CD; " : "") + "font-weight: bold; display: block !important;") + cssForArray(hidden, "display: none;");
+    termcss.innerHTML = cssForArray(visible, (prefix == "def" ? "color: #4F94CD; " : "") + "font-weight: bold; display: block !important;") + cssForArray(hidden, "display: none;");
     checkNoMatches();
 }
 
