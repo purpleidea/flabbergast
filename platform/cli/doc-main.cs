@@ -32,8 +32,8 @@ namespace Flabbergast {
 			string output_root = ".";
 			var show_help = false;
 			var options = new OptionSet {
-				{"g|github", "The URL to the GitHub version of these files.", v => github = v},
-				{"o|output", "The directory to place the docs.", v => output_root = v},
+				{"g=|github", "The URL to the GitHub version of these files.", v => github = v},
+				{"o=|output", "The directory to place the docs.", v => output_root = v},
 				{"h|help", "show this message and exit", v => show_help = v != null}
 			};
 
