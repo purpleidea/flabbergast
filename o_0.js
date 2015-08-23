@@ -4,7 +4,9 @@ function cssForArray(arr, css) {
     if (arr.length == 0) {
         return "";
     }
-    return arr.join() + "{" + css + "}";
+    return arr.map(function(sel) {
+        return sel + "{" + css + "}";
+    }).join("\n");
 }
 
 function pageLoad() {
