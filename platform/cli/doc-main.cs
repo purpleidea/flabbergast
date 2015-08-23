@@ -64,7 +64,7 @@ namespace Flabbergast {
 			var collector = new ConsoleCollector();
 			var success = true;
 			foreach (var dir in directories) {
-				Discover(dir, dir.Length, github, output_root, collector);
+				Discover(dir, dir.Length + (dir[dir.Length - 1] == Path.DirectorySeparatorChar ? 0 : 1), github, output_root, collector);
 			}
 			return success ? 0 : 1;
 		}
