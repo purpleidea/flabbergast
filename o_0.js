@@ -21,6 +21,16 @@ function cssForArray(arr, css) {
     }).join("\n");
 }
 
+function expandAll(id) {
+    for (var target = document.getElementById(id); target.nodeName == 'DT'; target = target.parentElement.parentElement.previousElementSibling) {
+        if (target.className == 'hidden') {
+            target.className = null;
+            target.getElementsByClassName('roll')[0].textContent = "▼";
+        }
+    }
+    return true;
+}
+
 function pageLoad() {
     var term = document.location.hash;
     if (term.length > 0 && term.startsWith("term-")) {

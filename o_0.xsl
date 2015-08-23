@@ -28,7 +28,9 @@
           </div>
         </div>
         <h1><a href=".">⌂</a> lib:<xsl:value-of select="o_0:lib/@name"/></h1>
-        <p><xsl:apply-templates select="o_0:lib/o_0:description/*|o_0:lib/o_0:description/text()"/></p>
+        <p>
+          <xsl:apply-templates select="o_0:lib/o_0:description/*|o_0:lib/o_0:description/text()"/>
+        </p>
         <div id="references">
           <xsl:for-each select="//o_0:ref/text()[not(contains(., 'interop')) and generate-id() = generate-id(key('refs', .)[1])]">
             <a href="{concat('doc-', translate(., '/', '-'), '.xml')}">lib:<xsl:value-of select="."/></a>
@@ -42,9 +44,7 @@
     </html>
   </xsl:template>
   <xsl:template match="o_0:attr" mode="searchpane">
-    <xsl:element name="a"><xsl:attribute name="href">#<xsl:value-of select="generate-id()"/></xsl:attribute><xsl:attribute name="class"><xsl:for-each select="o_0:def|o_0:use|o_0:description//o_0:use"><xsl:value-of select="concat(local-name(), '_', translate(text(), '.', '-'), ' ')"/></xsl:for-each><xsl:if test="not(o_0:use|o_0:description//o_0:use)">usenone</xsl:if></xsl:attribute><xsl:for-each select="ancestor::attr"><xsl:value-of select="concat(@name, substring(' .', 1 + count(o_0:type[text() = 'Frame']), 1))"/></xsl:for-each><xsl:value-of select="@name"/>
-			(<xsl:value-of select="concat(@startline, ':', @startcol, '-', @endline, ':', @endcol)"/>)
-		</xsl:element>
+    <a href="{concat('#', generate-id())}" onclick="{concat('expandAll(', $apos, generate-id(), $apos, ')')}"><xsl:attribute name="class"><xsl:for-each select="o_0:def|o_0:use|o_0:description//o_0:use"><xsl:value-of select="concat(local-name(), '_', translate(text(), '.', '-'), ' ')"/></xsl:for-each><xsl:if test="not(o_0:use|o_0:description//o_0:use)">usenone</xsl:if></xsl:attribute><xsl:for-each select="ancestor::attr"><xsl:value-of select="concat(@name, substring(' .', 1 + count(o_0:type[text() = 'Frame']), 1))"/></xsl:for-each><xsl:value-of select="@name"/> (<xsl:value-of select="concat(@startline, ':', @startcol, '-', @endline, ':', @endcol)"/>)</a>
   </xsl:template>
   <xsl:template match="o_0:attr">
     <dt id="{generate-id()}">
