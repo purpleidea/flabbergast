@@ -47,7 +47,21 @@
   </xsl:template>
   <xsl:template match="o_0:attr">
     <dt>
-      <span onclick="{concat('showUse(', $apos, @name, $apos, ');')}" id="{generate-id()}" title="Find uses">
+      <xsl:if test="not(.//o_0:description)">
+        <xsl:attribute name="class">hidden</xsl:attribute>
+      </xsl:if>
+      <xsl:choose>
+        <xsl:when test="not(.//o_0:description)">
+          <span class="roll" onclick="showHide(this);">▶</span>
+        </xsl:when>
+        <xsl:when test="./o_0:attr">
+          <span class="roll" onclick="showHide(this);">▼</span>
+        </xsl:when>
+        <xsl:otherwise>
+          <span class="roll">■</span>
+        </xsl:otherwise>
+      </xsl:choose>
+      <span class="use" onclick="{concat('showUse(', $apos, @name, $apos, ');')}" id="{generate-id()}" title="Find uses">
         <xsl:value-of select="@name"/>
       </span>
       <div class="info">

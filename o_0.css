@@ -25,13 +25,22 @@ border-radius:.2em;
 transition:border-color .5s ease-in-out;
 }
 
-dt span {
+dt span.use {
 color:#36648B;
 cursor:pointer;
 }
 
+dt span.roll {
+color:#ddd;
+padding-right:.5em;
+}
+
 dd {
 padding:.2em;
+}
+
+dt.hidden + dd {
+display:none;
 }
 
 .info {

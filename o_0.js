@@ -92,6 +92,12 @@ function showTerm(term, prefix) {
     termcss.innerHTML = cssForArray(visible, (prefix == "def" ? "color: #4F94CD; " : "") + "font-weight: bold; display: block !important;") + cssForArray(hidden, "display: none;");
 }
 
+function showHide(roller) {
+    var is_hidden = roller.parentNode.className == "hidden";
+    roller.textContent = is_hidden ? "▼" : "▶";
+    roller.parentNode.className = is_hidden ? "" : "hidden";
+}
+
 function updateRefs(term) {
     var hash_name = term == null ? null : ("term-" + term);
     var reflist = document.getElementById('references').childNodes;
