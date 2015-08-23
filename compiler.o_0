@@ -2001,7 +2001,7 @@ language_tmpl : Template {
 						actions : [
 							apigen.add_reference { field : $uri },
 							apigen.description_tag {
-								tag : "o_0:use"
+								tag : "o_0:ref"
 								xmlns : xmlns_api
 								require_prefix : "lib:"
 								contents_field : $uri
