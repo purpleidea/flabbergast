@@ -44,10 +44,12 @@
     </html>
   </xsl:template>
   <xsl:template match="o_0:attr" mode="searchpane">
-    <a href="{concat('#', generate-id())}" onclick="{concat('expandAll(', $apos, generate-id(), $apos, ')')}"><xsl:attribute name="class"><xsl:for-each select="o_0:def|o_0:use|o_0:description//o_0:use"><xsl:value-of select="concat(local-name(), '_', translate(text(), '.', '-'), ' ')"/></xsl:for-each><xsl:if test="not(o_0:use|o_0:description//o_0:use)">usenone</xsl:if></xsl:attribute><xsl:for-each select="ancestor::attr"><xsl:value-of select="concat(@name, substring(' .', 1 + count(o_0:type[text() = 'Frame']), 1))"/></xsl:for-each><xsl:value-of select="@name"/> (<xsl:value-of select="concat(@startline, ':', @startcol, '-', @endline, ':', @endcol)"/>)</a>
+    <xsl:variable name="id">item-<xsl:for-each select="./ancestor::o_0:attr"><xsl:value-of select="@name"/>-</xsl:for-each><xsl:value-of select="@name"/></xsl:variable>
+    <a href="{concat('#', $id)}" onclick="{concat('expandAll(', $apos, $id, $apos, ')')}"><xsl:attribute name="class"><xsl:for-each select="o_0:def|o_0:use|o_0:description//o_0:use"><xsl:value-of select="concat(local-name(), '_', translate(text(), '.', '-'), ' ')"/></xsl:for-each><xsl:if test="not(o_0:use|o_0:description//o_0:use)">usenone</xsl:if></xsl:attribute><xsl:for-each select="./ancestor::o_0:attr"><xsl:value-of select="concat(@name, substring(' .', 1 + count(o_0:type[text() = 'Frame']), 1))"/></xsl:for-each><xsl:value-of select="@name"/> (<xsl:value-of select="concat(@startline, ':', @startcol, '-', @endline, ':', @endcol)"/>)</a>
   </xsl:template>
   <xsl:template match="o_0:attr">
-    <dt id="{generate-id()}">
+    <xsl:variable name="id">item-<xsl:for-each select="./ancestor::o_0:attr"><xsl:value-of select="@name"/>-</xsl:for-each><xsl:value-of select="@name"/></xsl:variable>
+    <dt id="{$id}">
       <xsl:if test="not(.//o_0:description) and ./o_0:attr">
         <xsl:attribute name="class">hidden</xsl:attribute>
       </xsl:if>
