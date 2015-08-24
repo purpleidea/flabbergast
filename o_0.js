@@ -33,8 +33,8 @@ function expandAll(id) {
 
 function pageLoad() {
     var term = document.location.hash;
-    if (term.length > 0 && term.startsWith("term-")) {
-        term = term.substring(5);
+    if (term.startsWith("#term-")) {
+        term = term.substring(6);
         var searchbox = document.getElementById('search');
         searchbox.value = term;
         searchChange();
