@@ -22,7 +22,7 @@ function cssForArray(arr, css) {
 }
 
 function expandAll(id) {
-    for (var target = document.getElementById(id); target.nodeName == 'DT'; target = target.parentElement.parentElement.previousElementSibling) {
+    for (var target = document.getElementById(id); target != null && target.nodeName == 'DT'; target = target.parentElement.parentElement.previousElementSibling) {
         if (target.className == 'hidden') {
             target.className = null;
             target.getElementsByClassName('roll')[0].textContent = "▼";
@@ -38,6 +38,8 @@ function pageLoad() {
         var searchbox = document.getElementById('search');
         searchbox.value = term;
         searchChange();
+    } else if (term.startsWith("#item-")) {
+        expandAll(term.substring(1));
     }
 }
 
