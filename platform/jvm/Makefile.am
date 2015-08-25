@@ -117,8 +117,10 @@ CLEANFILES = \
 	flabbergast-runtime-$(VERSION)-sources.jar \
 	flabbergast-compiler-$(VERSION)-sources.jar \
 	flabbergast-stdlib-$(VERSION)-sources.jar \
+	flabbergast-testing-$(VERSION)-sources.jar \
 	flabbergast-runtime-$(VERSION)-javadoc.jar \
 	flabbergast-compiler-$(VERSION)-javadoc.jar \
 	flabbergast-stdlib-$(VERSION)-javadoc.jar \
+	flabbergast-testing-$(VERSION)-javadoc.jar \
 	$(TESTS) \
 	$(NULL)
