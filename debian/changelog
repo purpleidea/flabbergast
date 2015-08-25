@@ -1,3 +1,17 @@
+flabbergast (0.9~ppa0) trusty; urgency=medium
+
+  * Move compiler out of the library space
+  * Create automatic documentation system
+  * Add SQL query generation library
+  * Change usage of str_pad
+  * Allow colons in URIs
+  * Switch to JLine 2.x
+  * Use Flabbergast type names over platform type names
+  * Add flattenifier and use it for some string operations
+  * Make everything Java 1.5 compatible
+
+ -- Andre Masella <andre@masella.name>  Tue, 25 Aug 2015 19:31:02 -0400
+
 flabbergast (0.8~ppa1) trusty; urgency=medium
 
   * Include build dependency on rsync 
