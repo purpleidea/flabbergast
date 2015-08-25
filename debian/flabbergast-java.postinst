@@ -7,7 +7,7 @@ case "$1" in
 			--slave /usr/bin/flabbergast-docgen flabbergast-docgen /usr/bin/jflabbergast-docgen \
 			--slave /usr/share/man/man1/flabbergast.1.gz flabbergast.1.gz /usr/share/man/man1/jflabbergast.1.gz \
 			--slave /usr/share/man/man1/flabbergast-repl.1.gz flabbergast-repl.1.gz /usr/share/man/man1/jflabbergast-repl.1.gz \
-			--slave /usr/share/man/man1/flabbergast-docgen.1.gz flabbergast-docgen.1.gz /usr/share/man/man1/jflabbergast-docgen.1.gz \
+			--slave /usr/share/man/man1/flabbergast-docgen.1.gz flabbergast-docgen.1.gz /usr/share/man/man1/jflabbergast-docgen.1.gz
 		update-alternatives --quiet --auto flabbergast
 		;;
 	abort-upgrade|abort-remove|abort-deconfigure)
