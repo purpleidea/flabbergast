@@ -34,7 +34,7 @@ class WriterCompilationUnit extends CompilationUnit<Boolean> {
 		for (int it = 0; it < interfaces.length; it++) {
 			interface_names[it] = getInternalName(interfaces[it]);
 		}
-		visitor.visit(Opcodes.V1_7, access, class_name, null,
+		visitor.visit(Opcodes.V1_5, access, class_name, null,
 				getInternalName(superclass), interface_names);
 		return visitor;
 	}
