@@ -158,7 +158,7 @@ python : {
 					literal_count : If literal_attr Is Null Then 0 Else 1
 					str_count : If str_attr Is Null Then 0 Else 1
 					ml_str_count : If ml_str_attr Is Null Then 0 Else 1
-					attr : (literal_attr ?? str_attr) ?? ml_str_attr
+					attr : ((literal_attr ?? str_attr) ?? ml_str_attr) Enforce Str
 					value : "\n\(python_indent)\(attr_name) = \(attr),"
 					ok :
 						If literal_count Enforce Int + str_count Enforce Int + ml_str_count Enforce Int > 1

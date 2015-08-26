@@ -45,9 +45,9 @@ query : Template retrieve {
 
 	{{{From the connection, select the correct database provider.}}}
 	implementation :
-		(For provider : sql_providers, provider_name : Name
-			Where provider_name == connection.provider
-			Reduce provider With acc : Null) ?? (Error "Unsupported database “\(connection.provider)”. This library must be mismatched to the Flabbergast runtime.")
+		((For provider : sql_providers, provider_name : Name
+			Where provider_name == connection.provider Enforce Str
+			Reduce provider With acc : Null) ?? (Error "Unsupported database “\(connection.provider Enforce Str)”. This library must be mismatched to the Flabbergast runtime.")) Enforce Frame
 
 	{{{Expand the where template.}}}
 	exp_where : where {}
@@ -114,8 +114,8 @@ synthetic_sql_type : Template {
 		(For type : sql_types
 			Where type Is Frame && type.id B& coerce != 0
 			Reduce If acc Is Null
-				Then type.name
-				Else acc & " or " & type.name
+				Then type.name Enforce Str
+				Else acc Enforce Str & " or " & type.name Enforce Str
 			With acc : Null) ?? "none"
 }
 
