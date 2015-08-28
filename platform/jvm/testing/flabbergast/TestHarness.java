@@ -48,6 +48,7 @@ public class TestHarness {
 			all_succeeded &= collector.isParseDirty();
 		}
 		TaskMaster task_master = new TestTaskMaster();
+		task_master.addUriHandler(BuiltInLibraries.INSTANCE);
 		for (File file : new File(root, "errors")
 				.listFiles(new OnlySourceFiles())) {
 			boolean success;
