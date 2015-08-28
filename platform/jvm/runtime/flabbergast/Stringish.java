@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.text.Collator;
+import java.text.DecimalFormat;
 import java.util.Iterator;
 import java.util.Stack;
 
@@ -19,11 +20,12 @@ public abstract class Stringish
 		return new SimpleStringish(new String(new int[]{(int) codepoint}, 0, 1));
 	}
 
-	public static Stringish fromDouble(double value, boolean expoential,
+	public static Stringish fromDouble(double value, boolean exponential,
 			long digits) {
-		return new SimpleStringish(String.format("%"
-				+ (digits > 0 ? "." + digits : "") + (expoential ? "e" : "f"),
-				value));
+		DecimalFormat format = new DecimalFormat(exponential ? "#.#E0" : "#.#");
+		format.setMinimumFractionDigits((int) digits);
+		format.setMaximumFractionDigits((int) digits);
+		return new SimpleStringish(format.format(value));
 	}
 
 	public static Stringish fromInt(long value, boolean hex, long digits) {

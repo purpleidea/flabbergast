@@ -25,8 +25,11 @@ float_to_str_list : Template {
 	value :
 		Let
 			format_code :
-				(If exponential Then "e" Else "F") &
-				(If digits Enforce Int >= 0 Then digits Else Error "The number of digits must be positive.")
+				If digits Enforce Int < 0
+					Then Error "The number of digits must be positive."
+					Else
+						(For x : 1 Through digits Reduce acc & "0" With acc : "0.") &
+						(If exponential Then "E0" Else "")
 		In
 			For arg : args, arg_name : Name
 			Select arg_name : XInvoke System.Double ToString (arg To Float, format_code Enforce Str)
