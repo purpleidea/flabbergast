@@ -268,7 +268,7 @@ parse_int : firstifier(base : parse_int_list)
 {{{Convert strings containing digits into integers.}}}
 parse_int_list : Template ( From lib:utilsinterop ).parse_int_list {
 	args : Used
-	# The radix to use for the digits. The limits of this are platform-dependant.
+	{{{The radix to use for the digits. The limits of this are platform-dependant.}}}
 	radix : 10
 }
 
