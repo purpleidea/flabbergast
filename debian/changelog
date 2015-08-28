@@ -1,3 +1,15 @@
+flabbergast (0.10~ppa0) trusty; urgency=medium
+
+  * Add PostgreSQL discovery commands
+  * Remove circular dependency between lib:utils and lib:math
+  * Check for zero-length names in DoLookup
+  * Fix SQL column lookups
+  * Pass along CLASSPATH for JDBC drivers
+  * Add missing // to JDBC URLs
+  * Improve URIs in vim highlighting
+
+ -- Andre Masella <andre@masella.name>  Thu, 27 Aug 2015 21:16:14 -0400
+
 flabbergast (0.9~ppa1) trusty; urgency=medium
 
   * Fix flabbergast-java postinst script
