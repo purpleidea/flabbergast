@@ -175,6 +175,15 @@ lastifier : Template {
 	}
 }
 
+{{{Checks if the arguments match reference values.}}}
+matches : Template {
+	{{{A list of items to compare. The items may be of any comparable type.}}}
+	args : Required
+	{{{A list of reference values to compare against. These must match the length and types of \{args}.}}}
+	refs : Required
+	value : For x : args, y : refs Reduce acc && x == y With acc : True
+}
+
 {{{Finds the maximum in a list of values.}}}
 max : maxifier(base : identity)
 
