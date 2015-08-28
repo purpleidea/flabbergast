@@ -175,13 +175,24 @@ lastifier : Template {
 	}
 }
 
+{{{Remove attribute names from a frame or compact entries in a list.}}}
+list : listifier(base : identity)
+
+{{{Chang a function-like template to remove attribute names from a frame or compact entries in a list.}}}
+listifier : Template {
+	base : Required
+	value : Template base {
+		value +original: For x : original Select x
+	}
+}
+
 {{{Checks if the arguments match reference values.}}}
 matches : Template {
 	{{{A list of items to compare. The items may be of any comparable type.}}}
 	args : Required
 	{{{A list of reference values to compare against. These must match the length and types of \{args}.}}}
 	refs : Required
-	value : For x : args, y : refs Reduce acc && x == y With acc : True
+	value : For x : args, y : refs Reduce acc && (x Is Null && y Is Null || x == y) With acc : True
 }
 
 {{{Finds the maximum in a list of values.}}}
