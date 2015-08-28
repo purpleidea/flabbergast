@@ -209,6 +209,7 @@ maxifier : Template {
 			Reduce
 				If acc Is Null
 					Then item
+					Else If acc Is Float && acc Is NaN || item Is Float && item Is NaN Then NaN
 					Else If acc > item Then acc Else item
 			With acc : Null
 	}
@@ -228,6 +229,7 @@ minifier : Template {
 			Reduce
 				If acc Is Null
 					Then item
+					Else If acc Is Float && acc Is NaN || item Is Float && item Is NaN Then NaN
 					Else If acc < item Then acc Else item
 			With acc : Null
 	}
