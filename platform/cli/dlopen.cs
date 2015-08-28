@@ -43,6 +43,10 @@ namespace Flabbergast {
 			paths.Add(path);
 		}
 
+		public void ClearPaths() {
+			paths.Clear();
+		}
+
 		public static List<string> GenerateDefaultPaths() {
 			var paths = new List<string>();
 			var env_var = Environment.GetEnvironmentVariable("FLABBERGAST_PATH");

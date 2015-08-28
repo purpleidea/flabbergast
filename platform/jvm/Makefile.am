@@ -35,7 +35,7 @@ TESTS = flabbergast-testing-$(VERSION).jar
 TEST_EXTENSIONS = .jar
 JAR_LOG_COMPILER = ./run_test
 AM_JAR_LOG_FLAGS = "$(TESTING_CLASSPATH)"
-TESTING_CLASSPATH = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):flabbergast-runtime-$(VERSION).jar:flabbergast-compiler-$(VERSION).jar
+TESTING_CLASSPATH = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):flabbergast-runtime-$(VERSION).jar:flabbergast-compiler-$(VERSION).jar:flabbergast-stdlib-$(VERSION).jar
 
 RUNTIME_INPUTS = $(wildcard runtime/flabbergast/*.java)
 COMPILER_INPUTS = $(wildcard compiler/flabbergast/*.java)
@@ -61,7 +61,7 @@ flabbergast-stdlib-$(VERSION).jar flabbergast-stdlib-$(VERSION)-sources.jar flab
 	rm -rf .build
 	$(JAR) cf flabbergast-stdlib-$(VERSION)-javadoc.jar -C stdlib-javadoc .
 
-flabbergast-testing-$(VERSION).jar flabbergast-testing-$(VERSION)-sources.jar flabbergast-testing-$(VERSION)-javadoc.jar: testing.manifest $(TESTING_INPUTS) flabbergast-compiler-$(VERSION).jar
+flabbergast-testing-$(VERSION).jar flabbergast-testing-$(VERSION)-sources.jar flabbergast-testing-$(VERSION)-javadoc.jar: testing.manifest $(TESTING_INPUTS) flabbergast-compiler-$(VERSION).jar flabbergast-stdlib-$(VERSION).jar
 	CLASSPATH=$(TESTING_CLASSPATH) ./jarc testing $(VERSION)
 
 runtime.manifest: Makefile

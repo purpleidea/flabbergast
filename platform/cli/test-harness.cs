@@ -102,8 +102,11 @@ namespace Flabbergast
             var unit = new CompilationUnit(module_builder, false);
             var id = 0;
             var success = true;
-            success &= DoTests(Path.Combine(directory, "..", "..", "..", "..", "tests"), "*", unit, ref id);
-            success &= DoTests(Path.Combine(directory, "..", "..", "tests"), "I", unit, ref id);
+            var lib = new DynamicallyCompiledLibraries(new DirtyCollector());
+            lib.ClearPaths();
+            lib.AppendPath(Path.Combine(directory, "..", "..", "..", "..", "lib"));
+            success &= DoTests(Path.Combine(directory, "..", "..", "..", "..", "tests"), "*", unit, lib, ref id);
+            success &= DoTests(Path.Combine(directory, "..", "..", "tests"), "I", unit, lib, ref id);
             return success ? 0 : 1;
         }
 
@@ -118,7 +121,7 @@ namespace Flabbergast
             return files;
         }
 
-        public static bool DoTests(string root, string type, CompilationUnit unit, ref int id)
+        public static bool DoTests(string root, string type, CompilationUnit unit, UriLoader lib, ref int id)
         {
             var all_succeeded = true;
             if (!Directory.Exists(root))
@@ -136,6 +139,7 @@ namespace Flabbergast
                 all_succeeded &= collector.ParseDirty;
             }
             var task_master = new TestTaskMaster();
+            task_master.AddUriHandler(lib);
             foreach (var file in GetFiles(root, "errors"))
             {
                 bool success;
