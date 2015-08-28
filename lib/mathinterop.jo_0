@@ -10,7 +10,7 @@ angle_unit_turns : 6.283185307179586231996
 ceiling_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XInvoke java.lang.Math ceil (arg)
+		Select arg_name : XInvoke java.lang.Math ceil (arg To Float)
 }
 circle : {
 	arccos_list : Template {
@@ -47,7 +47,7 @@ circle : {
 floor_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XInvoke java.lang.Math floor (arg)
+		Select arg_name : XInvoke java.lang.Math floor (arg To Float)
 }
 hyperbola : {
 	arccos_list : Template {

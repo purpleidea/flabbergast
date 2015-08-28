@@ -10,7 +10,7 @@ angle_unit_turns : 6.283185307179586231996
 ceiling_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XInvoke System.Math Ceiling (arg)
+		Select arg_name : XInvoke System.Math Ceiling (arg To Float)
 }
 circle : {
 	arccos_list : Template {
@@ -47,7 +47,7 @@ circle : {
 floor_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XInvoke System.Math Floor (arg)
+		Select arg_name : XInvoke System.Math Floor (arg To Float)
 }
 hyperbola : {
 	arccos_list : Template {
