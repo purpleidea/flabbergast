@@ -415,6 +415,31 @@ sql_provider : Template {
 	}
 }
 sql_providers : {
+	mysql : sql_provider {
+		table_discovery +: {
+			sql_query : "SELECT TABLE_SCHEMA AS tbl_schema, TABLE_NAME AS tbl_name, CONCAT('`', TABLE_SCHEMA, '`.`', TABLE_NAME, '`') AS sql_from, CONCAT(LOWER(SUBSTRING(TABLE_NAME, 0, 1)), SUBSTRING(TABLE_NAME, 1)) AS ATTRNAME FROM information_schema.tables WHERE TABLE_SCHEMA <> 'information_schema'"
+		}
+		column_discovery +: {
+			sql_query : "SELECT  CONCAT('`', TABLE_SCHEMA, '`.`', TABLE_NAME, '`.`', COLUMN_NAME, '`') AS sql_expr, CONCAT(LOWER(SUBSTRING(COLUMN_NAME, 0, 1)), SUBSTRING(COLUMN_NAME, 1)) AS ATTRNAME, lookup AS `` FROM information_schema.COLUMNS, (SELECT 'bit%' AS type_pattern, 'sql_types.bool' AS lookup UNION SELECT '%int%' AS type_pattern, 'sql_types.int' AS lookup UNION SELECT 'float%' AS type_pattern, 'sql_types.float' AS lookup UNION SELECT 'double%' AS type_pattern, 'sql_types.float' AS lookup UNION SELECT 'decimal%' AS type_pattern, 'sql_types.float' AS lookup UNION SELECT '%char%' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT '%blob%' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT 'enum%' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT 'text' AS type_pattern, 'sql_types.str' AS lookup) AS type_info WHERE COLUMN_TYPE LIKE type_pattern AND TABLE_SCHEMA='\(table.tbl_schema)' AND TABLE_NAME='\(table.tbl_name)'"
+		}
+		transformations : {
+			backslash : utils_lib.str_transform.char_tmpl { char : "\\"  replacement : "\\\\" }
+			backspace : utils_lib.str_transform.char_tmpl { char : "\b"  replacement : "\\b" }
+			newline : utils_lib.str_transform.char_tmpl { char : "\n"  replacement : "\\n" }
+			null : utils_lib.str_transform.char_tmpl { char : "\x00"  replacement : "\\0" }
+			return : utils_lib.str_transform.char_tmpl { char : "\r"  replacement : "\\r" }
+			quote : utils_lib.str_transform.char_tmpl { char : "'"  replacement : "\\'" }
+			double_quote : utils_lib.str_transform.char_tmpl { char : "\""  replacement : "\\\"" }
+			tab : utils_lib.str_transform.char_tmpl { char : "\t"  replacement : "\\t" }
+			eof : utils_lib.str_transform.char_tmpl { char : "\x1A"  replacement : "\\Z" }
+		}
+		expr : expr_tmpl {
+			str_join : Template base_variadic_func_tmpl {
+				sql_func : "CONCAT"
+				sql_allowed_arg_type_id : sql_types.any
+			}
+		}
+	}
 	postgresql : sql_provider {
 		table_discovery +: {
 			sql_query : "SELECT '\"' || table_schema || '\".\"' || table_name || '\"' AS sql_from, table_schema, table_name, regexp_replace(regexp_replace(table_schema || '_' || table_name, '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 't\\1') AS \"ATTRNAME\" FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema');"
