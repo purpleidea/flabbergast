@@ -569,7 +569,7 @@ str_trim_list : Template ( From lib:utilsinterop ).str_trim_list {
 }
 
 {{{Get the UTF-8 length of a string.}}}
-str_utf8_length : (From lib:math ).sumifier(base : str_utf8_length_list)
+str_utf8_length : sumifier(base : str_utf8_length_list)
 
 {{{Get the UTF-8 length of strings.}}}
 str_utf8_length_list : Template ( From lib:utilsinterop ).str_utf8_length_list {
@@ -585,3 +585,16 @@ str_upper_case_list : Template ( From lib:utilsinterop ).str_upper_case_list {
 	{{{A list of strings to manipulate.}}}
 	args : Used
 }
+
+{{{Sum a list of numbers.}}}
+sum : sumifier(base : identity)
+
+{{{Convert a function-like template from one that returns a list of numbers to
+a single sum.}}}
+sumifier : Template {
+	base : Required
+	value : Template base {
+		value +original: For item : original Reduce acc + item With acc : 0
+	}
+}
+

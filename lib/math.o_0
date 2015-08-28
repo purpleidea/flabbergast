@@ -170,15 +170,11 @@ round_list : Template ( From lib:mathinterop ).round_list {
 }
 
 {{{Sum a list of numbers.}}}
-sum : sumifier(base : identity)
+sum : utils_lib.sum
 
 {{{Convert a function-like template from one that returns a list of numbers to
 a single sum.}}}
-sumifier : Template {
-	base : Required
-	value : Template base {
-		value +original: For item : original Reduce acc + item With acc : 0
-	}
-}
+sumifier : utils_lib.sumifier
+
 {{{The ratio of a circle's circumference to its radius, \Emph{τ}.}}}
 tau : pi * 2
