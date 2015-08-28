@@ -175,7 +175,7 @@ public class JdbcQuery extends Computation {
 							String result = rs.getString(column);
 							frame.set(attr_name, rs.wasNull()
 									? Unit.NULL
-									: new DoLookup(result.split(".")));
+									: new DoLookup(result.split("\\.")));
 						}
 					});
 					continue;
