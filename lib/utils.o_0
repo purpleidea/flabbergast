@@ -468,10 +468,11 @@ str_find_list : Template ( From lib:utilsinterop ).str_find_list {
 		Select arg_name : {
 			str : arg To Str
 			length : Length str
-			real_start :
+			orig_start :
 				If start Enforce Int >= 0
 					Then start
 					Else (start + length)
+			real_start : If backward Then length - orig_start - 1 Else orig_start
 			enabled : real_start Enforce Int >= 0 && real_start < length
 		}
 }
