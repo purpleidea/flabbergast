@@ -1,0 +1,6 @@
+utils_lib : From lib:utils
+
+value :
+	For x : utils_lib.int_to_ordinal_list(args : 1 Through 5), n : Name
+	Reduce acc && x == n
+	With acc : True

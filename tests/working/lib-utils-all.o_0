@@ -1,0 +1,3 @@
+utils_lib : From lib:utils
+
+value : utils_lib.all(True, True, True) && utils_lib.all() && !(utils_lib.all(False, True, True)) && !(utils_lib.all(False))

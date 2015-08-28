@@ -1,0 +1,3 @@
+utils_lib : From lib:utils
+
+value : utils_lib.max(1, 4, 2) == 4 && utils_lib.max("q", "a", "b") == "q" && utils_lib.max() Is Null && utils_lib.max(NaN, 3.5, 0) Is NaN

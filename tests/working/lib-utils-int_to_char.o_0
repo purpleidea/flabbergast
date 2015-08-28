@@ -1,0 +1,3 @@
+utils_lib : From lib:utils
+
+value : utils_lib.int_to_char(65, 233, 10) == "Aé\n"

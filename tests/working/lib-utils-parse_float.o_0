@@ -1,0 +1,3 @@
+utils_lib : From lib:utils
+
+value : utils_lib.matches(args : utils_lib.parse_float_list("4", "4.05", "3.2e5"), refs : [ 4, 4.05, 3.2e5 ])

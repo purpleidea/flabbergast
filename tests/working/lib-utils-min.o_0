@@ -1,0 +1,3 @@
+utils_lib : From lib:utils
+
+value : utils_lib.min(1, 4, 2) == 1 && utils_lib.min("q", "a", "b") == "a" && utils_lib.min() Is Null && utils_lib.min(NaN, 3.5, 0) Is NaN

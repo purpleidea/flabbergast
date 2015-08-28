@@ -1,0 +1,6 @@
+utils_lib : From lib:utils
+
+value :
+	utils_lib.matches(args : utils_lib.int_to_str_list(0, 15, 9), refs : ["0", "15", "9"]) &&
+	utils_lib.matches(args : utils_lib.int_to_str_list(0, 15, 9, hex : True), refs : ["0", "F", "9"]) &&
+	utils_lib.matches(args : utils_lib.int_to_str_list(0, 15, 9, digits : 2), refs : ["00", "15", "09"])

@@ -1,0 +1,3 @@
+utils_lib : From lib:utils
+
+value : utils_lib.last(Null, Null, 1, Null, 2) == 2 && utils_lib.last(Null) Is Null

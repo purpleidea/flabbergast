@@ -1,0 +1,6 @@
+utils_lib : From lib:utils
+
+value :
+	utils_lib.matches(args : utils_lib.parse_int_list("4", "40"), refs : [4, 40]) &&
+	utils_lib.matches(args : utils_lib.parse_int_list("4", "40", radix : 8), refs : [4, 32]) &&
+	utils_lib.matches(args : utils_lib.parse_int_list("4", "A", "a", radix : 16), refs : [4, 10, 10])

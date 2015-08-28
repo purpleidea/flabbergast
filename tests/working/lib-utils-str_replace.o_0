@@ -1,0 +1,3 @@
+utils_lib : From lib:utils
+
+value : utils_lib.matches(args : utils_lib.str_replace_list("Hello", "Goodbye", str : "oo", with : "o_0"), refs : [ "Hello", "Go_0dbye" ])

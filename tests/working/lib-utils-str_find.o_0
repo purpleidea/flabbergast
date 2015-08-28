@@ -1,0 +1,6 @@
+utils_lib : From lib:utils
+
+value :
+	utils_lib.matches(args : utils_lib.str_find_list("Hello", "You", str : "ll"), refs : [ 2, Null ]) &&
+	utils_lib.matches(args : utils_lib.str_find_list("abba", str : "a", backward : True), refs : [ 3 ]) &&
+	utils_lib.matches(args : utils_lib.str_find_list("abba", str : "a", start : 1), refs : [ 3 ])

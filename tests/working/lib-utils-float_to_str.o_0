@@ -1,0 +1,5 @@
+utils_lib : From lib:utils
+
+value :
+	utils_lib.matches(args : utils_lib.float_to_str_list(0, 1, 1.5, -1M), refs : [ "0", "1", "2", "-1000000"]) &&
+	utils_lib.matches(args : utils_lib.float_to_str_list(0, 1, 1.5, 1M, exponential : True, digits : 2), refs : [ "0.00E0", "1.00E0", "1.50E0", "1.00E6"])

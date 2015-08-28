@@ -1,0 +1,5 @@
+utils_lib : From lib:utils
+
+value :
+	utils_lib.matches(args : utils_lib.clamp_list(0, 1, 2, 3, 4, lower : 2, upper : 3), refs : [2, 2, 2, 3, 3]) &&
+	utils_lib.matches(args : utils_lib.clamp_list("apple", "blueberry", "carrot", "raspberry", lower : "b", upper : "f"), refs : ["b", "blueberry", "carrot", "f"])
