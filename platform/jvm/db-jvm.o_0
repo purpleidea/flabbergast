@@ -26,7 +26,7 @@ driver_config : db_lib.driver_config_tmpl {
 	url_driver +: {
 		parse :
 			"\tString db_fragment = JdbcUriHandler.parseUri(uri_fragment, out_properties, \"\(jdbc_user_param)\", \"\(jdbc_password_param)\", \(If jdbc_db_param Is Null Then "null" Else "\"\(jdbc_db_param)\""), err);\n\tif(db_fragment == null) return null;\n"
-		tail : " + db_fragment"
+		tail : "+ \"//\" + db_fragment"
 	}
 }
 
