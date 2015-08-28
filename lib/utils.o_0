@@ -244,6 +244,9 @@ non_null : Template {
 			Select arg_name : arg
 }
 
+{{{Select all the non-null values in a frame, discarding their attribute names.}}}
+non_null_as_list : listifier(base : non_null)
+
 {{{Replaces all null values in a frame with \{default}.}}}
 or_default : Template {
 	args : Used
