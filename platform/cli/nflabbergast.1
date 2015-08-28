@@ -41,7 +41,7 @@ Calls a class, deriving from \fBFlabbergast.Computation\fR and consume the value
 
 .TP
 \fBXInvoke\fR \fItype method\fB(\fIexpr\fB, \fR...\fB)\fR
-Calls a static or virtual method for a type using the supplied expressions as parameters. If the method is an instance method, the first argument must be the instance to use. The method cannot return \fBvoid\fR and cannot throw an exception. \fBout\fR and \fBref\fR arguments are not supported. The instance cannot be a value type (\fBSystem.Boolean\fR, \fBSystem.Long\fR, or \fBSystem.Double\fR). The return value of the method must be convertible to a Flabbergast type. Overload resolution is done automatically.
+Calls a static or virtual method for a type using the supplied expressions as parameters. If the method is an instance method, the first argument must be the instance to use. The method cannot return \fBvoid\fR and cannot throw an exception. \fBout\fR and \fBref\fR arguments are not supported. The instance can be a value type (\fBSystem.Boolean\fR, \fBSystem.Long\fR, or \fBSystem.Double\fR). The return value of the method must be convertible to a Flabbergast type. Overload resolution is done automatically.
 
 .SH SEE ALSO
 .BR flabbergast_language (7),
