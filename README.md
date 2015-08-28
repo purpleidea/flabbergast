@@ -44,8 +44,8 @@ Maven users can get the Java edition from [The Central Repository](http://search
 
 or you can download the JARs alone using:
 
-    mvn -DgroupId=com.github.apmasell.flabbergast -DartifactId=stdlib -Dversion=$VERSION dependency:get
-    mvn -DgroupId=com.github.apmasell.flabbergast -DartifactId=compiler -Dversion=$VERSION dependency:get
+    mvn -DgroupId=com.github.apmasell.flabbergast -DartifactId=flabbergst-stdlib -Dversion=$VERSION dependency:get
+    mvn -DgroupId=com.github.apmasell.flabbergast -DartifactId=flabbergast-compiler -Dversion=$VERSION dependency:get
 
 substituting `$VESRION` as appropriate. To run it, invoke Java on the JARs and run `flabbergast.MainPrinter` to run the default interface, which simply runs the provided script and dumps the output, or `flabbergast.MainREPL` to access the interactive debugger.
 
