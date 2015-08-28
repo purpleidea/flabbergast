@@ -392,6 +392,9 @@ namespace Flabbergast {
 	public class Lookup : Computation {
 		public static ComputeValue Do(params string[] names) {
 			return (task_master, reference, context, self, container) => {
+				if (names.Length == 0) {
+					return new FailureComputation(task_master, reference, "Missing names in lookup.");
+				}
 				foreach (var name in names) {
 					if (!task_master.VerifySymbol(reference, name)) {
 						return BlackholeComputation.INSTANCE;

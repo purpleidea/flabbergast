@@ -17,6 +17,9 @@ public class Lookup extends Computation {
 		public Computation invoke(TaskMaster task_master,
 				SourceReference source_reference, Context context, Frame self,
 				Frame container) {
+			if (names.length == 0) {
+				return new FailureComputation(task_master, source_reference, "Missing names in lookup.");
+			}
 			for (String name : names) {
 				if (!task_master.verifySymbol(source_reference, name)) {
 					return BlackholeComputation.INSTANCE;
