@@ -1,0 +1,5 @@
+math_lib : From lib:math
+utils_lib : From lib:utils
+
+value :
+	utils_lib.matches(args : math_lib.round_list(2.4, 2.44, 2.444, 0, -2.4, -2.44, -2.444, places : 2), refs : [ 2.4, 2.44, 2.44, 0, -2.4, -2.44, -2.44 ])
