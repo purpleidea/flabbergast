@@ -50,7 +50,7 @@ clampifier : Template {
 
 
 {{{Count the number of items in a frame.}}}
-count : firstifier(base : count_list)
+count : sumifier(base : count_list)
 
 {{{Count the number of item in a list of frames.}}}
 count_list : Template {
