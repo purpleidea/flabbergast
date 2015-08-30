@@ -16,32 +16,32 @@ circle : {
 	arccos_list : Template {
 		value :
 			For arg : args, arg_name : Name
-			Select arg_name : XInvoke java.lang.Math acos (arg To Float)
+			Select arg_name : XInvoke java.lang.Math acos (arg To Float) / angle_unit
 	}
 	arcsin_list : Template {
 		value :
 			For arg : args, arg_name : Name
-			Select arg_name : XInvoke java.lang.Math asin (arg To Float)
+			Select arg_name : XInvoke java.lang.Math asin (arg To Float) / angle_unit
 	}
 	arctan_list : Template {
 		value :
 			For arg : args, arg_name : Name
-			Select arg_name : XInvoke java.lang.Math atan (arg To Float)
+			Select arg_name : XInvoke java.lang.Math atan (arg To Float) / angle_unit
 	}
 	cos_list : Template {
 		value :
 			For arg : args, arg_name : Name
-			Select arg_name : XInvoke java.lang.Math cos (arg To Float)
+			Select arg_name : XInvoke java.lang.Math cos (arg To Float * angle_unit)
 	}
 	sin_list : Template {
 		value :
 			For arg : args, arg_name : Name
-			Select arg_name : XInvoke java.lang.Math sin (arg To Float)
+			Select arg_name : XInvoke java.lang.Math sin (arg To Float * angle_unit)
 	}
 	tan_list : Template {
 		value :
 			For arg : args, arg_name : Name
-			Select arg_name : XInvoke java.lang.Math tan (arg To Float)
+			Select arg_name : XInvoke java.lang.Math tan (arg To Float * angle_unit)
 	}
 }
 floor_list : Template {
