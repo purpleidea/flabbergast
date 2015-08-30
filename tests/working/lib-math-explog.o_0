@@ -1,0 +1,13 @@
+math_lib : From lib:math
+
+check : Template {
+	x : Required
+	y : Required
+	exp : math_lib.power(y, exponent : x)
+	log : math_lib.log(exp, base : y)
+	value : math_lib.round(log, places : 2) == x
+}
+
+value :
+	check(y : 3, x : 5) &&
+	check(y : 3, x : -5)

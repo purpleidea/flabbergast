@@ -1,0 +1,8 @@
+math_lib : From lib:math
+utils_lib : From lib:utils
+
+floats : math_lib.ceiling_list(3 To Float, 3.5, 0 To Float, -0.5, -7 To Float)
+ints : For f : floats Select f To Int
+
+value :
+	utils_lib.matches(args : ints, refs : [3, 4, 0, 0, -7])
