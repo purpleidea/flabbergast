@@ -1,0 +1,14 @@
+math_lib : From lib:math
+angles :
+	For angle : 0 Through 72
+	Select angle * 5
+cos : math_lib.hyperbola.cos_list(args : angles, angle_unit : math_lib.angle_unit_degrees)
+sin : math_lib.hyperbola.sin_list(args : angles, angle_unit : math_lib.angle_unit_degrees)
+tan : math_lib.hyperbola.tan_list(args : angles, angle_unit : math_lib.angle_unit_degrees)
+diff :
+	For c : cos, s : sin, t : tan
+	Select s / c - t
+value :
+	For x : math_lib.round_list(args : diff, places : 2)
+	Reduce acc && x == 0.0
+	With acc : True

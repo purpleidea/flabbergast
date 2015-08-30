@@ -1,0 +1,13 @@
+math_lib : From lib:math
+angles :
+	For angle : -18 Through 18
+	Select angle * 5
+sin : math_lib.hyperbola.sin_list(args : angles, angle_unit : math_lib.angle_unit_degrees)
+asin : math_lib.hyperbola.arcsin_list(args : sin, angle_unit : math_lib.angle_unit_degrees)
+diff :
+	For a : angles, x : asin
+	Select a - x
+value :
+	For x : math_lib.round_list(args : diff, places : 2)
+	Reduce acc && x == 0.0
+	With acc : True

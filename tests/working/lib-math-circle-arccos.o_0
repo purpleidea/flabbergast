@@ -1,0 +1,13 @@
+math_lib : From lib:math
+angles :
+	For angle : 0 Through 36
+	Select angle * 5
+cos : math_lib.circle.cos_list(args : angles, angle_unit : math_lib.angle_unit_degrees)
+acos : math_lib.circle.arccos_list(args : cos, angle_unit : math_lib.angle_unit_degrees)
+diff :
+	For a : angles, x : acos
+	Select a - x
+value :
+	For x : math_lib.round_list(args : diff, places : 2)
+	Reduce acc && x == 0.0
+	With acc : True

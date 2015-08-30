@@ -1,0 +1,13 @@
+math_lib : From lib:math
+angles :
+	For angle : 0 Through 72
+	Select angle * 5
+cos : math_lib.circle.cos_list(args : angles, angle_unit : math_lib.angle_unit_degrees)
+sin : math_lib.circle.sin_list(args : angles, angle_unit : math_lib.angle_unit_degrees)
+sumsquared :
+	For c : cos, s : sin
+	Select c * c + s * s
+value :
+	For x : math_lib.round_list(args : sumsquared, places : 4)
+	Reduce acc && x == 1.0
+	With acc : True
