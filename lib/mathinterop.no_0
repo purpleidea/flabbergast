@@ -63,7 +63,7 @@ hyperbola : {
 	arctan_list : Template {
 		value :
 			For arg : args, arg_name : Name
-			Select arg_name : 0.5 * XInvoke System.Math Log ((arg + 1.0) / (arg - 1.0)) / angle_unit
+			Select arg_name : 0.5 * XInvoke System.Math Log ((1.0 + arg) / (1.0 - arg)) / angle_unit
 	}
 	cos_list : Template {
 		value :
