@@ -16,63 +16,80 @@ retrieve : Template (From lib:sqlinterop ).retrieve {
 	{{{A string containing the implementation-specific SQL statement.}}}
 	sql_query : Required
 }
-{{{Query an SQL database for the delicious records within.}}}
-query : Template retrieve {
-	{{{A list of tables, selected from the \{table} frame, to be included in this
-	query.}}}
-	tables : Required
-	{{{A frame of expressions or columns to be included in the resulting table.}}}
-	columns :
-		For col : column
-			Reduce For acc_value : acc, col_value : col, name : Name
-				Select name : acc_value ?? col_value
-			With acc : {}
-	{{{A collection of expressions (or columns) that must be true to include a
-	row in the results.}}}
-	where : Template {}
 
-	{{{A collection of tables provided by the database. These may be reference in the \{tables} list.}}}
-	table : implementation.table_discovery(connection : connection)
-	{{{The collection of columns available from each of the tables specified in
-	\{tables}. These can be used in any place that accepts an expression. Given
-	there is a column \Mono{c} in a table \Mono{t}, reference it as
-	\Mono{column.t.c}.}}}
-	column :
-		For t : table, name : Name
-			Select name : implementation.column_discovery(connection : connection, table : t)
-	{{{Provides templates for construction expressions. See \{expr_tmpl} for details.}}}
-	expr : implementation.expr
+{{{Create an SQL-statement generating template.}}}
+queryfier : Template {
+	{{{The template to modify.}}}
+	base : Required
+	value : Template base {
+		{{{A list of tables, selected from the \{table} frame, to be included in this
+		query. Each of these must have a \{sql_from} attribute to be inserted into
+		the \Mono{FROM} clause.}}} tables : Required
+		{{{A frame of expressions or columns to be included in the resulting table.}}}
+		columns : Required
+		{{{A collection of expressions (or columns) that must be true to include a
+		row in the results.}}}
+		where : Template {}
 
-	{{{From the connection, select the correct database provider.}}}
-	implementation :
-		((For provider : sql_providers, provider_name : Name
-			Where provider_name == connection.provider Enforce Str
-			Reduce provider With acc : Null) ?? (Error "Unsupported database “\(connection.provider Enforce Str)”. This library must be mismatched to the Flabbergast runtime.")) Enforce Frame
+		{{{Provides templates for construction expressions. See \{expr_tmpl} for details.}}}
+		expr : provider.expr
 
-	{{{Expand the where template.}}}
-	exp_where : where {}
+		{{{The correct database provider from \{sql_providers}.}}}
+		provider : Required
 
-	{{{Generate the \Mono{FROM} clause.}}}
-	from_clause :
-		For t : tables, pos : Ordinal
-			Reduce (If pos > 1 Then acc & ", " Else "") & t.sql_from
-			With acc : Null
-	{{{Generate the columns in the \Mono{SELECT}.}}}
-	column_clause :
-		For col : columns, name : Name, pos : Ordinal
-			Reduce (If pos > 1 Then acc & ", " Else "") & col.sql_expr & " AS " & name
-			With acc : Null
-	{{{Generate the \Mono{WHERE} clause, if any.}}}
-	where_clause :
-		For clause : exp_where, position : Ordinal
-			Reduce (If position > 1 Then acc & " AND " Else " WHERE ") & clause.sql_expr
-			With acc : ""
-	{{{Generate the total query.}}}
-	sql_query :
-		If from_clause Is Null Then Error "No tables specified in query."
-		Else If column_clause Is Null Then Error "No columns specified in query."
-		Else "SELECT " & column_clause Enforce Str & " FROM " & from_clause & where_clause Enforce Str
+		{{{Expand the where template.}}}
+		exp_where : where {}
+
+		{{{Generate the \Mono{FROM} clause.}}}
+		from_clause :
+			For t : tables, pos : Ordinal
+				Reduce (If pos > 1 Then acc & ", " Else "") & t.sql_from
+				With acc : Null
+		{{{Generate the columns in the \Mono{SELECT}.}}}
+		column_clause :
+			For col : columns, name : Name, pos : Ordinal
+				Reduce (If pos > 1 Then acc & ", " Else "") & col.sql_expr & " AS " & name
+				With acc : Null
+		{{{Generate the \Mono{WHERE} clause, if any.}}}
+		where_clause :
+			For clause : exp_where, position : Ordinal
+				Reduce (If position > 1 Then acc & " AND " Else " WHERE ") & clause.sql_expr
+				With acc : ""
+		{{{Generate the total query.}}}
+		sql_query :
+			If from_clause Is Null Then Error "No tables specified in query."
+			Else If column_clause Is Null Then Error "No columns specified in query."
+			Else "SELECT " & column_clause Enforce Str & " FROM " & from_clause & where_clause Enforce Str
+	}
 }
+
+{{{Query an SQL database for the delicious records within.}}}
+query : Template queryifier(base : retrieve) {
+		{{{A collection of tables provided by the database. These may be reference in the \{tables} list.}}}
+		table : provider.table_discovery(connection : connection)
+		{{{The collection of columns available from each of the tables specified in
+		\{tables}. These can be used in any place that accepts an expression. Given
+		there is a column \Mono{c} in a table \Mono{t}, reference it as
+		\Mono{column.t.c}.}}}
+		column :
+			For t : table, name : Name
+				Select name : provider.column_discovery(connection : connection, table : t)
+		{{{The default set of columns to retreive is all known columns from the selected tables.}}}
+		columns :
+			For col : column
+				Reduce For acc_value : acc, col_value : col, name : Name
+					Select name : acc_value ?? col_value
+				With acc : {}
+		{{{The provider, automatically selected from the database connection.}}}
+		provider :
+			((For provider : sql_providers, provider_name : Name
+				Where provider_name == connection.provider Enforce Str
+				Reduce provider With acc : Null) ?? (Error "Unsupported database “\(connection.provider Enforce Str)”. This library must be mismatched to the Flabbergast runtime.")) Enforce Frame
+}
+
+{{{Create an SQL query without a connection to the database. The tables and
+columns available must be manually curated.}}}
+offline_query : queryifier(base : Template {})
 
 {{{Convert a value into a SQL expression if possible.}}}
 sql_marshall : utils_lib.str_concatifier(base : sql_marshall_list, delimiter : "")
@@ -139,7 +156,7 @@ expr_tmpl : Template {
 		{{{The bits for the allowed types of arguments.}}}
 		sql_allowed_arg_type_id : Required
 
-		sql_args : sql_marshall_list(args : args, provider : implementation)
+		sql_args : sql_marshall_list(args : args, provider : provider)
 		sql_expr :
 			If sql_type.coerce == 0 Then Error "Cannot compute type." Else
 				(For arg : sql_args, pos : Ordinal
@@ -183,7 +200,7 @@ expr_tmpl : Template {
 		{{{The bits for the allowed types of arguments.}}}
 		sql_allowed_arg_type_id : Required
 
-		sql_args : sql_marshall_list(args : args, provider : implementation)
+		sql_args : sql_marshall_list(args : args, provider : provider)
 		sql_expr :
 			If sql_type.coerce == 0 Then Error "Bad type in \(sql_func)." Else
 			sql_func &
@@ -233,7 +250,7 @@ expr_tmpl : Template {
 			test : Required
 			result : Required
 
-			when_specials : sql_marshall_list(args : { t : test  r : result }, provider : implementation)
+			when_specials : sql_marshall_list(args : { t : test  r : result }, provider : provider)
 
 			sql_type : when_specials.r.sql_type
 			sql_when :
@@ -245,7 +262,7 @@ expr_tmpl : Template {
 		specials : Template {
 			e : else
 		}
-		sql_specials : sql_marshall_list(args : specials {}, provider : implementation)
+		sql_specials : sql_marshall_list(args : specials {}, provider : provider)
 
 		sql_expr :
 			(For case : cases
@@ -409,7 +426,7 @@ sql_provider : Template {
 	table_discovery : Template retrieve {}
 	{{{An SQL statement that will return the columns for a particular table or
 	view as a frame of frames extending \{expr.base_expr_tmpl}. Other
-	# implementation-specific attributes are permitted.}}}
+	implementation-specific attributes are permitted.}}}
 	column_discovery : Template retrieve {
 		table : Required
 	}
