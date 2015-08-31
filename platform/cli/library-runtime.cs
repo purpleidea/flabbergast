@@ -80,12 +80,12 @@ namespace Flabbergast {
 				}
 				Console.Error.WriteLine("│");
 			}
+			Console.Error.WriteLine("Lookup happened here:");
+			lookup.SourceReference.Write(Console.Error, "  ", seen);
 			for (var it = 0; it < frame_list.Count; it++) {
 				Console.Error.WriteLine("Frame {0} defined:", it + 1);
 				frame_list[it].SourceReference.Write(Console.Error, "  ", seen);
 			}
-			Console.Error.WriteLine("Lookup happened here:");
-			lookup.SourceReference.Write(Console.Error, "  ", seen);
 		}
 
 		public override void ReportOtherError(SourceReference reference, string message) {
