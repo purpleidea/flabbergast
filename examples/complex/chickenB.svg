@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/PR-SVG-20010719/DTD/svg10.dtd">
+<svg width="24cm" height="17cm" viewBox="2 99 470 326" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g>
+    <rect style="fill: #ffffff" x="99.9" y="100" width="113.2" height="38"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="99.9" y="100" width="113.2" height="38"/>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="156.5" y="122.9">
+      <tspan x="156.5" y="122.9">Load Balancer</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="100.625" y="184" width="112.75" height="38"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="100.625" y="184" width="112.75" height="38"/>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="157" y="206.9">
+      <tspan x="157" y="206.9">Front-End (FE)</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="96.7" y="278" width="120.6" height="38"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="96.7" y="278" width="120.6" height="38"/>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="157" y="300.9">
+      <tspan x="157" y="300.9">Middleware (M)</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="3.95" y="366" width="122.15" height="38"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="3.95" y="366" width="122.15" height="38"/>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="65.025" y="388.9">
+      <tspan x="65.025" y="388.9">Egg Laying (EL)</tspan>
+    </text>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 257.1 376.333 C 277.06,369.333 287.04,367 307,367 C 326.96,367 336.94,369.333 356.9,376.333 L 356.9,413.667 C 336.94,420.667 326.96,423 307,423 C 287.04,423 277.06,420.667 257.1,413.667 L 257.1,376.333z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 257.1 376.333 C 277.06,369.333 287.04,367 307,367 C 326.96,367 336.94,369.333 356.9,376.333 L 356.9,413.667 C 336.94,420.667 326.96,423 307,423 C 287.04,423 277.06,420.667 257.1,413.667 L 257.1,376.333"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 257.1 376.333 C 277.06,383.333 287.04,385.667 307,385.667 C 326.96,385.667 336.94,383.333 356.9,376.333"/>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="307" y="403.667">
+      <tspan x="307" y="403.667">Egg (DB-E)</tspan>
+    </text>
+  </g>
+  <g>
+    <polyline style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="156.5,138 156.5,161 157,161 157,174.264 "/>
+    <polygon style="fill: #000000" points="157,181.764 152,171.764 157,174.264 162,171.764 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="157,181.764 152,171.764 157,174.264 162,171.764 "/>
+  </g>
+  <g>
+    <polyline style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="157,222 157,250 157,250 157,268.264 "/>
+    <polygon style="fill: #000000" points="157,275.764 152,265.764 157,268.264 162,265.764 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="157,275.764 152,265.764 157,268.264 162,265.764 "/>
+  </g>
+  <g>
+    <polyline style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="126.85,316 126.85,341 65.025,341 65.025,356.264 "/>
+    <polygon style="fill: #000000" points="65.025,363.764 60.025,353.764 65.025,356.264 70.025,353.764 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="65.025,363.764 60.025,353.764 65.025,356.264 70.025,353.764 "/>
+  </g>
+  <g>
+    <polyline style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="187.15,316 187.15,341.5 307,341.5 307,357.264 "/>
+    <polygon style="fill: #000000" points="307,364.764 302,354.764 307,357.264 312,354.764 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="307,364.764 302,354.764 307,357.264 312,354.764 "/>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 138.75 376.433 C 160.17,369.433 170.88,367.1 192.3,367.1 C 213.72,367.1 224.43,369.433 245.85,376.433 L 245.85,413.767 C 224.43,420.767 213.72,423.1 192.3,423.1 C 170.88,423.1 160.17,420.767 138.75,413.767 L 138.75,376.433z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 138.75 376.433 C 160.17,369.433 170.88,367.1 192.3,367.1 C 213.72,367.1 224.43,369.433 245.85,376.433 L 245.85,413.767 C 224.43,420.767 213.72,423.1 192.3,423.1 C 170.88,423.1 160.17,420.767 138.75,413.767 L 138.75,376.433"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 138.75 376.433 C 160.17,383.433 170.88,385.767 192.3,385.767 C 213.72,385.767 224.43,383.433 245.85,376.433"/>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="192.3" y="403.767">
+      <tspan x="192.3" y="403.767">Clucking (DB-C)</tspan>
+    </text>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 370.075 376.533 C 390.285,369.533 400.39,367.2 420.6,367.2 C 440.81,367.2 450.915,369.533 471.125,376.533 L 471.125,413.867 C 450.915,420.867 440.81,423.2 420.6,423.2 C 400.39,423.2 390.285,420.867 370.075,413.867 L 370.075,376.533z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 370.075 376.533 C 390.285,369.533 400.39,367.2 420.6,367.2 C 440.81,367.2 450.915,369.533 471.125,376.533 L 471.125,413.867 C 450.915,420.867 440.81,423.2 420.6,423.2 C 400.39,423.2 390.285,420.867 370.075,413.867 L 370.075,376.533"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 370.075 376.533 C 390.285,383.533 400.39,385.867 420.6,385.867 C 440.81,385.867 450.915,383.533 471.125,376.533"/>
+    <text font-size="12.7998" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="420.6" y="403.867">
+      <tspan x="420.6" y="403.867">Barn (DB-B)</tspan>
+    </text>
+  </g>
+  <g>
+    <polyline style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="187.15,316 187.15,341.55 192.3,341.55 192.3,357.364 "/>
+    <polygon style="fill: #000000" points="192.3,364.864 187.3,354.864 192.3,357.364 197.3,354.864 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="192.3,364.864 187.3,354.864 192.3,357.364 197.3,354.864 "/>
+  </g>
+  <g>
+    <polyline style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="187.15,316 187.15,341.6 420.6,341.6 420.6,357.464 "/>
+    <polygon style="fill: #000000" points="420.6,364.964 415.6,354.964 420.6,357.464 425.6,354.964 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="420.6,364.964 415.6,354.964 420.6,357.464 425.6,354.964 "/>
+  </g>
+</svg>

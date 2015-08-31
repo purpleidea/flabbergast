@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/PR-SVG-20010719/DTD/svg10.dtd">
+<svg width="16cm" height="18cm" viewBox="2 99 311 341" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g>
+    <rect style="fill: #ffffff" x="99.9" y="100" width="113.2" height="38"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="99.9" y="100" width="113.2" height="38"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="156.5" y="122.9">
+      <tspan x="156.5" y="122.9">Load Balancer</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="100.625" y="184" width="112.75" height="38"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="100.625" y="184" width="112.75" height="38"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="157" y="206.9">
+      <tspan x="157" y="206.9">Front-End (FE)</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="96.7" y="278" width="120.6" height="38"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="96.7" y="278" width="120.6" height="38"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="157" y="300.9">
+      <tspan x="157" y="300.9">Middleware (M)</tspan>
+    </text>
+  </g>
+  <g>
+    <rect style="fill: #ffffff" x="3.95" y="366" width="122.15" height="38"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="3.95" y="366" width="122.15" height="38"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="65.025" y="388.9">
+      <tspan x="65.025" y="388.9">Egg Laying (EL)</tspan>
+    </text>
+  </g>
+  <g>
+    <path style="fill: #ffffff" d="M 213.1 391.333 C 233.06,384.333 243.04,382 263,382 C 282.96,382 292.94,384.333 312.9,391.333 L 312.9,428.667 C 292.94,435.667 282.96,438 263,438 C 243.04,438 233.06,435.667 213.1,428.667 L 213.1,391.333z"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 213.1 391.333 C 233.06,384.333 243.04,382 263,382 C 282.96,382 292.94,384.333 312.9,391.333 L 312.9,428.667 C 292.94,435.667 282.96,438 263,438 C 243.04,438 233.06,435.667 213.1,428.667 L 213.1,391.333"/>
+    <path style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" d="M 213.1 391.333 C 233.06,398.333 243.04,400.667 263,400.667 C 282.96,400.667 292.94,398.333 312.9,391.333"/>
+    <text font-size="12.8" style="fill: #000000;text-anchor:middle;font-family:sans-serif;font-style:normal;font-weight:normal" x="263" y="418.667">
+      <tspan x="263" y="418.667">Database (DB)</tspan>
+    </text>
+  </g>
+  <g>
+    <polyline style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="156.5,138 156.5,161 157,161 157,174.264 "/>
+    <polygon style="fill: #000000" points="157,181.764 152,171.764 157,174.264 162,171.764 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="157,181.764 152,171.764 157,174.264 162,171.764 "/>
+  </g>
+  <g>
+    <polyline style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="157,222 157,250 157,250 157,268.264 "/>
+    <polygon style="fill: #000000" points="157,275.764 152,265.764 157,268.264 162,265.764 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="157,275.764 152,265.764 157,268.264 162,265.764 "/>
+  </g>
+  <g>
+    <polyline style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="126.85,316 126.85,341 65.025,341 65.025,356.264 "/>
+    <polygon style="fill: #000000" points="65.025,363.764 60.025,353.764 65.025,356.264 70.025,353.764 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="65.025,363.764 60.025,353.764 65.025,356.264 70.025,353.764 "/>
+  </g>
+  <g>
+    <polyline style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="187.15,316 187.15,349 263,349 263,372.264 "/>
+    <polygon style="fill: #000000" points="263,379.764 258,369.764 263,372.264 268,369.764 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="263,379.764 258,369.764 263,372.264 268,369.764 "/>
+  </g>
+</svg>
