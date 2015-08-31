@@ -18,13 +18,14 @@ retrieve : Template (From lib:sqlinterop ).retrieve {
 }
 
 {{{Create an SQL-statement generating template.}}}
-queryfier : Template {
+queryifier : Template {
 	{{{The template to modify.}}}
 	base : Required
 	value : Template base {
 		{{{A list of tables, selected from the \{table} frame, to be included in this
 		query. Each of these must have a \{sql_from} attribute to be inserted into
-		the \Mono{FROM} clause.}}} tables : Required
+		the \Mono{FROM} clause.}}}
+		tables : Required
 		{{{A frame of expressions or columns to be included in the resulting table.}}}
 		columns : Required
 		{{{A collection of expressions (or columns) that must be true to include a
@@ -89,7 +90,7 @@ query : Template queryifier(base : retrieve) {
 
 {{{Create an SQL query without a connection to the database. The tables and
 columns available must be manually curated.}}}
-offline_query : queryifier(base : Template {})
+offline_query : queryifier(base : Template { value : sql_query })
 
 {{{Convert a value into a SQL expression if possible.}}}
 sql_marshall : utils_lib.str_concatifier(base : sql_marshall_list, delimiter : "")
@@ -106,11 +107,14 @@ sql_marshall_list : Template {
 					sql_expr : provider.quote_start Enforce Str & utils_lib.str_escape(arg, transformations : provider.transformations) Enforce Str & provider.quote_end Enforce Str
 					sql_type : sql_types.str
 				}
+			Else If arg Is Bool Then {
+					sql_expr : If arg Then "TRUE" Else "FALSE"
+					sql_type : sql_types.bool
+				}
 			Else {
 					sql_expr : arg To Str
 					sql_type :
-						If arg Is Bool Then sql_types.bool
-						Else If arg Is Int Then sql_types.int
+						If arg Is Int Then sql_types.int
 						Else If arg Is Float Then sql_types.float
 						Else Error "Can't convert value to SQL type."
 				}
@@ -169,7 +173,7 @@ expr_tmpl : Template {
 					Reduce
 						If acc B& arg.sql_type.coerce == 0
 							Then Error "Argument \(pos) to \(sql_op) has incompatible type \(arg.sql_type.name)."
-							Else acc B& arg.coerce
+							Else acc B& arg.sql_type.coerce
 					With acc : sql_allowed_arg_type_id
 		}
 	}
@@ -203,10 +207,9 @@ expr_tmpl : Template {
 		sql_args : sql_marshall_list(args : args, provider : provider)
 		sql_expr :
 			If sql_type.coerce == 0 Then Error "Bad type in \(sql_func)." Else
-			sql_func &
 			(For arg : sql_args, pos : Ordinal
-				Reduce acc & (If pos > 1 Then sql_op Else "") & arg.sql_expr
-				With acc : "(") & ")"
+				Reduce acc & (If pos > 1 Then ", " Else "") & arg.sql_expr
+				With acc : sql_func & "(") & ")"
 
 		sql_type : synthetic_sql_type {
 			coerce :
@@ -228,10 +231,11 @@ expr_tmpl : Template {
 		type_mask : sql_types.any
 
 		sql_type : sql_types.bool
+		specials : sql_marshall_list(args : { l : left  r : right }, provider : provider)
 		sql_expr :
-			If left.sql_type.coerce B& right.sql_type.coerce B& type_mask == 0
+			If specials.l.sql_type.coerce B& specials.r.sql_type.coerce B& type_mask == 0
 				Then Error "Incompatible types in comparison."
-				Else "(\(left.sql_expr) \(sql_op) \(right.sql_expr)"
+				Else "(\(specials.l.sql_expr) \(sql_op) \(specials.r.sql_expr)"
 	}
 
 	and : Template base_infix_expr_tmpl {
@@ -278,19 +282,19 @@ expr_tmpl : Template {
 						If acc B& case.sql_type.coerce == 0
 							Then Error "WHEN block \(pos) has incompatible type \(case.sql_type.name)."
 							Else acc B& case.sql_type.coerce
-					With acc : If sql_specials.e Is Null Then sql_types.any Else sql_specials.e.coerce
+					With acc : If sql_specials.e Is Null Then sql_types.any Else sql_specials.e.sql_type.coerce
 		}
 	}
 	case_bool : Template base_case_tmpl {
 		sql_allowed_test_type : sql_types.bool
 		input_expr : ""
 	}
-	case_input : Template base_expr_tmpl {
+	case_input : Template base_case_tmpl {
 		input : Required
 
 		specials +: { i : input }
-		input_expr : special_expr.i
-		sql_allowed_test_type : special_types.i
+		input_expr : sql_specials.i.sql_expr
+		sql_allowed_test_type : sql_specials.i.sql_type
 	}
 	cast : Template base_expr_tmpl {
 		{{{The argument to cast.}}}
@@ -323,8 +327,8 @@ expr_tmpl : Template {
 		arg : Required
 		sql_type : sql_types.bool
 		sql_expr :
-			If sql_type.coerce == 0 Then Error "Bad type in \(sql_func)." Else
-				"(\(arg.sql_expr) IS NULL)"
+			If sql_type.coerce == 0 Then Error "Bad type in null check."
+				Else "(\(arg.sql_expr) IS NULL)"
 	}
 	le : Template base_compare_op_tmpl {
 		sql_op : "<="
