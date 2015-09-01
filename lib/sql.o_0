@@ -235,7 +235,7 @@ expr_tmpl : Template {
 		sql_expr :
 			If specials.l.sql_type.coerce B& specials.r.sql_type.coerce B& type_mask == 0
 				Then Error "Incompatible types in comparison."
-				Else "(\(specials.l.sql_expr) \(sql_op) \(specials.r.sql_expr)"
+				Else "(\(specials.l.sql_expr) \(sql_op) \(specials.r.sql_expr))"
 	}
 
 	and : Template base_infix_expr_tmpl {
