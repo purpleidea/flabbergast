@@ -374,7 +374,7 @@ expr_tmpl : Template {
 	}
 	str_join : Template base_infix_expr_tmpl {
 		sql_op : "||"
-		sql_allowed_arg_type_id : sql_types.any
+		sql_allowed_arg_type_id : sql_types.str.id
 	}
 	sum : Template base_variadic_func_tmpl {
 		sql_func : "SUM"
@@ -457,7 +457,7 @@ sql_providers : {
 		expr : expr_tmpl {
 			str_join : Template base_variadic_func_tmpl {
 				sql_func : "CONCAT"
-				sql_allowed_arg_type_id : sql_types.any
+				sql_allowed_arg_type_id : sql_types.str.id
 			}
 		}
 	}
