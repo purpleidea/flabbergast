@@ -1,0 +1,14 @@
+sql_lib : From lib:sql
+
+test_query : Template sql_lib.offline_query {
+	tables : [ { sql_from : "XXX" }, { sql_from : "YYY" } ]
+	columns : {
+		a : expr.negate {
+			arg : expr.str_join {
+				args : [ 3 ]
+			}
+		}
+	}
+}
+
+value : test_query(provider : sql_lib.sql_providers.sqlite)
