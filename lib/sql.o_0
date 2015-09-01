@@ -216,7 +216,7 @@ expr_tmpl : Template {
 				For arg : sql_args, pos : Ordinal
 					Reduce
 						If acc B& arg.sql_type.coerce == 0
-							Then Error "Argument \(pos) to \(sql_op) has incompatible type \(arg.sql_type.name)."
+							Then Error "Argument \(pos) to \(sql_func) has incompatible type \(arg.sql_type.name)."
 							Else acc B& arg.sql_type.coerce
 					With acc : sql_allowed_arg_type_id
 		}
