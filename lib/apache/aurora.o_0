@@ -81,6 +81,18 @@ aurora_file : Template {
 			With acc : "jobs = [\n") & "\t]\n"
 }
 
+{{{A collection of jobs. This is an indirection layer to make sharing configuration easier, it has no equivalent in Aurora.}}}
+job_group : Template {
+	{{{A list of job frames.}}}
+	jobs : Required
+
+	python_value :
+		For job : jobs, pos : Ordinal
+			Where !(job Is Null)
+			Reduce (If pos > 1 Then acc & ",\n" & python_indent Else "") & job.python_value
+			With acc : ""
+}
+
 {{{An Aurora process, defining a binary to run inside a task.}}}
 process : Template render_lib.python.object {
 	{{{The process name will be made available from the attribute name.}}}
