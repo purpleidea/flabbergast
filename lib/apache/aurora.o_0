@@ -245,6 +245,23 @@ job : Template render_lib.python.object {
 	{{{An optional cron schedule to use, from \From{lib:unix/cron}}}}
 	cron_schedule : Null
 
+	{{{The Zookeeper server set identifier for this job.}}}
+	serverset : "\(cluster)/\(role)/\(environment)/\(job_name)"
+	{{{A function-like template to produce a particular the Zookeepr server set for a particular instance of this job.}}}
+	server : Template {
+		{{{The indcies of the desired instances.}}}
+		args : Required
+		{{{If multiple indicies are provided, the separator between the paths.}}}
+		delimitier : ","
+
+		sets :
+			For index : args
+				Select If index Enforce Int >= 0 && index < instances
+					Then "\(serverset)/\(index)"
+					Else Error "\(index) is out of range for \(job_name)"
+		value : utils_lib.str_concat(args : sets, delimiter : delimiter)
+	}
+
 	python_type : "Job"
 	literal_attrs : {
 		task : Lookup task.python_value In Container
