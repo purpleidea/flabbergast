@@ -402,7 +402,7 @@ sql_types : {
 		name : "INTEGER"
 		id : 4
 		cast : bool.id B| float.id B| str.id
-		coerce : float.id B| str.id
+		coerce : int.id B| float.id B| str.id
 	}
 	str : {
 		name : "TEXT"
