@@ -26,9 +26,13 @@ border-radius:.2em;
 transition:border-color .5s ease-in-out;
 }
 
-dt span.use {
+dt span.use,dt span.def {
 color:#36648B;
 cursor:pointer;
+}
+
+dt span.def {
+font-style:italic;
 }
 
 dt span.roll {
