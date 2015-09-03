@@ -18,7 +18,7 @@ Great. As we get more users, that database starts to fill and we can no longer h
 
 Now, all of the database servers are almost the same, but the resource requirements vary based on the dataset loaded. So, let's create a database configuration that knows how to deal with that. [chicken4](chicken4.o_0) Adding new datasets it pretty trivial, and the command line arguments of the server even auto-configure. Oh, and we have to deal with the fact that the egg database can't be loaded in the US for legal reasons.
 
-This is all running smoothly until some code that was not properly tested make it into production and stuff crashes. The developer points out that the testing environment doesn't really match the production one and that's how the bug slipped in. Let's create a testing environment that really matches production, but is much less resource intensive: [chicken5](chicken5)
+This is all running smoothly until some code that was not properly tested make it into production and stuff crashes. The developer points out that the testing environment doesn't really match the production one and that's how the bug slipped in. Let's create a testing environment that really matches production, but is much less resource intensive: [chicken5](chicken5.o_0)
 
 Great, now we've moving. The problem for developers is that they have to create a Docker image every time. It would be great to have a shell script that can build the Docker image and deploy the Aurora configuration. If this where elsewhere, we could just write a shell script... Fortunately, Flabbergast generates text, so we _can_ generate a shell script. [chicken6](chicken6)
 
