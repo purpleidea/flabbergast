@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 using Flabbergast;
@@ -48,12 +49,17 @@ public class Printer {
 		var unit = new CompilationUnit(module_builder, true);
 		var collector = new ConsoleCollector();
 		var task_master = new ConsoleTaskMaster();
+		var accessory_lib_path = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(files[0])), "lib");
 		task_master.AddUriHandler(BuiltInLibraries.INSTANCE);
 		task_master.AddUriHandler(DbUriHandler.INSTANCE);
 		if (use_precompiled) {
-			task_master.AddUriHandler(new LoadPrecompiledLibraries());
+			var precomp = new LoadPrecompiledLibraries();
+			precomp.PrependPath(accessory_lib_path);
+			task_master.AddUriHandler(precomp);
 		}
-		task_master.AddUriHandler(new DynamicallyCompiledLibraries(collector));
+		var dyncomp = new DynamicallyCompiledLibraries(collector);
+		dyncomp.PrependPath(accessory_lib_path);
+		task_master.AddUriHandler(dyncomp);
 		var parser = Parser.Open(files[0]);
 		parser.Trace = trace;
 		var run_type = parser.ParseFile(collector, unit, "Printer");

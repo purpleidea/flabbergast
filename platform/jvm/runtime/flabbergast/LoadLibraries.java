@@ -41,4 +41,7 @@ public abstract class LoadLibraries implements UriLoader {
 	public void appendPath(String path) {
 		paths.add(path);
 	}
+	public void prependPath(String path) {
+		paths.add(0, path);
+	}
 }

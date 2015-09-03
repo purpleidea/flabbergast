@@ -1,5 +1,6 @@
 package flabbergast;
 
+import java.io.File;
 import java.io.IOException;
 
 import jline.console.ConsoleReader;
@@ -116,13 +117,26 @@ public class MainREPL {
 			System.exit(1);
 		}
 
+		String accessory_lib_path = null;
+		try {
+			accessory_lib_path = new File(files.length == 1
+					? new File(files[0]).getParentFile()
+					: new File("."), "lib").getCanonicalPath();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		ErrorCollector collector = new ConsoleCollector();
 		DynamicCompiler compiler = new DynamicCompiler(collector);
+		if (accessory_lib_path != null)
+			compiler.prependPath(accessory_lib_path);
 		ConsoleTaskMaster task_master = new ConsoleTaskMaster();
 		task_master.addUriHandler(BuiltInLibraries.INSTANCE);
 		task_master.addUriHandler(JdbcUriHandler.INSTANCE);
 		if (!result.hasOption('p')) {
-			task_master.addUriHandler(new LoadPrecompiledLibraries());
+			LoadPrecompiledLibraries precomp = new LoadPrecompiledLibraries();
+			task_master.addUriHandler(precomp);
+			if (accessory_lib_path != null)
+				precomp.prependPath(accessory_lib_path);
 		}
 		task_master.addUriHandler(compiler);
 		final Ptr<Frame> root = new Ptr<Frame>();

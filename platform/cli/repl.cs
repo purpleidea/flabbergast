@@ -2,6 +2,7 @@
 using System.CodeDom;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
 using Mono.Terminal;
@@ -75,10 +76,15 @@ namespace Flabbergast {
 			var task_master = new ConsoleTaskMaster();
 			task_master.AddUriHandler(BuiltInLibraries.INSTANCE);
 			task_master.AddUriHandler(DbUriHandler.INSTANCE);
+			var accessory_lib_path = Path.Combine(files.Count == 1 ? Path.GetDirectoryName(Path.GetFullPath(files[0])) : Environment.CurrentDirectory, "lib");
 			if (use_precompiled) {
-				task_master.AddUriHandler(new LoadPrecompiledLibraries());
+				var precomp = new LoadPrecompiledLibraries();
+				precomp.PrependPath(accessory_lib_path);
+				task_master.AddUriHandler(precomp);
 			}
-			task_master.AddUriHandler(new DynamicallyCompiledLibraries(collector));
+			var dyncomp = new DynamicallyCompiledLibraries(collector);
+			dyncomp.PrependPath(accessory_lib_path);
+			task_master.AddUriHandler(dyncomp);
 
 			if (files.Count == 1) {
 				var parser = Parser.Open(files[0]);

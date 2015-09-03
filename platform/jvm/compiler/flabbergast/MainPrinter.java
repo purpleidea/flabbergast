@@ -1,5 +1,8 @@
 package flabbergast;
 
+import java.io.File;
+import java.io.IOException;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -42,13 +45,25 @@ public class MainPrinter {
 			System.exit(1);
 		}
 
+		String accessory_lib_path = null;
+		try {
+			accessory_lib_path = new File(new File(files[0]).getParentFile(),
+					"lib").getCanonicalPath();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		ErrorCollector collector = new ConsoleCollector();
 		DynamicCompiler compiler = new DynamicCompiler(collector);
+		if (accessory_lib_path != null)
+			compiler.prependPath(accessory_lib_path);
 		ConsoleTaskMaster task_master = new ConsoleTaskMaster();
 		task_master.addUriHandler(BuiltInLibraries.INSTANCE);
 		task_master.addUriHandler(JdbcUriHandler.INSTANCE);
 		if (!result.hasOption('p')) {
-			task_master.addUriHandler(new LoadPrecompiledLibraries());
+			LoadPrecompiledLibraries precomp = new LoadPrecompiledLibraries();
+			task_master.addUriHandler(precomp);
+			if (accessory_lib_path != null)
+				precomp.prependPath(accessory_lib_path);
 		}
 		task_master.addUriHandler(compiler);
 		try {
