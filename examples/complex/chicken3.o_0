@@ -34,7 +34,7 @@ deploy_job : Template aurora_lib.job {
 		main : Template process {
 			requires : [ processes.install ]
 			# All our binaries take standard command line arguments, so let's make that easier.
-			command_line : [ "./", binary, " --port=", ports.http, For arg : main_args {}, name : Name Where !(arg Is Null) Reduce acc & " --" & name & "=" & arg With acc : "" ]
+			command_line : [ "./\(binary)", " --port=", ports.http, For arg : main_args {}, name : Name Where !(arg Is Null) Reduce acc & " --" & name & "=" & arg With acc : "" ]
 		}
 	}
 	task : aurora_lib.task {
