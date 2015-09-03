@@ -13,7 +13,7 @@ We are around on FreeNode IRC in `#flabbergast`, [Google Groups](https://groups.
 
 ## Documentation
 
-There are two important pieces of documentation: the rather dry [language spec man page](http://docs.flabbergast.org/flabbergast_language.7.pdf) and the friendly [manual](flabbergast-manual.md).
+There are two important pieces of documentation: the friendly [manual](flabbergast-manual.md) and the [API docs](http://docs.flabbergast.org). You might want to consult the [glossary](glossary.md) when you get started.
 
 The language spec describes the syntax and behaviour with formal semantics (or, at least, a poorly-written attempt at formal semantics). This is provided as a manual page such that it is included with the installed packages.
 
