@@ -132,7 +132,7 @@ process : Template render_lib.python.object {
 			For part : command_line
 			Reduce
 				acc &
-				(If part Is Frame Then part.command_line_value Else utils_lib.str_replace(part, str : "{{", with : "{{&")) & "\n"
+				(If part Is Frame Then part.command_line_value Else utils_lib.str_replace(part, str : "{{", with : "{{&")) & "\\\n"
 			With acc : ""
 	}
 	ordering :
