@@ -15,18 +15,11 @@ We are around on FreeNode IRC in `#flabbergast`, [Google Groups](https://groups.
 
 There are two important pieces of documentation: the friendly [manual](flabbergast-manual.md) and the [API docs](http://docs.flabbergast.org). You might want to consult the [glossary](glossary.md) when you get started.
 
-The language spec describes the syntax and behaviour with formal semantics (or, at least, a poorly-written attempt at formal semantics). This is provided as a manual page such that it is included with the installed packages.
+The manual describes the syntax is broad strokes and a more prosaic explanation of how it works with examples. It also describes philosophy, design patterns, and libraries. It's worth looking at some of the [examples](examples). If you want more whimsical examples, look at the [Rosetta Code](rosettacode) solutions.
 
-The manual describes the syntax is broader strokes and a more prosaic explanation of how it works with examples. It also describes philosophy, design patterns, and libraries.
+For programming language geeks, the [language spec](http://docs.flabbergast.org/flabbergast_language.7.html) describes the syntax and behaviour with formal semantics (or, at least, a poorly-written attempt at formal semantics). This is provided as a manual page such that it is included with the installed packages.
 
-The language can be compiled to a virtual machine simpler to implement than the full language spec and a self-hosting compiler is provided. The VM is documented in the [KWS VM](kws-vm.md) document, which does not include formal semantics because they are largely implied by the language spec.
-
-## Implementation
-There are two implementations of Flabbergast. The self-hosting version targets the JVM and the CLR.
-
-The self-hosting compiler is rather strange, as it is not really self-hosting. The self-hosting compiler is actually a Flabbergast program that, with added syntax templates, generates a compiler for a Flabbergast compiler in a target programming language. This generated compiler reduces Flabbergast syntax to KWS VM bytecode, which are then reduced to the native VM's bytecode. This is conceptually easier to understand and allows more code re-use.
-
-Each platform also contains an implementation of the runtime library and non-portable pieces of each library.
+If interested in compiler hacking, the language can be compiled to a virtual machine simpler to implement than the full language spec and a self-hosting compiler is provided. The VM is documented in the [KWS VM](kws-vm.md) document, which does not include formal semantics because they are largely implied by the language spec.
 
 ## Installation
 For Ubuntu and Debian systems, Flabbergast can be easily installed by:
@@ -68,6 +61,13 @@ Then perform a normal AutoTools install:
 
     ./configure && make && sudo make install
 
+## Implementation
+There are two implementations of Flabbergast. The self-hosting version targets the JVM and the CLR.
+
+The self-hosting compiler is rather strange, as it is not really self-hosting. The self-hosting compiler is actually a Flabbergast program that, with added syntax templates, generates a compiler for a Flabbergast compiler in a target programming language. This generated compiler reduces Flabbergast syntax to KWS VM bytecode, which are then reduced to the native VM's bytecode. This is conceptually easier to understand and allows more code re-use.
+
+Each platform also contains an implementation of the runtime library and non-portable pieces of each library.
+
 ## Patches
 Patches are welcome and patches are preferred to whining. For details, see [Conduct unbecoming of a hacker](http://sealedabstract.com/rants/conduct-unbecoming-of-a-hacker/). In general, the rules are as follows:
 
@@ -84,7 +84,7 @@ The logo is the worst symbolic representation of contextual lookup, previously c
 At every point, I made design decisions that were what I thought are the “best”. Some of them are going to seem wrong to you; some of them are going to seem wrong to me. I will happily tell you the reason or goal for a decision, but I will never defend it. Experience always changes our views on things, but one cannot regret decisions where one's past self failed to be clairvoyant–that is unrealistic. Even if a feature achieves its goal, you might disagree with the goal. My goals, in no particular order, are:
 
 - Do not be truthy.
-- Use words for complicated or unusual operations in preference to symbols. The symbols we have so far are mathematics and logical operators, string join, null coalescence, and the attribute definitions. I slightly regret attribute definitions, but they are so common, using words would be very cumbersome.
+- Use words for complicated or unusual operations in preference to symbols. The symbols we have so far are mathematics and logical operators, string join, null coalescence, and the attribute definitions.
 - Fail in the most helpful way possible (_i.e._, fail as early and explicitly as possible).
 - Avoid magic names. Current, there are `args`, `value`, and the ones generated automatically in lists. I am strongly opposed to users knowing about the one in lists; in future, they might be randomised on startup.
 - Avoid strings as messengers for structured data. This is part of the reason for lacking an evaluation operator.
