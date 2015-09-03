@@ -1,0 +1,40 @@
+aurora_lib : From lib:apache/aurora
+chicken_lib : From lib:chicken
+
+role : "chicken"
+
+chicken_aurora_file : aurora_lib.aurora_file {
+	environment : aurora_lib.environments.prod
+	jobs : [
+		chicken_lib.chicken_service_tmpl {
+			cluster : "na-east"
+			total_load : 100
+			datasets +: {
+				egg : Drop
+				# LAWYER CATS SEZ WE CAN'T HAVE THIS DATA IN THE US!!!
+			}
+		},
+		chicken_lib.chicken_service_tmpl {
+			cluster : "eu-north"
+			total_load : 80
+			jobs_to_run +: {
+				egg_layer +: {
+					# Egg laying is in greater demand in Europe, so our servers appear to
+					# be less efficient.
+					load_per_inst : 10
+				}
+			}
+		},
+		chicken_lib.chicken_service_tmpl {
+			cluster : "tw"
+			total_load : 50
+		},
+		# This is the testing cluster
+		chicken_lib.chicken_service_tmpl {
+			environment : aurora_lib.environments.devel
+			cluster : "eu-north"
+			total_load : 0
+		}
+	]
+}
+value : chicken_aurora_file.value

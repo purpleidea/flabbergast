@@ -1,0 +1,155 @@
+aurora_lib : From lib:apache/aurora
+utils_lib : From lib:utils
+
+role : "chicken"
+
+{{{Standard job that deploys from the build server.}}}
+deploy_job : Template aurora_lib.job {
+	{{{The list of the names of our deployment packages.}}}
+	packages : Required
+	{{{The binary to execute within the package.}}}
+	binary : Required
+	{{{All the args to the main binary.}}}
+	main_args : Template {}
+	{{{The load for each instance.}}}
+	load_per_inst : Required
+	{{{The minimum number of instances we allow.}}}
+	min_instances : 2
+	{{{Whether to add all the datasets servers to the command line.}}}
+	load_datasets : False
+
+	instances : utils_lib.max(total_load / load_per_inst + 1, min_instances)
+
+	processes : Template {
+		# We deploy all out processes from a standard server using a simple unpack.
+		# TODO: can we have one process per package? That would run in parallel.
+		install : Template process {
+			command_line : [
+				For package : packages
+					Reduce "\(acc) && wget -O- http://deploy.chicken/\(package).tar.bz2 | tar xfvj -"
+					With acc : "true"
+					# TODO: we should check the build artefact exists before deploying...and how big it is.
+			]
+		}
+		# Each of our jobs has one main process that does the real work.
+		main : Template process {
+			requires : [ processes.install ]
+			# All our binaries take standard command line arguments, so let's make that easier.
+			command_line : [
+				"./\(binary)",
+				" --port=", ports.http,
+				For arg : main_args {}, name : Name Where !(arg Is Null) Reduce acc & " --" & name & "=" & arg With acc : "",
+				If load_datasets
+					Then (For db_job : db_jobs, name : Name Where !(db_jobs Is Null) Reduce acc & " --db_" & name & "_serverset=" & db_job.serverset With acc : "")
+					Else ""
+				]
+		}
+	}
+	task : aurora_lib.task {
+		# We're going to automatically instantiate all the templates in the above
+		# frame. This automatically sets the `process_name` too.
+		processes :
+			For tmpl : Container.processes {}, process_name : Name
+				Where !(tmpl Is Null)
+				Select process_name : tmpl {}
+	}
+}
+
+db_tmpl : Template deploy_job {
+	dataset_name : Used
+	dataset_release : Required
+	# TODO: Can we get this set from the build server?
+	dataset_size : Required
+
+	load_per_inst : 30
+	db_release : "bbd1a6f49d39"
+
+	job_name : "db_" & dataset_name
+	db_server_pkg : "db-" & db_release
+	dbset_pkg : "dbimg-\(dataset_name)-\(dataset_release)"
+	packages : [ db_server_pkg, dbset_pkg ]
+	binary : "db"
+	main_args +: {
+		max_cache : resources.ram / 2
+		db_root : dataset_name & ".ini"
+	}
+	resources : {
+		cpu : 6
+		ram : 32Gi
+		disk : dataset_size
+	}
+}
+
+chicken_service_tmpl : Template aurora_lib.job_group {
+	# Define all our dataset templates. Remember these are jobs too.
+	datasets : Template {
+		clucking : Template db_tmpl {
+			dataset_release : "20150903"
+			dataset_size : 45Gi
+		}
+		egg : Template db_tmpl {
+			dataset_release : "20150831"
+			dataset_size : 40Gi
+		}
+		barn : Template db_tmpl {
+			dataset_release : "20150902"
+			dataset_size : 30Gi
+		}
+	}
+
+	# Instantiate all our database jobs.
+	db_jobs :
+		For tmpl : datasets {}, dataset_name : Name
+			Select dataset_name : tmpl { }
+
+	# Instantiate all our non-database jobs and merge them with the database
+	# jobs.
+	jobs :
+		For tmpl : jobs_to_run {}, db_job : db_jobs, job_name : Name
+			Select job_name : db_job ?? (tmpl { })
+
+	# Most jobs require the same amount of disk, so just set it here.
+	resources : {
+		disk : 500Mi
+	}
+
+	jobs_to_run : Template {
+		frontend : Template deploy_job {
+			load_per_inst : 10
+			packages : [ "fe-7f1e8cb4da7a" ]
+			binary : "fe"
+			main_args +: {
+				middleware_serverset : jobs.middleware.serverset
+			}
+			resources : {
+				cpu : 1
+				ram : 300Mi
+			}
+		}
+		middleware : Template deploy_job {
+			load_per_inst : 7
+			packages : [ "middle-44dab559610a" ]
+			binary : "middlew"
+			load_datasets : True
+			main_args +: {
+				egg_layer_serverset : jobs.egg_layer.serverset
+			}
+			resources : {
+				cpu : 4
+				ram : 4Gi
+			}
+		}
+		egg_layer : Template deploy_job {
+			load_per_inst : 20
+			packages : [ "eggl-76f869194f1b" ]
+			binary : "elayer"
+			main_args +: {
+				roosters : (resources.cpu * 3) To Int
+			}
+			resources : {
+				cpu : 16
+				ram : 8Gi
+			}
+		}
+	}
+}

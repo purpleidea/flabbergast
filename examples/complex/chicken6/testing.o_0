@@ -1,0 +1,44 @@
+aurora_lib : From lib:apache/aurora
+chicken_lib : From lib:chicken
+
+role : "$(whoami)"
+
+chicken_aurora_file : aurora_lib.aurora_file {
+	environment : aurora_lib.environments.prod
+	deploy_job : Template chicken_lib.deploy_job {
+		packages : [ "$(basename $(ls -ltr ../bin/\(jobname)-*.tar.bz2) .tar.bz2)" ]
+	}
+	db_tmpl : Template chicken_lib.db_tmpl {
+		dbset_pkg :  "$(basename $(ls -ltr ../bin/db-*.tar.bz2) .tar.bz2)" 
+	}
+	testing_jobs : chicken_lib.chicken_service_tmpl {
+		environment : aurora_lib.environments.devel
+		cluster : "eu-north"
+		total_load : 0
+		jobs_to_run +: {
+			frontend +: {
+			}
+		}
+	}
+	jobs : [ testing_jobs ]
+}
+value :
+	For job : chicken_aurora_file.testing_jobs.jobs
+		Reduce acc & "aurora job $1 \(job.serverset) testing.aurora\n"
+		With acc :
+"#!/bin/sh
+
+set -eux
+
+if [ $# -ne 1 ]
+then
+	echo \"Usage: $0 {create|killall}\"
+	exit 1
+fi
+
+make -C ../src build-tar upload-tar
+
+cat > testing.aurora <<EOI
+" & chicken_aurora_file.value & "
+EOI
+"
