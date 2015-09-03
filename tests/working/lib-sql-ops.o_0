@@ -1,0 +1,21 @@
+sql_lib : From lib:sql
+
+test_query : Template sql_lib.offline_query {
+	tables : [ { sql_from : "XXX" } ]
+	columns : {
+		a : expr.add {
+			left : 3
+			right : 4
+		}
+	}
+}
+
+sql_stmts : {
+	mysql : "SELECT (3+4) AS a FROM XXX"
+	postgresql : "SELECT (3+4) AS a FROM XXX"
+	sqlite : "SELECT (3+4) AS a FROM XXX"
+}
+
+value : For provider : sql_lib.sql_providers, stmt : sql_stmts
+	Reduce acc && (stmt Is Null || test_query(provider : provider) == stmt)
+	With acc : True
