@@ -10,7 +10,7 @@ Let's start with the basic configuration: [chicken1](chicken1.o_0)
 
 This configuration is pretty fragile. Let's replace all the hard-coded server-sets and paths into something better. [chicken2](chicken2.o_0)
 
-After being deployed for a while, our first discovery, after email from some eggasperated customers, is that the site is slow in some parts of the world. Geographically distributing the service should be easy since we can just deploy the same configuration to different data centres... Except, not quite. We soon discover that different parts of the world have different egg-eating preferences and we need to adjust the egg laying service based on load. Actually, we see different total loads, so let's make those adjustable too: [chicken3](chicken3)
+After being deployed for a while, our first discovery, after email from some eggasperated customers, is that the site is slow in some parts of the world. Geographically distributing the service should be easy since we can just deploy the same configuration to different data centres... Except, not quite. We soon discover that different parts of the world have different egg-eating preferences and we need to adjust the egg laying service based on load. Actually, we see different total loads, so let's make those adjustable too: [chicken3](chicken3.o_0)
 
 Great. As we get more users, that database starts to fill and we can no longer hold all our data in a single machine. We decide to separate it out into multiple databases, like so:
 

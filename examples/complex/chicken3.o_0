@@ -1,0 +1,138 @@
+aurora_lib : From lib:apache/aurora
+utils_lib : From lib:utils
+
+role : "chicken"
+environment : aurora_lib.environments.prod
+
+{{{Standard job that deploys from the build server.}}}
+deploy_job : Template aurora_lib.job {
+	{{{The list of the names of our deployment packages.}}}
+	packages : Required
+	{{{The binary to execute within the package.}}}
+	binary : Required
+	{{{All the args to the main binary.}}}
+	main_args : Template {}
+	{{{The load for each instance.}}}
+	load_per_inst : Required
+	{{{The minimum number of instances we allow.}}}
+	min_instances : 2
+
+	instances : utils_lib.max(total_load / load_per_inst + 1, min_instances)
+
+	processes : Template {
+		# We deploy all out processes from a standard server using a simple unpack.
+		# TODO: can we have one process per package? That would run in parallel.
+		install : Template process {
+			command_line : [
+				For package : packages
+					Reduce "\(acc) && wget -O- http://deploy.chicken/\(package).tar.bz2 | tar xfvj -"
+					With acc : "true"
+					# TODO: we should check the build artefact exists before deploying...and how big it is.
+			]
+		}
+		# Each of our jobs has one main process that does the real work.
+		main : Template process {
+			requires : [ processes.install ]
+			# All our binaries take standard command line arguments, so let's make that easier.
+			command_line : [ "./", binary, " --port=", ports.http, For arg : main_args {}, name : Name Where !(arg Is Null) Reduce acc & " --" & name & "=" & arg With acc : "" ]
+		}
+	}
+	task : aurora_lib.task {
+		# We're going to automatically instantiate all the templates in the above
+		# frame. This automatically sets the `process_name` too.
+		processes :
+			For tmpl : Container.processes {}, process_name : Name
+				Where !(tmpl Is Null)
+				Select process_name : tmpl {}
+	}
+}
+
+chicken_service_tmpl : Template aurora_lib.job_group {
+	jobs :
+		For tmpl : jobs_to_run {}, job_name : Name
+			Select job_name : tmpl { }
+
+	# Most jobs require the same amount of disk, so just set it here.
+	resources : {
+		disk : 500Mi
+	}
+
+	jobs_to_run : Template {
+		frontend : Template deploy_job {
+			load_per_inst : 10
+			packages : [ "fe-7f1e8cb4da7a" ]
+			binary : "fe"
+			main_args +: {
+				middleware_serverset : jobs.middleware.serverset
+			}
+			resources : {
+				cpu : 1
+				ram : 300Mi
+			}
+		}
+		middleware : Template deploy_job {
+			load_per_inst : 7
+			packages : [ "middle-44dab559610a" ]
+			binary : "middlew"
+			main_args +: {
+				db_serverset : jobs.db.serverset
+				egg_layer_serverset : jobs.egg_layer.serverset
+			}
+			resources : {
+				cpu : 4
+				ram : 4Gi
+			}
+		}
+		db : Template deploy_job {
+			load_per_inst : 30
+			packages : [ "db-bbd1a6f49d39", "dbimg-20150509" ]
+			binary : "db"
+			main_args +: {
+				max_cache : resources.ram / 2
+			}
+			resources : {
+				cpu : 6
+				ram : 32Gi
+				# TODO: Can we get this set from the build server?
+				disk : 50Gi
+			}
+		}
+		egg_layer : Template deploy_job {
+			load_per_inst : 20
+			packages : [ "eggl-76f869194f1b" ]
+			binary : "elayer"
+			main_args +: {
+				roosters : (resources.cpu * 3) To Int
+			}
+			resources : {
+				cpu : 16
+				ram : 8Gi
+			}
+		}
+	}
+}
+
+chicken_aurora_file : aurora_lib.aurora_file {
+	jobs : [
+		chicken_service_tmpl {
+			cluster : "na-east"
+			total_load : 100
+		},
+		chicken_service_tmpl {
+			cluster : "eu-north"
+			total_load : 80
+			jobs_to_run +: {
+				egg_layer +: {
+					# Egg laying is in greater demand in Europe, so our servers appear to
+					# be less efficient.
+					load_per_inst : 10
+				}
+			}
+		},
+		chicken_service_tmpl {
+			cluster : "tw"
+			total_load : 50
+		}
+	]
+}
+value : chicken_aurora_file.value
