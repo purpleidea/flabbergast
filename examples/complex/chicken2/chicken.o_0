@@ -1,0 +1,113 @@
+aurora_lib : From lib:apache/aurora
+
+cluster : "na-east"
+role : "chicken"
+environment : aurora_lib.environments.prod
+
+# Let's start by making a “better” job template. This one will be more suited
+# how we run binaries. We deploy everything from a standard webserver we
+# guarantee that our command line arguments are all valid Flabbergast
+# identifiers.
+deploy_job : Template aurora_lib.job {
+	{{{The list of the names of our deployment packages.}}}
+	packages : Required
+	{{{The binary to execute within the package.}}}
+	binary : Required
+	{{{All the args to the main binary.}}}
+	main_args : Template {}
+
+	processes : Template {
+		# We deploy all out processes from a standard server using a simple unpack.
+		# TODO: can we have one process per package? That would run in parallel.
+		install : Template process {
+			command_line : [
+				For package : packages
+					Reduce "\(acc) && wget -O- http://deploy.chicken/\(package).tar.bz2 | tar xfvj -"
+					With acc : "true"
+					# TODO: we should check the build artefact exists before deploying...and how big it is.
+			]
+		}
+		# Each of our jobs has one main process that does the real work.
+		main : Template process {
+			requires : [ processes.install ]
+			# All our binaries take standard command line arguments, so let's make that easier.
+			command_line : [ "./", binary, " --port=", ports.http, For arg : main_args {}, name : Name Where !(arg Is Null) Reduce acc & " --" & name & "=" & arg With acc : "" ]
+		}
+	}
+	task : aurora_lib.task {
+		# We're going to automatically instantiate all the templates in the above
+		# frame. This automatically sets the `process_name` too.
+		processes :
+			For tmpl : Container.processes {}, process_name : Name
+				Where !(tmpl Is Null)
+				Select process_name : tmpl {}
+	}
+}
+
+chicken_aurora_file : aurora_lib.aurora_file {
+	# Once again, we're going to instantiate templates and get `job_names` set for free.
+	jobs :
+		For tmpl : jobs_to_run {}, job_name : Name
+			Select job_name : tmpl { }
+
+	# Most jobs require the same amount of disk, so just set it here.
+	resources : {
+		disk : 500Mi
+	}
+
+	# Here are all our jobs to run.
+	jobs_to_run : Template {
+		frontend : Template deploy_job {
+			instances : 10
+			packages : [ "fe-7f1e8cb4da7a" ]
+			binary : "fe"
+			main_args +: {
+				middleware_serverset : jobs.middleware.serverset
+			}
+			resources : {
+				cpu : 1
+				ram : 300Mi
+			}
+		}
+		middleware : Template deploy_job {
+			instances : 15
+			packages : [ "middle-44dab559610a" ]
+			binary : "middlew"
+			main_args +: {
+				db_serverset : jobs.db.serverset
+				egg_layer_serverset : jobs.egg_layer.serverset
+			}
+			resources : {
+				cpu : 4
+				ram : 4Gi
+			}
+		}
+		db : Template deploy_job {
+			instances : 3
+			packages : [ "db-bbd1a6f49d39", "dbimg-20150509" ]
+			binary : "db"
+			main_args +: {
+				max_cache : resources.ram / 2
+			}
+			resources : {
+				cpu : 6
+				ram : 32Gi
+				# TODO: Can we get this set from the build server?
+				disk : 50Gi
+			}
+		}
+		egg_layer : Template deploy_job {
+			instances : 5
+			packages : [ "eggl-76f869194f1b" ]
+			binary : "elayer"
+			main_args +: {
+				roosters : (resources.cpu * 3) To Int
+			}
+			resources : {
+				cpu : 16
+				ram : 8Gi
+			}
+		}
+	}
+}
+value : chicken_aurora_file.value

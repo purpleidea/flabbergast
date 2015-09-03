@@ -1,0 +1,99 @@
+aurora_lib : From lib:apache/aurora
+
+cluster : "na-east"
+role : "chicken"
+environment : aurora_lib.environments.prod
+
+chicken_aurora_file : aurora_lib.aurora_file {
+	resources : {
+		disk : 500Mi
+	}
+	jobs : [
+		job {
+			job_name : "frontend"
+			instances : 10
+			task : aurora_lib.task {
+				processes : {
+					install : process {
+						process_name : "installer"
+						command_line : [ "wget -O- http://deploy.chicken/fe-7f1e8cb4da7a.tar.bz2 | tar xfvj -" ]
+					}
+					main : process {
+						process_name : "fe_main"
+						requires : [ processes.install ]
+						command_line : [ "./fe --port=", ports.http, " --middleware_serverset=\(cluster)/\(role)/\(environment)/middleware" ]
+					}
+				}
+			}
+			resources : {
+				cpu : 1
+				ram : 300Mi
+			}
+		},
+		job {
+			job_name : "middleware"
+			instances : 15
+			task : aurora_lib.task {
+				processes : {
+					install : process {
+						process_name : "installer"
+						command_line : [ "wget -O- http://deploy.chicken/middle-44dab559610a.tar.bz2 | tar xfvj -" ]
+					}
+					main : process {
+						process_name : "main"
+						requires : [ processes.install ]
+						command_line : [ "./middlew --port=", ports.http, " --db_serverset=\(cluster)/\(role)/\(environment)/db --egg_layer_serverset=\(cluster)/\(role)/\(environment)/egg_layer" ]
+					}
+				}
+			}
+			resources : {
+				cpu : 4
+				ram : 4Gi
+			}
+		},
+		job {
+			job_name : "db"
+			instances : 3
+			task : aurora_lib.task {
+				processes : {
+					install : process {
+						process_name : "installer"
+						command_line : [ "wget -O- http://deploy.chicken/db-bbd1a6f49d39.tar.bz2 | tar xfvj - && wget -O- http://deploy.chicken/dbimg-20150509.tar.bz2 | tar xfvj -" ]
+					}
+					main : process {
+						process_name : "main"
+						requires : [ processes.install ]
+						command_line : [ "./db --port=", ports.http, " --max_cache=\(resources.ram / 2)" ]
+					}
+				}
+			}
+			resources : {
+				cpu : 6
+				ram : 32Gi
+				disk : 50Gi
+			}
+		},
+		job {
+			job_name : "egg_layer"
+			instances : 5
+			task : aurora_lib.task {
+				processes : {
+					install : process {
+						process_name : "installer"
+						command_line : [ "wget -O- http://deploy.chicken/eggl-76f869194f1b.tar.bz2 | tar xfvj -" ]
+					}
+					main : process {
+						process_name : "elmain"
+						requires : [ processes.install ]
+						command_line : [ "./elayer --port=", ports.http, " --roosters=\((resources.cpu * 3) To Int)" ]
+					}
+				}
+			}
+			resources : {
+				cpu : 16
+				ram : 8Gi
+			}
+		}
+	]
+}
+value : chicken_aurora_file.value
