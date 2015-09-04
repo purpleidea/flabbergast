@@ -45,6 +45,7 @@
 		<Compile Include="sql.cs"/>
 		<Compile Include="srcref.cs"/>
 		<Compile Include="stringish.cs"/>
+		<Compile Include="time.cs"/>
 		<Compile Include="AssemblyInfo.cs"/>
 	</ItemGroup>
 	<Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets"/>

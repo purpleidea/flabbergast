@@ -1,0 +1,119 @@
+Introduction{{{Templates for manipulating the worst physical unit: times and dates.}}}
+
+{{{The current time.}}}
+now : {
+	{{{The current time in the timezone specified by the environment.}}}
+	local : (From lib:timeinterop ).now_local
+	{{{The current time in the UTC timezone.}}}
+	utc : (From lib:timeinterop ).now_utc
+}
+
+{{{The template for a time object. Do not instantiate this template! Use \{from_unix} or \{from_parts} to create this.}}}
+time_tmpl : Template {
+	{{{The number of days since the start of the week.}}}
+	day_of_week : Required
+	{{{The number of seconds since midnight. The might include fractional seconds.}}}
+	from_midnight : Required
+	{{{The number of milliseconds since the start of the current second.}}}
+	milliseconds : Required
+	{{{The number of seconds since the start of the current minute.}}}
+	second : Required
+	{{{The number of minutes since the start of the current hour.}}}
+	minute : Required
+	{{{The number of hours since the start of the day.}}}
+	hour : Required
+	{{{The number of days since the start of the month.}}}
+	day : Required
+	{{{The number of months since the start of the year.}}}
+	month : Required
+	{{{The number of years since the complicated start date of the Gregorian calendar.}}}
+	year : Required
+	{{{The number of weeks since the start of the year.}}}
+	week : Required
+	{{{The number of days since the start of the year.}}}
+	day_of_year : Required
+	{{{The number of second since the start of the UNIX calendar.}}}
+	epoch : Required
+	{{{Whether the time is in UTC or the local timezone.}}}
+	is_utc : Required
+	{{{Whether this year is a leap year in the Gregorian calendar.}}}
+	is_leap_year : Required
+}
+
+{{{A function-like template to create a time given a UNIX epoch.}}}
+from_unix : Template (From lib:timeinterop ).from_unix {
+	{{{The number of second since the start of the UNIX calendar.}}}
+	epoch : 0
+	{{{Whether the time is in UTC or the local timezone.}}}
+	is_utc : True
+}
+
+{{{A function-like template to create a time given some Gregorian information.}}}
+from_parts : Template (From lib:timeinterop ).from_parts {
+	{{{The number of milliseconds since the start of the current second.}}}
+	millisecond : 0
+	{{{The number of seconds since the start of the current minute.}}}
+	second : 0
+	{{{The number of minutes since the start of the current hour.}}}
+	minute : 0
+	{{{The number of hours since the start of the day.}}}
+	hour : 0
+	{{{The number of days since the start of the month.}}}
+	day : 1
+	{{{The number of months since the start of the year.}}}
+	month : 1
+	{{{The number of years since the complicated start date of the Gregorian calendar.}}}
+	year : 1970
+	{{{Whether the time is in UTC or the local timezone.}}}
+	is_utc : True
+}
+
+{{{Compare two times and return the difference, in seconds, between them. See \{compare_list} for details.}}}
+compare : utils_lib.firstifier(base : compare_list)
+
+{{{Compare a list of times against a reference time and return a list of the differences, in seconds, between them.}}}
+compare_list : Template (From lib:timeinterop ).compare_list {
+	{{{A list of times to compare.}}}
+	args : Used
+	{{{A reference time to compare against.}}}
+	to : Used
+}
+
+{{{Create a new time by adding to it. See \{modify_list} for details.}}}
+modify : utils_lib.firstifier(base : modify_list)
+
+{{{Create a list of new times by adding time spans to a list of times.}}}
+modify_list : Template (From lib:timeinterop ).modify_list {
+	args : Used
+	{{{The number of milliseconds to add to the original times. This can be negative.}}}
+	milliseconds : 0
+	{{{The number of seconds to add to the original times. This can be negative.}}}
+	seconds : 0
+	{{{The number of minutes to add to the original times. This can be negative.}}}
+	minutes : 0
+	{{{The number of hours to add to the original times. This can be negative.}}}
+	hours : 0
+	{{{The number of months to add to the original times. This can be negative.}}}
+	months : 0
+	{{{The number of days to add to the original times. This can be negative.}}}
+	days : 0
+	{{{The number of years to add to the original times. This can be negative.}}}
+	years : 0
+}
+
+{{{Create a new time transformed to a different time zone.}}}
+switch_zone : utils_lib.firstifier(base : switch_zone_list)
+
+{{{Create a list of new times transformed to a different time zone.}}}
+switch_zone_list : Template (From lib:timeinterop ).switch_zone_list {
+	args : Used
+	{{{Convert the provided times to UTC, otherwise local time.}}}
+	to_utc : True
+}
+
+{{{All the days, for convience of not remembering them numerically.}}}
+days : (From lib:timeinterop ).days Enforce Frame
+{{{All the months, for convience of not remembering them numerically.}}}
+months : (From lib:timeinterop ).months Enforce Frame
+
+utils_lib : From lib:utils

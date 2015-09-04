@@ -20,6 +20,8 @@ ASM_JAR="$JAR_PATH/asm4.jar"
 AC_SUBST([ASM_JAR])
 COMMONS_CLI_JAR="$JAR_PATH/commons-cli.jar"
 AC_SUBST([COMMONS_CLI_JAR])
+JODA_TIME_JAR="$JAR_PATH/joda-time.jar"
+AC_SUBST([JODA_TIME_JAR])
 
 if test "$enable_jvm" != no; then
 	AC_PATH_TOOL(JAVA, java, undefined)

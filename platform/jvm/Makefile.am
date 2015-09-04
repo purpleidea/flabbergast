@@ -24,6 +24,7 @@ java_DATA = \
 
 JAVA_RUNTIME_DEPS = \
 	$(JLINE_JAR) \
+	$(JODA_TIME_JAR) \
 	$(NULL)
 
 JAVA_COMPILER_DEPS = \
