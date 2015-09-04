@@ -406,4 +406,55 @@ namespace Flabbergast {
 			attributes[name] = value;
 		}
 	}
+/**
+ * A Frame of fixed data with an easy API.
+ */
+	public class FixedFrame : Frame, IEnumerable<string> {
+
+		private readonly IDictionary<string, Object> attributes = new Dictionary<string, Object>();
+
+		public override long Count { get { return attributes.Count; } }
+
+		public FixedFrame(string id, SourceReference source_ref) : base(id, source_ref, null, null) {
+		}
+
+		public override object this[string name] {
+			get {
+				object result;
+				attributes.TryGetValue(name, out result);
+				return result;
+			}
+		}
+
+		public IEnumerator<string> GetEnumerator() {
+			return attributes.Keys.GetEnumerator();
+    }
+
+		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
+			return this.GetEnumerator();
+		}
+		public void Add(string name, long val) {
+			attributes[name] = val;
+		}
+
+		public void Add(string name, string val) {
+			attributes[name] = new SimpleStringish(val);
+		}
+		public void Add(IEnumerable<Frame> frames) {
+			foreach (var frame in frames) {
+				attributes[frame.Id.ToString()] = frame;
+			}
+		}
+
+		/**
+		 * Check if an attribute name is present in the frame.
+		 */
+		public override bool Has(string name) {
+			return attributes.ContainsKey(name);
+		}
+
+		public override IEnumerable<string> GetAttributeNames() {
+			return attributes.Keys;
+		}
+	}
 }
