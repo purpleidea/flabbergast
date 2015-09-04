@@ -13,9 +13,12 @@ public class MutableFrame extends Frame {
 
 	private ArrayList<Computation> unslotted = new ArrayList<Computation>();
 
+	protected final TaskMaster task_master;
+
 	public MutableFrame(TaskMaster task_master, SourceReference source_ref,
 			Context context, Frame container) {
 		super(task_master, source_ref, context, container);
+		this.task_master = task_master;
 	}
 
 	@Override

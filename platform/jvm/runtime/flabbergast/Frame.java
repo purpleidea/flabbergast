@@ -26,15 +26,24 @@ public abstract class Frame implements Iterable<String> {
 	private final Context context;
 	private final Stringish id;
 	private final SourceReference source_reference;
-	protected final TaskMaster task_master;
 
 	public Frame(TaskMaster task_master, SourceReference source_ref,
 			Context context, Frame container) {
-		this.task_master = task_master;
+		this(TaskMaster.ordinalName(task_master.nextId()), source_ref, context,
+				container);
+	}
+
+	public Frame(String id, SourceReference source_ref, Context context,
+			Frame container) {
+		this(new SimpleStringish(id), source_ref, context, container);
+	}
+
+	public Frame(Stringish id, SourceReference source_ref, Context context,
+			Frame container) {
 		this.source_reference = source_ref;
 		this.context = Context.prepend(this, context);
 		this.container = container == null ? this : container;
-		this.id = TaskMaster.ordinalName(task_master.nextId());
+		this.id = id;
 	}
 
 	public abstract int count();

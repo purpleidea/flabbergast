@@ -172,19 +172,20 @@ namespace Flabbergast {
 			get;
 		}
 
-		protected readonly TaskMaster task_master;
-
 		/**
 	 * The stack trace when this frame was created.
 	 */
 		public SourceReference SourceReference { get; private set; }
 
-		public Frame(TaskMaster task_master, SourceReference source_ref, Context context, Frame container) {
-			this.task_master = task_master;
+		public Frame(TaskMaster task_master, SourceReference source_ref, Context context, Frame container) : this(TaskMaster.OrdinalName(task_master.NextId()), source_ref, context, container) {
+		}
+		public Frame(string id, SourceReference source_ref, Context context, Frame container) : this(new SimpleStringish(id), source_ref, context, container) {
+		}
+		public Frame(Stringish id, SourceReference source_ref, Context context, Frame container) {
 			SourceReference = source_ref;
 			Context = Context.Prepend(this, context);
 			Container = container ?? this;
-			Id = TaskMaster.OrdinalName(task_master.NextId());
+			Id = id;
 		}
 
 		public abstract IEnumerable<string> GetAttributeNames();
@@ -257,6 +258,7 @@ namespace Flabbergast {
 		public override long Count { get { return attributes.Count; } }
 		private readonly IDictionary<string, Object> attributes = new SortedDictionary<string, Object>();
 		private List<Computation> unslotted = new List<Computation>();
+		protected readonly TaskMaster task_master;
 
 		public override object this[string name] {
 			get {
@@ -268,7 +270,9 @@ namespace Flabbergast {
 				return result;
 			}
 		}
-		public MutableFrame(TaskMaster task_master, SourceReference source_ref, Context context, Frame container) : base (task_master, source_ref, context, container) { }
+		public MutableFrame(TaskMaster task_master, SourceReference source_ref, Context context, Frame container) : base (task_master, source_ref, context, container) {
+			this.task_master = task_master;
+		}
 		public override IEnumerable<string> GetAttributeNames() {
 			return attributes.Keys;
 		}
