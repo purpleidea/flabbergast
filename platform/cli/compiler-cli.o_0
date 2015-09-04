@@ -2688,7 +2688,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 							value :
 								"\(indent)\(generator).Fold((RevCons<LoadableValue>) null, arguments, (\(Id)_index, \(Id)_item, \(Id)_tail, \(Id)_block) => \(Id)_item.Generate(\(argument_list)(\(Id)_result) => \(Id)_block(new RevCons<LoadableValue>(\(Id)_result, \(Id)_tail))), (\(Id)_args) => {" &
 								"\(indent)\t\(generator).DebugPosition(this);" &
-								"\(indent)\tvar \(storage_name) = \(generator).InvokeNative(\(parameters.source_reference.storage_name), Methods, \(Id)_args.ToArray());" &
+								"\(indent)\tvar \(storage_name) = \(generator).InvokeNative(\(parameters.source_reference.storage_name), Methods, \(Id)_args == null ? new LoadableValue[0] : \(Id)_args.ToArray());" &
 								"\(indent)\tif (\(storage_name) != null) {" &
 								code &
 								"\(indent)\t}" &
