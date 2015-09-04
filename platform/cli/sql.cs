@@ -7,24 +7,24 @@ using System.Threading;
 namespace Flabbergast {
 	public class DbQuery : Computation {
 		private delegate string NameChooser (DbDataReader rs, long it);
-		private delegate void Retriever (DbDataReader rs, MutableFrame frame);
-		private delegate object Unpacker (DbDataReader rs, int position);
+		private delegate void Retriever (DbDataReader rs, MutableFrame frame, TaskMaster task_master);
+		private delegate object Unpacker (DbDataReader rs, int position, TaskMaster task_master);
 
 		private static Retriever Bind(string name, int position, Unpacker unpacker) {
-				return (rs, frame) => frame.Set(name, rs.IsDBNull(position) ? Unit.NULL : unpacker(rs, position));
+				return (rs, frame, task_master) => frame.Set(name, rs.IsDBNull(position) ? Unit.NULL : unpacker(rs, position, task_master));
 		}
 
 		static readonly Dictionary<System.Type, Unpacker> unpackers = new Dictionary<System.Type, Unpacker>();
 		private static readonly bool debug = (Environment.GetEnvironmentVariable("FLABBERGAST_SQL") ?? "") == "debug";
 		static DbQuery () {
-			AddUnpacker((rs, position) => {
+			AddUnpacker((rs, position, task_master) => {
 					var str = rs.GetString(position);
 					return str == null ? null : new SimpleStringish(str);
 			}, typeof(string));
-			AddUnpacker((rs, position) => rs.GetInt64(position), typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong));
-			AddUnpacker((rs, position) => rs.GetDouble(position), typeof(float), typeof(double));
-			AddUnpacker((rs, position) => rs.GetBoolean(position), typeof(bool));
-			AddUnpacker((rs, position) => {
+			AddUnpacker((rs, position, task_master) => rs.GetInt64(position), typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong));
+			AddUnpacker((rs, position, task_master) => rs.GetDouble(position), typeof(float), typeof(double));
+			AddUnpacker((rs, position, task_master) => rs.GetBoolean(position), typeof(bool));
+			AddUnpacker((rs, position, task_master) => {
 				var result = rs.GetValue(position);
 				if (result == null) {
 					return Unit.NULL;
@@ -121,7 +121,7 @@ namespace Flabbergast {
 						if (!task_master.VerifySymbol(source_ref, attr_name)) {
 							return false;
 						}
-						retrievers.Add((rs, frame) => frame.Set(attr_name, rs.IsDBNull(column) ? Precomputation.Capture(Unit.NULL) : Lookup.Do(rs.GetString(column).Split('.'))));
+						retrievers.Add((rs, frame, task_master) => frame.Set(attr_name, rs.IsDBNull(column) ? Precomputation.Capture(Unit.NULL) : Lookup.Do(rs.GetString(column).Split('.'))));
 						continue;
 					}
 					Unpacker unpacker;
@@ -145,7 +145,7 @@ namespace Flabbergast {
 				for (int it = 1; reader.Read(); it++) {
 					var frame = new MutableFrame(task_master, source_ref, list.Context, list);
 					foreach (var r in retrievers) {
-						r(reader, frame);
+						r(reader, frame, task_master);
 					}
 					list.Set(name_chooser(reader, it), frame);
 				}

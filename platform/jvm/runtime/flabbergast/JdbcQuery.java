@@ -27,8 +27,8 @@ public class JdbcQuery extends Computation {
 	}
 
 	private static abstract class Retriever {
-		abstract void invoke(ResultSet rs, MutableFrame frame)
-				throws SQLException;
+		abstract void invoke(ResultSet rs, MutableFrame frame,
+				TaskMaster task_master) throws SQLException;
 	}
 	private static class UnpackRetriever extends Retriever {
 		private final String name;
@@ -40,39 +40,45 @@ public class JdbcQuery extends Computation {
 			this.unpacker = unpacker;
 		}
 		@Override
-		void invoke(ResultSet rs, MutableFrame frame) throws SQLException {
-			Object result = unpacker.invoke(rs, position);
+		void invoke(ResultSet rs, MutableFrame frame, TaskMaster task_master)
+				throws SQLException {
+			Object result = unpacker.invoke(rs, position, task_master);
 			frame.set(name, rs.wasNull() ? Unit.NULL : result);
 		}
 	}
 	static abstract class Unpacker {
-		abstract Object invoke(ResultSet rs, int position) throws SQLException;
+		abstract Object invoke(ResultSet rs, int position,
+				TaskMaster task_master) throws SQLException;
 	}
 
 	static final Map<Integer, Unpacker> unpackers = new HashMap<Integer, Unpacker>();
 	static {
 		addUnpacker(new Unpacker() {
 			@Override
-			Object invoke(ResultSet rs, int position) throws SQLException {
+			Object invoke(ResultSet rs, int position, TaskMaster task_master)
+					throws SQLException {
 				String str = rs.getString(position);
 				return str == null ? null : new SimpleStringish(str);
 			}
 		}, Types.CHAR, Types.VARCHAR, Types.LONGVARCHAR);
 		addUnpacker(new Unpacker() {
 			@Override
-			Object invoke(ResultSet rs, int position) throws SQLException {
+			Object invoke(ResultSet rs, int position, TaskMaster task_master)
+					throws SQLException {
 				return rs.getLong(position);
 			}
 		}, Types.TINYINT, Types.SMALLINT, Types.INTEGER, Types.BIGINT);
 		addUnpacker(new Unpacker() {
 			@Override
-			Object invoke(ResultSet rs, int position) throws SQLException {
+			Object invoke(ResultSet rs, int position, TaskMaster task_master)
+					throws SQLException {
 				return rs.getDouble(position);
 			}
 		}, Types.REAL, Types.FLOAT, Types.DOUBLE);
 		addUnpacker(new Unpacker() {
 			@Override
-			Object invoke(ResultSet rs, int position) throws SQLException {
+			Object invoke(ResultSet rs, int position, TaskMaster task_master)
+					throws SQLException {
 				return rs.getBoolean(position);
 			}
 		}, Types.BIT);
@@ -170,8 +176,8 @@ public class JdbcQuery extends Computation {
 					}
 					retrievers.add(new Retriever() {
 						@Override
-						void invoke(ResultSet rs, MutableFrame frame)
-								throws SQLException {
+						void invoke(ResultSet rs, MutableFrame frame,
+								TaskMaster task_master) throws SQLException {
 							String result = rs.getString(column);
 							frame.set(attr_name, rs.wasNull()
 									? Unit.NULL
@@ -209,7 +215,7 @@ public class JdbcQuery extends Computation {
 				MutableFrame frame = new MutableFrame(task_master, source_ref,
 						list.getContext(), list);
 				for (Retriever r : retrievers) {
-					r.invoke(rs, frame);
+					r.invoke(rs, frame, task_master);
 				}
 				list.set(name_chooser.invoke(rs, it), frame);
 			}
