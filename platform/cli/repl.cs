@@ -111,6 +111,8 @@ namespace Flabbergast {
 			string s;
 
 			while (run && (s = line_editor.Edit(id + "‽ ", "")) != null) {
+				if (string.IsNullOrWhiteSpace(s))
+					continue;
 				var parser = new Parser("line" + id, s);
 				var run_type = parser.ParseRepl(collector, unit, "REPL" + id++);
 				if (run_type != null) {

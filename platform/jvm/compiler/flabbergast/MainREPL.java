@@ -188,6 +188,8 @@ public class MainREPL {
 			int id = 0;
 			KeepRunning keep_running = new KeepRunning();
 			while (keep_running.allowed() && (line = reader.readLine()) != null) {
+				if (line.trim().isEmpty())
+					continue;
 				Parser parser = new Parser("<console>", line);
 				PrintToConsole printer = new PrintToConsole(reader);
 				RawPrint raw_printer = new RawPrint(reader);
