@@ -1,6 +1,7 @@
 package flabbergast;
 
 import flabbergast.Lookup.DoLookup;
+import flabbergast.time.BaseTime;
 import java.sql.Types;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.joda.time.DateTime;
 
 public class JdbcQuery extends Computation {
 	private static abstract class NameChooser {
@@ -82,6 +84,14 @@ public class JdbcQuery extends Computation {
 				return rs.getBoolean(position);
 			}
 		}, Types.BIT);
+		addUnpacker(new Unpacker() {
+			@Override
+			Object invoke(ResultSet rs, int position, TaskMaster task_master)
+					throws SQLException {
+				return BaseTime.makeTime(
+						new DateTime(rs.getTimestamp(position)), task_master);
+			}
+		}, Types.DATE, Types.TIME, Types.TIMESTAMP);
 	}
 
 	static void addUnpacker(Unpacker unpacker, int... sql_types) {

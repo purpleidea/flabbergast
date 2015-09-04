@@ -24,6 +24,7 @@ namespace Flabbergast {
 			AddUnpacker((rs, position, task_master) => rs.GetInt64(position), typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong));
 			AddUnpacker((rs, position, task_master) => rs.GetDouble(position), typeof(float), typeof(double));
 			AddUnpacker((rs, position, task_master) => rs.GetBoolean(position), typeof(bool));
+			AddUnpacker((rs, position, task_master) => Time.BaseTime.MakeTime(rs.GetDateTime(position), task_master), typeof(DateTime));
 			AddUnpacker((rs, position, task_master) => {
 				var result = rs.GetValue(position);
 				if (result == null) {
@@ -40,6 +41,9 @@ namespace Flabbergast {
 				}
 				if (result is float || result is double) {
 					return (double)result;
+				}
+				if (result is DateTime) {
+					return Time.BaseTime.MakeTime(rs.GetDateTime(position), task_master);
 				}
 				return Unit.NULL;
 			}, typeof(object));
