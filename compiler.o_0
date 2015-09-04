@@ -2339,6 +2339,7 @@ language_tmpl : Template {
 					pattern : parser.sequence {
 						of : [
 							description {},
+							space { preferred : True },
 							valid_identifier { field : $name },
 							space { preferred : True },
 							parser.exact { word : ":" },
