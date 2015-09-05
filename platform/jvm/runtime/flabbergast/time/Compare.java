@@ -2,6 +2,8 @@ package flabbergast.time;
 
 import flabbergast.*;
 
+import java.lang.Math;
+
 import org.joda.time.DateTime;
 import org.joda.time.Seconds;
 
@@ -35,6 +37,6 @@ public class Compare extends BaseTime {
 				return;
 			}
 		}
-		result = (long) Seconds.secondsBetween(left, right).getSeconds();
+		result = (long) Seconds.secondsBetween(right, left).getSeconds();
 	}
 }
