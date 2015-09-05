@@ -285,7 +285,7 @@ expr_tmpl : Template {
 			sql_when :
 				If when_specials.t.sql_type.coerce B& sql_allowed_test_type.coerce == 0
 					Then Error "Incompatible type \(when_specials.t.sql_tpe.name) used in test for WHERE. Expected \(sql_allowed_test_type.name)."
-					Else "WHEN \(when_specials.t.sql_expr) THEN \(when_specials.r.sql_expr)"
+					Else " WHEN \(when_specials.t.sql_expr) THEN \(when_specials.r.sql_expr)"
 		}
 
 		specials : Template {
