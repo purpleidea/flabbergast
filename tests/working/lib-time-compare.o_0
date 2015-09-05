@@ -1,0 +1,25 @@
+time_lib : From lib:time
+
+compare : Template {
+	left : Required
+	right : Required
+	difference : Required
+	computed_difference : time_lib.compare(left, to : right) To Int
+	swapped_computed_difference : time_lib.compare(right, to : left) To Int
+	value : computed_difference == difference && swapped_computed_difference == -difference
+}
+
+time1 : time_lib.from_parts(year : 2015, month : 9, day : 5, hour : 12, minute : 25, second : 42, is_utc : True)
+time2 : time_lib.from_parts(year : 2015, month : 9, day : 5, hour : 11, minute : 25, second : 42, is_utc : True)
+time3 : time_lib.from_parts(year : 2016, month : 9, day : 5, hour : 11, minute : 25, second : 42, is_utc : True)
+
+checks : [
+	compare { left : time1  right : time2  difference : 3600 },
+	compare { left : time1  right : time3  difference : -31618800 },
+	compare { left : time2  right : time3  difference : -31622400 }
+]
+
+value :
+	For check : checks
+		Reduce acc &&  check.value
+		With acc : True
