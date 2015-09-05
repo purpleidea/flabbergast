@@ -38,7 +38,7 @@ JAR_LOG_COMPILER = ./run_test
 AM_JAR_LOG_FLAGS = "$(TESTING_CLASSPATH)"
 TESTING_CLASSPATH = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):flabbergast-runtime-$(VERSION).jar:flabbergast-compiler-$(VERSION).jar:flabbergast-stdlib-$(VERSION).jar
 
-RUNTIME_INPUTS = $(wildcard runtime/flabbergast/*.java)
+RUNTIME_INPUTS = $(wildcard runtime/flabbergast/*.java runtime/flabbergast/*/*.java)
 COMPILER_INPUTS = $(wildcard compiler/flabbergast/*.java)
 STDLIB_INPUTS = $(find ../../lib/ -name '*.o_0' -o -name '*.jo_0')
 TESTING_INPUTS = $(wildcard testing/flabbergast/*.java)
