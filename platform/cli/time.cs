@@ -67,17 +67,11 @@ namespace Flabbergast.Time {
 	protected void GetUnixTime(Action<DateTime> target, Context context) {
 			new Lookup(task_master, source_reference, new[]{"epoch"}, context).Notify(epoch => {
 				if (epoch is Int64) {
-					new Lookup(task_master, source_reference, new[]{"is_utc"}, context).Notify(is_utc => {
-						if (is_utc is bool) {
-							var time = new DateTime(1970, 1, 1, 0, 0, 0, (bool) is_utc ? DateTimeKind.Utc : DateTimeKind.Local);
-							target(time.AddSeconds((long) epoch));
-							if (Interlocked.Decrement(ref interlock) == 0) {
-								task_master.Slot(this);
-							}
-						} else {
-							task_master.ReportOtherError(source_reference, "“is_utc” must be an Bool.");
-						}
-					});
+					var time = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+					target(time.AddSeconds((long) epoch));
+					if (Interlocked.Decrement(ref interlock) == 0) {
+						task_master.Slot(this);
+					}
 				} else {
 					task_master.ReportOtherError(source_reference, "“epoch” must be an Int.");
 				}
@@ -192,7 +186,7 @@ namespace Flabbergast.Time {
 				interlock = 2;
 				new Lookup(task_master, source_reference, new[]{"is_utc"}, context).Notify(is_utc => {
 					if (is_utc is bool) {
-						kind = (bool) is_utc ? DateTimeKind.Utc : DateTimeKind.Local;
+						kind = ((bool) is_utc) ? DateTimeKind.Utc : DateTimeKind.Local;
 						if (Interlocked.Decrement(ref interlock) == 0) {
 							task_master.Slot(this);
 						}

@@ -161,30 +161,13 @@ public abstract class BaseTime extends Computation {
 			@Override
 			public void consume(final Object epoch) {
 				if (epoch instanceof Long) {
-					new Lookup(task_master, source_reference,
-							new String[]{"is_utc"}, context)
-							.listen(new ConsumeResult() {
-								@Override
-								public void consume(Object is_utc) {
-									if (is_utc instanceof Boolean) {
-										DateTime time = new DateTime(1970, 1,
-												1, 0, 0, 0, (Boolean) is_utc
-														? DateTimeZone.UTC
-														: DateTimeZone
-																.getDefault());
-										long epochl = (Long) epoch;
-										target.invoke(time
-												.plusSeconds((int) epochl));
-										if (interlock.decrementAndGet() == 0) {
-											task_master.slot(BaseTime.this);
-										}
-									} else {
-										task_master.reportOtherError(
-												source_reference,
-												"“is_utc” must be an Bool.");
-									}
-								}
-							});
+					DateTime time = new DateTime(1970, 1, 1, 0, 0, 0,
+							DateTimeZone.UTC);
+					long epochl = (Long) epoch;
+					target.invoke(time.plusSeconds((int) epochl));
+					if (interlock.decrementAndGet() == 0) {
+						task_master.slot(BaseTime.this);
+					}
 				} else {
 					task_master.reportOtherError(source_reference,
 							"“epoch” must be an Int.");
