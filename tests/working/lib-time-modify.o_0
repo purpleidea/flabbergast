@@ -1,0 +1,18 @@
+time_lib : From lib:time
+
+specified : {
+	time1 : time_lib.from_parts(year : 2015, month : 9, day : 5, hour : 12, minute : 25, second : 42, is_utc : True)
+	time2 : time_lib.from_parts(year : 2015, month : 9, day : 5, hour : 11, minute : 25, second : 42, is_utc : True)
+	time3 : time_lib.from_parts(year : 2016, month : 9, day : 5, hour : 11, minute : 25, second : 42, is_utc : True)
+}
+
+computed : {
+	time1 : time_lib.modify(specified.time2, hours : 1)
+	time2 : time_lib.modify(specified.time1, hours : -1)
+	time3 : time_lib.modify(specified.time2, years : 1)
+}
+
+value :
+	For left : specified, right : computed
+		Reduce acc && time_lib.compare(left, to : right) < 1
+		With acc : True

@@ -1,0 +1,8 @@
+time_lib : From lib:time
+
+unix : time_lib.from_unix(epoch : 1441452342)
+parts : time_lib.from_parts(year : 2015, month : 9, day : 5, hour : 11, minute : 25, second : 42, is_utc : True)
+
+value : time_lib.compare(unix, to : parts) < 1 &&
+	GenerateId unix.day_of_week == $saturday && GenerateId unix.month == $september &&
+	GenerateId parts.day_of_week == $saturday && GenerateId parts.month == $september

@@ -1,0 +1,3 @@
+time_lib : From lib:time
+
+value : time_lib.compare(args : time_lib.switch_zone_list(time_lib.now.local, to_utc : True), to : time_lib.now.utc) < 1
