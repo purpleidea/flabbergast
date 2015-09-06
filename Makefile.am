@@ -16,10 +16,12 @@ endif
 mimedir = $(datadir)/mime/packages
 
 bin_SCRIPTS = \
+	flabbergast-diff \
 	update-flabbergast \
 	$(NULL)
 
 man1_MANS = \
+	flabbergast-diff.1 \
 	update-flabbergast.1 \
 	$(NULL)
 

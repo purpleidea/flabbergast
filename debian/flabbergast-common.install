@@ -1,9 +1,11 @@
+usr/bin/flabbergast-*
 usr/bin/update-flabbergast
 usr/share/flabbergast/lib/*.o_0
 usr/share/flabbergast/lib/*/*.o_0
 usr/share/flabbergast/o_0.css
 usr/share/flabbergast/o_0.js
 usr/share/flabbergast/o_0.xsl
+usr/share/man/man1/flabbergast-*.1
 usr/share/man/man1/update-flabbergast.1
 usr/share/man/man7/*.7
 usr/share/mime

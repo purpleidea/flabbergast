@@ -26,6 +26,7 @@ Description: Flabbergast Configuration Langauge - CLI Edition
 Package: flabbergast-common
 Architecture: all
 Depends: ${misc:Depends}
+Suggests: git
 Description: Flabbergast Configuration Langauge - Common Infrastructure
  Core libraries and tools for Flabbergast.
 

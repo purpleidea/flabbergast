@@ -1,0 +1,90 @@
+#!/bin/sh
+# Compare the differences introduced in a git working directory
+
+set -eu
+HELP=false
+NO_CHANGES=2
+FLABBERGAST=flabbergast
+
+while getopts hN o
+do
+	case "$o" in
+		f)
+			FLABBERGAST="$OPTARG"
+			;;
+		h)
+			HELP=true
+			;;
+		N)
+			NO_CHANGES=0
+			;;
+		*)
+			echo "Unknown command line argument: -$o"
+			exit 2
+			;;
+	esac
+done
+
+if $HELP || [ $# -eq 0 ]
+then
+	echo "Compare Flabbergast output given git working directory changes."
+	echo "Usage: $0 [-N] [-F flabbergast] file1.o_0 [ file2.o_0 ... ]"
+	exit 0
+fi
+
+shift $((${OPTIND}-1))
+
+if ! git rev-parse --is-inside-work-tree > /dev/null
+then
+	echo "This does not look like a git repository."
+	exit 2
+fi
+
+if ! git status --porcelain | egrep '^.[^? ]' -q
+then
+	echo "No changes in working directory."
+	exit $NO_CHANGES
+fi
+
+OUTPUT_DIR=$(mktemp -d)
+POP_CMD=true
+for i in 1 2 15
+do
+	trap 'rm -rf '$OUTPUT_DIR'; $POP_CMD; trap - '$i'; kill -s '$i' $$' $i
+done
+trap 'EC=$?; rm -rf '$OUTPUT_DIR'; $POP_CMD; exit $EC' EXIT
+
+EXIT=0
+INDEX=0
+for FILE in "$@"
+do
+	if ! $FLABBERGAST -p "$FILE" -o "${OUTPUT_DIR}/${INDEX}-new"
+	then
+		echo > "${OUTPUT_DIR}/${INDEX}-new"
+		EXIT=2
+	fi
+	INDEX=$(($INDEX+1))
+done
+
+git stash save -k -q
+POP_CMD="git stash pop -q"
+INDEX=0
+for FILE in "$@"
+do
+	if ! $FLABBERGAST -p "$FILE" -o "${OUTPUT_DIR}/${INDEX}-old"
+	then
+		echo > "${OUTPUT_DIR}/${INDEX}-old"
+		EXIT=2
+	fi
+	INDEX=$(($INDEX+1))
+done
+
+INDEX=0
+for FILE in "$@"
+do
+	ABS_FILE=$(git ls-tree --full-name --name-only HEAD $FILE)
+	diff -u  --label "a/$ABS_FILE" "${OUTPUT_DIR}/${INDEX}-old" --label "b/$ABS_FILE" "${OUTPUT_DIR}/${INDEX}-new" || EXIT=$(($? > $EXIT ? $? : $EXIT))
+	INDEX=$(($INDEX+1))
+done
+
+exit $EXIT

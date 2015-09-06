@@ -1,0 +1,38 @@
+.\" Authors: Andre Masella
+.TH flabbergast-diff 1 "September 2015" "0.11" "USER COMMANDS"
+.SH NAME 
+flabbergast-diff \- Compare changes to Flabbergast files introduced in git
+.SH SYNOPSIS
+.B flabbergast-diff
+[
+.B \-N
+] [
+.B \-F
+.I flabbergast
+]
+.I file.o_0 ...
+.SH DESCRIPTION
+This compares the output of the listed Flabbergast files with and without all the changes in the current git working directory.
+
+The intended workflow is this: supposed a change is being made to a library, especially a refactoring, and the reprecussions of that change need to be observed. In that case, make the changes to the files, then run \fBflabbergast-diff\fR on the files that might be affected (not the libraries themselves).
+
+.SH OPTIONS
+.TP
+\-F flabbergast
+Use a different Flabbergast interpreter. Normally, the system installed \fBflabbergast\fR program is installed. This can be changed if the default is not installed or specifically one of \fBjflabbergast\fR or \fBnflabbergast\fR is desired. Do not provide any command line arguments.
+.TP
+\-N
+Exit successfully if the working directory is unchanged. Normally, if there are no changes in the working directory, exit code 2 is returned. If this switch provided and there are no changes in the working directory, it successfully exits.
+.TP
+file.o_0
+A file to compare. Many files can be provided. Note that these are onle files which generate output (\fIi.e.\fR, those with a \fBvalue\fR attribute), not all the files changed.
+
+.SH EXIT CODES
+In general, the exit codes are the same as for
+.BR diff (1):
+0 if no differences are detected, 1 if differences are detected, and 2 if another error occurs. Errors include failure to evaluate the input files. If there are no changes in the working directory, this is considered an error, unless \fB-N\fR is provided.
+
+.SH SEE ALSO
+.BR diff (1),
+.BR flabbergast (1),
+.BR git (1).
