@@ -1,0 +1,12 @@
+cron_lib : From lib:unix/cron
+
+complex : cron_lib.schedule {
+	minute : list {
+		of : [
+			3,
+			500
+		]
+	}
+}
+
+value : complex.cron_value Is Str

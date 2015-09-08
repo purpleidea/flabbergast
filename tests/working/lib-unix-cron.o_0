@@ -1,0 +1,13 @@
+cron_lib : From lib:unix/cron
+
+complex : cron_lib.schedule {
+	minute : list {
+		of : [ 3, range { from : 10  to : 30  by : 5 } ]
+	}
+}
+
+value :
+	For
+			test : [ cron_lib.hourly, cron_lib.daily, cron_lib.weekly, cron_lib.monthly, cron_lib.yearly, complex ],
+			ref : [ "0\t*\t*\t*\t*", "0\t0\t*\t*\t*", "0\t0\t*\t*\t0", "0\t0\t1\t*\t*", "0\t0\t1\t1\t*", "3,10-30/5\t*\t*\t*\t*" ]
+		Reduce acc && test.cron_value == ref With acc : True
