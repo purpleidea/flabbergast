@@ -1,10 +1,5 @@
 Introduction{{{Generate configuration stamps for those ever confusing \Mono{cron} schedules.}}}
 
-{{{All the days, for convience of not remembering them numerically.}}}
-days : For day : [ $sun, $mon, $tues, $wed, $thurs, $fri, $sat ], num : Ordinal Select day : num - 1
-{{{All the months, for convience of not remembering them numerically.}}}
-months : For month : [ $jan, $feb, $mar, $apr, $may, $jun, $jul, $aug, $sep, $oct, $nov, $dec ], num : Ordinal Select month : num
-
 {{{A crontab-compatible scheduling string.}}}
 schedule : Template {
 	{{{The minute to run the cron job.}}}
@@ -44,17 +39,23 @@ anywhen : {
 	cron_spec : "*"
 	cron_max : Null
 	cron_min : Null
+	cron_nest : 0
 }
 {{{A collection of times.}}}
 list : Template {
 	{{{A list of times, either as integers or other specifier templates.}}}
 	of : Required
 
+	cron_nest : 0
 	cron_spec :
 		For item : of, pos : Ordinal
 			Where !(item Is Null)
 			Reduce
-				(If pos > 1 Then acc & "," Else "") & (If item Is Int Then item Else item.cron_spec)
+				(If pos > 1 Then acc & "," Else "") & (
+					If item Is Int
+						Then item
+						Else If item.cron_nest <= cron_nest Then Error "Cannot nest these cron items."
+						Else item.cron_spec)
 			With acc : Null
 	cron_max :
 		For item : of
@@ -80,6 +81,7 @@ range : Template {
 	{{{The increment over the range.}}}
 	by : Null
 
+	cron_nest : 1
 	cron_spec :
 		(If from Enforce Int < to Enforce Int
 			Then "\(from)-\(to)"
