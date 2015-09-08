@@ -1,6 +1,4 @@
 Introduction{{{Templates for generating UNIX \Mono{ar} archives, which are conveniently text-only.}}}
-utils_lib : From lib:utils
-
 {{{A BSD \Mono{ar} style archive}}}
 archive_tmpl : Template {
 	{{{The collection of \{file_tmpl} files.}}}
@@ -10,14 +8,14 @@ archive_tmpl : Template {
 	uid : 0
 	{{{The default group ID to create files.}}}
 	gid : 0
-	{{{The default modification time, as a UNIX epoch time.}}}
-	mtime : 0
+	{{{The modification time, as a time or seconds since the epoch.}}}
+	mtime : time_lib.now.utc
 	{{{The user permission bits.}}}
-	user : 6
+	user : perm_lib.rw
 	{{{The group permission bits.}}}
-	group : 4
+	group : perm_lib.r
 	{{{The other permission bits.}}}
-	other : 4
+	other : perm_lib.r
 }
 
 {{{A file in a compressed archive}}}
@@ -38,13 +36,17 @@ file_tmpl : Template {
 	file_header : If file_name_length > 16 Then "#1/" & file_name_length Else file_name
 	header_suffix : If file_name_length > 16 Then file_name Else ""
 	header_perms :
-		utils_lib.str_pad(uid, length : 6) &
-		utils_lib.str_pad(gid, length : 6) &
-		utils_lib.str_pad(user & group & other, length : 8)
+		utils_lib.str_pad(uid Enforce Int, length : 6) &
+		utils_lib.str_pad(gid Enforce Int, length : 6) &
+		utils_lib.str_pad((perm_lib.permission_from_mode {}).octal, length : 8)
 	value :
 		utils_lib.str_pad(file_header, length : 16) &
-		utils_lib.str_pad(mtime, length : 12) &
+		utils_lib.str_pad(If mtime Is Int Then mtime Else mtime.epoch, length : 12) &
 		header_perms &
 		utils_lib.str_pad(utils_lib.str_utf8_length(contents, header_suffix), length : 10) &
 		"`\n" & header_suffix & contents
 }
+
+time_lib : From lib:time
+utils_lib : From lib:utils
+perm_lib : From lib:unix/perm
