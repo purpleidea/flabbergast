@@ -1,0 +1,26 @@
+ar_lib : From lib:archive/ar
+
+archive : ar_lib.archive_tmpl {
+	mtime : 0
+	args : [
+		file_tmpl {
+			contents : "Hello. This is a file."
+			file_name : "somefile.txt"
+			uid : 1000
+			gid : 1000
+			user : 7
+			group : 5
+			other : 5
+		},
+		file_tmpl {
+			contents : "Bonjour. Cette ficher est compliqué parce que ils y ont des charactrès Unicode."
+			file_name : "LaRêveUnicode.txt"
+		}
+	]
+}
+
+value : archive.value ==
+"!<arch>
+somefile.txt    0           1000  1000  755     22        `
+Hello. This is a file.#1/18           0           0     0     644     99        `
+LaRêveUnicode.txtBonjour. Cette ficher est compliqué parce que ils y ont des charactrès Unicode."
