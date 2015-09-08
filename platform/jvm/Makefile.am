@@ -54,7 +54,7 @@ flabbergast-compiler-$(VERSION).jar flabbergast-compiler-$(VERSION)-sources.jar 
 flabbergast-stdlib-$(VERSION).jar flabbergast-stdlib-$(VERSION)-sources.jar flabbergast-stdlib-$(VERSION)-javadoc.jar: stdlib.manifest $(STDLIB_INPUTS) flabbergast-compiler-$(VERSION).jar
 	rm -rf .build
 	mkdir .build
-	rsync -a --include '**.o_0' --include '**.jo_0' --exclude '*' ../../lib/ .build
+	rsync -a --include '**.o_0' --include '**.jo_0' --include '**/' --exclude '*' ../../lib/ .build
 	$(JAR) cfm flabbergast-stdlib-$(VERSION)-sources.jar stdlib.manifest -C .build .
 	cd .build && $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):../flabbergast-runtime-$(VERSION).jar:../flabbergast-compiler-$(VERSION).jar flabbergast.MainBuildCache -P
 	find .build -type f -a -not -name '*.class' -exec rm {} \;
