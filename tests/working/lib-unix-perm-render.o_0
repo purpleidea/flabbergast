@@ -1,0 +1,42 @@
+perm_lib : From lib:unix/perm
+
+test : Template {
+	user : Required
+	group : Required
+	other : Required
+	text : Required
+	octal : Required
+	int : Required
+	p : perm_lib.permission_from_mode {}
+	passed : p.valid && p.text == text && p.int == int && p.octal == octal
+}
+
+
+test_cases : [
+	test {
+		user : perm_lib.rw
+		group : perm_lib.r
+		other : perm_lib.r
+		text : "rw-r--r--"
+		octal : "644"
+		int : 420
+	},
+	test {
+		user : perm_lib.rwx
+		group : perm_lib.rx
+		other : perm_lib.rx
+		text : "rwxr-xr-x"
+		octal : "755"
+		int : 493
+	},
+	test {
+		user : perm_lib.rwx
+		group : perm_lib.rx
+		other : 0
+		text : "rwxr-x---"
+		octal : "750"
+		int : 488
+	}
+]
+
+value : For case : test_cases Reduce acc && case.passed With acc : True

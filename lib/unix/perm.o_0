@@ -1,0 +1,61 @@
+Introduction{{{UNIX-style permission bits, for those of us who don't like octal.}}}
+
+{{{Allow reading this file.}}}
+r : 4
+{{{Allow writing this file.}}}
+w : 2
+{{{Allow executing this file.}}}
+x : 1
+
+{{{Allow reading or writing this file.}}}
+rw : r B| w
+{{{Allow reading or executing this file.}}}
+rx : r B| x
+{{{Allow reading, writing, or executing this file.}}}
+rwx : rw B| x
+{{{Allow writing or executing this file.}}}
+wx : w B| x
+
+{{{Check if the integer provided is a valid mode.}}}
+is_valid_mode : utils_lib.allifier(base : is_valid_mode_list)
+
+{{{Check if the integers provided are valid modes.}}}
+is_valid_mode_list : Template {
+	args : Required
+	value : For arg : args Select arg B& rwx == arg
+}
+
+{{{Convert a mode into a human readable form, as displayed by \Mono{ls -l}. See \{mode_to_str_list}}}}
+mode_to_str : utils_lib.str_concatifier(base : mode_to_str_list, delimiter : "")
+
+{{{Convert a list of modes into a human readable form, as displayed by \Mono{ls -l}.}}}
+mode_to_str_list : Template {
+	{{{The modes to convert.}}}
+	args : Used
+	value :
+		For arg : args, arg_name : Name
+			Select arg_name :
+				(If arg B& 4 == 0 Then "-" Else "r") &
+				(If arg B& 2 == 0 Then "-" Else "w") &
+				(If arg B& 1 == 0 Then "-" Else "x")
+}
+
+{{{Create a integer from individual mode.}}}
+permission_from_mode : Template {
+	{{{The mode for the user.}}}
+	user : Used
+	{{{The mode for the group.}}}
+	group : Used
+	{{{The mode for others.}}}
+	other : Used
+	{{{Whether these modes are valid.}}}
+	valid : is_valid_mode(user, group, other)
+	{{{The modes as an integer.}}}
+	int : user * 64 + group * 8 + other
+	{{{The modes as an octal string.}}}
+	octal : user & group & other
+	{{{The modes as human-readable permissions.}}}
+	text : mode_to_str(user, group, other)
+}
+
+utils_lib : From lib:utils

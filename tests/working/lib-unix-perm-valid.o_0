@@ -1,0 +1,6 @@
+perm_lib : From lib:unix/perm
+
+valid : perm_lib.is_valid_mode(args : 0 Through 7)
+invalid : For x : perm_lib.is_valid_mode_list(-1, -2, 9, 100) Reduce acc && !x With acc : True
+
+value : valid && invalid
