@@ -1180,9 +1180,6 @@ The `str_escape` and corresponding `str_transform` templates allow escaping a st
 
 Currently, Flabbergast lacks a documentation generator, so the best information is the source comments.
 
-### Archives (`lib:archive/ar`)
-Since Flabbergast only outputs a single value, it can be awkward to generate multiple files. To combat this, it supports creating `ar`-style archives, which are plain text. To do this, instantiate `archive_tmpl` with the `args` being a list of `file_tmpl`, each with `file_name` and `contents`. The resulting file can then be unpacked using the UNIX `ar` program.
-
 ### Rendering (`lib:render`)
 This library converts frames in to other formats, including INI, JSON, Python, XML, and YAML. In short, the library provides templates such that a frame can be rendered to output formats. The exact semantics are different for each format, but, in general, the templates are composed into the desired structure providing the hierarchy and the library generates a string containing the output file. Escaping is handled automatically.
 
@@ -1227,6 +1224,12 @@ TODO
 
 ### Apache Aurora (`lib:apache/aurora`)
 Configures jobs for running on the Apache Aurora framework, which managers long-running jobs on Mesos.
+
+### Archives (`lib:unix/ar`)
+Since Flabbergast only outputs a single value, it can be awkward to generate multiple files. To combat this, it supports creating `ar`-style archives, which are plain text. To do this, instantiate `archive_tmpl` with the `args` being a list of `file_tmpl`, each with `file_name` and `contents`. The resulting file can then be unpacked using the UNIX `ar` program.
+
+### Permission Specifiers (`lib:unix/perm`)
+Helps generate UNIX-style file permissions and format them nicely.
 
 ### Cron Specifiers (`lib:unix/cron`)
 Allows generating the time specifications in for `crontab` entries.

@@ -1,4 +1,4 @@
-ar_lib : From lib:archive/ar
+ar_lib : From lib:unix/ar
 
 archive : ar_lib.archive_tmpl {
 	mtime : 0
