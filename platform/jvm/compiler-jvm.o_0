@@ -580,6 +580,10 @@ environment : compiler_lib.environment_tmpl {
 			value : "\t\t\(type_storage) = \(current_environment).addOverrideName(\(field).toString());\n"
 			class_gen : "\tRestrictableType \(type_storage);\n"
 		}
+		forbidden_name +: {
+			value : "\t\t\(current_environment).addForbiddenName(\"\(name)\");\n"
+			class_gen : ""
+		}
 		forbidden_name_from_field +: {
 			value : "\t\t\(current_environment).addForbiddenName(\(field).toString());\n"
 			class_gen : ""

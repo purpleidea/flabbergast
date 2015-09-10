@@ -243,6 +243,13 @@ environment_tmpl : Template {
 		# Create a name from a field where the name must not be used in the new
 		# environment. These are used mostly to detect potential circular
 		# evaluation.
+		forbidden_name : Template {
+			# The name.
+			name : Required
+		}
+		# Create a name from a field where the name must not be used in the new
+		# environment. These are used mostly to detect potential circular
+		# evaluation.
 		forbidden_name_from_field : Template {
 			# The field containing the name.
 			field : Required
