@@ -608,6 +608,19 @@ Extend a template
 Create a template that inherits from an existing template. It contains all the attributes of the existing template unless amended by the specified attributes. The specified attributes can add, replace, amend, or remove attributes from the existing template. Any unmentioned attributes are inherited directly. The new template has the lookup context of the context where the modification was performed followed by the context of the existing template.
 
 .TP
+Create a new function-like template
+.SEM Γ ⊢ \fBFunction (\fR( a:(A / F / G) (\fB,\fR a:(A / F / G))*)? \fB)\fR body:E\*<0\*> ↓ < Γ; k\*<x\*> → e\*<x\*> \fBvalue\fR → body >
+
+∀ x ∈ a : Γ ⊢ x ↓ k\*<x\*> → e\*<x\*>,
+
+¬∃ k\*<y\*> = k\*<x\*>
+
+¬∃ k\*<y\*> = \fBvalue\fR
+.SEME
+
+Create a new template, not based on any current template.
+
+.TP
 Bit-wise negation
 .SEM Γ ⊢ \fB-\fR expr:E\*<+\*> ↓ BITWISE_COMP(v) :: Int
 Γ ⊢ expr ↓ v :: Int
@@ -957,6 +970,13 @@ In a template, define an attribute that must be overridden. (X)
 .SEM Γ ⊢ name:I \fB: Required\fR ↓ name → \fBError \(dqAttribute \fRname\fB must be overridden.\(dq\fR
 .SEME
 .SEM Γ; R ⊢ name:I \fB: Required\fR ↓ name → \fBError \(dqAttribute \fRname\fB must be overridden.\(dq\fR
+.SEME
+
+Create an attribute whose value is an error requiring an override.
+
+.TP
+In a function-like template, define an attribute that must be overridden. (F)
+.SEM Γ ⊢ name:I ↓ name → \fBError \(dqAttribute \fRname\fB must be overridden.\(dq\fR
 .SEME
 
 Create an attribute whose value is an error requiring an override.

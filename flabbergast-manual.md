@@ -202,7 +202,9 @@ Unnamed values are placed in an `args` attribute.
     c : sum_of_squares(3, 4, 5)
     d : sum_of_squares(args : 3 Through 5)
 
-This means that function-like template can offer both variadic and non-variadic calling conventions. It is an error to specify both `args` and have unnamed arguments.
+This means that function-like template can offer both variadic and non-variadic calling conventions. It is an error to specify both `args` and have unnamed arguments. If you find templates a clunky way to do this, there is a special syntax to make it easier:
+
+    sum_of_squares : Function(args) For x : args Reduce acc + x * x With acc : 0
 
 There is an entirely different way to generate frames: from existing frames using the fricassée expressions. These work something like SQL or XQuery statements to generate new frames from existing frames, as SQL generates new tables from existing tables and XQuery generates new trees from existing trees.
 

@@ -2090,6 +2090,43 @@ language_tmpl : Template {
 			environment_enabled : True
 			generation_flavour : codegen.flavour_attribute
 			collect_names : True
+			is_typeable : True
+			missing_attribute_tmpl : Template syntax_element {
+				pattern_suffix : Required
+				pattern : parser.sequence {
+					of : [
+						description {},
+						space { preferred : True },
+						valid_identifier { field : $name },
+						pattern_suffix {}
+					]
+				}
+				apply_environment_to : [ ]
+				ensure_type_is : ensure_type.any { }
+				api_value : apigen.create_node {
+					name_field : $name
+					main_field : Null
+					actions : [ ]
+				}
+				code_value : kws.set_frame_or_tmpl_from_field {
+					name_field : $name
+					returns : into
+					into : parameters.target
+					with : kws.create_function {
+						returns : codegen.push_source_reference {
+							in : kws.error {
+								message : kws.string_concatenate {
+									first : kws.string_constant { str : "Attribute “" }
+									second : kws.string_concatenate {
+										first : kws.string_constant_from_field { field : $name }
+										second : kws.string_constant { str : "” must be overridden." }
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 			common +: {
 				comment : common_fields.str
 				name : common_fields.str
@@ -2097,7 +2134,7 @@ language_tmpl : Template {
 			rules +: {
 				plain_attribute : Template syntax_element {
 					pretty_name : "attribute"
-					alternatives : { new_tmpl_attributes : Null  extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
+					alternatives : { new_tmpl_attributes : Null  extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null  function_tmpl_attributes : Null }
 					pattern : attribute_pattern { allow_description : True }
 					apply_environment_to : [
 						environment.modified_environment {
@@ -2108,6 +2145,10 @@ language_tmpl : Template {
 						}
 					]
 					type_demand : ensure_type.propagate {
+						fields : [ $expression ]
+						needs_unbox : False
+					}
+					ensure_type_is : ensure_type.propagate {
 						fields : [ $expression ]
 						needs_unbox : False
 					}
@@ -2166,6 +2207,10 @@ language_tmpl : Template {
 						name : $inner_environment
 					} ]
 					type_demand : ensure_type.propagate {
+						fields : [ $expression ]
+						needs_unbox : False
+					}
+					ensure_type_is : ensure_type.propagate {
 						fields : [ $expression ]
 						needs_unbox : False
 					}
@@ -2245,6 +2290,9 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.list_independent { field : $overrides } ]
+					ensure_type_is : ensure_type.filter {
+						types : [ known_types.template ]
+					}
 					code_value : kws.set_frame_or_tmpl_from_field {
 						name_field : $name
 						returns : into
@@ -2267,44 +2315,22 @@ language_tmpl : Template {
 						}
 					}
 				}
-				missing_attribute : Template syntax_element {
+				missing_attribute : Template missing_attribute_tmpl {
 					pretty_name : "attribute requiring override"
 					alternatives : { new_tmpl_attributes : Null  extend_tmpl_attributes : Null }
-					pattern : parser.sequence {
+					pattern_suffix : Template parser.sequence {
 						of : [
-							description {},
-							space { preferred : True },
-							valid_identifier { field : $name },
 							space { preferred : True },
 							parser.exact { word : ":" },
 							space { preferred : True },
 							parser.exact { word : "Required" }
 						]
 					}
-					apply_environment_to : [ ]
-					api_value : apigen.create_node {
-						name_field : $name
-						main_field : Null
-						actions : [ ]
-					}
-					code_value : kws.set_frame_or_tmpl_from_field {
-						name_field : $name
-						returns : into
-						into : parameters.target
-						with : kws.create_function {
-							returns : codegen.push_source_reference {
-								in : kws.error {
-									message : kws.string_concatenate {
-										first : kws.string_constant { str : "Attribute “" }
-										second : kws.string_concatenate {
-											first : kws.string_constant_from_field { field : $name }
-											second : kws.string_constant { str : "” must be overridden." }
-										}
-									}
-								}
-							}
-						}
-					}
+				}
+				zz_missing_name : Template missing_attribute_tmpl {
+					pretty_name : "function-like template required argument"
+					alternatives : { function_tmpl_attributes : Null }
+					pattern_suffix : parser.nop
 				}
 				informative_attribute : Template syntax_element {
 					pretty_name : "informative attribute"
@@ -2321,6 +2347,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ ]
+					ensure_type_is : ensure_type.any { }
 					api_value : apigen.create_node {
 						name_field : $name
 						informative : True
@@ -2338,6 +2365,7 @@ language_tmpl : Template {
 				}
 				informative_attribute_new : Template rule_templates.informative_attribute {
 					alternatives : { new_tmpl_attributes : Null }
+					ensure_type_is : ensure_type.any { }
 					code_value : parameters.target
 				}
 				remove_attribute : Template syntax_element {
@@ -2355,6 +2383,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ ]
+					ensure_type_is : ensure_type.any { }
 					api_value : apigen.create_node {
 						name_field : $name
 						informative : True
@@ -2364,7 +2393,7 @@ language_tmpl : Template {
 				}
 				eager_attribute : Template syntax_element {
 					pretty_name : "eagerly evaluated attribute"
-					alternatives : { new_tmpl_attributes : Null  extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null }
+					alternatives : { new_tmpl_attributes : Null  extend_tmpl_attributes : Null  instantiate_tmpl_attributes : Null  function_tmpl_attributes : Null }
 					pattern : parser.sequence {
 						of : [
 							description {},
@@ -2391,6 +2420,10 @@ language_tmpl : Template {
 						}
 					]
 					type_demand : ensure_type.propagate {
+						fields : [ $expression ]
+						needs_unbox : False
+					}
+					ensure_type_is : ensure_type.propagate {
 						fields : [ $expression ]
 						needs_unbox : False
 					}
@@ -4604,6 +4637,95 @@ language_tmpl : Template {
 						accumulator_type : known_types.template
 						new_item : kws.tmpl_new
 						source_template : codegen.other_code { field : $source }
+					}
+				}
+				function_new : Template expression_tmpl {
+					pretty_name : "define function-like template"
+					level : 19
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "Function" },
+							space { preferred : True },
+							parser.exact { word : "(" },
+							parser.accumulate_list {
+								field : $attributes
+								type : $attribute
+								deduplicate : expanded_groups.attribute.expanded_common.name
+								forbid : [ $value ]
+								in : parser.many_word {
+									separator_word : ","
+									of : parser.sequence {
+										of : [
+											pure_space {},
+											parser.other {
+												type : $attribute
+												field : Null
+												alternate : $function_tmpl_attributes
+											},
+											pure_space {}
+										]
+									}
+								}
+							},
+							space { },
+							parser.exact { word : ")" },
+							space { },
+							parser.other { type: $expression  alternate : $expression0 field : $body }
+						]
+					}
+					apply_environment_to : [
+						environment.blank_environment {
+							name : $outer_environment
+							apply_to : [
+								environment.modified_environment {
+									name : $inner_environment
+									special_names : [
+										masks_from_definitions { field : $attributes },
+										forbidden_name { name : $value }
+									]
+									apply_to : [
+										environment.list_independent { field : $attributes  inherit : True},
+										environment.other_elements { fields : [ $body ] }
+									]
+								}
+							]
+						}
+					]
+					ensure_type_is : ensure_type.filter { types : [ known_types.template ] }
+					type_demand : ensure_type.propagate {
+						fields : [ $body ]
+						needs_unbox : False
+					}
+					api_value : apigen.other_list {
+						field : $attributes
+						collect_names : True
+					}
+					code_value : codegen.empty_parameter {
+						parameters : { source_template : emptiness }
+						in : codegen.collapse_others {
+							type : known_types.template
+							target_flavour : codegen.flavour_attribute_accumulate
+							field : $attributes
+							initial : kws.set_frame_or_tmpl {
+								name : kws.string_constant {
+									str : $value
+								}
+								into : kws.tmpl_new {
+									context : parameters.context
+								}
+								with : kws.create_function {
+									returns : codegen.push_source_reference {
+										in : codegen.prepare_lookup_cache {
+											in : codegen.prepare_lookup_cache {
+												in : codegen.other_code { field : $body }
+												name : $inner_environment
+											}
+											name : $outer_environment
+										}
+									}
+								}
+							}
+						}
 					}
 				}
 

@@ -2493,6 +2493,10 @@ compiler : compiler_lib.language_with_repl_tmpl {
 	# compiler, so the `super_class_extra` and `class_extra` attributes provide
 	# that content.
 	rule_groups +: {
+		attribute +: {
+			super_class_extra :
+				"\tinternal void AddMask(ErrorCollector collector, Environment environment) { environment.AddMask(name.ToString(), this); }\n"
+		}
 		fricassee_merge_input +: {
 			prepare_operations : {
 				name : codegen.gen_tmpl {

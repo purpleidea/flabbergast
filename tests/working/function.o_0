@@ -1,0 +1,2 @@
+fn : Function(x, y : 6) 2 * x + y
+value : fn(x : 3) == 12 && fn (x : 3, y : 1) == 7

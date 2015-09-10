@@ -1,0 +1,2 @@
+x : 1
+value : (Function(x, y : Now x) x + y)(x : 3) == 4
