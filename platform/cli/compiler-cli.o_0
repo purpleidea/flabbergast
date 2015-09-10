@@ -779,7 +779,7 @@ kws : compiler_lib.kws_repl_tmpl {
 					Reverse
 					Reduce
 						"\(sum_indent)if (!typeof(\(arg.type.real_type)).IsAssignableFrom(\(arg.value.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Expected  \(arg.type.name) but got {0} in \(opcode).\", Stringish.NameForType(\(arg.value.storage_name).BackingType)));" &
-						"\(sum_indent)\(arg.value.storage_name).Load(\(builder));" &
+						"\(sum_indent)\(generator).LoadReboxed(\(arg.value.storage_name), typeof(\(arg.type.real_type)));" &
 						acc
 						With acc : ""
 			base_code :
