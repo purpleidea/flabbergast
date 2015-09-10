@@ -813,8 +813,8 @@ kws : compiler_lib.kws_repl_tmpl {
 				For arg : arguments
 					Reverse
 					Reduce
-						"\(sum_indent)if (!\(arg.type.real_type).class.isAssignableFrom(\(arg.value.storage_name).getBackingType())) throw new java.lang.IllegalStateException(java.lang.String.format(\"Expected \(arg.type.name) but got %s in \(rule_name).\", Stringish.nameForClass(\(arg.value.storage_name).getBackingType())));" &
-						"\(sum_indent)\(arg.value.storage_name).load(\(builder));" &
+						"\(sum_indent)if (!\(arg.type.real_type).class.isAssignableFrom(\(arg.value.storage_name).getBackingType()) && (Class<?>) Object.class != (Class<?>) \(arg.type.real_type).class) throw new java.lang.IllegalStateException(java.lang.String.format(\"Expected \(arg.type.name) but got %s in \(rule_name).\", Stringish.nameForClass(\(arg.value.storage_name).getBackingType())));" &
+						"\(sum_indent)\(generator).loadReboxed(\(arg.value.storage_name), \(arg.type.real_type).class);" &
 						acc
 						With acc : ""
 			base_code :
