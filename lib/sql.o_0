@@ -15,6 +15,10 @@ retrieve : Template (From lib:sqlinterop ).retrieve {
 	connection : Required
 	{{{A string containing the implementation-specific SQL statement.}}}
 	sql_query : Required
+	{{{The template to be used for each row. When the query is evaluated, this
+	template is expanded for each row and the columns, except \Mono{ATTRNAME},
+	from the database are overrides on the row.}}}
+	sql_row_tmpl : Used
 }
 
 {{{Create an SQL-statement generating template.}}}
@@ -714,3 +718,6 @@ sql_providers : {
 		}
 	}
 }
+
+{{{The default row template is empty, providing only the columns in the database.}}}
+sql_row_tmpl : Template {}

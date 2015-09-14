@@ -58,9 +58,10 @@ namespace Flabbergast {
 		private readonly SourceReference source_ref;
 		private readonly Context context;
 		private readonly Frame self;
-		private int interlock = 3;
+		private int interlock = 4;
 		private DbConnection connection = null;
 		private string query = null;
+		private Template row_tmpl;
 
 		public DbQuery(TaskMaster task_master, SourceReference source_ref,
 				Context context, Frame self, Frame container) : base(task_master){
@@ -88,7 +89,7 @@ namespace Flabbergast {
 										"Expected “connection” to come from “sql:” import.");
 					});
 				new Lookup(task_master, source_ref, new []{"sql_query"},
-						context).Notify(return_value=> {
+						context).Notify(return_value => {
 						if (return_value is Stringish) {
 							query = return_value.ToString();
 							if (Interlocked.Decrement(ref interlock) == 0) {
@@ -98,6 +99,19 @@ namespace Flabbergast {
 						}
 						task_master.ReportOtherError(source_ref, string.Format(
 								"Expected type Str for “sql_query”, but got {0}.",
+								Stringish.NameForType(return_value.GetType())));
+				});
+				new Lookup(task_master, source_ref, new []{"sql_row_tmpl"},
+						context).Notify(return_value => {
+						if (return_value is Template) {
+							row_tmpl = (Template) return_value;
+							if (Interlocked.Decrement(ref interlock) == 0) {
+								task_master.Slot(this);
+							}
+							return;
+						}
+						task_master.ReportOtherError(source_ref, string.Format(
+								"Expected type Template for “sql_row_tmpl”, but got {0}.",
 								Stringish.NameForType(return_value.GetType())));
 				});
 				if (Interlocked.Decrement(ref interlock) > 0) {
@@ -147,12 +161,18 @@ namespace Flabbergast {
 
 				var list = new MutableFrame(task_master, source_ref, context, self);
 				for (int it = 1; reader.Read(); it++) {
-					var frame = new MutableFrame(task_master, source_ref, list.Context, list);
+					var frame = new MutableFrame(task_master, new JunctionReference(string.Format("SQL template instantiation row {0}", it), "<sql>", 0, 0, 0, 0, source_ref, row_tmpl.SourceReference), Context.Append(list.Context, row_tmpl.Context), list);
 					foreach (var r in retrievers) {
 						r(reader, frame, task_master);
 					}
+					foreach (var name in row_tmpl.GetAttributeNames()) {
+						if (!frame.Has(name)) {
+							frame.Set(name, row_tmpl[name]);
+						}
+					}
 					list.Set(name_chooser(reader, it), frame);
 				}
+				list.Slot();
 				result = list;
 				return true;
 			} catch (DataException e) {

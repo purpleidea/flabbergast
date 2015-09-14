@@ -103,9 +103,10 @@ public class JdbcQuery extends Computation {
 	private final SourceReference source_ref;
 	private final Context context;
 	private final Frame self;
-	private final AtomicInteger interlock = new AtomicInteger(3);
+	private final AtomicInteger interlock = new AtomicInteger(4);
 	private Connection connection = null;
 	private String query = null;
+	private Template row_tmpl = null;
 
 	public JdbcQuery(TaskMaster task_master, SourceReference source_ref,
 			Context context, Frame self, Frame container) {
@@ -152,6 +153,25 @@ public class JdbcQuery extends Computation {
 					task_master.reportOtherError(source_ref, String.format(
 							"Expected type Str for “sql_query”, but got %s.",
 							Stringish.nameForClass(return_value.getClass())));
+				}
+			});
+			new Lookup(task_master, source_ref, new String[]{"sql_row_tmpl"},
+					context).listen(new ConsumeResult() {
+				@Override
+				public void consume(Object return_value) {
+					if (return_value instanceof Template) {
+						row_tmpl = (Template) return_value;
+						if (interlock.decrementAndGet() == 0) {
+							task_master.slot(JdbcQuery.this);
+						}
+						return;
+					}
+					task_master.reportOtherError(
+							source_ref,
+							String.format(
+									"Expected type Str for “sql_row_tmpl”, but got %s.",
+									Stringish.nameForClass(return_value
+											.getClass())));
 				}
 			});
 			if (interlock.decrementAndGet() > 0) {
@@ -222,13 +242,23 @@ public class JdbcQuery extends Computation {
 			MutableFrame list = new MutableFrame(task_master, source_ref,
 					context, self);
 			for (int it = 1; rs.next(); it++) {
-				MutableFrame frame = new MutableFrame(task_master, source_ref,
-						list.getContext(), list);
+				MutableFrame frame = new MutableFrame(task_master,
+						new JunctionReference(String.format(
+								"SQL template instantiation row %d", it),
+								"<sql>", 0, 0, 0, 0, source_ref,
+								row_tmpl.getSourceReference()), Context.append(
+								list.getContext(), row_tmpl.getContext()), list);
 				for (Retriever r : retrievers) {
 					r.invoke(rs, frame, task_master);
 				}
+				for (String name : row_tmpl) {
+					if (!frame.has(name)) {
+						frame.set(name, row_tmpl.get(name));
+					}
+				}
 				list.set(name_chooser.invoke(rs, it), frame);
 			}
+			list.slot();
 			result = list;
 		} catch (SQLException e) {
 			task_master.reportOtherError(source_ref, e.getMessage());
