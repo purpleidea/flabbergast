@@ -16,11 +16,15 @@ compilerdir = $(pkgdatadir)/compiler
 compiler_SCRIPTS = jvm-build-cache
 
 javadir = $(datadir)/java
+if BUILD_FATJAR
+java_DATA = flabbergast-$(VERSION).jar
+else
 java_DATA = \
 	flabbergast-runtime-$(VERSION).jar \
 	flabbergast-compiler-$(VERSION).jar \
-	flabbergast-stdlib-$(VERSION).jar \
 	$(NULL)
+endif
+java_DATA += flabbergast-stdlib-$(VERSION).jar
 
 JAVA_RUNTIME_DEPS = \
 	$(JLINE_JAR) \
@@ -32,11 +36,19 @@ JAVA_COMPILER_DEPS = \
 	$(COMMONS_CLI_JAR) \
 	$(NULL)
 
+if BUILD_FATJAR
+COMPILER_JAR = flabbergast-$(VERSION).jar
+else
+COMPILER_JAR = flabbergast-runtime-$(VERSION).jar flabbergast-compiler-$(VERSION).jar
+endif
+
+INSTALLED_CP = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(subst $(SPACE),:$(javadir)/,$(COMPILER_JAR)):$${CLASSPATH:-}
+
 TESTS = flabbergast-testing-$(VERSION).jar
 TEST_EXTENSIONS = .jar
 JAR_LOG_COMPILER = ./run_test
 AM_JAR_LOG_FLAGS = "$(TESTING_CLASSPATH)"
-TESTING_CLASSPATH = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):flabbergast-runtime-$(VERSION).jar:flabbergast-compiler-$(VERSION).jar:flabbergast-stdlib-$(VERSION).jar
+TESTING_CLASSPATH = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):flabbergast-stdlib-$(VERSION).jar:$(subst $(SPACE),:,$(COMPILER_JAR))
 
 RUNTIME_INPUTS = $(wildcard runtime/flabbergast/*.java runtime/flabbergast/*/*.java)
 COMPILER_INPUTS = $(wildcard compiler/flabbergast/*.java)
@@ -45,11 +57,22 @@ TESTING_INPUTS = $(wildcard testing/flabbergast/*.java)
 
 SPACE = $(NULL) $(NULL)
 
+if BUILD_FATJAR
+flabbergast-$(VERSION).jar: $(RUNTIME_INPUTS) $(COMPILER_INPUTS)
+	rm -rf .build
+	mkdir .build
+	cd .build && for each in $(sort $(JAVA_RUNTIME_DEPS) $(JAVA_COMPILER_DEPS)); do $(JAR) xf $$each; done
+	$(JAVAC) -g -encoding UTF-8 -cp .build -sourcepath runtime -d .build $(RUNTIME_INPUTS)
+	$(JAVAC) -g -encoding UTF-8 -cp .build -sourcepath compiler -d .build $(COMPILER_INPUTS)
+	$(JAR) cf "flabbergast-${VERSION}.jar" -C .build .
+	rm -rf .build
+else
 flabbergast-runtime-$(VERSION).jar flabbergast-runtime-$(VERSION)-sources.jar flabbergast-runtime-$(VERSION)-javadoc.jar: runtime.manifest $(RUNTIME_INPUTS)
 	CLASSPATH=$(subst $(SPACE),:,$(JAVA_RUNTIME_DEPS)) ./jarc runtime $(VERSION)
 
 flabbergast-compiler-$(VERSION).jar flabbergast-compiler-$(VERSION)-sources.jar flabbergast-compiler-$(VERSION)-javadoc.jar: compiler.manifest $(COMPILER_INPUTS) flabbergast-runtime-$(VERSION).jar
 	CLASSPATH=$(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):flabbergast-runtime-$(VERSION).jar ./jarc compiler $(VERSION)
+endif
 
 flabbergast-stdlib-$(VERSION).jar flabbergast-stdlib-$(VERSION)-sources.jar flabbergast-stdlib-$(VERSION)-javadoc.jar: stdlib.manifest $(STDLIB_INPUTS) flabbergast-compiler-$(VERSION).jar
 	rm -rf .build
@@ -87,23 +110,28 @@ testing.manifest: Makefile
 jvm-build-cache: Makefile
 	@echo '#!/bin/sh' > $@
 	@echo 'cd "$$1" || exit 1' >> $@
-	@echo 'exec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)/flabbergast-runtime-$(VERSION).jar:$(javadir)/flabbergast-compiler-$(VERSION).jar:$${CLASSPATH:-} flabbergast.MainBuildCache' >> $@
+	@echo 'exec $(JAVA) -cp $(INSTALLED_CP) flabbergast.MainBuildCache' >> $@
 
 jflabbergast: Makefile
 	@echo '#!/bin/sh' > $@
-	@echo 'exec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)/flabbergast-runtime-$(VERSION).jar:$(javadir)/flabbergast-compiler-$(VERSION).jar:$${CLASSPATH:-} flabbergast.MainPrinter "$$@"' >> $@
+	@echo 'exec $(JAVA) -cp $(INSTALLED_CP) flabbergast.MainPrinter "$$@"' >> $@
 
 jflabbergast-repl: Makefile
 	@echo '#!/bin/sh' > $@
-	@echo 'exec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)/flabbergast-runtime-$(VERSION).jar:$(javadir)/flabbergast-compiler-$(VERSION).jar:$${CLASSPATH:-} flabbergast.MainREPL "$$@"' >> $@
+	@echo 'exec $(JAVA) -cp $(INSTALLED_CP) flabbergast.MainREPL "$$@"' >> $@
 
 jflabbergast-docgen: Makefile
 	@echo '#!/bin/sh' > $@
-	@echo 'exec $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(javadir)/flabbergast-runtime-$(VERSION).jar:$(javadir)/flabbergast-compiler-$(VERSION).jar:$${CLASSPATH:-} flabbergast.MainDocumenter "$$@"' >> $@
+	@echo 'exec $(JAVA) -cp $(INSTALLED_CP) flabbergast.MainDocumenter "$$@"' >> $@
 
 install-data-hook:
+if BUILD_FATJAR
+	$(LN_S) -f flabbergast-$(VERSION).jar $(DESTDIR)$(datadir)/java/flabbergast.jar
+else
 	$(LN_S) -f flabbergast-runtime-$(VERSION).jar $(DESTDIR)$(datadir)/java/flabbergast-runtime.jar
 	$(LN_S) -f flabbergast-compiler-$(VERSION).jar $(DESTDIR)$(datadir)/java/flabbergast-compiler.jar
+endif
+	$(LN_S) -f flabbergast-stdlib-$(VERSION).jar $(DESTDIR)$(datadir)/java/flabbergast-stdlib.jar
 
 CLEANFILES = \
 	jvm-build-cache \

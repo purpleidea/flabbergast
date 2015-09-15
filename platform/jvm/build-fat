@@ -10,7 +10,7 @@ mkdir .build
 
 # Unpack required JARs
 cd .build
-for each in ../asm-5.0.3.jar ../commons-cli-1.2.jar ../jline-2.11.jar
+for each in ../asm4.jar ../commons-cli.jar ../jline.jar ../joda-time.jar
 do
 ${JAR-jar} xf $each
 done

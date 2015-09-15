@@ -44,3 +44,6 @@ install-data-hook:
 		$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/$$(dirname $$f); \
 		$(INSTALL_DATA) $(srcdir)/$$f $(DESTDIR)$(pkgdatadir)/$$f; \
 	done	
+
+clean-local:
+	rm -rf pkgroot
