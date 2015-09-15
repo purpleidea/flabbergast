@@ -202,6 +202,8 @@ For more background on the complexity of configuration languages, take a look at
 
 To make adoption easier, Flabbergast tries to be like other popular languages in the inconsequential stuff. If compared to any mainstream language, the arithmetic operators are going to behave like “normal”. Flabbergast also tries to use words over symbols. Granted, it has the provincial assumption that everyone knows English, but the goal is to avoid looking like line noise. The unusual symbols are: `:` for definition (like JSON), `&` for string join, and `??` for null coalescence (like C#), and `+:` for overriding (a unique property of the language).
 
+For a quick reference, check the [cheatsheet](syntax-cheatsheet.md).
+
 ## Getting Started
 
 As general background, this guide assumes some previous experience programming. Familiarity with one functional language and one object-oriented language is helpful. A deeper understanding of a dynamically-typed object-oriented languages can be extremely helpful, though not necessary. Use of a macro processor might provide some extra insights.
