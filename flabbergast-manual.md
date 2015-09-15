@@ -3,6 +3,193 @@
 
 Flabbergast is a rather unique programming language. It is best-described as an object-oriented macro system, though it's best not to associate it too much with object-oriented programming. Conceptually, it is based on a proprietary programming language used at Google for creating configurations. At Google, this language is much despised because it is difficult to debug and has many design flaws. However, it is special in that it is a member of a unique language family. It has features from other languages: particularly functional languages and object-oriented languages. Flabbergast aims to be the second in that family of languages and, hopefully, be more loved by being easier to debug, easier to understand, and more semantically sturdy.
 
+## A Worked Example: Apache Aurora
+Let's start with an example for a simple job that runs on Apache Aurora. Aurora is a long-running job configuration system for Mesos. It's purposes is to collect and dispatch all the needed job information to Mesos. In Aurora, a file consists of many jobs, each with a task to perform. A task can have multiple processes that run inside of it. Most resources are configured on the job level; some on the task level.
+
+Flabbergast is going to describe the Aurora configuration using _templates_ and _frames_ and it will generate a big string, the configuration file for Aurora. If you run the Flabbergast interpreter on these files, it will produce a working Aurora configuration as output.
+
+The first thing needed is some basic plumbing:
+
+    aurora_lib : From lib:apache/aurora # Import the Aurora library.
+    hw_file : aurora_lib.aurora_file { # Create an Aurora configuration file
+      jobs : [ ] # Aurora requires we provide a list of job. We have none so far.
+    }
+    value : hw_file.value # Flabbergast is going to dump this string to the output.
+
+This won't do anything useful, but we have a basic skeleton. Let's create a job.
+
+    aurora_lib : From lib:apache/aurora
+    hw_file : aurora_lib.aurora_file {
+      jobs : [
+        job { # Create a job. This could also be `aurora_lib.job`, but we have nothing else named `job`.
+          instances : 1 # One replica of this job should run.
+          job_name : "hello_world" # Provide a friendly job name.
+          task : aurora_lib.task { processes : [] } # Each job needs a task.
+        }
+      ]
+    }
+    value : hw_file.value
+
+This will create one job, but this file won't work. A job needs a `cluster` and a `role`; it is also desirable to specify `resources`.
+
+    aurora_lib : From lib:apache/aurora
+    cluster : "cluster1"
+    role : "jrhacker"
+    resources : {
+      cpu : 0.1
+      ram : 16Mi
+      disk : 16Mi
+    }
+    hw_file : aurora_lib.aurora_file {
+      jobs : [
+        job {
+          instances : 1
+          job_name : "hello_world"
+          task : aurora_lib.task { processes : [] }
+        }
+      ]
+    }
+    value : hw_file.value
+
+I chose to put `cluster`, `role`, and `resources` resources at the top-level. This is so that they are shared between all jobs that I create. It is also completely valid to do:
+
+    aurora_lib : From lib:apache/aurora
+    hw_file : aurora_lib.aurora_file {
+      resources : {
+        cpu : 0.1
+        ram : 16Mi
+        disk : 16Mi
+      }
+      jobs : [
+        job {
+          cluster : "cluster1"
+          role : "jrhacker"
+          instances : 1
+          job_name : "hello_world"
+          task : aurora_lib.task { processes : [] }
+        }
+      ]
+    }
+    value : hw_file.value
+
+I can even split the `resources` frame.
+
+    aurora_lib : From lib:apache/aurora
+    role : "jrhacker"
+    resources : {
+      cpu : 0.2 # This value will be eclipsed by⋯
+      ram : 16Mi
+    }
+    hw_file : aurora_lib.aurora_file {
+      resources : {
+        disk : 16Mi
+      }
+      jobs : [
+        job {
+          resources : {
+            cpu : 0.1 # ⋯ this one, because this one is “closer” to the point of use.
+          }
+          cluster : "cluster1"
+          instances : 1
+          job_name : "hello_world"
+          task : aurora_lib.task { processes : [] }
+        }
+      ]
+    }
+    value : hw_file.value
+
+In this case, it doesn't change the output, but it allows me to control which parameters are shared by which jobs.
+
+Our task is pretty useless, let's give it some processes:
+
+    aurora_lib : From lib:apache/aurora
+    cluster : "cluster1"
+    role : "jrhacker"
+    resources : {
+      cpu : 0.1
+      ram : 16Mi
+      disk : 16Mi
+    }
+    hw_file : aurora_lib.aurora_file {
+      jobs : [
+        job {
+          instances : 1
+          job_name : "hello_world"
+          task : aurora_lib.task {
+            processes : { # Define the processes ⋯
+              hw : process { # ⋯ using process template
+								process_name : "hw" # The name of this process will be `hw`
+                command_line : [ "echo hello world" ] # The command line we want to run.
+              }
+            }
+          }
+        }
+      ]
+    }
+    value : hw_file.value
+
+This will give us a basic configuration. Aurora allows multiple replicas/instances of a job. Suppose we want each replica to know its identity:
+
+    aurora_lib : From lib:apache/aurora
+    cluster : "cluster1"
+    role : "jrhacker"
+    resources : {
+      cpu : 0.1
+      ram : 16Mi
+      disk : 16Mi
+    }
+    hw_file : aurora_lib.aurora_file {
+      jobs : [
+        job {
+          instances : 1
+          job_name : "hello_world"
+          task : aurora_lib.task {
+            processes : {
+              hw : process {
+								process_name : "hw"
+                command_line : [ "echo hello world. I am ", current_instance ]
+              }
+            }
+          }
+        }
+      ]
+    }
+    value : hw_file.value
+
+Aurora also allows setting multiple ports for incoming connections.
+
+    aurora_lib : From lib:apache/aurora
+    cluster : "cluster1"
+    role : "jrhacker"
+    resources : {
+      cpu : 0.1
+      ram : 16Mi
+      disk : 16Mi
+    }
+    hw_file : aurora_lib.aurora_file {
+      jobs : [
+        job {
+          instances : 1
+          job_name : "hello_world"
+          task : aurora_lib.task {
+						port_defs +: {
+							xmpp : Null # Creating a new null entry, defines a new port. By setting it to a string, it becomes an alias.
+						}
+            processes : {
+              hw : process {
+								process_name : "hw"
+                command_line : [ "helloworldd --http ", ports.http, " --xmpp ", ports.xmpp ]
+              }
+            }
+          }
+        }
+      ]
+    }
+    value : hw_file.value
+
+What makes Flabbergast helpful is how you can extend these base templates to suit your needs. You can create a template that runs a database. It could calculate the needed disk given a list of datasets. That way, a user gets a correctly configured database only having to specify the data sets. Other things to consider might be creating a standard configuration for a sharded system, then using a fricassée to create them over the right range. Or, even, combine the two: create a lists of grouped datasets, then use those to bring up many similar databases to serve them.
+
+## Background
 It is important to understand the niche for Flabbergast: it is a configuration language. The configuration of some systems is rather trivial: `fstab` and `resolv.conf` have remained virtually unchanged over many years. More complex programs, such as Apache, BIND, Samba, and CUPS have significantly more complicated configurations. The complexity is not a function of the configuration itself; indeed `smb.conf` is just an INI file. Complexity comes because there's a desire to share common configuration between elements (_e.g._, the list of privileged users among SMB shares). Configuration files start to grow awkward macro systems, get preprocessed using M4 or the like, or get evermore specific configuration operations to migrate the complexity into the binary.
 
 Flabbergast, in some ways, is like a macro system. However, macro systems, such as M4 and the CPP, operate by manipulating text or tokens and can only ever output more text or tokens. Flabbergast is a language meant to manipulate structured configuration: frames. Frames can behave somewhat like objects: they can have inheritance relations, they can be extended, and, finally, rendered into a standard configuration format, which might be the frames themselves or it could be text. Either way, the needs of the configuration remain in the Flabbergast language; not the binary consuming the configuration. Moreover, Flabbergast makes it possible to write libraries of utilities and templates for configurations.
@@ -213,190 +400,6 @@ There is an entirely different way to generate frames: from existing frames usin
     c : For v : a Reduce v + acc With acc : 0 # Yields 6
 
 These are the essential features of the language. Many other built-in expressions are provided, including an `If` expression, other ways to generate frames, access to external libraries, more variants of the fricassée expression, and more subtle ways to lookup identifiers.
-
-## A Worked Example: Apache Aurora
-Let's start with an example for a simple job that runs on Apache Aurora. Aurora is a long-running job configuration system for Mesos. It's purposes is to collect and dispatch all the needed job information to Mesos. In Aurora, a file consists of many jobs, each with a task to perform. A task can have multiple processes that run inside of it. Most resources are configured on the job level; some on the task level.
-
-The first thing needed is some basic plumbing:
-
-    aurora_lib : From lib:apache/aurora # Import the Aurora library.
-    hw_file : aurora_lib.aurora_file { # Create an Aurora configuration file
-      jobs : [ ] # Aurora requires we provide a list of job. We have none so far.
-    }
-    value : hw_file.value # Flabbergast is going to dump this string to the output.
-
-This won't do anything useful, but we have a basic skeleton. Let's create a job.
-
-    aurora_lib : From lib:apache/aurora
-    hw_file : aurora_lib.aurora_file {
-      jobs : [
-        job { # Create a job. This could also be `aurora_lib.job`, but we have nothing else named `job`.
-          instances : 1 # One replica of this job should run.
-          job_name : "hello_world" # Provide a friendly job name.
-          task : aurora_lib.task { processes : [] } # Each job needs a task.
-        }
-      ]
-    }
-    value : hw_file.value
-
-This will create one job, but this file won't work. A job needs a `cluster` and a `role`; it is also desirable to specify `resources`.
-
-    aurora_lib : From lib:apache/aurora
-    cluster : "cluster1"
-    role : "jrhacker"
-    resources : {
-      cpu : 0.1
-      ram : 16Mi
-      disk : 16Mi
-    }
-    hw_file : aurora_lib.aurora_file {
-      jobs : [
-        job {
-          instances : 1
-          job_name : "hello_world"
-          task : aurora_lib.task { processes : [] }
-        }
-      ]
-    }
-    value : hw_file.value
-
-I chose to put `cluster`, `role`, and `resources` resources at the top-level. This is so that they are shared between all jobs that I create. It is also completely valid to do:
-
-    aurora_lib : From lib:apache/aurora
-    hw_file : aurora_lib.aurora_file {
-      resources : {
-        cpu : 0.1
-        ram : 16Mi
-        disk : 16Mi
-      }
-      jobs : [
-        job {
-          cluster : "cluster1"
-          role : "jrhacker"
-          instances : 1
-          job_name : "hello_world"
-          task : aurora_lib.task { processes : [] }
-        }
-      ]
-    }
-    value : hw_file.value
-
-I can even split the `resources` frame.
-
-    aurora_lib : From lib:apache/aurora
-    role : "jrhacker"
-    resources : {
-      cpu : 0.2 # This value will be eclipsed by⋯
-      ram : 16Mi
-    }
-    hw_file : aurora_lib.aurora_file {
-      resources : {
-        disk : 16Mi
-      }
-      jobs : [
-        job {
-          resources : {
-            cpu : 0.1 # ⋯ this one, because this one is “closer” to the point of use.
-          }
-          cluster : "cluster1"
-          instances : 1
-          job_name : "hello_world"
-          task : aurora_lib.task { processes : [] }
-        }
-      ]
-    }
-    value : hw_file.value
-
-In this case, it doesn't change the output, but it allows me to control which parameters are shared by which jobs.
-
-Our task is pretty useless, let's give it some processes:
-
-    aurora_lib : From lib:apache/aurora
-    cluster : "cluster1"
-    role : "jrhacker"
-    resources : {
-      cpu : 0.1
-      ram : 16Mi
-      disk : 16Mi
-    }
-    hw_file : aurora_lib.aurora_file {
-      jobs : [
-        job {
-          instances : 1
-          job_name : "hello_world"
-          task : aurora_lib.task {
-            processes : { # Define the processes ⋯
-              hw : process { # ⋯ using process template
-								process_name : "hw" # The name of this process will be `hw`
-                command_line : [ "echo hello world" ] # The command line we want to run.
-              }
-            }
-          }
-        }
-      ]
-    }
-    value : hw_file.value
-
-This will give us a basic configuration. Aurora allows multiple replicas/instances of a job. Suppose we want each replica to know its identity:
-
-    aurora_lib : From lib:apache/aurora
-    cluster : "cluster1"
-    role : "jrhacker"
-    resources : {
-      cpu : 0.1
-      ram : 16Mi
-      disk : 16Mi
-    }
-    hw_file : aurora_lib.aurora_file {
-      jobs : [
-        job {
-          instances : 1
-          job_name : "hello_world"
-          task : aurora_lib.task {
-            processes : {
-              hw : process {
-								process_name : "hw"
-                command_line : [ "echo hello world. I am ", current_instance ]
-              }
-            }
-          }
-        }
-      ]
-    }
-    value : hw_file.value
-
-Aurora also allows setting multiple ports for incoming connections.
-
-    aurora_lib : From lib:apache/aurora
-    cluster : "cluster1"
-    role : "jrhacker"
-    resources : {
-      cpu : 0.1
-      ram : 16Mi
-      disk : 16Mi
-    }
-    hw_file : aurora_lib.aurora_file {
-      jobs : [
-        job {
-          instances : 1
-          job_name : "hello_world"
-          task : aurora_lib.task {
-						port_defs +: {
-							xmpp : Null # Creating a new null entry, defines a new port. By setting it to a string, it becomes an alias.
-						}
-            processes : {
-              hw : process {
-								process_name : "hw"
-                command_line : [ "helloworldd --http ", ports.http, " --xmpp ", ports.xmpp ]
-              }
-            }
-          }
-        }
-      ]
-    }
-    value : hw_file.value
-
-What makes Flabbergast helpful is how you can extend these base templates to suit your needs. You can create a template that runs a database. It could calculate the needed disk given a list of datasets. That way, a user gets a correctly configured database only having to specify the data sets. Other things to consider might be creating a standard configuration for a sharded system, then using a fricassée to create them over the right range. Or, even, combine the two: create a lists of grouped datasets, then use those to bring up many similar databases to serve them.
 
 ## Core Concepts
 
