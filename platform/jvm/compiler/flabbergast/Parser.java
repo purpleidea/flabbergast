@@ -1,6 +1,7 @@
 package flabbergast;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -290,7 +291,7 @@ public class Parser {
 	 */
 	public static Parser open(String filename) throws IOException {
 		return new Parser(filename, new String(Files.readAllBytes(Paths
-				.get(filename))));
+				.get(filename)), StandardCharsets.UTF_8));
 	}
 
 	/**
