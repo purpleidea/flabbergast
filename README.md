@@ -13,7 +13,7 @@ We are around on FreeNode IRC in `#flabbergast`, [Google Groups](https://groups.
 
 ## Documentation
 
-There are two important pieces of documentation: the friendly [manual](flabbergast-manual.md) and the [API docs](http://docs.flabbergast.org). You might want to consult the [glossary](glossary.md) when you get started.
+There are two important pieces of documentation: the friendly [manual](flabbergast-manual.md) and the [API docs](http://docs.flabbergast.org). You might want to consult the [glossary](glossary.md) when you get started and keep the [syntax cheatsheet](syntax-cheatsheet.md) around.
 
 The manual describes the syntax is broad strokes and a more prosaic explanation of how it works with examples. It also describes philosophy, design patterns, and libraries. It's worth looking at some of the [examples](examples). If you want more whimsical examples, look at the [Rosetta Code](rosettacode) solutions.
 
