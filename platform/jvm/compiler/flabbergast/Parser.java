@@ -1,11 +1,11 @@
 package flabbergast;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import javax.xml.parsers.ParserConfigurationException;
 
 import flabbergast.Generator.ParameterisedBlock;
@@ -289,8 +289,8 @@ public class Parser {
 	 * @throws IOException
 	 */
 	public static Parser open(String filename) throws IOException {
-		return new Parser(filename, new String(Files.readAllBytes(Paths
-				.get(filename)), "UTF-8"));
+		return new Parser(filename, new Scanner(new File(filename), "UTF-8")
+				.useDelimiter("\\Z").next());
 	}
 
 	/**
