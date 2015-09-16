@@ -1,6 +1,6 @@
 package flabbergast;
 
-import java.nio.charset.StandardCharsets;
+import java.io.UnsupportedEncodingException;
 
 import java.util.Iterator;
 import java.util.Stack;
@@ -28,9 +28,12 @@ public class SimpleStringish extends Stringish {
 
 	@Override
 	public long getUtf8Length() {
-		return str.getBytes(StandardCharsets.UTF_8).length;
+		try {
+			return str.getBytes("UTF-8").length;
+		} catch (UnsupportedEncodingException e) {
+			return -1;
+		}
 	}
-
 
 	@Override
 	public Iterator<String> iterator() {

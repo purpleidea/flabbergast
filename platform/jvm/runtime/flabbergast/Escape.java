@@ -1,10 +1,10 @@
 package flabbergast;
-import java.nio.charset.StandardCharsets;
+import java.io.UnsupportedEncodingException;
+import java.lang.Comparable;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.lang.Comparable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Escape extends Computation {
@@ -229,45 +229,53 @@ public class Escape extends Computation {
 				return;
 			}
 		}
-		MutableFrame output_frame = new MutableFrame(task_master, source_ref,
-				context, self);
-		for (int index = 0; index < input.length; index++) {
-			StringBuilder buffer = new StringBuilder();
-			for (int it = 0; it < input[index].length(); it = input[index]
-					.offsetByCodePoints(it, 1)) {
-				int c = input[index].codePointAt(it);
-				boolean is_surrogate = Character.isSupplementaryCodePoint(c);
-				String replacement = single_substitutions.get(c);
-				if (replacement != null) {
-					buffer.append(replacement);
-				} else {
-					boolean matched = false;
-					for (Range range : ranges) {
-						if (c >= range.start && c <= range.end) {
-							byte[] utf8 = input[index].substring(it,
-									it + (is_surrogate ? 2 : 1)).getBytes(
-									StandardCharsets.UTF_8);
-							buffer.append(String.format(range.replacement, c,
-									(int) input[index].charAt(it), is_surrogate
-											? (int) input[index].charAt(it + 1)
-											: 0, (int) utf8[0], utf8.length > 1
-											? (int) utf8[1]
-											: 0, utf8.length > 2
-											? (int) utf8[2]
-											: 0, utf8.length > 3
-											? (int) utf8[3]
-											: 0));
-							matched = true;
-							break;
+		try {
+			MutableFrame output_frame = new MutableFrame(task_master,
+					source_ref, context, self);
+			for (int index = 0; index < input.length; index++) {
+				StringBuilder buffer = new StringBuilder();
+				for (int it = 0; it < input[index].length(); it = input[index]
+						.offsetByCodePoints(it, 1)) {
+					int c = input[index].codePointAt(it);
+					boolean is_surrogate = Character
+							.isSupplementaryCodePoint(c);
+					String replacement = single_substitutions.get(c);
+					if (replacement != null) {
+						buffer.append(replacement);
+					} else {
+						boolean matched = false;
+						for (Range range : ranges) {
+							if (c >= range.start && c <= range.end) {
+								byte[] utf8 = input[index].substring(it,
+										it + (is_surrogate ? 2 : 1)).getBytes(
+										"UTF-8");
+								buffer.append(String.format(
+										range.replacement,
+										c,
+										(int) input[index].charAt(it),
+										is_surrogate ? (int) input[index]
+												.charAt(it + 1) : 0,
+										(int) utf8[0], utf8.length > 1
+												? (int) utf8[1]
+												: 0, utf8.length > 2
+												? (int) utf8[2]
+												: 0, utf8.length > 3
+												? (int) utf8[3]
+												: 0));
+								matched = true;
+								break;
+							}
+						}
+						if (!matched) {
+							buffer.appendCodePoint(c);
 						}
 					}
-					if (!matched) {
-						buffer.appendCodePoint(c);
-					}
 				}
+				output_frame.set(index, new SimpleStringish(buffer.toString()));
 			}
-			output_frame.set(index, new SimpleStringish(buffer.toString()));
+			result = output_frame;
+		} catch (UnsupportedEncodingException e) {
+			task_master.reportOtherError(source_ref, e.getMessage());
 		}
-		result = output_frame;
 	}
 }
