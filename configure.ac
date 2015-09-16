@@ -37,7 +37,7 @@ else
 	target_java=no
 fi
 
-if test "$enable_jvm" != no; then
+if test "$enable_cli" != no; then
 	AC_PATH_TOOL(XBUILD, xbuild, undefined)
 	if test "$XBUILD" = undefined; then
 		target_cli=no
