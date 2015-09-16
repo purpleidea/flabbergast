@@ -42,13 +42,13 @@ else
 COMPILER_JAR = flabbergast-runtime-$(VERSION).jar flabbergast-compiler-$(VERSION).jar
 endif
 
-INSTALLED_CP = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):$(subst $(SPACE),:$(javadir)/,$(COMPILER_JAR)):$${CLASSPATH:-}
+INSTALLED_CP = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) $(addprefix $(javadir)/, $(COMPILER_JAR))):$${CLASSPATH:-}
 
 TESTS = flabbergast-testing-$(VERSION).jar
 TEST_EXTENSIONS = .jar
 JAR_LOG_COMPILER = ./run_test
 AM_JAR_LOG_FLAGS = "$(TESTING_CLASSPATH)"
-TESTING_CLASSPATH = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):flabbergast-stdlib-$(VERSION).jar:$(subst $(SPACE),:,$(COMPILER_JAR))
+TESTING_CLASSPATH = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) flabbergast-stdlib-$(VERSION).jar $(COMPILER_JAR))
 
 RUNTIME_INPUTS = $(wildcard runtime/flabbergast/*.java runtime/flabbergast/*/*.java)
 COMPILER_INPUTS = $(wildcard compiler/flabbergast/*.java)
@@ -71,7 +71,7 @@ flabbergast-runtime-$(VERSION).jar flabbergast-runtime-$(VERSION)-sources.jar fl
 	CLASSPATH=$(subst $(SPACE),:,$(JAVA_RUNTIME_DEPS)) ./jarc runtime $(VERSION)
 
 flabbergast-compiler-$(VERSION).jar flabbergast-compiler-$(VERSION)-sources.jar flabbergast-compiler-$(VERSION)-javadoc.jar: compiler.manifest $(COMPILER_INPUTS) flabbergast-runtime-$(VERSION).jar
-	CLASSPATH=$(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):flabbergast-runtime-$(VERSION).jar ./jarc compiler $(VERSION)
+	CLASSPATH=$(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) flabbergast-runtime-$(VERSION).jar) ./jarc compiler $(VERSION)
 endif
 
 flabbergast-stdlib-$(VERSION).jar flabbergast-stdlib-$(VERSION)-sources.jar flabbergast-stdlib-$(VERSION)-javadoc.jar: stdlib.manifest $(STDLIB_INPUTS) $(COMPILER_JAR)
@@ -79,13 +79,13 @@ flabbergast-stdlib-$(VERSION).jar flabbergast-stdlib-$(VERSION)-sources.jar flab
 	mkdir .build
 	rsync -a --include '**.o_0' --include '**.jo_0' --include '**/' --exclude '*' ../../lib/ .build
 	$(JAR) cfm flabbergast-stdlib-$(VERSION)-sources.jar stdlib.manifest -C .build .
-	cd .build && $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):../flabbergast-runtime-$(VERSION).jar:../flabbergast-compiler-$(VERSION).jar flabbergast.MainBuildCache -P
+	cd .build && $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) $(addprefix ../, $(COMPILER_JAR))) flabbergast.MainBuildCache -P
 	find .build -type f -a -not -name '*.class' -exec rm {} \;
 	$(JAR) cfm flabbergast-stdlib-$(VERSION).jar stdlib.manifest -C .build .
 	rm -rf .build
 	$(JAR) cf flabbergast-stdlib-$(VERSION)-javadoc.jar -C stdlib-javadoc .
 
-flabbergast-testing-$(VERSION).jar flabbergast-testing-$(VERSION)-sources.jar flabbergast-testing-$(VERSION)-javadoc.jar: testing.manifest $(TESTING_INPUTS) flabbergast-compiler-$(VERSION).jar flabbergast-stdlib-$(VERSION).jar
+flabbergast-testing-$(VERSION).jar flabbergast-testing-$(VERSION)-sources.jar flabbergast-testing-$(VERSION)-javadoc.jar: testing.manifest $(TESTING_INPUTS) $(COMPILER_JAR) flabbergast-stdlib-$(VERSION).jar
 	CLASSPATH=$(TESTING_CLASSPATH) ./jarc testing $(VERSION)
 
 runtime.manifest: Makefile
