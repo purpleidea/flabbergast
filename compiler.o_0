@@ -4436,6 +4436,55 @@ language_tmpl : Template {
 					}
 				}
 
+				nullable_lookup : Template expression_tmpl {
+					pretty_name : "nullable contextual lookup"
+					level : 19
+					pattern : parser.sequence {
+						of : [
+							child_expression { field : $expression },
+							parser.exact { word : "?." },
+							parser.accumulate_list {
+								type : $identifier
+								field : $names
+								nonempty : True
+								in : parser.many_word {
+									of : parser.other {
+										type : $identifier
+										field : Null
+									}
+									separator_word : "."
+								}
+							}
+						]
+					}
+					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
+					ensure_type_is : ensure_type.intrinsic { needs_unbox : False }
+					type_demand : ensure_type.filter {
+						types : [ known_types.frame, known_types.unit ]
+						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
+					}
+					api_value : apigen.other { fields : [ $expression ] }
+					code_value : codegen.type_dispatch {
+						of : codegen.other_code { field : $expression }
+						choices : [
+							choice_tmpl {
+								type : known_types.unit
+								action : kws.null_constant {}
+							},
+							choice_tmpl {
+								type : known_types.frame
+								action : codegen.return_intrinsic_dispatch {
+									of : kws.lookup_field {
+										field : $names
+										source : kws.frame_context {
+											source : converted_result
+										}
+									}
+								}
+							}
+						]
+					}
+				}
 				literal_frame : Template expression_tmpl {
 					pretty_name : "literal frame"
 					level : 19

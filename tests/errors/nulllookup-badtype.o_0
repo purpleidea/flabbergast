@@ -1,0 +1,9 @@
+a : {
+ b : 3
+ c : { d : 4 }
+ j : Null
+}
+x : Null
+
+value : a?.b.c
+

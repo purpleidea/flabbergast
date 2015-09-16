@@ -568,7 +568,7 @@ Null coalescence
 Γ ⊢ default ↓ v
 .SEME
 
-.SS EXPRESSION SYNTAX (E) – FRAME CREATION AND UNARY OPERATORS
+.SS EXPRESSION SYNTAX (E) – FRAME CREATION, NULLABLE LOOKUP, AND UNARY OPERATORS
 .TP
 Literal frame
 .SEM (t, ...) ⊢ \fB{\fR (a:A)* \fB}\fR ↓ r = < u; r, t, ...;  ∀ x ∈ a : k\*<x\*> → v\*<x\*> >
@@ -619,6 +619,12 @@ Create a new function-like template
 .SEME
 
 Create a new template, not based on any current template.
+
+.TP
+Nullable lookup
+.SEM Γ ⊢ expr:E\*<+\*> \fB?\fR names:(\fB.\fR I)+ ↓ v
+Γ ⊢ \fBIf\fR expr \fBIs Null Then Else Null\fR (\fRexpr\fB)\fRnames ↓ v
+.SEME
 
 .TP
 Bit-wise negation

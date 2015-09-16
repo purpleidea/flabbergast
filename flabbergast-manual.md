@@ -200,7 +200,7 @@ For more background on the complexity of configuration languages, take a look at
 
 ## Quick Notes on Syntax
 
-To make adoption easier, Flabbergast tries to be like other popular languages in the inconsequential stuff. If compared to any mainstream language, the arithmetic operators are going to behave like “normal”. Flabbergast also tries to use words over symbols. Granted, it has the provincial assumption that everyone knows English, but the goal is to avoid looking like line noise. The unusual symbols are: `:` for definition (like JSON), `&` for string join, and `??` for null coalescence (like C#), and `+:` for overriding (a unique property of the language).
+To make adoption easier, Flabbergast tries to be like other popular languages in the inconsequential stuff. If compared to any mainstream language, the arithmetic operators are going to behave like “normal”. Flabbergast also tries to use words over symbols. Granted, it has the provincial assumption that everyone knows English, but the goal is to avoid looking like line noise. The unusual symbols are: `:` for definition (like JSON), `&` for string join, and `??` for null coalescence (like C#), `?.` for the null-coalescing lookup (like CoffeeScript's existential property access), and `+:` for overriding (a unique property of the language).
 
 For a quick reference, check the [cheatsheet](syntax-cheatsheet.md).
 
@@ -588,6 +588,8 @@ Here is non-trivial example uses of all lookup styles:
 In `a`, contextual lookup searches for an `i`, which does not exist in the current frame, but does exist in its container. In `x`, contextual looks for an frame `a` that contains an attribute `h`, which it finds at the top-level. In `y`, although `i` is accessible from the frame `a`, it does not exist in `a`, so `a.i` fails to find a matching frame. However, in `z`, a remote lookup searches for `i` starting from `a`, which is found in exactly the same way as when computing the value for `a.h`. Inside `w`, the situation is more complicated as another frame named `a` is created. Searching for `a.h`, as `w.x` does, first checks the frame `w.a`, but this frame lacks an `h` attribute, so lookup continues, instead finding the top-level frame. In `w.y`, lookup for `a.i` will match the `w.a` frame as it does have an `i` attribute. In both `w.z` and `w.v`, searching for `a` yields `w.a`. In the case of `w.z`, doing a remote lookup inside `w.a` for `i` will find the attribute inside it. In the case of `w.v`, the parentheses have broken the lookup into a contextual lookup (`a`) and a direct get (`.h`); this is an error as the matched `a` (`w.a`) does not have an attribute `h`.
 
 > __This is the most complicated part of the language, but also the most useful.__
+
+The pattern `If x Is Null Then Null Else (x).y` tends to show up frequently. The nullable lookup operator, makes this `x?.y`.
 
 ### Fricassée Expressions
 

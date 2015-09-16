@@ -1,0 +1,8 @@
+a : {
+ b : 3
+ c : { d : 4 }
+ j : Null
+}
+x : Null
+
+value : x?.b Is Null && a?.b == 3 && (a?.j)?.c Is Null && a?.c.d == 4 && x?.c.d Is Null && a.c?.d == 4 && a.j?.d Is Null

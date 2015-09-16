@@ -68,6 +68,8 @@ Instantiate a template: `tmpl { overrides... }` (_e.g._, `some_template { x : 3 
 
 Null coalescence: `x ?? y`
 
+Nullable lookup: `x?.y` which is sugar for `If x Is Null Then Null Else (x).y`
+
 Literal frame: `{ attr : 3 }` See [attribute definitions](#attribute-definitions).
 
 New template: `Template { attr : x }` See [attribute definitions](#attribute-definitions).
