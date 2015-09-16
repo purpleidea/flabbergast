@@ -3,12 +3,10 @@ package flabbergast;
 import static org.objectweb.asm.Type.getInternalName;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,8 +44,9 @@ public class DynamicCompiler extends LoadLibraries {
 			super.visitEnd();
 			byte[] x = writer.toByteArray();
 			try {
-				Files.write(Paths.get("/tmp/fail.class"), x,
-						StandardOpenOption.CREATE);
+				FileOutputStream output = new FileOutputStream("fail.class");
+				output.write(writer.toByteArray());
+				output.close();
 			} catch (IOException f) {
 			}
 			try {

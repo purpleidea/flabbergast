@@ -1,9 +1,8 @@
 package flabbergast;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -40,8 +39,9 @@ class AutoWriteClassVisitor extends ClassVisitor {
 		super.visitEnd();
 		try {
 			target.getParentFile().mkdirs();
-			Files.write(target.toPath(), writer.toByteArray(),
-					StandardOpenOption.CREATE);
+			FileOutputStream output = new FileOutputStream(target);
+			output.write(writer.toByteArray());
+			output.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
