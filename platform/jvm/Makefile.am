@@ -74,7 +74,7 @@ flabbergast-compiler-$(VERSION).jar flabbergast-compiler-$(VERSION)-sources.jar 
 	CLASSPATH=$(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS)):flabbergast-runtime-$(VERSION).jar ./jarc compiler $(VERSION)
 endif
 
-flabbergast-stdlib-$(VERSION).jar flabbergast-stdlib-$(VERSION)-sources.jar flabbergast-stdlib-$(VERSION)-javadoc.jar: stdlib.manifest $(STDLIB_INPUTS) flabbergast-compiler-$(VERSION).jar
+flabbergast-stdlib-$(VERSION).jar flabbergast-stdlib-$(VERSION)-sources.jar flabbergast-stdlib-$(VERSION)-javadoc.jar: stdlib.manifest $(STDLIB_INPUTS) $(COMPILER_JAR)
 	rm -rf .build
 	mkdir .build
 	rsync -a --include '**.o_0' --include '**.jo_0' --include '**/' --exclude '*' ../../lib/ .build
