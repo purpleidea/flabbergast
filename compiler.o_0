@@ -1326,7 +1326,7 @@ language_tmpl : Template {
 	type_operator : Template binary_operator {
 		apply_environment_to : [ environment.other_elements { fields : [ $left ] } ]
 		right_operand : Template parser.other {
-			type : $type
+			type : $type_name
 		}
 	}
 	# An "Is" operator.
@@ -3067,7 +3067,7 @@ language_tmpl : Template {
 			}
 		}
 
-		type : Template syntax_group {
+		type_name : Template syntax_group {
 			type_element : Template syntax_element {
 				friendly_name : Required
 				castable_from : Required

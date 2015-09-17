@@ -2672,7 +2672,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 				}
 			}
 		}
-		type +: {
+		type_name +: {
 			super_class_extra : "\tabstract Type getTypeId();\n\tabstract TypeSet getCastableFrom();\n\tabstract boolean getUnbox();\n"
 			type_element +: {
 				castable_from_type_bits : For t : castable_from Reduce acc & ", " & t.union_type With acc : type.union_type
