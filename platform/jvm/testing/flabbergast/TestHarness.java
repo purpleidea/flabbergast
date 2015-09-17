@@ -3,6 +3,7 @@ package flabbergast;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.Collections;
 
 public class TestHarness {
 	private static final class OnlySourceFiles implements FilenameFilter {
@@ -22,6 +23,12 @@ public class TestHarness {
 		return new File(buffer.toString());
 	}
 
+	private static File[] alwaysIterable(File[] collection) {
+		if (collection == null)
+			return new File[0];
+		return collection;
+	}
+
 	public static boolean doTests(File root, String type, Ptr<Integer> id)
 			throws IOException {
 		boolean all_succeeded = true;
@@ -29,8 +36,8 @@ public class TestHarness {
 			System.err.printf("Skipping non-existent directory: %s\n", root);
 			return all_succeeded;
 		}
-		for (File file : new File(root, "malformed")
-				.listFiles(new OnlySourceFiles())) {
+		for (File file : alwaysIterable(new File(root, "malformed")
+				.listFiles(new OnlySourceFiles()))) {
 			DirtyCollector collector = new DirtyCollector();
 			DynamicCompiler compiler = new DynamicCompiler(collector);
 
@@ -49,8 +56,8 @@ public class TestHarness {
 		}
 		TaskMaster task_master = new TestTaskMaster();
 		task_master.addUriHandler(BuiltInLibraries.INSTANCE);
-		for (File file : new File(root, "errors")
-				.listFiles(new OnlySourceFiles())) {
+		for (File file : alwaysIterable(new File(root, "errors")
+				.listFiles(new OnlySourceFiles()))) {
 			boolean success;
 			try {
 				DirtyCollector collector = new DirtyCollector();
@@ -75,8 +82,8 @@ public class TestHarness {
 					type, file.getName());
 			all_succeeded &= success;
 		}
-		for (File file : new File(root, "working")
-				.listFiles(new OnlySourceFiles())) {
+		for (File file : alwaysIterable(new File(root, "working")
+				.listFiles(new OnlySourceFiles()))) {
 			boolean success;
 			try {
 				DirtyCollector collector = new DirtyCollector();
