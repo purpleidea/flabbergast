@@ -10,6 +10,6 @@ vim-syntax-flabbergast.yaml: Makefile
 	for each in $(GROUPS); do echo " - $${each}/flabbergast.vim" >> vim-syntax-flabbergast.yaml; done
 
 install-data-local:
-	for each in $(GROUPS); do install -m 644 -D $${each}.vim $(DESTDIR)$(datadir)/vim/addons/$$each/flabbergast.vim; done
+	for each in $(GROUPS); do $(mkinstalldirs) $(DESTDIR)$(datadir)/vim/addons/$$each; $(INSTALL_DATA) $${each}.vim $(DESTDIR)$(datadir)/vim/addons/$$each/flabbergast.vim; done
 
 CLEANFILES = vim-syntax-flabbergast.yaml
