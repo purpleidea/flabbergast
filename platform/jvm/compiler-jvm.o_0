@@ -968,10 +968,10 @@ kws : compiler_lib.kws_repl_tmpl {
 		emit_method : "visitInsn"
 	}
 	int_to_bool +: {
-		opcode : "Long.class.getMethod(\"compare\", long.class, long.class)"
-		emit_method : Null
+		opcode : "LCMP"
+		emit_method : "visitInsn"
 		gen_gen +: {
-			extra_emit :
+			extra_load :
 				If number == 0
 					Then "\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.LCONST_0);"
 				Else If number == 1

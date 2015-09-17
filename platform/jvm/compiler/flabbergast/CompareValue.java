@@ -3,6 +3,7 @@ package flabbergast;
 import static org.objectweb.asm.Type.getInternalName;
 
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 
 class CompareValue extends LoadableValue {
@@ -25,6 +26,10 @@ class CompareValue extends LoadableValue {
 			left.load(generator);
 			right.load(generator);
 			generator.visitInsn(Opcodes.ISUB);
+		} else if (left.getBackingType() == long.class) {
+			left.load(generator);
+			right.load(generator);
+			generator.visitInsn(Opcodes.LCMP);
 		} else {
 			left.load(generator);
 			right.load(generator);
