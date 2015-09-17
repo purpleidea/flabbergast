@@ -940,12 +940,50 @@ kws : compiler_lib.kws_repl_tmpl {
 		}
 	}
 	int_divide +: {
-		opcode : "LDIV"
+		cached : True
+		opcode : "DUP2"
 		emit_method : "visitInsn"
+		gen_gen +: {
+			extra_post :
+				"\(sum_indent)org.objectweb.asm.Label \(Id)_ok = new org.objectweb.asm.Label();" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.LCONST_0);" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.LCMP);" &
+				"\(sum_indent)\(builder).visitJumpInsn(org.objectweb.asm.Opcodes.IFEQ, \(Id)_ok);" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.POP2);" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.POP2);" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.POP);" &
+				"\(sum_indent)\(generator).loadTaskMaster();" &
+				"\(sum_indent)\(parameters.source_reference.storage_name).load(\(generator));" &
+				"\(sum_indent)\(builder).visitLdcInsn(\"Division‽‽‽ by zero‽‽‽ Inconceivable!!!\");" &
+				"\(sum_indent)\(generator).visitMethod(TaskMaster.class.getMethod(\"reportOtherError\", SourceReference.class, String.class));" &
+				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.ICONST_0);" &
+				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.IRETURN);" &
+				"\(sum_indent)\(builder).visitLabel(\(Id)_ok);" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.LDIV);"
+		}
 	}
 	int_modulus +: {
-		opcode : "LREM"
+		cached : True
+		opcode : "DUP2"
 		emit_method : "visitInsn"
+		gen_gen +: {
+			extra_post :
+				"\(sum_indent)org.objectweb.asm.Label \(Id)_ok = new org.objectweb.asm.Label();" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.LCONST_0);" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.LCMP);" &
+				"\(sum_indent)\(builder).visitJumpInsn(org.objectweb.asm.Opcodes.IFEQ, \(Id)_ok);" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.POP2);" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.POP2);" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.POP);" &
+				"\(sum_indent)\(generator).loadTaskMaster();" &
+				"\(sum_indent)\(parameters.source_reference.storage_name).load(\(generator));" &
+				"\(sum_indent)\(builder).visitLdcInsn(\"The remainder, having divided by zero, is...uhh...seven?\");" &
+				"\(sum_indent)\(generator).visitMethod(TaskMaster.class.getMethod(\"reportOtherError\", SourceReference.class, String.class));" &
+				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.ICONST_0);" &
+				"\(sum_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.IRETURN);" &
+				"\(sum_indent)\(builder).visitLabel(\(Id)_ok);" &
+				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.LREM);"
+		}
 	}
 	int_multiply +: {
 		opcode : "LMUL"
