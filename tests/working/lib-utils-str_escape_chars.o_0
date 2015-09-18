@@ -1,0 +1,10 @@
+utils_lib : From lib:utils
+
+transform : [
+	utils_lib.str_transform.char_tmpl { char : "a"  replacement : "1" },
+	utils_lib.str_transform.char_tmpl { char : "𐌌"  replacement : "2" },
+	utils_lib.str_transform.char_tmpl { char : "瀀"  replacement : "3" },
+	utils_lib.str_transform.char_tmpl { char : "Փ"  replacement : "44" }
+]
+results : utils_lib.str_escape_list("a", "ab", "ba", "aa", "a𐌌", "瀀Փ", "瀀bՓ", transformations : transform)
+value : utils_lib.matches(args : results, refs : ["1", "1b", "b1", "11", "12", "344", "3b44"])
