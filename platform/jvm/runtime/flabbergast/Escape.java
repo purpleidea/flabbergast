@@ -2,6 +2,7 @@ package flabbergast;
 import java.io.UnsupportedEncodingException;
 import java.lang.Comparable;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.List;
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ public class Escape extends Computation {
 
 	private Map<Integer, String> single_substitutions = new TreeMap<Integer, String>();
 	private List<Range> ranges = new ArrayList<Range>();
-	private String[] input;
+	private Map<String, String> input = new TreeMap<String, String>();
 	private SourceReference source_ref;
 	private Context context;
 	private Frame self;
@@ -52,16 +53,15 @@ public class Escape extends Computation {
 			if (result instanceof Frame) {
 				Frame input = (Frame) result;
 				interlock.addAndGet(input.count());
-				Escape.this.input = new String[input.count()];
 				int index = 0;
 				for (String name : input) {
-					final int target_index = index++;
+					final String target_name = name;
 					input.getOrSubscribe(name, new ConsumeResult() {
 						@Override
 						public void consume(Object arg) {
 							if (arg instanceof Stringish) {
-								Escape.this.input[target_index] = arg
-										.toString();
+								Escape.this.input.put(target_name,
+										arg.toString());
 								if (interlock.decrementAndGet() == 0) {
 									task_master.slot(Escape.this);
 								}
@@ -232,11 +232,12 @@ public class Escape extends Computation {
 		try {
 			MutableFrame output_frame = new MutableFrame(task_master,
 					source_ref, context, self);
-			for (int index = 0; index < input.length; index++) {
+			for (Entry<String, String> entry : input.entrySet()) {
 				StringBuilder buffer = new StringBuilder();
-				for (int it = 0; it < input[index].length(); it = input[index]
+				String in_str = entry.getValue();
+				for (int it = 0; it < in_str.length(); it = in_str
 						.offsetByCodePoints(it, 1)) {
-					int c = input[index].codePointAt(it);
+					int c = in_str.codePointAt(it);
 					boolean is_surrogate = Character
 							.isSupplementaryCodePoint(c);
 					String replacement = single_substitutions.get(c);
@@ -246,14 +247,14 @@ public class Escape extends Computation {
 						boolean matched = false;
 						for (Range range : ranges) {
 							if (c >= range.start && c <= range.end) {
-								byte[] utf8 = input[index].substring(it,
+								byte[] utf8 = in_str.substring(it,
 										it + (is_surrogate ? 2 : 1)).getBytes(
 										"UTF-8");
 								buffer.append(String.format(
 										range.replacement,
 										c,
-										(int) input[index].charAt(it),
-										is_surrogate ? (int) input[index]
+										(int) in_str.charAt(it),
+										is_surrogate ? (int) in_str
 												.charAt(it + 1) : 0,
 										(int) utf8[0], utf8.length > 1
 												? (int) utf8[1]
@@ -271,7 +272,8 @@ public class Escape extends Computation {
 						}
 					}
 				}
-				output_frame.set(index, new SimpleStringish(buffer.toString()));
+				output_frame.set(entry.getKey(),
+						new SimpleStringish(buffer.toString()));
 			}
 			result = output_frame;
 		} catch (UnsupportedEncodingException e) {

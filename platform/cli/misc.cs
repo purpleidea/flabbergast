@@ -252,7 +252,7 @@ namespace Flabbergast {
 
 		private Dictionary<int, string> single_substitutions = new Dictionary<int, string>();
 		private SortedList<int, Range> ranges = new SortedList<int, Range>();
-		private string[] input;
+		private Dictionary<string, string> input = new Dictionary<string, string>();
 		private SourceReference source_ref;
 		private Context context;
 		private Frame self;
@@ -270,13 +270,11 @@ namespace Flabbergast {
 				if (result is Frame) {
 					var input = (Frame) result;
 					Interlocked.Add(ref interlock, (int) input.Count);
-					this.input = new string[input.Count];
-					var index = 0;
 					foreach (var name in input.GetAttributeNames()) {
-						var target_index = index++;
+						var target_name = name;
 						input.GetOrSubscribe(name, arg => {
 							if (arg is Stringish) {
-								this.input[target_index] = arg.ToString();
+								this.input[target_name] = arg.ToString();
 								if (Interlocked.Decrement(ref interlock) == 0) {
 									task_master.Slot(this);
 								}
@@ -387,11 +385,12 @@ namespace Flabbergast {
 				}
 			}
 			var output_frame = new MutableFrame(task_master, source_ref, context, self);
-			for (var index = 0; index < input.Length; index++) {
+			foreach (var entry in input) {
+				var in_str = entry.Value;
 				var buffer = new StringBuilder();
-				for(var it = 0; it < input[index].Length; it += Char.IsSurrogatePair(input[index], it) ? 2 : 1) {
-					var c = Char.ConvertToUtf32(input[index], it);
-					var is_surrogate = Char.IsSurrogatePair(input[index], it);
+				for (var it = 0; it < in_str.Length; it += Char.IsSurrogatePair(in_str, it) ? 2 : 1) {
+					var c = Char.ConvertToUtf32(in_str, it);
+					var is_surrogate = Char.IsSurrogatePair(in_str, it);
 					string replacement;
 					if (single_substitutions.TryGetValue(c, out replacement)) {
 						buffer.Append(replacement);
@@ -401,8 +400,8 @@ namespace Flabbergast {
 							if (c >= range.start && c <= range.end) {
 								var utf8 = new byte[4];
 								
-								Encoding.UTF8.GetBytes(input[index], it, is_surrogate ? 2 : 1, utf8, 0);
-								buffer.Append(String.Format(range.replacement, c, (int) input[index][it], is_surrogate ? (int) input[index][it + 1] : 0, (int) utf8[0], (int) utf8[1], (int) utf8[2], (int) utf8[3]));
+								Encoding.UTF8.GetBytes(in_str, it, is_surrogate ? 2 : 1, utf8, 0);
+								buffer.Append(String.Format(range.replacement, c, (int) in_str[it], is_surrogate ? (int) in_str[it + 1] : 0, (int) utf8[0], (int) utf8[1], (int) utf8[2], (int) utf8[3]));
 								matched = true;
 								break;
 							}
@@ -412,7 +411,7 @@ namespace Flabbergast {
 						}
 					}
 				}
-				output_frame.Set(index, new SimpleStringish(buffer.ToString()));
+				output_frame.Set(entry.Key, new SimpleStringish(buffer.ToString()));
 			}
 			result = output_frame;
 			return true;
