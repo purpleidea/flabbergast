@@ -59,6 +59,7 @@ public class MainPrinter {
 		ConsoleTaskMaster task_master = new ConsoleTaskMaster();
 		task_master.addUriHandler(BuiltInLibraries.INSTANCE);
 		task_master.addUriHandler(JdbcUriHandler.INSTANCE);
+		task_master.addUriHandler(EnvironmentUriHandler.INSTANCE);
 		if (!result.hasOption('p')) {
 			LoadPrecompiledLibraries precomp = new LoadPrecompiledLibraries();
 			task_master.addUriHandler(precomp);

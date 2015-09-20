@@ -1228,6 +1228,9 @@ Flabbergast has a standard format for database connection strings, due to the fa
 
 For a list of supported databases and their options, view `man flabbergast_sql`. Currently, only a handful of databases are supported. Patches for new databases are welcome.
 
+### Environment Variables (`env:`)
+Current environment variables may be accessed with `env:` URIs. For instance, to access the current path, use `env:PATH`.
+
 ### Parsing (`lib:parse`)
 TODO
 

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace Flabbergast {
@@ -631,6 +632,25 @@ namespace Flabbergast {
 				x.Continue();
 			}
 			return false;
+		}
+	}
+	public class EnvironmentUriHandler : UriHandler {
+		public static readonly EnvironmentUriHandler INSTANCE = new EnvironmentUriHandler();
+		private EnvironmentUriHandler() {}
+		public string UriName { get { return "Environment variables"; } }
+		public Computation ResolveUri(TaskMaster task_master, string uri, out LibraryFailure reason) {
+			if (!uri.StartsWith("env:")) {
+				reason = LibraryFailure.Missing;
+				return null;
+			}
+			var name = uri.Substring(4);
+			if (!Regex.IsMatch(name, "[A-Z_][A-Z0-9_]*")) {
+				reason = LibraryFailure.BadName;
+				return null;
+			}
+			reason = LibraryFailure.None;
+			var content = Environment.GetEnvironmentVariable(name);
+			return new Precomputation(content == null ? (object) Unit.NULL : new SimpleStringish(content));
 		}
 	}
 }

@@ -52,6 +52,7 @@ public class Printer {
 		var accessory_lib_path = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(files[0])), "lib");
 		task_master.AddUriHandler(BuiltInLibraries.INSTANCE);
 		task_master.AddUriHandler(DbUriHandler.INSTANCE);
+		task_master.AddUriHandler(EnvironmentUriHandler.INSTANCE);
 		if (use_precompiled) {
 			var precomp = new LoadPrecompiledLibraries();
 			precomp.PrependPath(accessory_lib_path);
