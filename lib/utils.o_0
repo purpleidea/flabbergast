@@ -624,3 +624,5 @@ sumifier : Template {
 	}
 }
 
+{{{The currently logged in user. This is platform dependent.}}}
+user : (From lib:utilsinterop).user Enforce Str
