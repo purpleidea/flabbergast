@@ -33,7 +33,7 @@ syn keyword flabbergastBool False True
 syn keyword flabbergastConstant Null
 syn match flabbergastBadKeyword "\<[A-WYZ][^ \t#]*" display
 syn match flabbergastIdentifierString "\$[a-z][a-zA-Z0-9_]*\>" display
-syn match flabbergastFrom "[A-Za-z0-9.+-]\+:[A-Za-z0-9~!*'();@&=+$,/?%#.+-:]\+" display
+syn match flabbergastFrom "[A-Za-z0-9.+-]\+:[A-Za-z0-9~!*'_;@&=+$,/?%#.+-:]\+" display
 syn keyword flabbergastFrom From
 syn keyword flabbergastFricassee By Each For Name Order Ordinal Reduce Reverse Select With
 syn keyword flabbergastConditional If Then Else
