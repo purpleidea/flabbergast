@@ -139,7 +139,7 @@ namespace Flabbergast {
 						if (!task_master.VerifySymbol(source_ref, attr_name)) {
 							return false;
 						}
-						retrievers.Add((rs, frame, task_master) => frame.Set(attr_name, rs.IsDBNull(column) ? Precomputation.Capture(Unit.NULL) : Lookup.Do(rs.GetString(column).Split('.'))));
+						retrievers.Add((rs, frame, _task_master) => frame.Set(attr_name, rs.IsDBNull(column) ? Precomputation.Capture(Unit.NULL) : Lookup.Do(rs.GetString(column).Split('.'))));
 						continue;
 					}
 					Unpacker unpacker;

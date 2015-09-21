@@ -245,9 +245,9 @@ namespace Flabbergast.Time {
 				first = false;
 				interlock = 3;
 				GetTime(d => initial = d, "arg");
-				new Lookup(task_master, source_reference, new[]{"to_utc"}, context).Notify(to_utc => {
-					if (to_utc is bool) {
-						this.to_utc = (bool) to_utc;
+				new Lookup(task_master, source_reference, new[]{"to_utc"}, context).Notify(to_utc_result => {
+					if (to_utc_result is bool) {
+						to_utc = (bool) to_utc_result;
 						if (Interlocked.Decrement(ref interlock) == 0) {
 							task_master.Slot(this);
 						}
