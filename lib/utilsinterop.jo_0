@@ -68,8 +68,8 @@ str_transform : {
 	}
 	range_tmpl : Template {
 		type : 1
-		mode_hex_upper : { four : "8X"  two : "4X"  one : "2X" }
-		mode_hex_lower : { four : "8x"  two : "4x"  one : "2x" }
+		mode_hex_upper : { four : "08X"  two : "04X"  one : "02X" }
+		mode_hex_lower : { four : "08x"  two : "04x"  one : "02x" }
 		mode_decimal : { four : "d"  two : "d"  one : "d" }
 
 		utf32 : { value : "%0$\(mode.four)" }
