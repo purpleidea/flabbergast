@@ -6,6 +6,8 @@ using System.IO;
 namespace Flabbergast {
 	public abstract class Stringish : IComparable<Stringish> {
 		public static Stringish[] BOOLEANS = {new SimpleStringish("False"), new SimpleStringish("True")};
+		public static Stringish OS_NAME = new SimpleStringish(Environment.OSVersion.VersionString);
+
 		public abstract long Length { get; }
 		public abstract long Utf8Length { get; }
 

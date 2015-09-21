@@ -1,0 +1,26 @@
+{{{Platform-specific configuration.}}}
+machine_tmpl : Template {
+	{{{The string that separates paths into directories.}}}
+	directory_separator : Required
+	{{{A friendly name for this platform.}}}
+	name : Required
+	{{{The string that separates directores in lists of directories (\Emph{e.g.}, \Mono{PATH}).}}}
+	path_separator : Required
+}
+
+{{{Microsoft Windows machines...and I guess ReactOS and WINE too.}}}
+windows : machine_tmpl {
+	directory_separator : "\\"
+	name : "Windows"
+	path_separator : ";"
+}
+
+{{{UNIX-like machines.}}}
+unix : machine_tmpl {
+	directory_separator : "/"
+	name : "UNIX"
+	path_separator : ":"
+}
+
+{{{The kind of machine currently in use.}}}
+local : From lib:machineinterop

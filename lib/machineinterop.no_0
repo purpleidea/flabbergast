@@ -1,0 +1,3 @@
+directory_separator : XField  System.IO.Path DirectorySeparatorChar
+name : XField Flabbergast.Stringish,Flabbergast.Runtime OS_NAME
+path_separator : XField System.IO.Path PathSeparator
