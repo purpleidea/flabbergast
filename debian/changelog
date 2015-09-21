@@ -1,3 +1,32 @@
+flabbergast (0.11~ppa0) trusty; urgency=medium
+
+  * Fix several bugs in string escaping
+  * Change URIs to include _ and exclude ()
+  * Capture integer division by zero errors
+  * Allow ! in JVM REPL
+  * Remove dependence on Java 1.7
+  * Force file parsing to UTF-8 in Java
+  * Fix bad type conversions with `Now`
+  * Allow blank lines in the REPL
+  * Add nullable lookup operator (`?.`)
+  * Add `env:` URIs to access environment variables
+  * Create function-like template creation sugar (`Function`)
+  * Document URI schemes
+  * Allow diffing Flabbergast files in git (`flabbergast-diff`)
+  * Rename lib:archive/ar to lib:unix/ar
+  * Fix various trigonometry bugs
+  * Have `min` and `max` respond consistently to `NaN` in `lib:utils`
+  * Allow accessing current username in `lib:utils`
+  * Add a row template for SQL queries in `lib:sql`
+  * Add UNIX permission library `lib:unix/perm`
+  * Add time processing library `lib:time`
+  * Add serverset generation and job groups to Aurora library`
+  * Refactor SQL to allow off-line usage
+  * Add mySQL discovery and syntax
+  * Add matches function in `lib:utils`
+
+ -- Andre Masella <andre@masella.name>  Mon, 21 Sep 2015 08:45:00 -0400
+
 flabbergast (0.10~ppa0) trusty; urgency=medium
 
   * Add PostgreSQL discovery commands
