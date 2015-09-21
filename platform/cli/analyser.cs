@@ -42,6 +42,20 @@ internal abstract class AstTypeableNode : AstNode {
 		}
 		return success;
 	}
+	internal static FieldInfo ReflectField(ErrorCollector collector, AstNode where, string type_name, string field_name, ref bool success) {
+		var reflected_type = System.Type.GetType(type_name, false);
+		if (reflected_type == null) {
+			success = false;
+			collector.ReportRawError(where, "No such type " + type_name + " found. Perhaps you are missing an assembly reference.");
+			return null;
+		}
+		var field = reflected_type.GetField(field_name);
+		if (field == null || !field.IsPublic) {
+			success = false;
+			collector.ReportRawError(where, "The type " + type_name + " does not contain a public static field " + field_name + ".");
+		}
+		return field;
+	}
 	internal static void ReflectMethod(ErrorCollector collector, AstNode where, string type_name, string method_name, int arity, List<MethodInfo> methods, ref bool success) {
 		var reflected_type = System.Type.GetType(type_name, false);
 		if (reflected_type == null) {
@@ -104,7 +118,7 @@ internal abstract class AstTypeableNode : AstNode {
 			return Type.Int;
 		} else if (clr_type == typeof(float) || clr_type == typeof(double)) {
 			return Type.Float;
-		} else if (clr_type == typeof(string) || clr_type == typeof(Stringish)) {
+		} else if (clr_type == typeof(string) || clr_type == typeof(Stringish) || clr_type == typeof(char)) {
 			return Type.Str;
 		} else if (typeof(Frame).IsAssignableFrom(clr_type)) {
 			return Type.Frame;

@@ -575,6 +575,9 @@ internal abstract class Generator {
 				} else if (result.BackingType == typeof(double)) {
 					Builder.Emit(OpCodes.Conv_R8);
 				} else if (result.BackingType == typeof(Stringish)) {
+					if (best_method.ReturnType == typeof(char)) {
+						Builder.Emit(OpCodes.Call, typeof(Char).GetMethod("ToString", new[] { typeof(char) }));
+					}
 					Builder.Emit(OpCodes.Newobj, typeof(SimpleStringish).GetConstructors()[0]);
 				} else {
 					throw new InvalidOperationException(String.Format("No conversation from {0} to {1} while invoking {2}.{3}.", best_method.ReturnType.Name, result.BackingType.Name, best_method.ReflectedType.Name, best_method.Name));
@@ -990,6 +993,26 @@ internal class FieldValue : LoadableValue {
 	public override void Load(ILGenerator generator) {
 		generator.Emit(OpCodes.Ldarg_0);
 		generator.Emit(OpCodes.Ldfld, Field);
+	}
+}
+internal class StaticFieldValue : LoadableValue {
+	public FieldInfo Field { get; private set; }
+	public override System.Type BackingType { get { return Field.FieldType; } }
+	public StaticFieldValue(FieldInfo field) {
+		Field = field;
+	}
+	public override void Load(ILGenerator generator) {
+		generator.Emit(OpCodes.Ldsfld, Field);
+		if (Field.FieldType == typeof(int) || Field.FieldType == typeof(short) || Field.FieldType == typeof(byte)) {
+			generator.Emit(OpCodes.Conv_I8);
+		} else if (Field.FieldType == typeof(float)) {
+			generator.Emit(OpCodes.Conv_R8);
+		} else if (Field.FieldType == typeof(char)) {
+			generator.Emit(OpCodes.Call, typeof(Char).GetMethod("ToString", new[] { typeof(char) }));
+			generator.Emit(OpCodes.Newobj, typeof(SimpleStringish).GetConstructors()[0]);
+		} else if (Field.FieldType == typeof(string)) {
+			generator.Emit(OpCodes.Newobj, typeof(SimpleStringish).GetConstructors()[0]);
+		}
 	}
 }
 internal class AutoUnboxValue : LoadableValue {

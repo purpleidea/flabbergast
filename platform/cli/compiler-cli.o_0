@@ -2742,6 +2742,53 @@ compiler : compiler_lib.language_with_repl_tmpl {
 						}
 					}
 				}
+				xfield : Template expression_tmpl {
+					level : 19
+					pretty_name : "access CLI field"
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "XField" },
+							space { mandatory : True },
+							parser.accumulate_string {
+								field : "type_name"
+								in : parser.many {
+									nonempty : True
+									accumulate : True
+									separator : parser.single { char : ".," }
+									of : cli_identifier { }
+								}
+							},
+							space { mandatory : True },
+							parser.accumulate_string {
+								field : "field_name"
+								accumulate: True
+								in : cli_identifier { }
+							}
+						]
+					}
+					class_extra : "\tprivate System.Reflection.FieldInfo Field;\n"
+					apply_environment_to : [
+						environment.application_action {
+							class_gen : ""
+							value :
+								"\t\tField = ReflectField(_collector, this, type_name.ToString(), field_name.ToString(), ref _success);\n"
+						}
+					]
+					ensure_type_is : ensure_type.filter {
+						types : Drop
+						type_bits : "AstTypeableNode.TypeFromClrType(Field.FieldType)"
+					}
+					api_value : apigen.nop {}
+					code_value : codegen.gen_tmpl {
+						extra_indent : "\t\t"
+
+						gen_gen +: {
+							value :
+								"\(indent)var \(storage_name) = new StaticFieldValue(Field);" &
+								code
+						}
+					}
+				}
 			}
 		}
 	}
