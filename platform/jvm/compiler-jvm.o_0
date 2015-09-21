@@ -948,7 +948,7 @@ kws : compiler_lib.kws_repl_tmpl {
 				"\(sum_indent)org.objectweb.asm.Label \(Id)_ok = new org.objectweb.asm.Label();" &
 				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.LCONST_0);" &
 				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.LCMP);" &
-				"\(sum_indent)\(builder).visitJumpInsn(org.objectweb.asm.Opcodes.IFEQ, \(Id)_ok);" &
+				"\(sum_indent)\(builder).visitJumpInsn(org.objectweb.asm.Opcodes.IFNE, \(Id)_ok);" &
 				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.POP2);" &
 				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.POP2);" &
 				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.POP);" &
@@ -971,7 +971,7 @@ kws : compiler_lib.kws_repl_tmpl {
 				"\(sum_indent)org.objectweb.asm.Label \(Id)_ok = new org.objectweb.asm.Label();" &
 				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.LCONST_0);" &
 				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.LCMP);" &
-				"\(sum_indent)\(builder).visitJumpInsn(org.objectweb.asm.Opcodes.IFEQ, \(Id)_ok);" &
+				"\(sum_indent)\(builder).visitJumpInsn(org.objectweb.asm.Opcodes.IFNE, \(Id)_ok);" &
 				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.POP2);" &
 				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.POP2);" &
 				"\(sum_indent)\(builder).visitInsn(org.objectweb.asm.Opcodes.POP);" &
