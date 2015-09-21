@@ -72,13 +72,13 @@ str_transform : {
 		mode_hex_lower : { four : "08x"  two : "04x"  one : "02x" }
 		mode_decimal : { four : "d"  two : "d"  one : "d" }
 
-		utf32 : { value : "%0$\(mode.four)" }
-		utf16_0 : { value : "%1$\(mode.two)" }
-		utf16_1 : { value : "%2$\(mode.two)" }
-		utf8_0 : { value : "%3$\(mode.one)" }
-		utf8_1 : { value : "%4$\(mode.one)" }
-		utf8_2 : { value : "%5$\(mode.one)" }
-		utf8_3 : { value : "%6$\(mode.one)" }
+		utf32 : { value : "%1$\(mode.four)" }
+		utf16_0 : { value : "%2$\(mode.two)" }
+		utf16_1 : { value : "%3$\(mode.two)" }
+		utf8_0 : { value : "%4$\(mode.one)" }
+		utf8_1 : { value : "%5$\(mode.one)" }
+		utf8_2 : { value : "%6$\(mode.one)" }
+		utf8_3 : { value : "%7$\(mode.one)" }
 
 		format_str :
 			For part : replacement

@@ -250,18 +250,19 @@ public class Escape extends Computation {
 								byte[] utf8 = in_str.substring(it,
 										it + (is_surrogate ? 2 : 1)).getBytes(
 										"UTF-8");
+								// The bit masks are to avoid sign extension.
 								buffer.append(String.format(
 										range.replacement,
 										c,
-										(int) in_str.charAt(it),
-										is_surrogate ? (int) in_str
+										0xFFFF & (int) in_str.charAt(it),
+										is_surrogate ? 0xFFFF & (int) in_str
 												.charAt(it + 1) : 0,
-										(int) utf8[0], utf8.length > 1
-												? (int) utf8[1]
+										0xFF & (int) utf8[0], utf8.length > 1
+												? 0xFF & (int) utf8[1]
 												: 0, utf8.length > 2
-												? (int) utf8[2]
+												? 0xFF & (int) utf8[2]
 												: 0, utf8.length > 3
-												? (int) utf8[3]
+												? 0xFF & (int) utf8[3]
 												: 0));
 								matched = true;
 								break;
