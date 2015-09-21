@@ -54,7 +54,7 @@ public abstract class BaseTime extends Computation {
 		time_accessors.put("day_of_week", new Transform<DateTime>() {
 			@Override
 			public Object invoke(DateTime d) {
-				return DAYS[d.dayOfWeek().get()];
+				return DAYS[d.dayOfWeek().get() % 7];
 			}
 		});
 		time_accessors.put("from_midnight", new Transform<DateTime>() {
