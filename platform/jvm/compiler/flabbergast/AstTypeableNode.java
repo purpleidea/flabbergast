@@ -1,5 +1,6 @@
 package flabbergast;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -56,16 +57,53 @@ abstract class AstTypeableNode extends AstNode {
 		return candiate_return;
 	}
 
-	static void reflectMethod(ErrorCollector collector, AstNode where,
-			String type_name, String method_name, int arity,
-			List<Method> methods, Ptr<Boolean> success) {
-		Class<?> reflected_type = null;
+	static Class<?> getReflectedType(ErrorCollector collector, AstNode where,
+			String type_name, Ptr<Boolean> success) {
 		try {
-			reflected_type = Class.forName(type_name);
+			return Class.forName(type_name);
 		} catch (ClassNotFoundException e) {
 			success.set(false);
 			collector.reportRawError(where, "No such type " + type_name
 					+ " found.");
+			return null;
+		}
+	}
+	static Field reflectField(ErrorCollector collector, AstNode where,
+			String type_name, String field_name, Ptr<Boolean> success) {
+		Class<?> reflected_type = getReflectedType(collector, where, type_name,
+				success);
+		if (reflected_type == null) {
+			return null;
+		}
+		try {
+			Field field = reflected_type.getField(field_name);
+			if (!Modifier.isStatic(field.getModifiers())) {
+				success.set(false);
+				collector.reportRawError(where, "The field " + field_name
+						+ " in  type " + type_name + " has is not static.");
+				return null;
+			}
+			return field;
+		} catch (NoSuchFieldException e) {
+			success.set(false);
+			collector.reportRawError(where, "The type " + type_name
+					+ " has no field named " + field_name);
+			return null;
+		} catch (SecurityException e) {
+			success.set(false);
+			collector.reportRawError(where, "The field " + field_name
+					+ " in  type " + type_name + " is not public.");
+			return null;
+		}
+
+	}
+
+	static void reflectMethod(ErrorCollector collector, AstNode where,
+			String type_name, String method_name, int arity,
+			List<Method> methods, Ptr<Boolean> success) {
+		Class<?> reflected_type = getReflectedType(collector, where, type_name,
+				success);
+		if (reflected_type == null) {
 			return;
 		}
 

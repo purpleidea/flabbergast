@@ -667,7 +667,7 @@ known_vm_types : compiler_lib.known_vm_types_tmpl {
 ensure_type : compiler_lib.ensure_type_tmpl {
 	# Restrict the union and check if the intersection is empty.
 	filter +: {
-		type_bits : For t : types Reduce acc & ", " & t.union_type With acc : "TypeSet.EMPTY"
+		type_bits : (For t : types Reduce acc & ", " & t.union_type With acc : "new TypeSet(TypeSet.EMPTY") & ")"
 
 		parent_type : Lookup current_type In Container
 		current_type : Id
@@ -675,7 +675,7 @@ ensure_type : compiler_lib.ensure_type_tmpl {
 
 		value :
 			"\(indent)TypeSet \(Id) = new TypeSet(\(parent_type));" &
-			"\(indent)TypeSet \(Id)_restrict = new TypeSet(\(type_bits));" &
+			"\(indent)TypeSet \(Id)_restrict = \(type_bits);" &
 			"\(indent)if (!\(Id).restrict(\(Id)_restrict)) {" &
 			"\(indent)\t_success.set(false);" &
 			"\(indent)\t_collector.reportExpressionTypeError(\(class_name).this, \(Id)_restrict, \(parent_type));" &
@@ -2861,6 +2861,53 @@ compiler : compiler_lib.language_with_repl_tmpl {
 								code &
 								"\(indent)\t}" &
 								"\(indent)} });"
+						}
+					}
+				}
+				xfield : Template expression_tmpl {
+					level : 19
+					pretty_name : "get static Java field"
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "XField" },
+							space { mandatory : True },
+							parser.accumulate_string {
+								field : "type_name"
+								in : parser.many {
+									nonempty : True
+									accumulate : True
+									separator : parser.single { char : "." }
+									of : jvm_identifier { }
+								}
+							},
+							space { mandatory : True },
+							parser.accumulate_string {
+								field : "field_name"
+								accumulate: True
+								in : jvm_identifier { }
+							}
+						]
+					}
+					class_extra : "\tprivate java.lang.reflect.Field field;\n"
+					apply_environment_to : [
+						environment.application_action {
+							class_gen : ""
+							value :
+								"\t\tfield = reflectField(_collector, this, type_name.toString(), field_name.toString(), _success);\n"
+						}
+					]
+					ensure_type_is : ensure_type.filter {
+						types : Drop
+						type_bits : "TypeSet.fromNative(field.getType())"
+					}
+					api_value : apigen.nop {}
+					code_value : codegen.gen_tmpl {
+						extra_indent : "\t"
+
+						gen_gen +: {
+							value :
+								"\(indent)final LoadableValue \(storage_name) = new StaticFieldValue(field);" &
+								code
 						}
 					}
 				}
