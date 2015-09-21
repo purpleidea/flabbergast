@@ -1,0 +1,14 @@
+utils_lib : From lib:utils
+
+transform_16 : [
+	utils_lib.str_transform.range_tmpl { start : "a"  end : "ゖ"  replacement : [ "<", utf16_0, ",", utf16_1, ">" ] }
+]
+transform_8 : [
+	utils_lib.str_transform.range_tmpl { start : "a"  end : "ゖ"  replacement : [ "<", utf8_0, ",", utf8_1, ",", utf8_2, ",", utf8_3, ">" ] }
+]
+results : For transform : [ transform_8, transform_16 ] Select utils_lib.str_escape("aαぁ",  transformations : transform)
+refs : [
+	"<61,00,00,00><CE,B1,00,00><E3,81,81,00>",
+	"<0061,0000><03B1,0000><3041,0000>"
+]
+value : utils_lib.matches(args : results, refs : refs)

@@ -1,0 +1,13 @@
+utils_lib : From lib:utils
+
+transform : [
+	utils_lib.str_transform.range_tmpl { start : "a" end : "z"  replacement : [ "<", utf32, ">" ] },
+	utils_lib.str_transform.range_tmpl { start : "α" end : "ω"  replacement : [ "<", utf32, ">" ] },
+	utils_lib.str_transform.range_tmpl { start : "ぁ" end : "ゖ"  replacement : [ "<", utf32, ">" ] },
+	utils_lib.str_transform.char_tmpl { char : "b"  replacement : "1" },
+	utils_lib.str_transform.char_tmpl { char : "β"  replacement : "2" },
+	utils_lib.str_transform.char_tmpl { char : "づ"  replacement : "3" }
+]
+results : utils_lib.str_escape_list("az", "za", "ccb", "XaX", "αω", "ωα", "XωX", "γβγ", "ぁゖ", "ゖぁ", "のづの",  transformations : transform)
+refs : ["<00000061><0000007A>", "<0000007A><00000061>", "<00000063><00000063>1", "X<00000061>X", "<000003B1><000003C9>", "<000003C9><000003B1>", "X<000003C9>X", "<000003B3>2<000003B3>", "<00003041><00003096>", "<00003096><00003041>", "<0000306E>3<0000306E>"]
+value : utils_lib.matches(args : results, refs : refs)

@@ -1,0 +1,14 @@
+utils_lib : From lib:utils
+
+transform_lc : [
+	utils_lib.str_transform.range_tmpl { start : "a"  end : "ゖ"  replacement : [ "<", utf32, ">" ]  mode : mode_hex_lower }
+]
+transform_dec : [
+	utils_lib.str_transform.range_tmpl { start : "a"  end : "ゖ"  replacement : [ "<", utf32, ">" ]  mode : mode_decimal }
+]
+results : For transform : [ transform_dec, transform_lc ] Select utils_lib.str_escape("α",  transformations : transform)
+refs : [
+	"<945>",
+	"<000003b1>"
+]
+value : utils_lib.matches(args : results, refs : refs)
