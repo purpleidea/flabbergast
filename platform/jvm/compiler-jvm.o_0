@@ -435,16 +435,16 @@ parser : compiler_lib.parser_tmpl {
 		pok : ((Lookup parse_complete In Container) { ok : True }).value
 		perr : ((Lookup parse_complete In Container) { ok : False }).value
 		target_rule :
-			Let base : "\(type).parseRule_\(alternate ?? "Base")"
+			Let base : "\(type).parseRule_\(alternate ?? "Base" Enforce Str)"
 			In
 				If field Is Null
 				Then
-					"new ParseRule<\(type)>() { public boolean invoke(Ptr<Parser.Position> \(Id)_iposition, Ptr<\(type)> \(Id)_iresult) { boolean \(Id)_success = \(base)(\(Id)_iposition, \(Id)_iresult); " &
+					"new ParseRule<\(type Enforce Str)>() { public boolean invoke(Ptr<Parser.Position> \(Id)_iposition, Ptr<\(type)> \(Id)_iresult) { boolean \(Id)_success = \(base Enforce Str)(\(Id)_iposition, \(Id)_iresult); " &
 					(If deduplicate Is Null
 						Then ""
 						Else
-							(Let dedup_container : "_obj.get()." & Lookup field In Container & "_dedup"
-								In "if (\(Id)_success) { if (\(dedup_container).contains(\(Id)_iresult.get().\(deduplicate.dedup_key))) { \(Id)_iposition.get().nameConstraint(\(Id)_iresult.get().\(deduplicate.dedup_key)); return false; } else { \(dedup_container).add(\(Id)_iresult.get().\(deduplicate.dedup_key)); } } ")) &
+							(Let dedup_container : "_obj.get()." & (Lookup field In Container) Enforce Str & "_dedup"
+								In "if (\(Id)_success) { if (\(dedup_container).contains(\(Id)_iresult.get().\(deduplicate.dedup_key Enforce Str))) { \(Id)_iposition.get().nameConstraint(\(Id)_iresult.get().\(deduplicate.dedup_key)); return false; } else { \(dedup_container).add(\(Id)_iresult.get().\(deduplicate.dedup_key)); } } ")) &
 					"return \(Id)_success; } }"
 				Else base
 		parse_call : If field Is Null
@@ -844,8 +844,8 @@ kws : compiler_lib.kws_repl_tmpl {
 			value :
 				For arg : arguments, arg_indent : arg_indents
 				Reverse
-				Reduce arg.value.gen_gen(code : acc, indent : indent & arg_indent)
-				With acc : base_code
+				Reduce arg.value.gen_gen(code : acc, indent : indent & arg_indent) Enforce Str
+				With acc : base_code Enforce Str
 		}
 	}
 	bool_negate +: {
@@ -1352,7 +1352,7 @@ kws : compiler_lib.kws_repl_tmpl {
 				"\(sum_indent)\(generator).visitMethod(Template.class.getConstructors()[0]);" &
 				"\(sum_indent)\(storage_name).store(\(generator));" &
 				code
-			value : If source Is Null Then base_code Else source.gen_gen(indent : indent, code : base_code)
+			value : If source Is Null Then base_code Else source.gen_gen(indent : indent Enforce Str, code : base_code Enforce Str) Enforce Str
 		}
 	}
 
@@ -1949,8 +1949,8 @@ codegen : compiler_lib.codegen_tmpl {
 			value :
 				For def : define, def_indent : def_indents
 					Reverse
-					Reduce def.gen_gen(code : acc, indent : indent & def_indent)
-					With acc : jail.exp_in.gen_gen(indent : indent & total_def_indent, code : code)
+					Reduce def.gen_gen(code : acc Enforce Str, indent : indent Enforce Str & def_indent Enforce Str) Enforce Str
+					With acc : jail.exp_in.gen_gen(indent : indent Enforce Str & total_def_indent Enforce Str, code : code) Enforce Str
 		}
 	}
 	collapse_others +: {
@@ -2099,7 +2099,7 @@ codegen : compiler_lib.codegen_tmpl {
 
 			value :
 				For parameter : parameters, parameter_indent : parameter_indents
-				Reduce parameter.gen_gen(code : acc, indent : indent & action.extra_indent & parameter_indent)
+				Reduce parameter.gen_gen(code : acc Enforce Str, indent : indent Enforce Str & action.extra_indent Enforce Str & parameter_indent Enforce Str) Enforce Str
 				With acc : base_code
 		}
 	}
@@ -2136,7 +2136,7 @@ codegen : compiler_lib.codegen_tmpl {
 		new_context : Id & "_context"
 		gen_gen +: {
 			value :
-				"\(indent)\(name ?? generation_environment).generateLookupCache(\(generator), \(specials.raw_material(indent : indent)), \(parent_lookup_cache), \(parameters.source_reference.storage_name), \(parent_context.storage_name), \(parameters.self_frame.storage_name), new Environment.Block() { public void invoke(final LoadableValue \(new_context), final LookupCache \(lookup_cache)) throws java.lang.Exception {" &
+				"\(indent)\((name ?? generation_environment) Enforce Str).generateLookupCache(\(generator), \(specials.raw_material(indent : indent) Enforce Str), \(parent_lookup_cache), \(parameters.source_reference.storage_name), \(parent_context.storage_name), \(parameters.self_frame.storage_name), new Environment.Block() { public void invoke(final LoadableValue \(new_context), final LookupCache \(lookup_cache)) throws java.lang.Exception {" &
 				"\(indent)\t\(generator).debugPosition(\(class_name).this);" &
 				in.gen_gen(indent : indent & "\t", code : code) &
 				"\(indent)} });"
