@@ -1,0 +1,55 @@
+.TH flabbergast_uri 7 "" "1.0" MISCELLANEOUS
+.SH NAME
+flabbergast_uri \- URI schemes supported by the Flabbergast language
+.SH SYNOPSIS
+Flabbergast provides several URI schemes to access external information and code.
+
+.SH URI SCHEMES
+The currently supported schemes are listed below.
+
+.TP
+\fBenv:\fRvariable
+Access UNIX environment variables. The variable name must consist of uppercase letters, numbers, and underscore, and must not begin with a number, per the IEEE Std 1003.1 section 8.1. If an environment variable is defined, it will be returned as a string. If the variable is undefined, \fRNull\fR will be returned instead.
+
+It's important to note that, by design, there is no way to inspect the entire environment or lookup an environment variable using a string.
+
+.TP
+\fBlib:\fRpath
+This imports a Flabbergast library. Libraries are regular Flabbergast files that do not need to have a \fBvalue\fR attribute. The allow names of Flabbergast libraries are intentionally limited to ASCII letters and digits, separated by \fB/\fR. Note this excludes underscore. When a library is referenced, it can be loaded from three places: a pre-compilation cache, a source file, or a fixed pre-compiled library. These places are checked in order. The pre-compiled cache can be disabled on the command-line with \fB-p\fR to
+.BR jflabbergast (1)
+and
+.BR nflabbergast (1).
+
+The pre-compilation caches and sources are checked in the same way. Each location is checked for a matching file ending in either \fB.o_0\fR or a platform-specific \fB.jo_0\fR on the JVM and \fB.no_0\fR on the CLR. No verification is done to determine if the pre-compiled cache is up-to-date. Therefore, it is important to update the cache using
+.BR update-flabbergast (1).
+The following locations are checked, in order:
+
+.RS
+.IP 1.
+A directory named \fBlib\fR in the same directory as the input Flabbergast file. In the case of the REPL, if no input file is provided, the current directory is used.
+.IP 2.
+Any directories listed in the environment variable \fBFLABBERGAST_PATH\fR, listed in order.
+.IP 3.
+The directory \fB$HOME/.local/share/flabbergast/lib\fR on UNIX or \fB%localappdata%/flabbergast/lib\fR on Windows.
+.IP 4.
+The directory \fB$PREFIX/share/flabbergast/lib\fR, where \fB$PREFIX\fR was supplied at compile time.
+.IP 5.
+The directory \fB/usr/share/flabbergast/lib\fR.
+.IP 6.
+The directory \fB/usr/local/share/flabbergast/lib\fR.
+.RE
+
+In some cases, the JVM edition of Flabbergast ships with a \fBstdlib\fR JAR. This JAR contains a precompiled version of the libraries distributed with Flabbergast. These are chosen as a final fallback.
+
+.TP
+\fBsql:\fRprovider\fB:\fRdatabase
+This accesses an SQL database. This URI scheme returns a frame representing a database connection. This is useless on its own, but can be combined with templates in \fBlib:sql\fR to perform queries on the database. Flabbergast makes use of the underlying VM's database system, JDBC on the JVM and ADO.NET on the CLR. This means that to use a particular database vendor/provider, Flabbergast must support this vendor and the correct driver must be installed in the VM. For the JVM, this means placing the appropriate JAR in the \fBCLASSPATH\fR, or, for the CLR, adding the DLL to the GAC and editing the \fBmachine.confg\fR.
+
+For details about the supported SQL providers and their specific parameters, see
+.BR flabbergast_sql(7).
+
+.SH SEE ALSO
+.BR flabbergast(1),
+.BR update-flabbergast (1),
+.BR flabbergast_language(7),
+.BR flabbergast_sql(7).
