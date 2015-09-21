@@ -185,6 +185,7 @@ public class MainREPL {
 			reader.setPrompt("‽ ");
 			reader.setHistoryEnabled(true);
 			reader.setPaginationEnabled(true);
+			reader.setExpandEvents(false);
 			String line;
 			int id = 0;
 			KeepRunning keep_running = new KeepRunning();
