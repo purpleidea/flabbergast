@@ -26,7 +26,9 @@ For Ubuntu and Debian systems, Flabbergast can be easily installed by:
 
     apt-add-repository ppa:flabbergast/ppa && apt-get update && apt-get install flabbergast-java flabbergast-cil
 
-There are two editions of the language: one which uses the Java Virtual Machine (`flabbergast-java`) and one which uses the Common Language Infrastructure (`flabbergast-cil`). You need only install one. You can then get started by running `flabbergast` to process a file or `flabbergast-repl` to start an interactive session. If you want to run a specific edition when both are installed, use `jflabbergast` or `nflabbergast` for the JVM and CLI versions, respectively.
+MacOS X packages are available on the [releases](https://github.com/flabbergast-config/flabbergast/releases) page.
+
+There are two editions of the language: one which uses the Java Virtual Machine (`flabbergast-java`) and one which uses the Common Language Infrastructure (`flabbergast-cil`). You need only install one. You can then get started by running `flabbergast` to process a file or `flabbergast-repl` to start an interactive session. If you want to run a specific edition when both are installed, use `jflabbergast` or `nflabbergast` for the JVM and CLI versions, respectively. The MacOS packages include only the Java edition.
 
 For efficiency, Flabbergast allows pre-compilation of libraries. This can be done using `update-flabbergast`. It can only update directories writable by the user; but it is automatically trigged upon installation of new packages containing Flabbergast code. You may wish to keep a set of your own libraries in `~/.local/share/flabbergast/lib`, and it will manage those too.
 
