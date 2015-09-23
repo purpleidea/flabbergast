@@ -70,6 +70,9 @@ The self-hosting compiler is rather strange, as it is not really self-hosting. T
 
 Each platform also contains an implementation of the runtime library and non-portable pieces of each library.
 
+## Mission
+Flabbergast's mission is to provide a language and libraries to create configuration files for many different software applications from composable pieces that minimises the plumbing and stamp coupling while doing as much logic and validation as possible to ensure correct configuration before deployment.
+
 ## Patches
 Patches are welcome and patches are preferred to whining. For details, see [Conduct unbecoming of a hacker](http://sealedabstract.com/rants/conduct-unbecoming-of-a-hacker/). In general, the rules are as follows:
 
