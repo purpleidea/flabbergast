@@ -118,7 +118,7 @@ Our task is pretty useless, let's give it some processes:
           task : aurora_lib.task {
             processes : { # Define the processes ⋯
               hw : process { # ⋯ using process template
-								process_name : "hw" # The name of this process will be `hw`
+                process_name : "hw" # The name of this process will be `hw`
                 command_line : [ "echo hello world" ] # The command line we want to run.
               }
             }
@@ -146,7 +146,7 @@ This will give us a basic configuration. Aurora allows multiple replicas/instanc
           task : aurora_lib.task {
             processes : {
               hw : process {
-								process_name : "hw"
+                process_name : "hw"
                 command_line : [ "echo hello world. I am ", current_instance ]
               }
             }
@@ -172,12 +172,12 @@ Aurora also allows setting multiple ports for incoming connections.
           instances : 1
           job_name : "hello_world"
           task : aurora_lib.task {
-						port_defs +: {
-							xmpp : Null # Creating a new null entry, defines a new port. By setting it to a string, it becomes an alias.
-						}
+            port_defs +: {
+              xmpp : Null # Creating a new null entry, defines a new port. By setting it to a string, it becomes an alias.
+            }
             processes : {
               hw : process {
-								process_name : "hw"
+                process_name : "hw"
                 command_line : [ "helloworldd --http ", ports.http, " --xmpp ", ports.xmpp ]
               }
             }
@@ -208,7 +208,7 @@ For a quick reference, check the [cheatsheet](syntax-cheatsheet.md).
 
 As general background, this guide assumes some previous experience programming. Familiarity with one functional language and one object-oriented language is helpful. A deeper understanding of a dynamically-typed object-oriented languages can be extremely helpful, though not necessary. Use of a macro processor might provide some extra insights.
 
-Flabbergast has many of the same data types as many other languages: Booleans, integers, floating-point numbers, and strings; which look and act much like they do in other languages. It also has two special data types: frames and templates. Note that there are no functions (first class or otherwise); templates can do some of the work of functions. Flabbergast is purely functional: everything is an expression and no expression can have indirect consequences on another expression.
+Flabbergast has many of the same data types as many other languages: Booleans, integers, floating-point numbers, and strings; which look and act much like they do in other languages. It also has two special data types: frames and templates. Note that there are no functions (first class or otherwise); templates can do some of the work of functions. Flabbergast is pure and declarative: everything is an expression and no expression can have indirect consequences on another expression.
 
 Frames are similar to Perl's hashes, Python's objects, JavaScript's objects and C#'s anonymous classes. A frame is a dictionary/map between identifiers and values, which may be of any of the aforementioned types. Frames are immutable upon creation. Each entry in a frame is called an _attribute_, having a _name_ and a _value_. The entire scope of a file is also one big frame:
 
@@ -409,7 +409,7 @@ There are two core concepts in Flabbergast: contextual (dynamic) lookup and inhe
 
 A frame is a map of names to values, including other frames. Each frame is immutable upon creation. The values in the frame can be expressions (_i.e._, dynamically computed when the frame is created); there are no methods as there are in other object-oriented languages. Expressions can reference each other and the Flabbergast interpreter will determine the correct evaluation order. Although frames cannot be modified, new frames can be created from existing frames using fricassée (`For`) expressions that allow generation of frames based on the values in existing frames, much like SQL or XQuery statements produce new tables or trees from existing tables or trees, respectively. Frames can also be instantiated from templates, which are essentially unevaluated frames (_i.e._, the values of the attributes have not yet been computed).
 
-Each frame also has an evaluation context. In most languages, there are multiple scopes in which variables can be found. For instance, in C, the compiler tries to resolve a variable in the current block and proceeds through each containing block, then checks the function parameters, and finally global variables. Java is considerably more complicated as it needs to check not only the enclosing blocks and the function parameters, but also the fields of the class, and it has to make a distinction between static and instantiated fields, and inner classes are even more involved as the containing classes have to be checked. Flabbergast's algorithm for resolution is very simple, but can yield very complicated results.
+Each frame also has an evaluation context. In most languages, there are multiple scopes in which variables can be found. For instance, in C, the compiler tries to resolve a variable in the current block and proceeds through each containing block, then checks the function parameters, and finally global variables. Java is considerably more complicated as it needs to check not only the enclosing blocks and the method parameters, but also the fields of the class, and it has to make a distinction between static and instantiated fields, and inner classes are even more involved as the containing classes have to be checked. Flabbergast's algorithm for resolution is very simple, but can yield very complicated results.
 
 Flabbergast uses contextual lookup. It is easiest to think of resolution as having two dimensions: containment and inheritance. When resolving a variable, the language will first look for an attribute of the same name in the current frame; if none exists, it will look in the containing frame (_i.e._, the frame in which the current frame is an attribute) and will continue to examine containers until a matching frame is found. If there is no match, resolution will continue in the parents of the template; that is, it will go to the context in which the template was defined and search through the containing frames there. If that yields no matches, resolution will proceed back through the template's template's containers and back until there are no more contexts.
 
