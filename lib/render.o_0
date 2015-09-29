@@ -66,6 +66,8 @@ json : {
 	list : Template scalar {
 		{{{A list of JSON elements (list, object, or scalar).}}}
 		children : Required
+		{{{The key for the JSON element, or null to use the attribute name.}}}
+		json_name : Null
 
 		{{{The rendered JSON string.}}}
 		json_value :
@@ -78,17 +80,21 @@ json : {
 	object : Template scalar {
 		{{{A list of JSON elements (list, object, or scalar). Attribute names will be used as JSON object keys.}}}
 		children : Required
+		{{{The key for the JSON element, or null to use the attribute name.}}}
+		json_name : Null
 
 		{{{The rendered JSON string.}}}
 		json_value :
 			(For child : children, arg_name : Name, position : Ordinal
-			Reduce acc & (If position == 1 Then "" Else ", ") & "\"" & arg_name & "\":" & child.json_value
+			Reduce acc & (If position == 1 Then "" Else ", ") & "\"" & (child.json_name ?? arg_name) & "\":" & child.json_value
 			With acc : "{") & "}"
 	}
 	{{{Produce a single JSON value}}}
 	scalar : Template {
 		{{{The value to be converted. Most Flabbergast types will be mapped automatically.}}}
 		arg : Required
+		{{{The key for the JSON element, or null to use the attribute name.}}}
+		json_name : Null
 		json_value :
 				If arg Is Str Then "\"" & utils_lib.str_escape(arg, transformations : json.escape_transform) & "\""
 				Else If arg Is Null Then "null"
