@@ -63,7 +63,7 @@ json : {
 	escape_transform : escape_transform_tmpl {}
 
 	{{{Produce a list of other JSON fragments.}}}
-	list : Template scalar {
+	list : Template {
 		{{{A list of JSON elements (list, object, or scalar).}}}
 		children : Required
 		{{{The key for the JSON element, or null to use the attribute name.}}}
@@ -77,7 +77,7 @@ json : {
 			"]"
 	}
 	{{{Produce an object containing key-value pairs}}}
-	object : Template scalar {
+	object : Template {
 		{{{A list of JSON elements (list, object, or scalar). Attribute names will be used as JSON object keys.}}}
 		children : Required
 		{{{The key for the JSON element, or null to use the attribute name.}}}
