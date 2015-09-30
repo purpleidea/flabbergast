@@ -29,6 +29,7 @@ java_DATA += flabbergast-stdlib-$(VERSION).jar
 JAVA_RUNTIME_DEPS = \
 	$(JLINE_JAR) \
 	$(JODA_TIME_JAR) \
+	$(JSON_JAR) \
 	$(NULL)
 
 JAVA_COMPILER_DEPS = \

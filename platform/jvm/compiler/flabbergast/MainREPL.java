@@ -133,6 +133,7 @@ public class MainREPL {
 		task_master.addUriHandler(BuiltInLibraries.INSTANCE);
 		task_master.addUriHandler(JdbcUriHandler.INSTANCE);
 		task_master.addUriHandler(EnvironmentUriHandler.INSTANCE);
+		task_master.addUriHandler(JsonUriHandler.INSTANCE);
 		if (!result.hasOption('p')) {
 			LoadPrecompiledLibraries precomp = new LoadPrecompiledLibraries();
 			task_master.addUriHandler(precomp);
