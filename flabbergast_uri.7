@@ -14,6 +14,18 @@ Access UNIX environment variables. The variable name must consist of uppercase l
 It's important to note that, by design, there is no way to inspect the entire environment or lookup an environment variable using a string.
 
 .TP
+\fBjson:\fRurl
+This retrieves a JSON file, from the Internet or the local file system, parsers it and converts it to a template. The URL scheme supported vary with the plaform, but \fBfile\fR, \fBhttp\fR, and \fBhttps\fR are supported on all platforms. This means the URI specification will look something like \fBjson:http://www.example.com/file.json\fR. The returned template has the following structure:
+
+\fBTemplate { json_root : \fIcontents of file\fB  json : Used } \fR
+
+The contents of the file will be structured as template instantiations based on \fBlib:render\fR. That is:
+
+\fB(From json:http://www.example.com/file.json { json : (From lib:render).json }).json_root.json_value\fR
+
+will parse and then re-encode the file without alteration. To manipulate the file, simple provide different templates for \fBjson.object\fR, \fBjson.list\fR, and \fBjson.scalar\fR.
+
+.TP
 \fBlib:\fRpath
 This imports a Flabbergast library. Libraries are regular Flabbergast files that do not need to have a \fBvalue\fR attribute. The allow names of Flabbergast libraries are intentionally limited to ASCII letters and digits, separated by \fB/\fR. Note this excludes underscore. When a library is referenced, it can be loaded from three places: a pre-compilation cache, a source file, or a fixed pre-compiled library. These places are checked in order. The pre-compiled cache can be disabled on the command-line with \fB-p\fR to
 .BR jflabbergast (1)

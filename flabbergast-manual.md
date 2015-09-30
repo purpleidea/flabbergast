@@ -1231,6 +1231,69 @@ For a list of supported databases and their options, view `man flabbergast_sql`.
 ### Environment Variables (`env:`)
 Current environment variables may be accessed with `env:` URIs. For instance, to access the current path, use `env:PATH`.
 
+### JSON File Import (`json:`)
+JSON files can be imported from the local file system or the Internet using `json:` URIs. The import will be returned as a template of the form:
+
+     Template {
+       json : Used
+       json_root : <contents of file>
+     }
+
+The structure of the JSON file is preserved using template instantiations: `json.object`, `json.list`, and `json.scalar`. These mirror exactly the format in `lib:render`. This means a JSON file can be re-encoded using:
+
+     render_lib : From lib:render
+     foo : From json:http://www.example.com/foo.json {
+        json : render_lib.json
+     }
+     value : foo.json_root.json_value
+
+It is reasonable to supply other templates to convert the JSON input to something else. For instance, these transform it in to Flabbergast objects, assuming all the names are Flabbergast-compatible:
+
+     foo : From json:http://www.example.com/foo.json {
+        json : {
+          list : Template {
+            value : children
+          }
+          scalar : Template {
+            value : arg
+          }
+          object : Template {
+            value : For child : children Select child.json_name : child.value
+          }
+        }
+     }
+     flabbergast_value : foo.json_root.value
+
+Due to contextual lookup, it is possible to define templates inside to change the behaviour at lower levels:
+
+     foo : From json:http://www.example.com/foo.json {
+        json : {
+          list : Template {
+            # If there is a list in attribute named “integers”, convert all the numbers in it to integers.
+            json :
+              If json_name == "integers"
+                Then {
+                  scalar : Template {
+                    json_value : arg To Int
+                } Else {}
+            json_value : children
+          }
+          scalar : Template {
+            json_value : arg
+          }
+          render_lib : From lib:render
+          object : Template {
+            # The tree under an attribute named “magic” will be converted back
+            # to JSON as a string; the rest to Flabbergast.
+            json : If json_name == "magic"
+              Then render_lib.json
+              Else Lookup json in Container
+            json_value : For child : children Select child.json_name : child.json_value
+          }
+        }
+     }
+     flabbergast_value : foo.json_root.json_value
+
 ### Parsing (`lib:parse`)
 TODO
 
