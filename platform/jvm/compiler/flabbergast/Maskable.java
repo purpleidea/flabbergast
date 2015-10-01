@@ -1,5 +1,5 @@
 package flabbergast;
 
 interface Maskable {
-	void addMask(ErrorCollector collector, Environment environment);
+    void addMask(ErrorCollector collector, Environment environment);
 }

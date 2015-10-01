@@ -9,18 +9,18 @@ import java.util.Set;
  */
 public class NativeSourceReference extends SourceReference {
 
-	private final String name;
+    private final String name;
 
-	public NativeSourceReference(String name) {
-		this.name = name;
-	}
+    public NativeSourceReference(String name) {
+        this.name = name;
+    }
 
-	@Override
-	public void write(Writer writer, String prefix, Set<SourceReference> seen)
-			throws IOException {
-		writer.write(prefix);
-		writer.write("└ <");
-		writer.write(name);
-		writer.write(">\n");
-	}
+    @Override
+    public void write(Writer writer, String prefix, Set<SourceReference> seen)
+    throws IOException {
+        writer.write(prefix);
+        writer.write("└ <");
+        writer.write(name);
+        writer.write(">\n");
+    }
 }

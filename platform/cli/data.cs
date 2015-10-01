@@ -8,65 +8,67 @@ namespace Flabbergast {
  * The collection of frames in which lookup should be performed.
  */
 
-	public class Context {
-		/**
-	 * The total number of frames in this context.
-	 */
+public class Context {
+    /**
+    * The total number of frames in this context.
+    */
 
-		public int Length {
-			get { return frames.Count; }
-		}
+    public int Length {
+        get {
+            return frames.Count;
+        }
+    }
 
-		private readonly List<Frame> frames;
+    private readonly List<Frame> frames;
 
-		private Context(List<Frame> frames) {
-			this.frames = frames;
-		}
+    private Context(List<Frame> frames) {
+        this.frames = frames;
+    }
 
-		/**
-	 * Conjoin two contexts, placing all the frames of the provided context after
-	 * all the frames in the original context.
-	 */
+    /**
+    * Conjoin two contexts, placing all the frames of the provided context after
+    * all the frames in the original context.
+    */
 
-		public static Context Append(Context original, Context new_tail) {
-			if (original == null) {
-				throw new InvalidOperationException("Cannot append to null context.");
-			}
-			if (new_tail == null || original == new_tail) {
-				return original;
-			}
-			int filter = 0;
-			var list = new List<Frame>(original.Length + new_tail.Length);
-			foreach (var frame in original.frames) {
-				list.Add(frame);
-				filter |= frame.GetHashCode();
-			}
-			foreach (var frame in new_tail.frames) {
-				int hash = frame.GetHashCode();
-				if ((hash & filter) != hash || !list.Contains(frame)) {
-					list.Add(frame);
-					filter |= hash;
-				}
-			}
-			return new Context(list);
-		}
+    public static Context Append(Context original, Context new_tail) {
+        if (original == null) {
+            throw new InvalidOperationException("Cannot append to null context.");
+        }
+        if (new_tail == null || original == new_tail) {
+            return original;
+        }
+        int filter = 0;
+        var list = new List<Frame>(original.Length + new_tail.Length);
+        foreach (var frame in original.frames) {
+            list.Add(frame);
+            filter |= frame.GetHashCode();
+        }
+        foreach (var frame in new_tail.frames) {
+            int hash = frame.GetHashCode();
+            if ((hash & filter) != hash || !list.Contains(frame)) {
+                list.Add(frame);
+                filter |= hash;
+            }
+        }
+        return new Context(list);
+    }
 
-		public IEnumerable<Frame> Fill() {
-			return frames;
-		}
+    public IEnumerable<Frame> Fill() {
+        return frames;
+    }
 
-		public static Context Prepend(Frame head, Context tail) {
-			if (head == null) {
-				throw new InvalidOperationException("Cannot prepend a null frame to a context.");
-			}
-			var list = new List<Frame>(tail == null ? 1 : (tail.Length + 1));
-			list.Add(head);
-			if (tail != null) {
-				list.AddRange(tail.frames.Where(frame => head != frame));
-			}
-			return new Context(list);
-		}
-	}
+    public static Context Prepend(Frame head, Context tail) {
+        if (head == null) {
+            throw new InvalidOperationException("Cannot prepend a null frame to a context.");
+        }
+        var list = new List<Frame>(tail == null ? 1 : (tail.Length + 1));
+        list.Add(head);
+        if (tail != null) {
+            list.AddRange(tail.frames.Where(frame => head != frame));
+        }
+        return new Context(list);
+    }
+}
 
 /**
  * The null type.
@@ -76,385 +78,425 @@ namespace Flabbergast {
  * possible.
  */
 
-	public class Unit {
-		public static readonly Unit NULL = new Unit();
-		private Unit() {}
+public class Unit {
+    public static readonly Unit NULL = new Unit();
+    private Unit() {}
 
-		public override string ToString() {
-			return "Null";
-		}
-	}
+    public override string ToString() {
+        return "Null";
+    }
+}
 
 /**
  * Objects which have strings that can be iterated in alphabetical order for
  * the MergeIterator.
  */
 
-	public interface IAttributeNames {
-		/**
-	 * Provide all the attribute names (keys) in the collection. They need not be
-	 * ordered.
-	 */
-		IEnumerable<string> GetAttributeNames();
-	}
+public interface IAttributeNames {
+    /**
+    * Provide all the attribute names (keys) in the collection. They need not be
+    * ordered.
+    */
+    IEnumerable<string> GetAttributeNames();
+}
 
 /**
  * A Flabbergast Template, holding functions for computing attributes.
  */
 
-	public class Template : IAttributeNames {
-		public Frame Container { get; private set; }
-		/**
-	 * The context in which this template was created.
-	 */
-		public Context Context { get; private set; }
-		/**
-	 * Access the functions in the template. Templates should not be mutated, but
-	 * this policy is not enforced by this class; it must be done in the calling
-	 * code.
-	 */
+public class Template : IAttributeNames {
+    public Frame Container {
+        get;
+        private set;
+    }
+    /**
+    * The context in which this template was created.
+    */
+    public Context Context {
+        get;
+        private set;
+    }
+    /**
+    * Access the functions in the template. Templates should not be mutated, but
+    * this policy is not enforced by this class; it must be done in the calling
+    * code.
+    */
 
-		public ComputeValue this[string name] {
-			get { return attributes.ContainsKey(name) ? attributes[name] : null; }
-			set {
-				if (value == null) {
-					return;
-				}
-				if (attributes.ContainsKey(name)) {
-					throw new InvalidOperationException("Redefinition of attribute " + name + ".");
-				}
-				attributes[name] = value;
-			}
-		}
+    public ComputeValue this[string name] {
+        get {
+            return attributes.ContainsKey(name) ? attributes[name] : null;
+        }
+        set {
+            if (value == null) {
+                return;
+            }
+            if (attributes.ContainsKey(name)) {
+                throw new InvalidOperationException("Redefinition of attribute " + name + ".");
+            }
+            attributes[name] = value;
+        }
+    }
 
-		/**
-	 * The stack trace at the time of creation.
-	 */
-		public SourceReference SourceReference { get; private set; }
-		private readonly IDictionary<string, ComputeValue> attributes = new SortedDictionary<string, ComputeValue>();
+    /**
+    * The stack trace at the time of creation.
+    */
+    public SourceReference SourceReference {
+        get;
+        private set;
+    }
+    private readonly IDictionary<string, ComputeValue> attributes = new SortedDictionary<string, ComputeValue>();
 
-		public Template(SourceReference source_ref, Context context, Frame container) {
-			SourceReference = source_ref;
-			Context = context;
-			Container = container;
-		}
+    public Template(SourceReference source_ref, Context context, Frame container) {
+        SourceReference = source_ref;
+        Context = context;
+        Container = container;
+    }
 
-		public IEnumerable<string> GetAttributeNames() {
-			return attributes.Keys;
-		}
+    public IEnumerable<string> GetAttributeNames() {
+        return attributes.Keys;
+    }
 
-		public ComputeValue Get(Stringish name) {
-			return this[name.ToString()];
-		}
-	}
+    public ComputeValue Get(Stringish name) {
+        return this[name.ToString()];
+    }
+}
 
 /**
  * A Frame in the Flabbergast language.
  */
 
-	public abstract class Frame : DynamicObject, IAttributeNames {
-		/**
-	 * The containing frame, or null for file-level frames.
-	 */
-		public Frame Container { get; private set; }
-		/**
-	 * The lookup context when this frame was created and any of its ancestors.
-	 */
-		public Context Context { get; private set; }
-		public abstract long Count { get; }
-		public Stringish Id { get; private set; }
-		/**
-	 * Access the functions in the frames. Frames should not be mutated, but this
-	 * policy is not enforced by this class; it must be done in the calling code.
-	 */
+public abstract class Frame : DynamicObject, IAttributeNames {
+    /**
+    * The containing frame, or null for file-level frames.
+    */
+    public Frame Container {
+        get;
+        private set;
+    }
+    /**
+    * The lookup context when this frame was created and any of its ancestors.
+    */
+    public Context Context {
+        get;
+        private set;
+    }
+    public abstract long Count {
+        get;
+    }
+    public Stringish Id {
+        get;
+        private set;
+    }
+    /**
+    * Access the functions in the frames. Frames should not be mutated, but this
+    * policy is not enforced by this class; it must be done in the calling code.
+    */
 
-		public abstract object this[string name] {
-			get;
-		}
+    public abstract object this[string name] {
+        get;
+    }
 
-		/**
-	 * The stack trace when this frame was created.
-	 */
-		public SourceReference SourceReference { get; private set; }
+    /**
+    * The stack trace when this frame was created.
+    */
+    public SourceReference SourceReference {
+        get;
+        private set;
+    }
 
-		public Frame(TaskMaster task_master, SourceReference source_ref, Context context, Frame container) : this(TaskMaster.OrdinalName(task_master.NextId()), source_ref, context, container) {
-		}
-		public Frame(string id, SourceReference source_ref, Context context, Frame container) : this(new SimpleStringish(id), source_ref, context, container) {
-		}
-		public Frame(Stringish id, SourceReference source_ref, Context context, Frame container) {
-			SourceReference = source_ref;
-			Context = Context.Prepend(this, context);
-			Container = container ?? this;
-			Id = id;
-		}
+    public Frame(TaskMaster task_master, SourceReference source_ref, Context context, Frame container) : this(TaskMaster.OrdinalName(task_master.NextId()), source_ref, context, container) {
+    }
+    public Frame(string id, SourceReference source_ref, Context context, Frame container) : this(new SimpleStringish(id), source_ref, context, container) {
+    }
+    public Frame(Stringish id, SourceReference source_ref, Context context, Frame container) {
+        SourceReference = source_ref;
+        Context = Context.Prepend(this, context);
+        Container = container ?? this;
+        Id = id;
+    }
 
-		public abstract IEnumerable<string> GetAttributeNames();
+    public abstract IEnumerable<string> GetAttributeNames();
 
-		public override IEnumerable<string> GetDynamicMemberNames() {
-			return GetAttributeNames();
-		}
+    public override IEnumerable<string> GetDynamicMemberNames() {
+        return GetAttributeNames();
+    }
 
-		/**
-	 * Access a value if available, or be notified upon completion.
-	 * Returns: true if the value was available, false if the name does not exist.
-	 */
+    /**
+    * Access a value if available, or be notified upon completion.
+    * Returns: true if the value was available, false if the name does not exist.
+    */
 
-		internal bool GetOrSubscribe(string name, ConsumeResult consumer) {
-			var result = this[name];
-			if (result == null) {
-				return false;
-			}
+    internal bool GetOrSubscribe(string name, ConsumeResult consumer) {
+        var result = this[name];
+        if (result == null) {
+            return false;
+        }
 
-			if (result is Computation) {
-				((Computation) result).Notify(consumer);
-			} else {
-				consumer(result);
-			}
-			return true;
-		}
+        if (result is Computation) {
+            ((Computation) result).Notify(consumer);
+        } else {
+            consumer(result);
+        }
+        return true;
+    }
 
-		/**
-	 * Check if an attribute name is present in the frame.
-	 */
-		public abstract bool Has(string name);
+    /**
+    * Check if an attribute name is present in the frame.
+    */
+    public abstract bool Has(string name);
 
-		public bool Has(Stringish name) {
-			return Has(name.ToString());
-		}
+    public bool Has(Stringish name) {
+        return Has(name.ToString());
+    }
 
-		public static Frame Through(TaskMaster task_master, SourceReference source_ref, long start, long end,
-			Context context, Frame container) {
-			var result = new MutableFrame(task_master, source_ref, context, container);
-			if (end < start)
-				return result;
-			for (long it = 0; it <= (end - start); it++) {
-				result.Set(TaskMaster.OrdinalNameStr(it + 1), start + it);
-			}
-			return result;
-		}
+    public static Frame Through(TaskMaster task_master, SourceReference source_ref, long start, long end,
+                                Context context, Frame container) {
+        var result = new MutableFrame(task_master, source_ref, context, container);
+        if (end < start)
+            return result;
+        for (long it = 0; it <= (end - start); it++) {
+            result.Set(TaskMaster.OrdinalNameStr(it + 1), start + it);
+        }
+        return result;
+    }
 
-		public override bool TryGetIndex(GetIndexBinder binder, Object[] indexes, out Object result) {
-			result = null;
-			return false;
-		}
+    public override bool TryGetIndex(GetIndexBinder binder, Object[] indexes, out Object result) {
+        result = null;
+        return false;
+    }
 
-		public Stringish RenderTrace(Stringish prefix) {
-			var writer = new System.IO.StringWriter();
-			var seen = new Dictionary<SourceReference, bool>();
-			SourceReference.Write(writer, prefix.ToString(), seen);
-			return new SimpleStringish(writer.ToString());
-		}
+    public Stringish RenderTrace(Stringish prefix) {
+        var writer = new System.IO.StringWriter();
+        var seen = new Dictionary<SourceReference, bool>();
+        SourceReference.Write(writer, prefix.ToString(), seen);
+        return new SimpleStringish(writer.ToString());
+    }
 
-		public override bool TryGetMember(GetMemberBinder binder, out Object result) {
-			var name = binder.Name;
-			if (binder.IgnoreCase && char.IsUpper(name, 0)) {
-				name = char.ToLower(name[0]) + name.Substring(1);
-			}
-			result = this[name];
-			return result != null;
-		}
-	}
-	public class MutableFrame : Frame {
-		public override long Count { get { return attributes.Count; } }
-		private readonly IDictionary<string, Object> attributes = new SortedDictionary<string, Object>();
-		private List<Computation> unslotted = new List<Computation>();
-		protected readonly TaskMaster task_master;
+    public override bool TryGetMember(GetMemberBinder binder, out Object result) {
+        var name = binder.Name;
+        if (binder.IgnoreCase && char.IsUpper(name, 0)) {
+            name = char.ToLower(name[0]) + name.Substring(1);
+        }
+        result = this[name];
+        return result != null;
+    }
+}
+public class MutableFrame : Frame {
+    public override long Count {
+        get {
+            return attributes.Count;
+        }
+    }
+    private readonly IDictionary<string, Object> attributes = new SortedDictionary<string, Object>();
+    private List<Computation> unslotted = new List<Computation>();
+    protected readonly TaskMaster task_master;
 
-		public override object this[string name] {
-			get {
-				// If this frame is being looked at, then all its pending attributes should
-				// be slotted.
-				Slot();
-				object result;
-				attributes.TryGetValue(name, out result);
-				return result;
-			}
-		}
-		public MutableFrame(TaskMaster task_master, SourceReference source_ref, Context context, Frame container) : base (task_master, source_ref, context, container) {
-			this.task_master = task_master;
-		}
-		public override IEnumerable<string> GetAttributeNames() {
-			return attributes.Keys;
-		}
-		public override bool Has(string name) {
-			return attributes.ContainsKey(name);
-		}
+    public override object this[string name] {
+        get {
+            // If this frame is being looked at, then all its pending attributes should
+            // be slotted.
+            Slot();
+            object result;
+            attributes.TryGetValue(name, out result);
+            return result;
+        }
+    }
+    public MutableFrame(TaskMaster task_master, SourceReference source_ref, Context context, Frame container) : base (task_master, source_ref, context, container) {
+        this.task_master = task_master;
+    }
+    public override IEnumerable<string> GetAttributeNames() {
+        return attributes.Keys;
+    }
+    public override bool Has(string name) {
+        return attributes.ContainsKey(name);
+    }
 
-		public void Set(long ordinal, object value) {
-			Set(TaskMaster.OrdinalNameStr(ordinal), value);
-		}
-		public void Set(string name, object value) {
-			if (value == null) {
-				return;
-			}
-			if (attributes.ContainsKey(name)) {
-				throw new InvalidOperationException("Redefinition of attribute " + name + ".");
-			}
-			if (value is ComputeValue) {
-				var computation = ((ComputeValue) value)(task_master, SourceReference, Context, this, Container);
-				attributes[name] = computation;
-				/*
-			 * When this computation has completed, replace its value in the frame.
-			 */
-				computation.NotifyDelayed(result => {
-					attributes[name] = result;
-				});
-				/*
-			 * If the value is a computation, it cannot be slotted for execution
-			 * since it might depend on lookups that reference this frame. Therefore, put
-			 * it in a queue for later activation.
-			 */
-				unslotted.Add(computation);
-			} else {
-				if (value is MutableFrame) {
-					/*
-				 * If the value added is a frame, it might be in a complicated
-				 * slotting arrangement. The safest thing to do is to steal its
-				 * unslotted children and slot them when we are slotted (or absorbed
-				 * into another frame.
-				 */
+    public void Set(long ordinal, object value) {
+        Set(TaskMaster.OrdinalNameStr(ordinal), value);
+    }
+    public void Set(string name, object value) {
+        if (value == null) {
+            return;
+        }
+        if (attributes.ContainsKey(name)) {
+            throw new InvalidOperationException("Redefinition of attribute " + name + ".");
+        }
+        if (value is ComputeValue) {
+            var computation = ((ComputeValue) value)(task_master, SourceReference, Context, this, Container);
+            attributes[name] = computation;
+            /*
+            * When this computation has completed, replace its value in the frame.
+            */
+            computation.NotifyDelayed(result => {
+                attributes[name] = result;
+            });
+            /*
+            * If the value is a computation, it cannot be slotted for execution
+            * since it might depend on lookups that reference this frame. Therefore, put
+            * it in a queue for later activation.
+            */
+            unslotted.Add(computation);
+        } else {
+            if (value is MutableFrame) {
+                /*
+                * If the value added is a frame, it might be in a complicated
+                * slotting arrangement. The safest thing to do is to steal its
+                * unslotted children and slot them when we are slotted (or absorbed
+                * into another frame.
+                */
 
-					var other = (MutableFrame) value;
-					unslotted.AddRange(other.unslotted);
-					other.unslotted = unslotted;
-				}
-				attributes[name] = value;
-			}
-		}
+                var other = (MutableFrame) value;
+                unslotted.AddRange(other.unslotted);
+                other.unslotted = unslotted;
+            }
+            attributes[name] = value;
+        }
+    }
 
-		/**
-	 * Trigger any unfinished computations contained in this frame to be executed.
-	 *
-	 * When a frame is being filled, unfinished computations may be added. They
-	 * cannot be started immediately, since the frame may still have members to
-	 * be added and those changes will be visible to the lookup environments of
-	 * those computations. Only when a frame is “returned” can the computations
-	 * be started. This should be called before returning to trigger computation.
-	 */
+    /**
+    * Trigger any unfinished computations contained in this frame to be executed.
+    *
+    * When a frame is being filled, unfinished computations may be added. They
+    * cannot be started immediately, since the frame may still have members to
+    * be added and those changes will be visible to the lookup environments of
+    * those computations. Only when a frame is “returned” can the computations
+    * be started. This should be called before returning to trigger computation.
+    */
 
-		public void Slot() {
-			foreach (var computation in unslotted) {
-				computation.Slot();
-			}
-			unslotted.Clear();
-		}
-	}
+    public void Slot() {
+        foreach (var computation in unslotted) {
+            computation.Slot();
+        }
+        unslotted.Clear();
+    }
+}
 
 /**
  * A Frame wrapper over a CLR object.
  */
-	public class ReflectedFrame : Frame {
+public class ReflectedFrame : Frame {
 
-		private readonly IDictionary<String, Object> attributes;
+    private readonly IDictionary<String, Object> attributes;
 
-		public object Backing { get; private set; }
+    public object Backing {
+        get;
+        private set;
+    }
 
-		public override long Count { get { return attributes.Count; } }
+    public override long Count {
+        get {
+            return attributes.Count;
+        }
+    }
 
-		public static ReflectedFrame Create<T>(TaskMaster task_master, T backing,
-				IDictionary<string, Func<T, object>> accessors) {
-			var attributes = accessors.ToDictionary(pair => pair.Key, pair => {
-				object result = pair.Value(backing);
-				if (result == null) {
-					result = Unit.NULL;
-				} else if (result is Boolean || result is Double
-						|| result is Int64 || result is Frame
-						|| result is Stringish
-						|| result is Template || result is Unit) {
-				} else if (result is string) {
-					result = new SimpleStringish((String) result);
-				} else {
-					throw new InvalidCastException("Value for " + pair.Key
-							+ " is non-Flabbergast type "
-							+ result.GetType() + ".");
-				}
-				return result;
-			});
-			return new ReflectedFrame(task_master, new ClrSourceReference(),
-					backing, attributes);
-		}
+    public static ReflectedFrame Create<T>(TaskMaster task_master, T backing,
+                                           IDictionary<string, Func<T, object>> accessors) {
+        var attributes = accessors.ToDictionary(pair => pair.Key, pair => {
+            object result = pair.Value(backing);
+            if (result == null) {
+                result = Unit.NULL;
+            } else if (result is Boolean || result is Double
+                       || result is Int64 || result is Frame
+                       || result is Stringish
+                       || result is Template || result is Unit) {
+            } else if (result is string) {
+                result = new SimpleStringish((String) result);
+            } else {
+                throw new InvalidCastException("Value for " + pair.Key
+                                               + " is non-Flabbergast type "
+                                               + result.GetType() + ".");
+            }
+            return result;
+        });
+        return new ReflectedFrame(task_master, new ClrSourceReference(),
+                                  backing, attributes);
+    }
 
-		private ReflectedFrame(TaskMaster task_master, SourceReference source_ref,
-				Object backing, IDictionary<string, object> attributes) : base(task_master, source_ref, null, null) {
-			Backing = backing;
-			this.attributes = attributes;
-		}
+    private ReflectedFrame(TaskMaster task_master, SourceReference source_ref,
+                           Object backing, IDictionary<string, object> attributes) : base(task_master, source_ref, null, null) {
+        Backing = backing;
+        this.attributes = attributes;
+    }
 
-		public override object this[string name] {
-			get {
-				object result;
-				attributes.TryGetValue(name, out result);
-				return result;
-			}
-		}
+    public override object this[string name] {
+        get {
+            object result;
+            attributes.TryGetValue(name, out result);
+            return result;
+        }
+    }
 
-		/**
-		 * Check if an attribute name is present in the frame.
-		 */
-		public override bool Has(string name) {
-			return attributes.ContainsKey(name);
-		}
+    /**
+     * Check if an attribute name is present in the frame.
+     */
+    public override bool Has(string name) {
+        return attributes.ContainsKey(name);
+    }
 
-		public override IEnumerable<string> GetAttributeNames() {
-			return attributes.Keys;
-		}
+    public override IEnumerable<string> GetAttributeNames() {
+        return attributes.Keys;
+    }
 
-		public void Set(string name, object value) {
-			if (attributes.ContainsKey(name)) {
-				throw new InvalidOperationException();
-			}
-			attributes[name] = value;
-		}
-	}
+    public void Set(string name, object value) {
+        if (attributes.ContainsKey(name)) {
+            throw new InvalidOperationException();
+        }
+        attributes[name] = value;
+    }
+}
 /**
  * A Frame of fixed data with an easy API.
  */
-	public class FixedFrame : Frame, IEnumerable<string> {
+public class FixedFrame : Frame, IEnumerable<string> {
 
-		private readonly IDictionary<string, Object> attributes = new Dictionary<string, Object>();
+    private readonly IDictionary<string, Object> attributes = new Dictionary<string, Object>();
 
-		public override long Count { get { return attributes.Count; } }
-
-		public FixedFrame(string id, SourceReference source_ref) : base(id, source_ref, null, null) {
-		}
-
-		public override object this[string name] {
-			get {
-				object result;
-				attributes.TryGetValue(name, out result);
-				return result;
-			}
-		}
-
-		public IEnumerator<string> GetEnumerator() {
-			return attributes.Keys.GetEnumerator();
+    public override long Count {
+        get {
+            return attributes.Count;
+        }
     }
 
-		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
-			return this.GetEnumerator();
-		}
-		public void Add(string name, long val) {
-			attributes[name] = val;
-		}
+    public FixedFrame(string id, SourceReference source_ref) : base(id, source_ref, null, null) {
+    }
 
-		public void Add(string name, string val) {
-			attributes[name] = new SimpleStringish(val);
-		}
-		public void Add(IEnumerable<Frame> frames) {
-			foreach (var frame in frames) {
-				attributes[frame.Id.ToString()] = frame;
-			}
-		}
+    public override object this[string name] {
+        get {
+            object result;
+            attributes.TryGetValue(name, out result);
+            return result;
+        }
+    }
 
-		/**
-		 * Check if an attribute name is present in the frame.
-		 */
-		public override bool Has(string name) {
-			return attributes.ContainsKey(name);
-		}
+    public IEnumerator<string> GetEnumerator() {
+        return attributes.Keys.GetEnumerator();
+    }
 
-		public override IEnumerable<string> GetAttributeNames() {
-			return attributes.Keys;
-		}
-	}
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
+        return this.GetEnumerator();
+    }
+    public void Add(string name, long val) {
+        attributes[name] = val;
+    }
+
+    public void Add(string name, string val) {
+        attributes[name] = new SimpleStringish(val);
+    }
+    public void Add(IEnumerable<Frame> frames) {
+        foreach (var frame in frames) {
+            attributes[frame.Id.ToString()] = frame;
+        }
+    }
+
+    /**
+     * Check if an attribute name is present in the frame.
+     */
+    public override bool Has(string name) {
+        return attributes.ContainsKey(name);
+    }
+
+    public override IEnumerable<string> GetAttributeNames() {
+        return attributes.Keys;
+    }
+}
 }
