@@ -1,3 +1,40 @@
+These are more theoretical questions. Practical questions are answered in [the manual](flabbergast-manual.md).
+# How do I do reflection/evaluation?
+
+This isn't supported and isn't likely to be.
+
+The language is sufficiently flexible that most of the things that would need reflection can be done using features of the language. Since frames can be introspected, there's no need to have Java/C#-style reflection of classes. Reflecting on templates is rather unhelpful since they contain the attribute expressions can't be converted into callable functions.
+
+Converting strings to executable code is a rather undesirable prospect (_i.e._, `eval`). Again, since the language is meant to be embedded in other systems, there may be security implications to loading code from untrusted sources.
+
+The more restricted version of this is allowing strings to be used for lookup. In some situations, this is useful, but the desired behaviour can usually be accomplished with:
+
+    For n : Name, v : x Where n == name Reduce acc ?? v With acc : Null
+
+This, however, only does a single layer of direct lookup, instead of contextual lookup.
+
+The predecessor of Flabbergast had an evaluation function and the use cases were either limited or insane–some users constructed entire frames from strings, substituting supplied values into attribute names and values, even though better tools existed in the language. In general, it was use to bind frames together in unrelated parts of the program. With a hypothetical `Eval`, it tended to look as follows:
+
+    cpu_limits : {
+       foo : 1.0
+       bar : 1.5
+       baz : 0.75
+    }
+    task_tmpl : Template {
+      name : Required
+      cpu_limit : Eval "cpu_limits.\(name)"
+    }
+    tasks : {
+       foo : task_tmpl {
+         name : "foo"
+       }
+    }
+
+In practise, this created more problems than it solved. First, debugging the evaluated expressions was difficult since they were opaque, and this only became more difficult as the names were more arbitrary. In this particular case, the fricassée solution proposed above would work (and indeed it would in most situations). As the item is operating on the string instead of the syntax tree, devious things can be done, for example, `name : "foo + 0.5"`, which might make `name` unusable in other contexts, or have unforeseen consequences.
+
+Moreover, there is precious little reason not to set the attribute in the correct frame. That is much clearer.
+
+With sufficient demonstration of utility, a reasonable plan would be to include a reflected contextual lookup operator. Imagine something to the effect of `Lookup Using [$a, $b, $c] In x` as the equivalent of `Lookup a.b.c In x`. This will be a difficult sales pitch.
 # Why are templates special? Why can't every frame be used as a template? 
 
 TL;DR: Frames are collections of values and templates are collections of code/functions/computations. It was too hard to reason about anything else properly.

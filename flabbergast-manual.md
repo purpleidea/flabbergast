@@ -435,7 +435,7 @@ Inheritance allows creation of attributes, in addition to providing a history fo
 
 Since attributes can refer to each other, it is the interpreter's duty to determine the order to evaluate the expressions. This means that attributes can be specified in any order (unlike C and C++). In fact, contextual lookup makes it impossible to determine to what attributes references refer until evaluation time. One unusual effect is that the inheritance path of a frame can be changed at runtime (_i.e._, the “class” hierarchy is not determined at compile-time)! In fact, since templates can be instantiated in different contexts, it is possible for the same declaration to be used in different contexts that create two different frame inheritance paths. This is the kind of stuff that can be used for good or evil–there are legitimate reasons to re-parent frames, but it can be very confusing and cause unexpected behaviour.
 
-The interpreter must be able to linearise the order in which it will perform evaluations. If the expression evaluation contains a cycle, then it is not possible to evaluate any of the expressions in the cycle. This is called _circular evaluation_. While theoretically possible, determining a fixed point is a rather impractical proposition. There are pseudo-cycles that are acceptable: the expressions can refer to one-another circularly so long as they don't need the value. This happens mostly during contextual lookup:
+The interpreter must be able to linearise the order in which it will perform evaluations. If the expression evaluation contains a cycle, then it is not possible to evaluate any of the expressions in the cycle. This is called _circular evaluation_. There are pseudo-cycles that are acceptable: the expressions can refer to one-another circularly so long as they don't need the value. This happens mostly during contextual lookup:
 
     x : {
       w : 4
@@ -460,7 +460,7 @@ Usually, the intended meaning of this expression is:
 
 ## Syntax
 
-In Flabbergast, all keywords start with a capital letter and identifiers start with a small letter, making them easily distinguishable. There are also a number of special characters used for operators. Comments being with `#` and terminate at the end of the line. For the purposes of code formatting, comments preceding an attribute are assumed to be associated with it.
+In Flabbergast, all keywords start with a capital letter and identifiers start with a small letter, making them easily distinguishable. There are also a number of special characters used for operators. Comments begin with `#` and terminate at the end of the line. For the purposes of code formatting, comments preceding an attribute are assumed to be associated with it.
 
 ### Types and Constants
 
@@ -512,7 +512,7 @@ Frames are implicitly sorted by their attribute names. The literal list is a way
 
 The `Through` operator produces a list with the values being numbers starting from the left operand up to, and including, the right operand, both of which must be integers. If the right operand is the same or less than the left, the list returned will be empty.
 
-The values of the following frames are all exactly the same:
+The values of the following frames all have the same values in the same order:
 
     x : [ 1, 2, 3 ]
     y : 1 Through 3
@@ -656,7 +656,7 @@ Because multiple input frames can be provided, much like LISP's variadic `map`, 
 
     x : [ 1, 2, 3 ]
     y : [ 4, 5, 6 ]
-    z : For a, b In x, y Select a + b # Element-wise sum of the lists
+    z : For a : x, y : b Select a + b # Element-wise sum of the lists
 
 The anonymous frame generator can support ordering operations, shown later, on the context to choose the order of the output.
 
@@ -671,7 +671,7 @@ Presently, there are two ordering operations: `Reverse` reverses the order of th
 
     x : -3 Through 3
     y : For a : x  Reverse  Select a # Yields [ 3, 2, 1, 0, -1, -2, -3 ]
-    z : For a : x  Order By If a < 0 Then -a Else a  Select a # Yields [ 0, -1, 1, -2, 2, -3, 3 ]
+    z : For a : x  Order By (If a < 0 Then -a Else a) Enforce Int Select a # Yields [ 0, -1, 1, -2, 2, -3, 3 ]
 
 Note that if two values have the same sort key, in the example -1 and 1 do, then the order between them is not guaranteed. Any type that can be compared using the `<=>` can be used as a sort key, but all must be of the same type.
 
@@ -740,20 +740,17 @@ The `Let` expression allows binding a value to a new name. For example, `Let a :
 
 The `Append` operators concatenates two frames. The attribute names are the same as if a literal list had been used. This means that `{ a : 5 } Append [ 6 ]` will produce the same frame as `[ 5, 6 ]`.
 
-The `From` expression allows importing external content into the program. This does two jobs: allows accessing libraries and allows access information for the program being configured. The `From` keyword is always followed by a URI. The `lib:` URI is  used for the standard library. The `file:` URI may also be supported. By convention, it is best to do all the importing at the start of a file:
+The `From` expression allows importing external content into the program. This does two jobs: allows accessing libraries and allows access information for the program being configured. The `From` keyword is always followed by a URI. The `lib:` URI is  used for the standard library. By convention, it is best to do all the importing at the start of a file:
 
     foo_lib : From lib:foo
 
-Supposing this was CUPS, it might be perfectly reasonable for CUPS to provide a list of backends (_e.g._, parallel port, USB, IPP):
+Presently, there are handlers for SQL databases, JSON files, and environment variables.
 
-    known_backends : From cups:backends
-    # Function-like template to determine if a backend is supported by CUPS
-    supported_backend : Template {
-      backend : Required
-      value : For known_backend : known_backends
-        Reduce accumulator || backend == known_backend
-        With accumulator : False
-    }
+    version : From env:EXAMPLE_VERSION
+    release_db : From sql:postgresql://o_0@db.example.com/release
+    sql_lib : From lib:sql
+
+    release_versions : sql_lib.retrieve { connection : release_db, sql_query : "SELECT version, artifact, checksum FROM release_info ORDER BY push_date WHERE version == '\(token)'" }
 
 Implementation-specific keywords start with `X`. They should not be used in most code, but are often present in libraries to support binding to the underlying platform.
 
@@ -1269,7 +1266,8 @@ Due to contextual lookup, it is possible to define templates inside to change th
      foo : From json:http://www.example.com/foo.json {
         json : {
           list : Template {
-            # If there is a list in attribute named “integers”, convert all the numbers in it to integers.
+            # If there is a list in attribute named “integers”, convert all the
+            # numbers in it to integers.
             json :
               If json_name == "integers"
                 Then {
@@ -1344,7 +1342,7 @@ Inside documentation, there are text formatting tags: `\Emph{x}` will add emphas
 
 ## Questions of Varying Frequency
 
-The following answers are universally discouraging of certain ideas as these ideas are not congruent with normal Flabbergast use.
+The following answers are universally discouraging of certain ideas as these ideas are not congruent with normal Flabbergast use. More philosophical questions are answered in [FAQ](faq.md).
 
 ### When do I end something with `_tmpl`? How do you feel about Hungary?
 
@@ -1372,7 +1370,7 @@ Hungary makes delicious food. Please do not apply it to Flabbergast.
 
 ### How do I use a string as the URI in `From`?
 
-This is intentionally not possible. For various embedding reasons, it's important that the dependencies of a file are known during compilation. Importing new files can lead to all kinds of misery for doing any analysis of the code, and might represent a security problem for the host application.
+This is intentionally not possible. For various embedding reasons, it's important that the dependencies of a file are known during compilation. Importing new files can lead to all kinds of misery for doing any analysis of the code, and might represent a security problem.
 
 If the goal is to read from a configuration specific file, then invert the inheritance structure:
 
@@ -1465,39 +1463,3 @@ That can be taken further by making the enumeration values as templates:
     }
     x : tmpl { name : "foo" enumish : my_enum.a }
 
-### How do I do reflection/evaluation?
-
-This isn't supported and isn't likely to be.
-
-The language is sufficiently flexible that most of the things that would need reflection can be done using features of the language. Since frames can be introspected, there's no need to have Java/C#-style reflection of classes. Reflecting on templates is rather unhelpful since they contain the attribute expressions can't be converted into callable functions.
-
-Converting strings to executable code is a rather undesirable prospect (_i.e._, `eval`). Again, since the language is meant to be embedded in other systems, there may be security implications to loading code from untrusted sources.
-
-The more restricted version of this is allowing strings to be used for lookup. In some situations, this is useful, but the desired behaviour can usually be accomplished with:
-
-    For n : Name, v : x Where n == name Reduce acc ?? v With acc : Null
-
-This, however, only does a single layer of direct lookup, instead of contextual lookup.
-
-The predecessor of Flabbergast had an evaluation function and the use cases were either limited or insane–some users constructed entire frames from strings, substituting supplied values into attribute names and values, even though better tools existed in the language. In general, it was use to bind frames together in unrelated parts of the program. With a hypothetical `Eval`, it tended to look as follows:
-
-    cpu_limits : {
-       foo : 1.0
-       bar : 1.5
-       baz : 0.75
-    }
-    task_tmpl : Template {
-      name : Required
-      cpu_limit : Eval "cpu_limits.\(name)"
-    }
-    tasks : {
-       foo : task_tmpl {
-         name : "foo"
-       }
-    }
-
-In practise, this created more problems than it solved. First, debugging the evaluated expressions was difficult since they were opaque, and this only became more difficult as the names were more arbitrary. In this particular case, the fricassée solution proposed above would work (and indeed it would in most situations). As the item is operating on the string instead of the syntax tree, devious things can be done, for example, `name : "foo + 0.5"`, which might make `name` unusable in other contexts, or have unforeseen consequences.
-
-Moreover, there is precious little reason not to set the attribute in the correct frame. That is much clearer.
-
-With sufficient demonstration of utility, a reasonable plan would be to include a reflected contextual lookup operator. Imagine something to the effect of `Lookup Using [$a, $b, $c] In x` as the equivalent of `Lookup a.b.c In x`. This will be a difficult sales pitch.
