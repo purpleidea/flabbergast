@@ -246,7 +246,7 @@ Integers also have a few special suffixes for dealing with large values, includi
 
 Integers also have bit-wise operators `B&` (and), `B|` (or), `B^` (xor), and `B!` (complement).
 
-Booleans are very much as expected, with `!` for logical negation, `&&` for short-circuiting conjunction, and `||` for short-circuiting disjunction. The comparison operators also work; one quirk is that they all work, not just equal and not equal. This means that truth is greater than falsehood–don't read too much into it.
+Booleans are very much as expected, with `!` for logical negation, `&&` for short-circuiting conjunction, and `||` for short-circuiting disjunction. The comparison operators also work; one quirk is that they all work, not only equal and not equal. This means that truth is greater than falsehood–don't read too much into it.
 
     a : True && False # Yields False
     b : False && Error "I don't care" # Yields False
@@ -342,7 +342,7 @@ Notice that `a_tmpl` does not produce an error for lacking `y`, because the attr
 
 When instantiated, the new frame can perform lookups into the _containers_ of the location where it was instantiated and into the _containers_ of its _ancestors_, that is, the containers of the template that defined it, and any ancestors of that template. This is described in great detail in the more advanced sections. This feature, coupled with contextual lookup, is the useful basis to the Flabbergast language.
 
-Like Java and C#, templates can only inherit a single parent. In Java and C#, this is mostly a concern over how to handle methods with the same name inherited from both parents. Flabbergast has an additional reason not to encourage this: how to combine the ancestry of the two templates. Java and C# work around their lack of multiple inheritance issues using interfaces. In Flabbergast, there is no need for interfaces, since those are a by-product of a type system that Flabbergast doesn't have. The consumer of a frame can simply pluck the attributes it needs out of that frame; it doesn't need to define a type. Frames also don't have methods, as attributes can perform computation, so there are no type signatures to “get right”.
+Like Java and C#, templates can only inherit a single parent. In Java and C#, this is mostly a concern over how to handle methods with the same name inherited from both parents. Flabbergast has an additional reason not to encourage this: how to combine the ancestry of the two templates. Java and C# work around their lack of multiple inheritance issues using interfaces. In Flabbergast, there is no need for interfaces, since those are a by-product of a type system that Flabbergast doesn't have. The consumer of a frame can pluck the attributes it needs out of that frame; it doesn't need to define a type. Frames also don't have methods, as attributes can perform computation, so there are no type signatures to “get right”.
 
 Like object-oriented languages, in addition to adding new things, template inheritance can also replace existing things:
 
@@ -366,7 +366,7 @@ An unusual feature of Flabbergast is the ability to remove attributes:
       y : Drop
     }
 
-In most other languages, this would break the class since any references to the deleted method or field would be invalid, but in Flabbergast, any references to the removed attribute simply follow normal lookup and can find the value elsewhere.
+In most other languages, this would break the class since any references to the deleted method or field would be invalid, but in Flabbergast, any references to the removed attribute follow normal lookup and can find the value elsewhere.
 
 Templates can also act as functions. Undefined attributes are parameters, and a single attribute can act as a result:
 
@@ -431,9 +431,9 @@ In general-purpose programming languages, this idea sounds like madness, but Fla
 
 In the last sentence, to whom does _her_ refer? While _my mum_ is the closest noun that could match _her_, it has been previously established that my mum does not have a cat, so _my mum's cat_ wouldn't make sense. Because we treat _her cat_ as a unit, we contextually keep looking for a _her_ that does have a cat, which would be _my sister_. Conceptually, this is how Flabbergast's resolution algorithm works: it finds the match that makes the most contextual sense.
 
-Inheritance allows creation of attributes, in addition to providing a history for contextual lookup. A frame or template is a collection of key-value pairs, where each key is a valid identifier and a value can be any expression. A template can be _amended_ at the time of instantiation or through the `Template` expression, which creates a new template that copies all the existing attributes, less the amended ones. In most object-oriented languages, fields and methods can be overridden (_i.e._, replaced with new code). Similarly, attributes can be overridden with new expressions. Some languages allow access the overridden method through special keywords (_e.g._, Java's `super`, C#'s `base`, or Python's `super()`). Flabbergast permits accessing the original attribute, but a new name must be specified; there is no default name like `super`. Unlike most languages, Flabbergast permits deletion of an attribute. Because of contextual lookup, any other attributes referencing the deleted attribute will simply look elsewhere.
+Inheritance allows creation of attributes, in addition to providing a history for contextual lookup. A frame or template is a collection of key-value pairs, where each key is a valid identifier and a value can be any expression. A template can be _amended_ at the time of instantiation or through the `Template` expression, which creates a new template that copies all the existing attributes, less the amended ones. In most object-oriented languages, fields and methods can be overridden (_i.e._, replaced with new code). Similarly, attributes can be overridden with new expressions. Some languages allow access the overridden method through special keywords (_e.g._, Java's `super`, C#'s `base`, or Python's `super()`). Flabbergast permits accessing the original attribute, but a new name must be specified; there is no default name like `super`. Unlike most languages, Flabbergast permits deletion of an attribute. Because of contextual lookup, any other attributes referencing the deleted attribute will look elsewhere.
 
-Since attributes can refer to each other, it is the interpreter's duty to determine the order to evaluate the expressions. This means that attributes can be specified in any order (unlike C and C++). In fact, contextual lookup makes it impossible to determine to what attributes references refer until evaluation time. One unusual effect is that the inheritance path of a frame can be changed at runtime (_i.e._, the “class” hierarchy is not determined at compile-time)! In fact, since templates can be instantiated in different contexts, it is possible for the same declaration to be used in different contexts that create two different frame inheritance paths. Obviously, this is the kind of stuff that can be used for good or evil–there are legitimate reasons to re-parent frames, but it can be very confusing and cause unexpected behaviour.
+Since attributes can refer to each other, it is the interpreter's duty to determine the order to evaluate the expressions. This means that attributes can be specified in any order (unlike C and C++). In fact, contextual lookup makes it impossible to determine to what attributes references refer until evaluation time. One unusual effect is that the inheritance path of a frame can be changed at runtime (_i.e._, the “class” hierarchy is not determined at compile-time)! In fact, since templates can be instantiated in different contexts, it is possible for the same declaration to be used in different contexts that create two different frame inheritance paths. This is the kind of stuff that can be used for good or evil–there are legitimate reasons to re-parent frames, but it can be very confusing and cause unexpected behaviour.
 
 The interpreter must be able to linearise the order in which it will perform evaluations. If the expression evaluation contains a cycle, then it is not possible to evaluate any of the expressions in the cycle. This is called _circular evaluation_. While theoretically possible, determining a fixed point is a rather impractical proposition. There are pseudo-cycles that are acceptable: the expressions can refer to one-another circularly so long as they don't need the value. This happens mostly during contextual lookup:
 
@@ -677,7 +677,7 @@ Note that if two values have the same sort key, in the example -1 and 1 do, then
 
 ### Frames and Templates
 
-In addition to literal frames, frames can be instantiated from templates. The instantiation can also amended a template by adding, removing, or overriding attributes. The syntax for instantiation is simply an expression yielding a template followed by `{`, an optional list of amendments, and terminated by `}`. Templates are created in a syntax similar to literal frames: `Template {`, a list of attributes, followed by `}`.
+In addition to literal frames, frames can be instantiated from templates. The instantiation can also amended a template by adding, removing, or overriding attributes. The syntax for instantiation is an expression yielding a template followed by `{`, an optional list of amendments, and terminated by `}`. Templates are created in a syntax similar to literal frames: `Template {`, a list of attributes, followed by `}`.
 
     foo_tmpl : Template { a : b + 4 }
     foo : foo_tmpl { b : 3 } # Yields { a : 7  b : 4 }
@@ -693,7 +693,7 @@ Templates can also be derived using a syntax that is a hybrid of the two: `Templ
 
 There are several amendment attributes, not all of which can be used in all contexts:
 
- - `:`, followed by an expression, simply defines an attribute to be the supplied expression. If there previously was an attribute of the same name, it is discarded.
+ - `:`, followed by an expression, defines an attribute to be the supplied expression. If there previously was an attribute of the same name, it is discarded.
  - `: Required` creates an attribute that is always an error. This can be thought of as an _abstract_ attribute, in the C++/Java/C# terminology. This is not permitted during instantiation.
  - `: Drop` deletes an attribute. The attribute must already exist, so this is not valid when declaring a new template.
  - `+`, followed by an identifier, then `:`, followed by an expression, will replace an attribute but allows the previous value to be bound to the identifier supplied. The attribute must already exist, so this is not valid when declaring a new template.
@@ -701,7 +701,7 @@ There are several amendment attributes, not all of which can be used in all cont
  - `: Used` indicates that a value is expected to be available through lookup. It does not actually *do* anything; it is merely a way to explain intentions to others and provide a place to hang documentation. It can be thought of as a weak version of `Required` attributes, and is usually preferable.
  - `: Now`, followed by an expression, creates an attribute, but evaluates is eagerly, in the current context, much like the function call convenience syntax.
 
-There is also a function call convenience syntax. In their own way, templates can act as lambdas. In frame instantiation, the expressions are evaluated in the context of the frame created. In a function call, expressions provided are evaluated in the current (parent) context, then placed into the instantiated template. A list of unnamed expressions can be provided and these are collected into an `args` frame. Finally, instead of simply returning the entire frame, the `value` attribute is returned from the instantiated frame. For instance, the function call:
+There is also a function call convenience syntax. In their own way, templates can act as lambdas. In frame instantiation, the expressions are evaluated in the context of the frame created. In a function call, expressions provided are evaluated in the current (parent) context, then placed into the instantiated template. A list of unnamed expressions can be provided and these are collected into an `args` frame. Finally, instead of returning the entire frame, the `value` attribute is returned from the instantiated frame. For instance, the function call:
 
     {
       a : 3
@@ -724,7 +724,7 @@ is almost rewritten as:
 
 In this example, `c` would be circular evaluation when using normal evaluation semantics, but because the evaluation of the parameters happens in the containing context, this is fine. There is a subtle different too: the resulting tuple's container will not be the one where it is instantiated, but the one where it is defined.
 
-For Java programmers, there's an easy analogy for the two modes of template instantiation: anonymous inner classes. Creating a template is a bit like instantiating an anonymous inner class. If that class has multiple methods, then template instantiation gives similar behaviour. If only one method is of interest, then it can be instantiated using function-like instantiation, much like lambda notation in Java 8.
+For Java programmers, there's an analogy for the two modes of template instantiation: anonymous inner classes. Creating a template is a bit like instantiating an anonymous inner class. If that class has multiple methods, then template instantiation gives similar behaviour. If only one method is of interest, then it can be instantiated using function-like instantiation, much like lambda notation in Java 8.
 
 ### Data Reshaping
 
@@ -732,7 +732,7 @@ It's useful to remember how all the pieces of structured data manipulation in th
 
 ![](https://rawgithub.com/apmasell/flabbergast/master/inheritance.svg)
 
-Templates can be made from scratch or from existing templates. Frames can be made from scratch, by instantiating templates, the fricassée `Select` operations, or the `Append` expression. Scalar values can be distilled from frames using the fricassée `Reduce` operation. Obviously, scalar values can be manipulated a number of ways not shown in the diagram.
+Templates can be made from scratch or from existing templates. Frames can be made from scratch, by instantiating templates, the fricassée `Select` operations, or the `Append` expression. Scalar values can be distilled from frames using the fricassée `Reduce` operation. Scalar values can be manipulated a number of ways not shown in the diagram.
 
 ### Miscellaneous
 
@@ -761,7 +761,7 @@ Implementation-specific keywords start with `X`. They should not be used in most
 
 The language is meant for creating configurations. What, precisely, is a configuration? Or, more specifically, how is it different from regular code?
 
-Certainly, Flabbergast is a bad choice for writing a GUI application, or a data processing pipeline. It's almost useful to think of Flabbergast as something like a compiler: it takes highly structured data and outputs very simple data. Effectively, it is meant to render data. What the language is attempting to do is make it easy to compress the duplication in a very ad-hoc way, as a macro system does. Real compilers for real languages are large, complicated, and, hopefully, well-designed. Flabbergast aims to help you put together a very simple language with almost no effort, but, unlike most macro systems, it's going to have rather sophisticated descriptions of data. As such, it's not going to do everything right; it's going to rely on the user to put in moderately sane input and that the downstream consumer will validate the input.
+Certainly, Flabbergast is a bad choice for writing a GUI application, or a data processing pipeline. It's almost useful to think of Flabbergast as something like a compiler: it takes highly structured data and outputs very simple data. Effectively, it is meant to render data. What the language is attempting to do is compress the duplication in a very ad-hoc way, as a macro system does. Real compilers for real languages are large, complicated, and, hopefully, well-designed. Flabbergast aims to help you put together a very simple language with almost no effort, but, unlike most macro systems, it's going to have rather sophisticated descriptions of data. As such, it's not going to do everything right; it's going to rely on the user to put in moderately sane input and that the downstream consumer will validate the input.
 
 In most languages, afterthoughts are not appreciated. However, most configurations are nothing but afterthoughts and exceptions. “I want the test version of the webserver to be the same as the production except for the database connection.” “I want the videos SMB share to be the same as the documents SMB share with a few extra users.” Flabbergast is built to service “except”, “and”, and “but”. Everything is malleable and done in such a way that it can be changed even if the base version didn't anticipate that change. There's no concept of Java's `final`, or C++'s `const`.
 
@@ -769,13 +769,13 @@ Most languages, particularly object-oriented languages, have a lot of plumbing: 
 
 Although Flabbergast has the `Required` attribute definition, it should almost never be used. This is one of the most frequent mistakes of novice programmers. If there's a value needed, just use it; there's no need force the consumer of a template to fill in the blank. The real use case is for things that must be provided and unique. For instance, the name of an SMB share is probably best defined with `Required`, but the list of users that can access the share should certainly not use `Required`. It's okay that a user who instantiates a share template without providing a users list somewhere will cause a lookup error: failure to provide an appropriately name value is a failure to consume that API correctly and, indeed, this was noted by an error being produced. There's no need to make this some how “more” explicit. The `Used` attribute definition provides an advisory version of `Required` that indicates that a value should be supplied, but does not stipulate that it needs to be included directly.
 
-The most important feature of Flabbergast is overriding. When starting out with Java or C#, understanding how to divide things up into objects is the hard part. When starting out with ML or Haskell, understanding how to make things stateless is the hard part. When starting out with Flabbergast, understanding  how to make things easy to override is the hard part.
+The most important feature of Flabbergast is overriding. When starting out with Java or C#, understanding how to divide things up into objects is the hard part. When starting out with ML or Haskell, understanding how to make things stateless is the hard part. When starting out with Flabbergast, understanding how to make things easy to override is the hard part.
 
 
 ### Interfaces
-In object-oriented languages, there is typically some convention surround how to tell if an object is consumable in a particular situation. Statically-typed object-oriented languages typically have “interfaces”, in the Java or C# sense. These are functions of the type system: since each expression needs a type and multiple inheritance is not permitted, an interface provides a type that any object can fulfill outside of the inheritance hierarchy. Dynamically-typed object-oriented languages, particularly Python, JavaScript, and Ruby, eschew this and proudly extol the benefits of “duck” typing: that is, simply call a method and expect it to work.
+In object-oriented languages, there is typically some convention surround how to tell if an object is consumable in a particular situation. Statically-typed object-oriented languages typically have “interfaces”, in the Java or C# sense. These are functions of the type system: since each expression needs a type and multiple inheritance is not permitted, an interface provides a type that any object can fulfill outside of the inheritance hierarchy. Dynamically-typed object-oriented languages, particularly Python, JavaScript, and Ruby, eschew this and proudly extol the benefits of “duck” typing: that is, call a method and expect it to work.
 
-Flabbergast is necessarily dynamically-typed by virtually of being dynamically-scoped. Therefore, interfaces are definitely of the duck-typing variety. Since methods aren't present, the interface is still simpler: it is just the attributes that a frame is expected to have and, possibly, expected types for those attributes. Using the `Enforce` operator is a polite way of insisting that certain types are provided from an interface.
+Flabbergast is necessarily dynamically-typed by virtually of being dynamically-scoped. Therefore, interfaces are definitely of the duck-typing variety. Since methods aren't present, the interface is still simpler: it is the attributes that a frame is expected to have and, possibly, expected types for those attributes. Using the `Enforce` operator is a polite way of insisting that certain types are provided from an interface.
 
 Often, the caller has some driver to convert code. For instance, this is a completely reasonable block of Python:
 
@@ -829,7 +829,7 @@ There are two reasons that is preferred: debugging and overriding. Since there i
 
 First, it can be extremely useful for debugging purposes to tinker with subexpressions. For instance, if there is a condition that isn't working properly, it could be useful to override the condition and check if the output is at least correct. Second, the user might be doing something sufficiently different that overriding that condition is helpful. Perhaps they need an extra clause or there is a special case where that logic isn't appropriate.
 
-In a language designed around exceptions, exposing the inner workings is a feature, not a bug. However, this implies a larger interface surface, which is more difficult to maintain. Obviously, a balance must be struck. The language has made interface simpler, so adding some extra complexity is not as grievous. It's also worth noting that some overrides of non-existent attribute is dead, but not dangerous, code. As a general rule, the real description of the interface belongs in documentation (either external or comments) that describe the interface.
+In a language designed around exceptions, exposing the inner workings is a feature, not a bug. However, this implies a larger interface surface, which is more difficult to maintain–a balance must be struck. The language has made interface simpler, so adding some extra complexity is not as grievous. It's also worth noting that some overrides of non-existent attribute is dead, but not dangerous, code. As a general rule, the real description of the interface belongs in documentation (either external or comments) that describe the interface.
 
 When writing templates, it is good style to separate attributes into blocks: the “parameters”, “private” intermediate attributes, and “output” attributes.
 
@@ -838,7 +838,7 @@ When writing templates, it is good style to separate attributes into blocks: the
 Naming things is difficult. Very difficult. The major disadvantage to dynamic scoping is that names can collide and have unintended consequences. There are several ways to address the problems:
 
 1. Name things well. That might sound glib, but it isn't. The traditional loop variables `i`, `j`, and `k` are a heap of trouble in Flabbergast. The opposite end of the spectrum `where_super_explicit_names_that_no_one_can_confuse` are used is equally unpleasant. If the name is semantically meaningful and the same term isn't overloaded (_e.g._, `mu` can be the magnetic field permeability of free space and the coefficient of friction), then it is probably a good choice and collisions will be intentional (making `mu` unfortunate, but `magnetic_perm` quite reasonable).
-2. Use frames as name spaces. While frames are _not_ name spaces, contextual lookup can be used to help the situation. Using `parser.space` can provide more information than simply `space`.
+2. Use frames as name spaces. While frames are _not_ name spaces, contextual lookup can be used to help the situation. Using `parser.space` can provide more information than `space`.
 3. Name library imports with `_lib`. It is good hygiene to import libraries using `foo_lib : From lib:foo` as if there is a collision, the values will be the same anyway.
 4. Use lookup traps when needed. If lookup should stop beyond a certain point, define the name to `Null` to stop lookup from continuing. In templates, if the value needs to be provided or the name is common (_e.g._, `name` or `enabled`) use the `Required` definition to trap lookup.
 
@@ -1018,7 +1018,7 @@ These templates can now be nested and the resulting `spec` will have correct ind
 
 Finally, the `indent` definition is an contextual lookup trap. If the user of these templates did not define an `indent` value at the top level, contextual lookup would continue until it found this one.
 
-So, the following would produce correctly indented, if not pointless, Python:
+The following would produce correctly indented, if not pointless, Python:
 
     transform_var : Template python_group {
         var : Used
@@ -1059,7 +1059,7 @@ In some cases, it is desirable to combine templates. There is no direct template
     a_tmpl : Template { x : 3  y : 4 }
     b_tmpl : Template a_tmpl { z : x + y }
 
-Here, `b_tmpl` extends `a_tmpl`. If the changes that `b_tmpl` are general, it might be nice to have a higher-order way to apply those changes to any template, not just `a_tmpl`. This could be accomplished in the following way:
+Here, `b_tmpl` extends `a_tmpl`. If the changes that `b_tmpl` are general, it might be nice to have a higher-order way to apply those changes to any template, not only `a_tmpl`. This could be accomplished in the following way:
 
     b_ifier : Template { base : Required  value : Template base { z : x + y } }
     a_tmpl : Template { x : 3  y : 4 }
@@ -1161,7 +1161,7 @@ Because Flabbergast is meant to render data, it has a rather lean standard libra
  - mathematics. Computation is good!
  - generating XML, JSON, and other formats to be read by the programs being configured.
 
-So, the Flabbergast libraries look like they do to avoid I/O and minimise the ensuing insanity.
+The Flabbergast libraries look like they do to avoid I/O and minimise the ensuing insanity.
 
 There are platform specific libraries, which end in `interop`, to provide access to the underlying libraries. Do not access these libraries directly. Instead, using the corresponding platform-independent library (_e.g._, `utils` rather than `utilsinterop`). These libraries enhance the functionality of these base libraries, but the originals may still be visible in stack traces; consider them an implementation detail.
 
@@ -1311,7 +1311,7 @@ Allows generating the time specifications in for `crontab` entries.
 
 ## Automatic Documentation
 
-Flabbergast has a built-in documentation system. Unlike, say JavaDoc, Flabbergast documentation is parsed by the compiler and certain checks are done on it. To add documentation to code is extremely easy. There are two major elements: an introduction and attribute documentation.
+Flabbergast has a built-in documentation system. Unlike, say JavaDoc, Flabbergast documentation is parsed by the compiler and certain checks are done on it. Adding documentation goes in two places: an introduction and attribute documentation.
 
 An introduction is associated with a whole file and appears at the top of a file:
 
@@ -1405,7 +1405,7 @@ Then create a single situation-specific footprint:
       machine_info : From info:machine/foo
     }
 
-Then for each configuration is simply a marriage of footprint and template:
+Then for each configuration is only a marriage of footprint and template:
 
     config_lib : From lib:config_templates
     footprint : From lib:foo_footprint
@@ -1415,7 +1415,7 @@ These final files tend to be rather short.
 
 ### How do I create a new type?
 
-There isn't a mechanism to create user-defined types as such. There are two reasons: what would be the look-up rules for type names and how would one define new primitive operations? In general, there's no reason to create a new type: just create a new frame with a well-defined interface. For all typical purposes, that is as good as defining a new type. In the typical class-based object-oriented sense, there is no guarantee that a frame will inherit the intended template, but if it has a compliant interface, there isn't necessarily any harm.
+There isn't a mechanism to create user-defined types as such. There are two reasons: what would be the look-up rules for type names and how would one define new primitive operations? In general, there's no reason to create a new type: create a new frame with a well-defined interface. For all typical purposes, that is as good as defining a new type. In the typical class-based object-oriented sense, there is no guarantee that a frame will inherit the intended template, but if it has a compliant interface, there isn't necessarily any harm.
 
 Many languages have restricted value sets: enumerations (C, C++, Java, C#) or symbols (LISP, Ruby, SmallTalk). These are intended to be universally comparable values that exist in some kind of special name space. Symbols are essentially strings, so the `$` identifier-like string is essentially the same. An enumeration-like structure can be easily made:
 
@@ -1498,6 +1498,6 @@ The predecessor of Flabbergast had an evaluation function and the use cases were
 
 In practise, this created more problems than it solved. First, debugging the evaluated expressions was difficult since they were opaque, and this only became more difficult as the names were more arbitrary. In this particular case, the fricassée solution proposed above would work (and indeed it would in most situations). As the item is operating on the string instead of the syntax tree, devious things can be done, for example, `name : "foo + 0.5"`, which might make `name` unusable in other contexts, or have unforeseen consequences.
 
-Moreover, there is precious little reason not to simply set the attribute in the correct frame. That is much clearer.
+Moreover, there is precious little reason not to set the attribute in the correct frame. That is much clearer.
 
 With sufficient demonstration of utility, a reasonable plan would be to include a reflected contextual lookup operator. Imagine something to the effect of `Lookup Using [$a, $b, $c] In x` as the equivalent of `Lookup a.b.c In x`. This will be a difficult sales pitch.
