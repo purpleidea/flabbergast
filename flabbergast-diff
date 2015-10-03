@@ -46,7 +46,7 @@ then
 	exit $NO_CHANGES
 fi
 
-OUTPUT_DIR=$(mktemp -d)
+OUTPUT_DIR=$(mktemp -d ${TMPDIR:-/tmp}/o_0.XXXXXXXXXX)
 POP_CMD=true
 for i in 1 2 15
 do
