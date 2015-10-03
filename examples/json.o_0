@@ -1,0 +1,30 @@
+# Here's construction of a JSON object using lib:render
+render_lib : From lib:render
+
+example_obj : render_lib.json.object {
+    children : [
+        render_lib.json.list {
+            json_name : "valid_range"
+            children : [
+                render_lib.json.scalar {
+                    arg : 1
+
+                },
+                render_lib.json.scalar {
+                    arg : 900000000000000
+
+                }
+            ]
+        },
+        render_lib.json.scalar {
+            json_name : "name"
+            arg : "json example code"
+        },
+        render_lib.json.scalar {
+            json_name : "is_example"
+            arg : True
+        }
+    ]
+}
+
+value : example_obj.json_value
