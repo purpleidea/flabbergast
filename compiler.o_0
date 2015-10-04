@@ -33,6 +33,8 @@ parser_tmpl : Template {
 		# If true, parsing will succeed if the current character is not in the
 		# string defined in `char`.
 		invert_match : False
+		# If the end of input is encoutered, should that be a match or a mismatch?
+		match_eof : False
 	}
 	# Matches any character by Unicode class.
 	char_class : Template {
@@ -1220,7 +1222,7 @@ language_tmpl : Template {
 							parser.many {
 								of : parser.single { char : "\\n"  invert_match : True  accumulate : True }
 							},
-							parser.single { char : "\\n" }
+							parser.single { char : "\\n"  match_eof : True }
 						]
 					}
 				]

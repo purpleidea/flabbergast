@@ -196,7 +196,9 @@ parser : compiler_lib.parser_tmpl {
 		acc : If accumulate
 			Then (accumulate_char { input : "_position.get().peekLast()"  indent : Lookup indent In Container & "\t"}).value
 			Else ""
-		parser_gen : "\(indent)if (\"\(char)\".indexOf(_position.get().next()) \(If invert_match Then "==" Else "!=") -1) {" &
+		parser_gen :
+			"\(indent)char \(Id)_char = _position.get().next();" &
+			"\(indent)if (\"\(char)\".indexOf(\(Id)_char) \(If invert_match Then "==" Else "!=") -1\(If match_eof Then " || \(Id)_char == '\\0'" Else " && \(Id)_char != '\\0'")) {" &
 			acc & parse_complete(ok : True, indent : indent & "\t") &
 			"\(indent)} else {" &
 			"\(indent)\t_position.get().update(Parser.toLiteral(\"\(char)\"), \"\(pretty_name)\");" &
