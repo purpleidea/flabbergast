@@ -1,3 +1,13 @@
+flabbergast (0.13~ppa0) trusty; urgency=medium
+
+  * Fix parser when EOF occurs in comment
+  * Make mktemp call in flabbergast-diff portable
+  * Add JSON importer URI scheme
+  * Fix bugs in JSON in lib:render
+  * Add local machine information library (lib:machine)
+
+ -- Andre Masella <andre@masella.name>  Mon, 05 Oct 2015 21:02:31 -0400
+
 flabbergast (0.12~ppa0) trusty; urgency=medium
 
   * Fix bad division under Java
