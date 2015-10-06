@@ -25,6 +25,20 @@ DEP_CLI="
 			<version>1.2</version>
 			<scope>runtime</scope>
 		</dependency>"
+DEP_JODA_TIME="
+		<dependency>
+			<groupId>joda-time</groupId>
+			<artifactId>joda-time</artifactId>
+			<version>2.3</version>
+			<scope>runtime</scope>
+		</dependency>"
+DEP_JSON="
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20090211</version>
+			<scope>runtime</scope>
+		</dependency>"
 DEP_FL_R="
 		<dependency>
 			<groupId>com.github.apmasell.flabbergast</groupId>
@@ -86,6 +100,6 @@ EOI
 	mvn gpg:sign-and-deploy-file -DrepositoryId=$REPO -Durl=https://oss.sonatype.org/service/local/staging/deploy/maven2/ -DpomFile=${PKG}-${VERSION}.pom -Dfile=${PKG}-${VERSION}.jar  -Dsources=${PKG}-${VERSION}-sources.jar -Djavadoc=${PKG}-${VERSION}-javadoc.jar -Dpackaging=jar
 	rm -f ${PKG}-${VERSION}.pom{,.asc} ${PKG}-${VERSION}{,-sources,-javadoc}.jar.asc
 }
-upload runtime Runtime "$DEP_CLI"
+upload runtime Runtime "$DEP_CLI$DEP_JODA_TIME$DEP_JSON"
 upload compiler Compiler "$DEP_ASM$DEP_JLINE$DEP_FL_R"
 upload stdlib "Standard Library" "$DEP_FL_R"
