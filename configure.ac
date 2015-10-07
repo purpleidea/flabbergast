@@ -33,7 +33,7 @@ if test "$enable_jvm" != no; then
 	if test "$JAVA" = undefined -o "$JAVAC" = undefined -o "$JAR" = undefined; then
 		target_java=no
 	else
-		AC_CHECK_FILES([${ASM_JAR} ${COMMONS_CLI_JAR} ${JLINE_JAR}], [ target_java=yes ], [ target_java=no ])
+		AC_CHECK_FILES([${ASM_JAR} ${COMMONS_CLI_JAR} ${JLINE_JAR} ${JODA_TIME_JAR} ${JSON_JAR}], [ target_java=yes ], [ target_java=no ])
 	fi
 else
 	target_java=no
