@@ -17,8 +17,9 @@ public class BuiltInLibraries implements UriLoader {
     @SuppressWarnings("unchecked")
     public Class<? extends Computation> resolveUri(String uri,
             Ptr<LibraryFailure> failure) {
-        if (!uri.startsWith("lib:"))
+        if (!uri.startsWith("lib:")) {
             return null;
+        }
         String type_name = "flabbergast.library."
                            + uri.substring(4).replace('/', '.');
         try {

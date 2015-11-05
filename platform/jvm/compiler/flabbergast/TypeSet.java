@@ -8,8 +8,9 @@ public class TypeSet {
     public static final TypeSet EMPTY = new TypeSet(0);
 
     public static TypeSet fromNative(Class<?> type) {
-        if (type == Object.class)
+        if (type == Object.class) {
             return ALL;
+        }
         Type t = Type.fromNative(type);
         if (t == null) {
             return EMPTY;
@@ -68,8 +69,9 @@ public class TypeSet {
          * that's okay, because we expect the coalescence expression to fix the
          * problem at run-time.
          */
-        if (flags == 0)
+        if (flags == 0) {
             return this;
+        }
         if ((flags & original.flags) != 0) {
             this.flags &= original.flags;
         }
@@ -100,13 +102,15 @@ public class TypeSet {
 
     @Override
     public String toString() {
-        if (flags == 0)
+        if (flags == 0) {
             return "<none>";
+        }
         StringBuilder sb = new StringBuilder();
         boolean first = true;
         for (Type type : Type.values()) {
-            if ((type.get() & flags) == 0)
+            if ((type.get() & flags) == 0) {
                 continue;
+            }
             if (first) {
                 first = false;
             } else {

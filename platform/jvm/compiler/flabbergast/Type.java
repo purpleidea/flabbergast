@@ -9,8 +9,9 @@ public enum Type {
     public static Type fromNative(Class<?> clazz) {
         for (Type t : values()) {
             for (Class<?> c : t.clazz)
-                if (c.isAssignableFrom(clazz))
+                if (c.isAssignableFrom(clazz)) {
                     return t;
+                }
         }
         return null;
     }

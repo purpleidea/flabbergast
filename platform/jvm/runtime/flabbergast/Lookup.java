@@ -127,8 +127,9 @@ public class Lookup extends Computation {
     public String getName() {
         StringBuilder sb = new StringBuilder();
         for (int n = 0; n < names.length; n++) {
-            if (n > 0)
+            if (n > 0) {
                 sb.append(".");
+            }
             sb.append(names[n]);
         }
         return sb.toString();

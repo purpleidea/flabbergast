@@ -97,8 +97,9 @@ class ApiGenerator {
 
         if (!type.hasAll()) {
             for (Type t : Type.values()) {
-                if (!type.contains(t))
+                if (!type.contains(t)) {
                     continue;
+                }
                 Element type_node = document.createElementNS(document
                                     .getDocumentElement().getNamespaceURI(), "o_0:type");
                 type_node.appendChild(document.createTextNode(t == Type.Unit

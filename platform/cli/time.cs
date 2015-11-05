@@ -85,7 +85,7 @@ public abstract class BaseTime : Computation {
         Computation lookup = new Lookup(task_master, source_reference, names, context);
         lookup.Notify(result => {
             if (result is ReflectedFrame && ((ReflectedFrame) result).Backing is DateTime) {
-                target((DateTime) ((ReflectedFrame) result).Backing);
+                target((DateTime)((ReflectedFrame) result).Backing);
                 if (Interlocked.Decrement(ref interlock) == 0) {
                     task_master.Slot(this);
                 }
@@ -123,7 +123,7 @@ abstract class BaseParts : BaseTime {
             { "year", x => years = x }
         };
         Interlocked.Add(ref interlock, parts.Count);
-        foreach(var entry in parts) {
+        foreach (var entry in parts) {
             var name = entry.Key + (plural ? "s" : "");
             new Lookup(task_master, source_reference, new[] { name }, context).Notify(result => {
                 if (result is Int64) {

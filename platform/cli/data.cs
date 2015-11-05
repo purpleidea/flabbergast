@@ -301,7 +301,7 @@ public class MutableFrame : Frame {
             return result;
         }
     }
-    public MutableFrame(TaskMaster task_master, SourceReference source_ref, Context context, Frame container) : base (task_master, source_ref, context, container) {
+    public MutableFrame(TaskMaster task_master, SourceReference source_ref, Context context, Frame container) : base(task_master, source_ref, context, container) {
         this.task_master = task_master;
     }
     public override IEnumerable<string> GetAttributeNames() {

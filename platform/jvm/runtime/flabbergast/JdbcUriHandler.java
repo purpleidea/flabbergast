@@ -75,8 +75,9 @@ public class JdbcUriHandler implements UriHandler {
         int user_end = 0;
         while (user_end < uri_fragment.length()
                 && (Character.isLetterOrDigit(uri_fragment.charAt(user_end)) || uri_fragment
-                    .charAt(user_end) == '_'))
+                    .charAt(user_end) == '_')) {
             user_end++;
+        }
         if (user_end == uri_fragment.length()) {
             // We know this is malformed.
             err.set("Missing “/” followed by database in SQL URI.");
@@ -93,8 +94,9 @@ public class JdbcUriHandler implements UriHandler {
                 // Possible password. Might be port.
                 int password_end = user_end + 1;
                 while (password_end < uri_fragment.length()
-                        && "/@".indexOf(uri_fragment.charAt(password_end)) == -1)
+                        && "/@".indexOf(uri_fragment.charAt(password_end)) == -1) {
                     password_end++;
+                }
                 if (password_end == uri_fragment.length()) {
                     // We know this is malformed.
                     err.set("Missing “/” followed by database in SQL URI.");
@@ -119,8 +121,9 @@ public class JdbcUriHandler implements UriHandler {
             // IPv6 address?
             if (uri_fragment.charAt(host_end) == '[') {
                 while (host_end < uri_fragment.length()
-                        && uri_fragment.charAt(host_end) != ']')
+                        && uri_fragment.charAt(host_end) != ']') {
                     host_end++;
+                }
             }
             host_end++;
         }
@@ -131,8 +134,9 @@ public class JdbcUriHandler implements UriHandler {
         if (uri_fragment.charAt(host_end) == ':') {
             host_end++;
             while (host_end < uri_fragment.length()
-                    && Character.isDigit(uri_fragment.charAt(host_end)))
+                    && Character.isDigit(uri_fragment.charAt(host_end))) {
                 host_end++;
+            }
             if (host_end == uri_fragment.length()) {
                 err.set("Missing “/” followed by database in SQL URI.");
                 return null;
@@ -148,8 +152,9 @@ public class JdbcUriHandler implements UriHandler {
         }
         int db_end = host_end + 1;
         while (db_end < uri_fragment.length()
-                && uri_fragment.charAt(db_end) != '/')
+                && uri_fragment.charAt(db_end) != '/') {
             db_end++;
+        }
         if (db_end < uri_fragment.length()) {
             err.set("Junk after database in SQL URI.");
             return null;
@@ -185,8 +190,9 @@ public class JdbcUriHandler implements UriHandler {
         try {
             Properties params = new Properties();
             int first_colon = 5;
-            while (first_colon < uri.length() && uri.charAt(first_colon) != ':')
+            while (first_colon < uri.length() && uri.charAt(first_colon) != ':') {
                 first_colon++;
+            }
             if (first_colon == uri.length()) {
                 return new FailureComputation(task_master,
                                               new JavaSourceReference(), "Bad provider in URI “"
@@ -195,14 +201,16 @@ public class JdbcUriHandler implements UriHandler {
             String provider = uri.substring(4, first_colon);
             int question_mark = first_colon;
             while (question_mark < uri.length()
-                    && uri.charAt(question_mark) != '?')
+                    && uri.charAt(question_mark) != '?') {
                 question_mark++;
+            }
             String uri_fragment = uri.substring(first_colon + 1, question_mark);
             if (question_mark < uri.length() - 1) {
                 for (String param_str : uri.substring(question_mark + 1).split(
                             "&")) {
-                    if (param_str.length() == 0)
+                    if (param_str.length() == 0) {
                         continue;
+                    }
                     String[] parts = param_str.split("=", 2);
                     if (parts.length != 2) {
                         return new FailureComputation(task_master,
@@ -213,7 +221,7 @@ public class JdbcUriHandler implements UriHandler {
                 }
             }
 
-            Ptr<String> err = new Ptr<String>("Bad URI.");
+            Ptr<String> err = new Ptr<String> ("Bad URI.");
             Properties properties = new Properties();
             String jdbc_uri = JdbcParser.parse(provider, uri_fragment, params,
                                                properties, err);

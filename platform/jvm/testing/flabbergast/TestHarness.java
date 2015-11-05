@@ -16,16 +16,18 @@ public class TestHarness {
     private static File combine(String... parts) {
         StringBuilder buffer = new StringBuilder();
         for (int it = 0; it < parts.length; it++) {
-            if (it > 0)
+            if (it > 0) {
                 buffer.append(File.separator);
+            }
             buffer.append(parts[it]);
         }
         return new File(buffer.toString());
     }
 
     private static File[] alwaysIterable(File[] collection) {
-        if (collection == null)
+        if (collection == null) {
             return new File[0];
+        }
         return collection;
     }
 
@@ -114,7 +116,7 @@ public class TestHarness {
 
     public static void main(String[] args) {
         try {
-            Ptr<Integer> id = new Ptr<Integer>(0);
+            Ptr<Integer> id = new Ptr<Integer> (0);
             boolean success = true;
             success &= doTests(combine("..", "..", "tests"), "*", id);
             success &= doTests(combine("tests"), "I", id);

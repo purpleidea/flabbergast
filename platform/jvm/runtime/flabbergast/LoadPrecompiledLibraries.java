@@ -33,8 +33,9 @@ public class LoadPrecompiledLibraries extends LoadLibraries {
             }
             class_loader = new URLClassLoader(urls);
         }
-        if (!uri.startsWith("lib:"))
+        if (!uri.startsWith("lib:")) {
             return null;
+        }
 
         String base_name = uri.substring(4).replace('/', '.');
         String type_name = "flabbergast.library." + base_name;

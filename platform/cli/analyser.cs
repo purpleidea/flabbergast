@@ -30,7 +30,7 @@ internal abstract class AstTypeableNode : AstNode {
     internal abstract Environment PropagateEnvironment(ErrorCollector collector, List<AstTypeableNode> queue, Environment environment, ref bool success);
     internal abstract void MakeTypeDemands(ErrorCollector collector, ref bool _success);
     public bool Analyse(ErrorCollector collector) {
-        var environment = new Environment (FileName, StartRow, StartColumn, EndRow, EndColumn);
+        var environment = new Environment(FileName, StartRow, StartColumn, EndRow, EndColumn);
         var queue = new List<AstTypeableNode>();
         var success = true;
         PropagateEnvironment(collector, queue, environment, ref success);
@@ -81,8 +81,8 @@ internal abstract class AstTypeableNode : AstNode {
             }
         }
     }
-    internal static bool AllInParameteres (MethodInfo method) {
-        foreach(var parameter in method.GetParameters()) {
+    internal static bool AllInParameteres(MethodInfo method) {
+        foreach (var parameter in method.GetParameters()) {
             if (parameter.IsOut) {
                 return false;
             }
@@ -95,7 +95,7 @@ internal abstract class AstTypeableNode : AstNode {
             return 0;
         /* Find all the methods that match the needed type. */
         var candidate_methods = from method in methods
-                                where (TypeFromClrType(method.ReturnType) & return_type) != 0
+                                where(TypeFromClrType(method.ReturnType) & return_type) != 0
                                 select method;
 
         Type candiate_return = 0;
@@ -853,7 +853,7 @@ internal class ApiGenerator {
         }
 
         if (type != NameInfo.AnyType) {
-            foreach(var t in Enum.GetValues(typeof(Type)).Cast<Type>()) {
+            foreach (var t in Enum.GetValues(typeof(Type)).Cast<Type>()) {
                 if ((type & t) == 0)
                     continue;
                 var type_node = Document.CreateElement("o_0:type", Document.DocumentElement.NamespaceURI);

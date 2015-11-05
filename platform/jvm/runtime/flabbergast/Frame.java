@@ -14,8 +14,9 @@ public abstract class Frame implements Iterable<String> {
                                 Frame container) {
         MutableFrame result = new MutableFrame(task_master, source_ref,
                                                context, container);
-        if (end < start)
+        if (end < start) {
             return result;
+        }
         for (long it = 0; it <= (end - start); it++) {
             result.set(TaskMaster.ordinalNameStr(it + 1), start + it);
         }

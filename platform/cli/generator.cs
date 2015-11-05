@@ -293,7 +293,7 @@ internal abstract class Generator {
         var type_dispatch = new Dictionary<System.Type, Tuple<int, FieldValue>>();
         ParameterisedBlock<LoadableValue> end_handler = result => {
             if (!type_dispatch.ContainsKey(result.BackingType)) {
-                type_dispatch[result.BackingType] = new Tuple<int,FieldValue>(DefineState(), MakeField("if_result", result.BackingType));
+                type_dispatch[result.BackingType] = new Tuple<int, FieldValue>(DefineState(), MakeField("if_result", result.BackingType));
             }
             Builder.Emit(OpCodes.Ldarg_0);
             result.Load(this);
@@ -306,7 +306,7 @@ internal abstract class Generator {
         MarkState(else_state);
         false_part(end_handler);
 
-        foreach(var tuple in type_dispatch.Values) {
+        foreach (var tuple in type_dispatch.Values) {
             MarkState(tuple.Item1);
             result_block(tuple.Item2);
         }
@@ -370,7 +370,7 @@ internal abstract class Generator {
             Builder.Emit(OpCodes.Ret);
             return;
         }
-        for(var it = 0; it < types.Length; it++) {
+        for (var it = 0; it < types.Length; it++) {
             var label = Builder.DefineLabel();
             original.Load(Builder);
             Builder.Emit(OpCodes.Isinst, types[it]);
@@ -471,7 +471,7 @@ internal abstract class Generator {
         MarkState(0);
         // If this is a top level function, load all the external values for our children.
         if (load_owner_externals) {
-            foreach(var uri in owner_externals.Keys) {
+            foreach (var uri in owner_externals.Keys) {
                 if (!externals.ContainsKey(uri)) {
                     externals[uri] = MakeField(uri, typeof(object));
                 }
@@ -499,7 +499,7 @@ internal abstract class Generator {
         run_builder.Emit(OpCodes.Ldfld, StateField);
         run_builder.Emit(OpCodes.Switch, call_labels);
         run_builder.ThrowException(typeof(ArgumentOutOfRangeException));
-        for(var it = 0; it < entry_points.Count; it++) {
+        for (var it = 0; it < entry_points.Count; it++) {
             run_builder.MarkLabel(call_labels[it]);
             run_builder.Emit(OpCodes.Ldarg_0);
             run_builder.Emit(OpCodes.Tailcall);
@@ -572,7 +572,7 @@ internal abstract class Generator {
 
         var result = MakeField(best_method.Name, AstTypeableNode.ClrTypeFromType(AstTypeableNode.TypeFromClrType(best_method.ReturnType))[0]);
         Builder.Emit(OpCodes.Ldarg_0);
-        for(var it = 0; it < arguments.Length; it++) {
+        for (var it = 0; it < arguments.Length; it++) {
             arguments[it].Load(this);
             if (it == 0 && !best_method.IsStatic && best_method.ReflectedType.IsValueType) {
                 var local = Builder.DeclareLocal(arguments[it].BackingType);
@@ -623,7 +623,7 @@ internal abstract class Generator {
         source.Load(Builder);
         if (!target_type.IsAssignableFrom(source.BackingType) || target_type.IsValueType != source.BackingType.IsValueType) {
             if (target_type == typeof(object)) {
-                if (source.BackingType == typeof(bool) || source.BackingType == typeof(double) ||source.BackingType == typeof(long)) {
+                if (source.BackingType == typeof(bool) || source.BackingType == typeof(double) || source.BackingType == typeof(long)) {
                     Builder.Emit(OpCodes.Box, source.BackingType);
                 }
             } else {
@@ -872,7 +872,7 @@ internal class FunctionGenerator : Generator {
         ctor_builder.Emit(OpCodes.Ldarg_0);
         ctor_builder.Emit(OpCodes.Ldarg_1);
         ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
-        for(var it = 0; it < initial_information.Length; it++) {
+        for (var it = 0; it < initial_information.Length; it++) {
             ctor_builder.Emit(OpCodes.Ldarg_0);
             ctor_builder.Emit(OpCodes.Ldarg, it + 2);
             ctor_builder.Emit(OpCodes.Stfld, initial_information[it]);
@@ -975,7 +975,7 @@ class ReplGenerator : Generator {
         ctor_builder.Emit(OpCodes.Ldarg_0);
         ctor_builder.Emit(OpCodes.Ldarg_1);
         ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
-        for(var it = 0; it < initial_information.Length; it++) {
+        for (var it = 0; it < initial_information.Length; it++) {
             ctor_builder.Emit(OpCodes.Ldarg_0);
             ctor_builder.Emit(OpCodes.Ldarg, it + 2);
             ctor_builder.Emit(OpCodes.Stfld, initial_information[it]);

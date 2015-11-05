@@ -268,8 +268,7 @@ internal class ParserPosition {
         };
     }
     internal ParserPosition Clone() {
-        var child = new ParserPosition(Parser, error_collector)
-        {
+        var child = new ParserPosition(Parser, error_collector) {
             Index = Index,
             Row = Row,
             Column = Column,

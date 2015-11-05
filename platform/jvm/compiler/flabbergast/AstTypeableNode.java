@@ -16,8 +16,9 @@ abstract class AstTypeableNode extends AstNode {
                                         List<? extends TypeableElement> arguments, TypeSet return_type,
                                         Ptr<Boolean> success) {
         /* If there are no candidate methods, don't bother checking the types. */
-        if (methods.size() == 0)
+        if (methods.size() == 0) {
             return TypeSet.EMPTY;
+        }
         /* Find all the methods that match the needed type. */
         List<Method> candidate_methods = new ArrayList<Method>();
         TypeSet candiate_return = TypeSet.EMPTY;
@@ -45,9 +46,9 @@ abstract class AstTypeableNode extends AstNode {
             TypeSet candidate_parameter_type = TypeSet.EMPTY;
             for (Method method : methods) {
                 Class<?> param_type = Modifier.isStatic(method.getModifiers())
-                                      ? method.getParameterTypes()[it]
+                                      ? method.getParameterTypes() [it]
                                       : (it == 0 ? method.getDeclaringClass() : method
-                                         .getParameterTypes()[it - 1]);
+                                         .getParameterTypes() [it - 1]);
                 candidate_parameter_type = candidate_parameter_type.union(Type
                                            .fromNative(param_type));
             }
@@ -131,7 +132,7 @@ abstract class AstTypeableNode extends AstNode {
                 getStartColumn(), getEndRow(), getEndColumn(), null, false,
                 false);
         List<AstTypeableNode> queue = new ArrayList<AstTypeableNode>();
-        Ptr<Boolean> success = new Ptr<Boolean>(true);
+        Ptr<Boolean> success = new Ptr<Boolean> (true);
         propagateEnvironment(collector, queue, environment, success);
         SortedMap<Integer, Set<AstTypeableNode>> sorted_nodes = new TreeMap<Integer, Set<AstTypeableNode>>();
 

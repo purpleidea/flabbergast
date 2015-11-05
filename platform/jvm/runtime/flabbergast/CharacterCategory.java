@@ -98,7 +98,7 @@ public class CharacterCategory extends Computation implements ConsumeResult {
             input_lookup.listen(this);
             for (Map.Entry<Byte, String> entry : categories.entrySet()) {
                 Computation lookup = new Lookup(task_master, source_reference,
-                                                new String[] {entry.getValue()}, context);
+                                                new String[] {entry.getValue() }, context);
                 lookup.listen(new Category(entry.getKey()));
             }
             if (interlock.decrementAndGet() > 0) {

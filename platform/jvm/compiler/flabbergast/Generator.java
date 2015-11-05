@@ -52,12 +52,15 @@ abstract class Generator {
     private static final int MAX_DISPATCHES = 6 * 1024;
 
     static Class<?> getBoxedType(Class<?> type) {
-        if (type == boolean.class)
+        if (type == boolean.class) {
             return Boolean.class;
-        if (type == long.class)
+        }
+        if (type == long.class) {
             return Long.class;
-        if (type == double.class)
+        }
+        if (type == double.class) {
             return Double.class;
+        }
         return type;
     }
 
@@ -69,8 +72,9 @@ abstract class Generator {
         StringBuilder signature = new StringBuilder();
         signature.append('(');
         for (Class<?> clazz : parametertypes) {
-            if (clazz != null)
+            if (clazz != null) {
                 signature.append(Type.getDescriptor(clazz));
+            }
         }
         signature.append(')');
         if (returntype == null) {
@@ -197,7 +201,7 @@ abstract class Generator {
             builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
                                     getInternalName(JunctionReference.class), "<init>", Type
                                     .getConstructorDescriptor(JunctionReference.class
-                                            .getConstructors()[0]));
+                                            .getConstructors() [0]));
         }
     }
 
@@ -256,7 +260,7 @@ abstract class Generator {
                 if (!type_dispatch.containsKey(result.getBackingType())) {
                     type_dispatch
                     .put(result.getBackingType(),
-                         new AbstractMap.SimpleImmutableEntry<Integer, FieldValue>(
+                         new AbstractMap.SimpleImmutableEntry<Integer, FieldValue> (
                              defineState(), makeField(
                                  "if_result",
                                  result.getBackingType())));
@@ -392,8 +396,9 @@ abstract class Generator {
         StringBuilder error_message = new StringBuilder();
         error_message.append("Unexpected type %s instead of ");
         for (int it = 0; it < types.size(); it++) {
-            if (it > 0)
+            if (it > 0) {
                 error_message.append(" or ");
+            }
             error_message.append(Stringish.nameForClass(types.get(it)));
         }
         if (original.getBackingType() != Object.class) {
@@ -722,7 +727,7 @@ abstract class Generator {
         Method best_method = null;
         int best_penalty = Integer.MAX_VALUE;
         for (Method method : methods) {
-            Ptr<Integer> penalty = new Ptr<Integer>(0);
+            Ptr<Integer> penalty = new Ptr<Integer> (0);
             Class<?>[] parameters = method.getParameterTypes();
             boolean is_static = Modifier.isStatic(method.getModifiers());
             if (!is_static
@@ -745,8 +750,9 @@ abstract class Generator {
             source_reference.load(builder);
             StringBuilder arg_types = new StringBuilder();
             for (int it = 0; it < arguments.size(); it++) {
-                if (it > 0)
+                if (it > 0) {
                     arg_types.append(", ");
+                }
                 arg_types.append(arguments.get(it).getBackingType()
                                  .getCanonicalName());
             }
@@ -835,7 +841,7 @@ abstract class Generator {
                 builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
                                         getInternalName(SimpleStringish.class), "<init>", Type
                                         .getConstructorDescriptor(SimpleStringish.class
-                                                .getConstructors()[0]));
+                                                .getConstructors() [0]));
             } else {
                 throw new IllegalArgumentException(String.format(
                                                        "No conversation from %s to %s while invoking %s.%s.",
@@ -1017,7 +1023,7 @@ abstract class Generator {
         builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
                                 getInternalName(BasicSourceReference.class), "<init>", Type
                                 .getConstructorDescriptor(BasicSourceReference.class
-                                        .getConstructors()[0]));
+                                        .getConstructors() [0]));
         reference.store(builder);
         return reference;
     }

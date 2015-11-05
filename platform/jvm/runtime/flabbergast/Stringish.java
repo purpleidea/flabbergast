@@ -18,7 +18,7 @@ public abstract class Stringish
     };
 
     public static Stringish fromCodepoint(long codepoint) {
-        return new SimpleStringish(new String(new int[] {(int) codepoint}, 0, 1));
+        return new SimpleStringish(new String(new int[] { (int) codepoint}, 0, 1));
     }
 
     public static Stringish fromDouble(double value, boolean exponential,
@@ -51,20 +51,27 @@ public abstract class Stringish
     }
 
     public static String nameForClass(Class<?> t) {
-        if (Stringish.class.isAssignableFrom(t))
+        if (Stringish.class.isAssignableFrom(t)) {
             return "Str";
-        if (t == Boolean.class || t == boolean.class)
+        }
+        if (t == Boolean.class || t == boolean.class) {
             return "Bool";
-        if (t == Double.class || t == double.class)
+        }
+        if (t == Double.class || t == double.class) {
             return "Float";
-        if (t == Frame.class)
+        }
+        if (t == Frame.class) {
             return "Frame";
-        if (t == Long.class || t == long.class)
+        }
+        if (t == Long.class || t == long.class) {
             return "Int";
-        if (t == Template.class)
+        }
+        if (t == Template.class) {
             return "Template";
-        if (t == Unit.class)
+        }
+        if (t == Unit.class) {
             return "Null";
+        }
         return t.getSimpleName();
     }
 
@@ -73,8 +80,8 @@ public abstract class Stringish
         Collator collator = Collator.getInstance();
         Iterator<String> this_stream = iterator();
         Iterator<String> other_stream = other.iterator();
-        Ptr<Integer> this_offset = new Ptr<Integer>(0);
-        Ptr<Integer> other_offset = new Ptr<Integer>(0);
+        Ptr<Integer> this_offset = new Ptr<Integer> (0);
+        Ptr<Integer> other_offset = new Ptr<Integer> (0);
         Ptr<String> this_current = new Ptr<String>();
         Ptr<String> other_current = new Ptr<String>();
         int result = 0;
@@ -113,7 +120,7 @@ public abstract class Stringish
 
     @Override
     public Iterator<String> iterator() {
-        return new RamblingIterator<String>(this);
+        return new RamblingIterator<String> (this);
     }
 
     @Override

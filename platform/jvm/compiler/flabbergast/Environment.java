@@ -103,7 +103,7 @@ class Environment implements CodeRegion {
             intrinsic.setValue(intrinsic.getValue() & must_unbox);
             return original_type;
         } else {
-            intrinsics.put(node, new AbstractMap.SimpleEntry<TypeSet, Boolean>(
+            intrinsics.put(node, new AbstractMap.SimpleEntry<TypeSet, Boolean> (
                                type, must_unbox));
             return type;
         }
@@ -134,7 +134,7 @@ class Environment implements CodeRegion {
                 "<init>",
                 org.objectweb.asm.Type
                 .getConstructorDescriptor(MutableFrame.class
-                                          .getConstructors()[0]));
+                                          .getConstructors() [0]));
             child_frame.store(generator);
 
             generator.getBuilder().visitVarInsn(Opcodes.ALOAD, 0);
@@ -235,15 +235,17 @@ class Environment implements CodeRegion {
             generator.stopInterlock();
         }
         for (LoadableCache lookup_result : lookup_results) {
-            if (!lookup_result.getDirectCopy())
+            if (!lookup_result.getDirectCopy()) {
                 continue;
+            }
             base_lookup_cache.set(lookup_result.getNameInfo(),
                                   lookup_result.getValue());
         }
         for (LoadableCache lookup_result : lookup_results) {
             if (!(lookup_result.getSinglyTyped() && !lookup_result
-                    .getDirectCopy()))
+                    .getDirectCopy())) {
                 continue;
+            }
             base_lookup_cache.set(lookup_result.getNameInfo(),
                                   new AutoUnboxValue(lookup_result.getValue(), lookup_result
                                           .getTypes().get(0)));
@@ -411,8 +413,9 @@ class Environment implements CodeRegion {
         StringBuilder error_message = new StringBuilder();
         error_message.append("Expected type ");
         for (int it = 0; it < types.size(); it++) {
-            if (it > 0)
+            if (it > 0) {
                 error_message.append(" or ");
+            }
             error_message.append(Stringish.nameForClass(types.get(it)));
         }
         error_message.append(" for ");

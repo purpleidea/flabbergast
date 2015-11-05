@@ -84,7 +84,7 @@ public class CharacterCategory : Computation {
             }
         }
         var frame = new MutableFrame(task_master, source_reference, context, container);
-        for(int it = 0; it < input.Length; it++) {
+        for (int it = 0; it < input.Length; it++) {
             frame.Set(it + 1, mappings[Char.GetUnicodeCategory(input[it])]);
         }
         result = frame;
@@ -124,7 +124,7 @@ public class StringToCodepoints : Computation {
             }
         }
         var frame = new MutableFrame(task_master, source_reference, context, container);
-        for(int it = 0; it < input.Length; it++) {
+        for (int it = 0; it < input.Length; it++) {
             frame.Set(it + 1, (long) Char.ConvertToUtf32(input, it));
         }
         result = frame;
@@ -398,7 +398,7 @@ public class Escape : Computation {
                     buffer.Append(replacement);
                 } else {
                     bool matched = false;
-                    foreach(var range in ranges.Values) {
+                    foreach (var range in ranges.Values) {
                         if (c >= range.start && c <= range.end) {
                             var utf8 = new byte[4];
 
@@ -463,7 +463,7 @@ public class Instantiation : Computation, IEnumerable<string> {
             }
         }
         var frame = new MutableFrame(task_master, new JunctionReference("instantiation", "<native>", 0, 0, 0, 0, src_ref, tmpl.SourceReference), Context.Append(context, tmpl.Context), container);
-        foreach(var entry in overrides) {
+        foreach (var entry in overrides) {
             frame.Set(entry.Key, entry.Value);
         }
         foreach (var name in tmpl.GetAttributeNames()) {

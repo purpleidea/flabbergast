@@ -382,7 +382,7 @@ public class LineEditor {
                     rendered_text.Append("    ");
                 else {
                     rendered_text.Append('^');
-                    rendered_text.Append((char) (c + 'A' - 1));
+                    rendered_text.Append((char)(c + 'A' - 1));
                 }
             } else
                 rendered_text.Append((char) c);
@@ -801,7 +801,7 @@ public class LineEditor {
         }
 
         public static Handler Control(char c, KeyHandler h) {
-            return new Handler((char) (c - 'A' + 1), h);
+            return new Handler((char)(c - 'A' + 1), h);
         }
     }
 
@@ -837,7 +837,7 @@ public class LineEditor {
             head = tail = cursor = 0;
 
             if (File.Exists(histfile)) {
-                using (var sr = File.OpenText(histfile)) {
+                using(var sr = File.OpenText(histfile)) {
                     string line;
 
                     while ((line = sr.ReadLine()) != null) {
@@ -875,7 +875,7 @@ public class LineEditor {
                 return;
 
             try {
-                using (var sw = File.CreateText(histfile)) {
+                using(var sw = File.CreateText(histfile)) {
                     var start = (count == history.Length) ? head : tail;
                     for (var i = start; i < start + count; i++) {
                         var p = i % history.Length;
@@ -985,13 +985,12 @@ public class LineEditor {
 
 #if DEMO
 class Demo {
-    static void Main ()
-    {
-        LineEditor le = new LineEditor ("foo");
+    static void Main() {
+        LineEditor le = new LineEditor("foo");
         string s;
 
-        while ((s = le.Edit ("shell> ", "")) != null) {
-            Console.WriteLine ("----> [{0}]", s);
+        while ((s = le.Edit("shell> ", "")) != null) {
+            Console.WriteLine("----> [{0}]", s);
         }
     }
 }

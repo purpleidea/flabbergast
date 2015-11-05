@@ -20,8 +20,8 @@ public class Context implements Iterable<Frame> {
             return original;
         }
         int filter = 0;
-        List<Frame> list = new ArrayList<Frame>(original.getLength()
-                                                + new_tail.getLength());
+        List<Frame> list = new ArrayList<Frame> (original.getLength()
+                + new_tail.getLength());
         for (Frame f : original.frames) {
             list.add(f);
             filter |= f.hashCode();
@@ -41,9 +41,9 @@ public class Context implements Iterable<Frame> {
             throw new IllegalArgumentException(
                 "Cannot prepend a null frame to a context.");
         }
-        List<Frame> list = new ArrayList<Frame>(tail == null
-                                                ? 1
-                                                : (tail.getLength() + 1));
+        List<Frame> list = new ArrayList<Frame> (tail == null
+                ? 1
+                : (tail.getLength() + 1));
         list.add(head);
         if (tail != null) {
             for (Frame frame : tail.frames) {

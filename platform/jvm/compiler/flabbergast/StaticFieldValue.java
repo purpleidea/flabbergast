@@ -39,7 +39,7 @@ class StaticFieldValue extends LoadableValue {
                                  Type.getInternalName(field.getDeclaringClass()),
                                  field.getName(), Type.getDescriptor(field.getType()));
         if (field.getType() == String.class) {
-            Generator.visitMethod(SimpleStringish.class.getConstructors()[0],
+            Generator.visitMethod(SimpleStringish.class.getConstructors() [0],
                                   generator);
         } else if (field.getType() == int.class
                    || field.getType() == byte.class

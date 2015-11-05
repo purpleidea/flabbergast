@@ -58,7 +58,7 @@ abstract class NameInfo {
         builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
                                 getInternalName(Lookup.class), "<init>", org.objectweb.asm.Type
                                 .getConstructorDescriptor(Lookup.class
-                                        .getConstructors()[0]));
+                                        .getConstructors() [0]));
         generator.generateConsumeResult(lookup_result);
         builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
                                 getInternalName(Lookup.class), "listen",

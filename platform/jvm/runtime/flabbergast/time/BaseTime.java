@@ -185,7 +185,7 @@ public abstract class BaseTime extends Computation {
             public void consume(Object result) {
                 if (result instanceof ReflectedFrame
                         && ((ReflectedFrame) result).getBacking() instanceof DateTime) {
-                    target.invoke((DateTime) ((ReflectedFrame) result)
+                    target.invoke((DateTime)((ReflectedFrame) result)
                                   .getBacking());
                     if (interlock.decrementAndGet() == 0) {
                         task_master.slot(BaseTime.this);

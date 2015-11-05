@@ -18,8 +18,9 @@ public class ConcatIterator<T> implements Iterator<T> {
 
     @Override
     public T next() {
-        if (first.hasNext())
+        if (first.hasNext()) {
             return first.next();
+        }
         return second.next();
     }
 

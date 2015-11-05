@@ -120,17 +120,20 @@ public abstract class Computation {
     }
 
     protected void wakeupListeners() {
-        if (result == null)
+        if (result == null) {
             throw new UnsupportedOperationException();
+        }
         ex.lock();
         ArrayList<ConsumeResult> consumer_copy = consumer;
         consumer = null;
         ex.unlock();
 
-        if (consumer_copy == null)
+        if (consumer_copy == null) {
             return;
+        }
 
-        for (ConsumeResult cr : consumer_copy)
+        for (ConsumeResult cr : consumer_copy) {
             cr.consume(result);
+        }
     }
 }

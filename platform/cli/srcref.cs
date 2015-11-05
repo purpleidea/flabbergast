@@ -160,7 +160,7 @@ public class ClrSourceReference : SourceReference {
     public ClrSourceReference(Exception e) : this(new StackTrace(e, true)) {
     }
     public ClrSourceReference(StackTrace trace) {
-        for(var it = SKIP; it < trace.FrameCount; it++) {
+        for (var it = SKIP; it < trace.FrameCount; it++) {
             if (typeof(TaskMaster).IsAssignableFrom(trace.GetFrame(it).GetMethod().DeclaringType))
                 break;
             this.trace.Add(string.Format("{0}:{1}", trace.GetFrame(it).GetMethod().DeclaringType.ToString(), trace.GetFrame(it).ToString()));

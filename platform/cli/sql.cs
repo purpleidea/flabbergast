@@ -6,9 +6,9 @@ using System.Threading;
 
 namespace Flabbergast {
 public class DbQuery : Computation {
-    private delegate string NameChooser (DbDataReader rs, long it);
-    private delegate void Retriever (DbDataReader rs, MutableFrame frame, TaskMaster task_master);
-    private delegate object Unpacker (DbDataReader rs, int position, TaskMaster task_master);
+    private delegate string NameChooser(DbDataReader rs, long it);
+    private delegate void Retriever(DbDataReader rs, MutableFrame frame, TaskMaster task_master);
+    private delegate object Unpacker(DbDataReader rs, int position, TaskMaster task_master);
 
     private static Retriever Bind(string name, int position, Unpacker unpacker) {
         return (rs, frame, task_master) => frame.Set(name, rs.IsDBNull(position) ? Unit.NULL : unpacker(rs, position, task_master));
@@ -16,7 +16,7 @@ public class DbQuery : Computation {
 
     static readonly Dictionary<System.Type, Unpacker> unpackers = new Dictionary<System.Type, Unpacker>();
     private static readonly bool debug = (Environment.GetEnvironmentVariable("FLABBERGAST_SQL") ?? "") == "debug";
-    static DbQuery () {
+    static DbQuery() {
         AddUnpacker((rs, position, task_master) => {
             var str = rs.GetString(position);
             return str == null ? null : new SimpleStringish(str);
@@ -205,7 +205,7 @@ public class DbUriHandler : UriHandler {
             err = "Missing “/” followed by database in SQL URI.";
             return false;
         } else {
-            switch(uri_fragment[user_end]) {
+            switch (uri_fragment[user_end]) {
             case '@':
                 // End of user string.
                 builder[user_param] = uri_fragment.Substring(0, user_end);

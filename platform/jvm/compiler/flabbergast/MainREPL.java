@@ -29,8 +29,9 @@ public class MainREPL {
         }
 
         public void print() {
-            if (value != null)
+            if (value != null) {
                 print(value);
+            }
         }
 
         @Override
@@ -127,8 +128,9 @@ public class MainREPL {
         }
         ErrorCollector collector = new ConsoleCollector();
         DynamicCompiler compiler = new DynamicCompiler(collector);
-        if (accessory_lib_path != null)
+        if (accessory_lib_path != null) {
             compiler.prependPath(accessory_lib_path);
+        }
         ConsoleTaskMaster task_master = new ConsoleTaskMaster();
         task_master.addUriHandler(BuiltInLibraries.INSTANCE);
         task_master.addUriHandler(JdbcUriHandler.INSTANCE);
@@ -137,8 +139,9 @@ public class MainREPL {
         if (!result.hasOption('p')) {
             LoadPrecompiledLibraries precomp = new LoadPrecompiledLibraries();
             task_master.addUriHandler(precomp);
-            if (accessory_lib_path != null)
+            if (accessory_lib_path != null) {
                 precomp.prependPath(accessory_lib_path);
+            }
         }
         task_master.addUriHandler(compiler);
         final Ptr<Frame> root = new Ptr<Frame>();
@@ -191,8 +194,9 @@ public class MainREPL {
             int id = 0;
             KeepRunning keep_running = new KeepRunning();
             while (keep_running.allowed() && (line = reader.readLine()) != null) {
-                if (line.trim().isEmpty())
+                if (line.trim().isEmpty()) {
                     continue;
+                }
                 Parser parser = new Parser("<console>", line);
                 PrintToConsole printer = new PrintToConsole(reader);
                 RawPrint raw_printer = new RawPrint(reader);

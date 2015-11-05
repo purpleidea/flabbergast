@@ -232,7 +232,7 @@ public abstract class TaskMaster : IEnumerable<Lookup> {
     private static char[] CreateOrdinalSymbols() {
         var array = new char[26];
         for (var it = 0; it < 26; it++) {
-            array[it] = (char) ('A' + it);
+            array[it] = (char)('A' + it);
         }
         Array.Sort(array);
         return array;
@@ -286,7 +286,7 @@ public abstract class TaskMaster : IEnumerable<Lookup> {
     }
 
     public static string OrdinalNameStr(long id) {
-        var id_str = new char[(int) (sizeof (long) * 8 * Math.Log(2, symbols.Length)) + 1];
+        var id_str = new char[(int)(sizeof(long) * 8 * Math.Log(2, symbols.Length)) + 1];
         if (id < 0) {
             id_str[0] = 'e';
             id = long.MaxValue + id;
@@ -454,7 +454,7 @@ public class Lookup : Computation {
 
     public Frame this[int name, int frame] {
         get {
-            foreach(var current in known_attempts) {
+            foreach (var current in known_attempts) {
                 if (current.frame == frame && current.name > name
                         || current.frame > frame) {
                     return null;
@@ -653,8 +653,7 @@ public abstract class AsyncComputation : Computation {
         return state;
     }
 
-    public object EndGo(IAsyncResult r)
-    {
+    public object EndGo(IAsyncResult r) {
         AsyncResult ar = r as AsyncResult;
         return ar.Result;
     }

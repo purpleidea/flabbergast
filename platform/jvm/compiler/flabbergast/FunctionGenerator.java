@@ -55,10 +55,11 @@ class FunctionGenerator extends Generator {
         ctor_builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
                                      getInternalName(Computation.class), "<init>", Type
                                      .getConstructorDescriptor(Computation.class
-                                             .getConstructors()[0]));
+                                             .getConstructors() [0]));
         for (int it = 0; it < initial_information.length; it++) {
-            if (initial_information[it] == null)
+            if (initial_information[it] == null) {
                 continue;
+            }
             ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
             ctor_builder.visitVarInsn(Opcodes.ALOAD, it + 2);
             initial_information[it].store(ctor_builder);
@@ -117,8 +118,9 @@ class FunctionGenerator extends Generator {
         init_builder.visitTypeInsn(Opcodes.NEW, class_name);
         init_builder.visitInsn(Opcodes.DUP);
         for (int it = 0; it < construct_params.length; it++) {
-            if (construct_params[it] == null)
+            if (construct_params[it] == null) {
                 continue;
+            }
             init_builder.visitVarInsn(Opcodes.ALOAD, it + 1);
         }
         init_builder.visitMethodInsn(Opcodes.INVOKESPECIAL, class_name,

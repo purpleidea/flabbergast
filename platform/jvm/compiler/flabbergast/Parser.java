@@ -335,7 +335,7 @@ public class Parser {
     public Document documentFile(ErrorCollector collector, String lib_name,
                                  String github) throws ParserConfigurationException {
         Ptr<file> result = new Ptr<file>();
-        Ptr<Position> position = new Ptr<Position>(new Position(collector));
+        Ptr<Position> position = new Ptr<Position> (new Position(collector));
         if (file.parseRule_Base(position, result)
                 && position.get().isFinished()) {
             if (result.get().analyse(collector)) {
@@ -369,7 +369,7 @@ public class Parser {
     public <T> T parseFile(ErrorCollector collector, CompilationUnit<T> unit,
                            String type_name) throws Exception {
         final Ptr<file> result = new Ptr<file>();
-        Ptr<Position> position = new Ptr<Position>(new Position(collector));
+        Ptr<Position> position = new Ptr<Position> (new Position(collector));
         if (file.parseRule_Base(position, result)
                 && position.get().isFinished()) {
             if (result.get().analyse(collector)) {
@@ -424,7 +424,7 @@ public class Parser {
     public <T> T parseRepl(ErrorCollector collector, CompilationUnit<T> unit,
                            String type_name) throws Exception {
         final Ptr<repl> result = new Ptr<repl>();
-        Ptr<Position> position = new Ptr<Position>(new Position(collector));
+        Ptr<Position> position = new Ptr<Position> (new Position(collector));
         if (repl.parseRule_Base(position, result)
                 && position.get().isFinished()) {
             if (result.get().analyse(collector)) {

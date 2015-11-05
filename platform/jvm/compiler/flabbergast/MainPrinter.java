@@ -54,8 +54,9 @@ public class MainPrinter {
         }
         ErrorCollector collector = new ConsoleCollector();
         DynamicCompiler compiler = new DynamicCompiler(collector);
-        if (accessory_lib_path != null)
+        if (accessory_lib_path != null) {
             compiler.prependPath(accessory_lib_path);
+        }
         ConsoleTaskMaster task_master = new ConsoleTaskMaster();
         task_master.addUriHandler(BuiltInLibraries.INSTANCE);
         task_master.addUriHandler(JdbcUriHandler.INSTANCE);
@@ -64,8 +65,9 @@ public class MainPrinter {
         if (!result.hasOption('p')) {
             LoadPrecompiledLibraries precomp = new LoadPrecompiledLibraries();
             task_master.addUriHandler(precomp);
-            if (accessory_lib_path != null)
+            if (accessory_lib_path != null) {
                 precomp.prependPath(accessory_lib_path);
+            }
         }
         task_master.addUriHandler(compiler);
         try {

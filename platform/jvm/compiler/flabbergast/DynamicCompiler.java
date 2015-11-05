@@ -123,16 +123,18 @@ public class DynamicCompiler extends LoadLibraries {
         if (cache.containsKey(uri)) {
             return cache.get(uri);
         }
-        if (!uri.startsWith("lib:"))
+        if (!uri.startsWith("lib:")) {
             return null;
+        }
         String type_name = "flabbergast/library/" + uri.substring(4);
         for (String path : paths) {
             for (String extension : extensions) {
                 try {
                     File f = new File(path + File.separator + uri.substring(4)
                                       + extension);
-                    if (!f.exists())
+                    if (!f.exists()) {
                         continue;
+                    }
                     Parser parser = Parser.open(f.getAbsolutePath());
                     Class<? extends Computation> result = parser.parseFile(
                             collector, unit, type_name);
