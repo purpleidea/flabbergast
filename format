@@ -1,0 +1,5 @@
+#!/bin/sh
+
+set -eu
+astyle --mode=cs -nqpHU $(find $(dirname $0)/platform/cli -name '*.cs' -not -name 'compiler-cli.cs')
+astyle --mode=java --style=java -nqpHU $(find $(dirname $0)/platform/jvm -name '*.java' -not -name 'compiler-jvm.java')
