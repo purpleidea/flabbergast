@@ -14,6 +14,9 @@ public abstract class Stringish : IComparable<Stringish> {
     public abstract long Utf8Length {
         get;
     }
+    public abstract long Utf16Length {
+        get;
+    }
 
     public int CompareTo(Stringish other) {
         var this_stream = Stream();
@@ -124,6 +127,12 @@ public class SimpleStringish : Stringish {
         }
     }
 
+    public override long Utf16Length {
+        get {
+            return str.Length;
+        }
+    }
+
     private readonly string str;
     private readonly long length;
 
@@ -146,6 +155,11 @@ public class ConcatStringish : Stringish {
     public override long Length {
         get {
             return chars;
+        }
+    }
+    public override long Utf16Length {
+        get {
+            return head.Utf16Length + tail.Utf16Length;
         }
     }
     public override long Utf8Length {

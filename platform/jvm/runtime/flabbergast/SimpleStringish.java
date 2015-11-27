@@ -36,6 +36,11 @@ public class SimpleStringish extends Stringish {
     }
 
     @Override
+    public long getUtf16Length() {
+        return str.length();
+    }
+
+    @Override
     public Iterator<String> iterator() {
         return new Iterator<String>() {
             boolean state = true;

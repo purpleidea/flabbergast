@@ -147,6 +147,11 @@ str_utf8_length_list : Template {
 		For arg : args, arg_name : Name
 		Select arg_name : XInvoke Flabbergast.Stringish,Flabbergast.Runtime get_Utf8Length (arg To Str)
 }
+str_utf16_length_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke Flabbergast.Stringish,Flabbergast.Runtime get_Utf16Length (arg To Str)
+}
 str_upper_case_list : Template {
 	value :
 		For arg : args, arg_name : Name

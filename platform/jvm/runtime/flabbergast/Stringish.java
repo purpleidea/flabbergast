@@ -116,6 +116,8 @@ public abstract class Stringish
 
     public abstract long getLength();
 
+    public abstract long getUtf16Length();
+
     public abstract long getUtf8Length();
 
     @Override

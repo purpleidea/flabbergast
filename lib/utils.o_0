@@ -603,6 +603,15 @@ str_utf8_length_list : Template ( From lib:utilsinterop ).str_utf8_length_list {
 	args : Used
 }
 
+{{{Get the UTF-16 length of a string.}}}
+str_utf16_length : sumifier(base : str_utf16_length_list)
+
+{{{Get the UTF-16 length of strings.}}}
+str_utf16_length_list : Template ( From lib:utilsinterop ).str_utf16_length_list {
+	{{{A list of strings to measure.}}}
+	args : Used
+}
+
 {{{CONVERT A STRING TO UPPER CASE.}}}
 str_upper_case : str_concatifier(base : str_upper_case_list)
 
