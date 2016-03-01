@@ -1,6 +1,8 @@
 package flabbergast;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -40,8 +42,7 @@ public class MainDocumenter {
                     Transformer transformer = transformerFactory
                                               .newTransformer();
                     DOMSource source = new DOMSource(doc);
-                    StreamResult result = new StreamResult(new File(
-                            output_filename));
+                    StreamResult result = new StreamResult(new OutputStreamWriter(new FileOutputStream(new File(output_filename)), "UTF-8"));
                     transformer.transform(source, result);
                 } else {
                     success = false;
