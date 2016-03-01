@@ -1,7 +1,7 @@
 Introduction{{{Support for interface with SQL relational databases}}}
 
 utils_lib : From lib:utils
-{{{Query an SQL database in and produce a frame containing a frame for each row.
+{{{Query an SQL database and produce a frame containing a frame for each row.
 
 The names of the columns, which must be valid Flabbergast identifiers, will be
 the attribute names in each “row” frame. The special column name
