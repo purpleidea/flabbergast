@@ -1,3 +1,11 @@
+flabbergast (0.14~ppa0) trusty; urgency=medium
+
+  * Ensure documentation ouput is written as UTF-8
+  * Allow calculating UTF16 string length
+  * Add missing JSON dependency
+
+ -- Andre Masella <andre@masella.name>  Tue, 01 Mar 2016 19:41:02 -0500
+
 flabbergast (0.13~ppa0) trusty; urgency=medium
 
   * Fix parser when EOF occurs in comment
