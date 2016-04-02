@@ -13,6 +13,7 @@ driver_config : db_lib.driver_config_tmpl {
 					(If param.validate Is Null Then "" Else "\tif (!Regex.IsMatch(in_properties[\"\(param_name)\"], \"\(param.validate Enforce Str)\")) { err = \"The value for “\(param_name)” is not allowed.\"; return null; }\n") &
 					"\t\t\(Id)_builder[\"\(param.ado_net_param)\"] = in_properties[\"\(param_name)\"];\n\t}\n"
 				With acc : "") &
+			(For fixed_param : fixed_params Reduce acc & "\t\(Id)_builder[\"\(fixed_param.ado_net_param)\"] = \(fixed_param.ado_net_value);\n" With acc : "") &
 			"\tvar \(Id)_connection = DbProviderFactories.GetFactory(\"\(ado_net_name Enforce Str)\").CreateConnection();\n\t\(Id)_connection.ConnectionString = \(Id)_builder.ConnectionString;\n\treturn \(Id)_connection;\n}\n"
 	}
 

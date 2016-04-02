@@ -4,6 +4,7 @@ driver_config_tmpl : Template {
 		jdbc_name : Required
 		ado_net_name : Required
 		params : Required
+		fixed_params : []
 
 		param_list :
 			For param : params, param_name : Name, pos : Ordinal
@@ -24,6 +25,13 @@ driver_config_tmpl : Template {
 		ado_net_db_param : "Database"
 		ado_net_user_param : "User Id"
 		ado_net_password_param : "Password"
+	}
+
+	fixed_param_tmpl : Template {
+		jdbc_param : Required
+		jdbc_value : Required
+		ado_net_param : Required
+		ado_net_value : Required
 	}
 
 	param_tmpl : Template {
@@ -54,6 +62,14 @@ driver_config_tmpl : Template {
 			ado_net_user_param : "Uid"
 			ado_net_password_param : "Pwd"
 			params : {}
+			fixed_params : [
+				fixed_param_tmpl {
+					jdbc_param : "characterEncoding"
+					jdbc_value : "\"UTF-8\""
+					ado_net_param : "charset"
+					ado_net_value : "\"utf8\""
+				}
+			]
 		}
 		postgresql : Template url_driver {
 			friendly_name : "PostgreSQL"
