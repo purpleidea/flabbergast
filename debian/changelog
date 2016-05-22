@@ -1,3 +1,9 @@
+flabbergast (0.15~ppa0) xenial; urgency=medium
+
+  * Force mySQL into Unicode
+
+ -- Andre Masella <andre@masella.name>  Sun, 22 May 2016 08:19:35 -0400
+
 flabbergast (0.14~ppa0) trusty; urgency=medium
 
   * Ensure documentation ouput is written as UTF-8
