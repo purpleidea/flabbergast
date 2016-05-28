@@ -589,10 +589,10 @@ sql_provider : Template {
 sql_providers : {
 	mysql : sql_provider {
 		table_discovery +: {
-			sql_query : "SELECT TABLE_SCHEMA AS tbl_schema, TABLE_NAME AS tbl_name, CONCAT('`', TABLE_SCHEMA, '`.`', TABLE_NAME, '`') AS sql_from, CONCAT(LOWER(SUBSTRING(TABLE_NAME, 0, 1)), SUBSTRING(TABLE_NAME, 1)) AS ATTRNAME FROM information_schema.tables WHERE TABLE_SCHEMA <> 'information_schema'"
+			sql_query : "SELECT QUOTE(TABLE_SCHEMA) AS tbl_schema, QUOTE(TABLE_NAME) AS tbl_name, CONCAT('`', TABLE_SCHEMA, '`.`', TABLE_NAME, '`') AS sql_from, CONCAT(LOWER(SUBSTRING(TABLE_NAME, 0, 1)), SUBSTRING(TABLE_NAME, 1)) AS ATTRNAME FROM information_schema.tables WHERE TABLE_SCHEMA NOT IN ('information_schema', 'performance_schema')"
 		}
 		column_discovery +: {
-			sql_query : "SELECT  CONCAT('`', TABLE_SCHEMA, '`.`', TABLE_NAME, '`.`', COLUMN_NAME, '`') AS sql_expr, CONCAT(LOWER(SUBSTRING(COLUMN_NAME, 0, 1)), SUBSTRING(COLUMN_NAME, 1)) AS ATTRNAME, lookup AS `` FROM information_schema.COLUMNS, (SELECT 'bit%' AS type_pattern, 'sql_types.bool' AS lookup UNION SELECT '%int%' AS type_pattern, 'sql_types.int' AS lookup UNION SELECT 'float%' AS type_pattern, 'sql_types.float' AS lookup UNION SELECT 'double%' AS type_pattern, 'sql_types.float' AS lookup UNION SELECT 'decimal%' AS type_pattern, 'sql_types.float' AS lookup UNION SELECT '%char%' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT '%blob%' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT 'enum%' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT 'text' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT 'date' AS type_pattern, 'sql_types.timestamp' AS lookup UNION SELECT 'time%' AS type_pattern, 'sql_types.timestamp' AS lookup UNION SELECT 'year%' AS type_pattern, 'sql_types.timestamp' AS lookup UNION SELECT 'interval%' AS type_pattern, 'sql_types.interval' AS lookup) AS type_info WHERE COLUMN_TYPE LIKE type_pattern AND TABLE_SCHEMA='\(table.tbl_schema)' AND TABLE_NAME='\(table.tbl_name)'"
+			sql_query : "SELECT CONCAT('`', TABLE_SCHEMA, '`.`', TABLE_NAME, '`.`', COLUMN_NAME, '`') AS sql_expr, CONCAT(LOWER(SUBSTRING(COLUMN_NAME, 1, 1)), SUBSTRING(COLUMN_NAME, 2)) AS ATTRNAME, lookup AS `$sql_type` FROM information_schema.COLUMNS, (SELECT 'bit%' AS type_pattern, 'sql_types.bool' AS lookup UNION SELECT '%int%' AS type_pattern, 'sql_types.int' AS lookup UNION SELECT 'float%' AS type_pattern, 'sql_types.float' AS lookup UNION SELECT 'double%' AS type_pattern, 'sql_types.float' AS lookup UNION SELECT 'decimal%' AS type_pattern, 'sql_types.float' AS lookup UNION SELECT '%char%' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT '%blob%' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT 'enum%' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT 'text' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT 'date' AS type_pattern, 'sql_types.timestamp' AS lookup UNION SELECT 'time%' AS type_pattern, 'sql_types.timestamp' AS lookup UNION SELECT 'year%' AS type_pattern, 'sql_types.timestamp' AS lookup UNION SELECT 'interval%' AS type_pattern, 'sql_types.interval' AS lookup) AS type_info WHERE COLUMN_TYPE LIKE type_pattern AND TABLE_SCHEMA=\(table.tbl_schema) AND TABLE_NAME=\(table.tbl_name)"
 		}
 		transformations : {
 			backslash : utils_lib.str_transform.char_tmpl { char : "\\"  replacement : "\\\\" }
@@ -620,10 +620,10 @@ sql_providers : {
 	}
 	postgresql : sql_provider {
 		table_discovery +: {
-			sql_query : "SELECT '\"' || table_schema || '\".\"' || table_name || '\"' AS sql_from, table_schema, table_name, regexp_replace(regexp_replace(table_schema || '_' || table_name, '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 't\\1') AS \"ATTRNAME\" FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema');"
+			sql_query : "SELECT QUOTE_IDENT(table_schema) || '.' || QUOTE_IDENT(table_name) AS sql_from, QUOTE_LITERAL(table_schema) AS table_schema, QUOTE_LITERAL(table_name) AS table_name, regexp_replace(regexp_replace(table_schema || '_' || table_name, '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 't\\1') AS \"ATTRNAME\" FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema');"
 		}
 		column_discovery +: {
-			sql_query : "SELECT '\"' || table_schema || '\".\"' || table_name || '\".\"' || column_name || '\"' AS sql_expr, regexp_replace(regexp_replace(column_name, '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 'c\\1') AS \"ATTRNAME\", data_type, 'sql_types.' || data_xlate.lookup AS \"$sql_type\" FROM information_schema.columns, (VALUES ('bigint', 'int'), ('bigserial', 'int'), ('integer', 'int'), ('interval%', 'int'), ('serial', 'int'), ('smallint', 'int'), ('boolean', 'bool'), ('numeric%', 'float'), ('double precision', 'float'), ('real', 'float'), ('bytea', 'str'), ('character%', 'bool'), ('text', 'str'), ('date', 'timestamp'), ('time%', 'timestamp'), ('interval%', 'interval')) AS data_xlate (name, lookup) WHERE table_schema = '\(table.table_schema)' AND table_name = '\(table.table_name)' AND data_type LIKE data_xlate.name"
+			sql_query : "SELECT QUOTE_IDENT(table_schema) || '.' || QUOTE_IDENT(table_name) || '.' || QUOTE_IDENT(column_name) AS sql_expr, regexp_replace(regexp_replace(column_name, '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 'c\\1') AS \"ATTRNAME\", data_type, 'sql_types.' || data_xlate.lookup AS \"$sql_type\" FROM information_schema.columns, (VALUES ('bigint', 'int'), ('bigserial', 'int'), ('integer', 'int'), ('interval%', 'int'), ('serial', 'int'), ('smallint', 'int'), ('boolean', 'bool'), ('numeric%', 'float'), ('double precision', 'float'), ('real', 'float'), ('bytea', 'str'), ('character%', 'bool'), ('text', 'str'), ('date', 'timestamp'), ('time%', 'timestamp'), ('interval%', 'interval')) AS data_xlate (name, lookup) WHERE table_schema = \(table.table_schema) AND table_name = \(table.table_name) AND data_type LIKE data_xlate.name"
 		}
 		quote_start : "E'"
 		transformations : {
@@ -651,7 +651,7 @@ sql_providers : {
 			sql_query : "SELECT name AS \"ATTRNAME\", tbl_name AS sql_from FROM sqlite_master WHERE type = 'table'"
 		}
 		column_discovery +: {
-			sql_query : "PRAGMA table_info(\(table.sql_from))"
+			sql_query : "PRAGMA table_info(\"\(table.sql_from)\")"
 			# SQLite doesn't give us the power to control the format of the data we
 			# get back, so we get to do it locally. Fun.
 			value +orig:
