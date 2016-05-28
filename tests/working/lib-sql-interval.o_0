@@ -10,6 +10,7 @@ test_query : Template sql_lib.offline_query {
 }
 
 sql_stmts : {
+	mssql : "SELECT 3 AS a FROM XXX"
 	mysql : "SELECT INTERVAL 3 SECONDS AS a FROM XXX"
 	postgresql : "SELECT INTERVAL '3' SECONDS AS a FROM XXX"
 	sqlite : "SELECT 3 AS a FROM XXX"

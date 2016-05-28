@@ -601,6 +601,67 @@ sql_provider : Template {
 	arithmetic_rules : sql_aritmetic_tmpl {}
 }
 sql_providers : {
+	mssql : sql_provider {
+		table_discovery +: {
+			sql_query : "SELECT QUOTENAME(table_schema) + '.' + QUOTENAME(table_name) AS sql_from, QUOTENAME(table_schema, '''') as table_schema, QUOTENAME(table_name, '''') AS table_name, LOWER(LEFT(table_schema, 1)) + RIGHT(table_schema, LEN(table_schema) - 1) + '_' + table_name AS [ATTRNAME] FROM information_schema.tables WHERE UPPER(table_schema) NOT IN ('SYS', 'INFORMATION_SCHEMA') AND PATINDEX('%[^a-zA-Z0-9_]%', table_schema) = 0 AND PATINDEX('%[^a-zA-Z0-9_]%', table_name) = 0;"
+		}
+		column_discovery +: {
+			sql_query : "SELECT QUOTENAME(table_schema) + '.' + QUOTENAME(table_name) + '.' + QUOTENAME(column_name) AS sql_expr, LOWER(LEFT(column_name, 1)) + RIGHT(column_name, LEN(column_name) - 1) AS [ATTRNAME], data_type, 'sql_types.' + data_xlate.lookup AS [$sql_type] FROM information_schema.columns, (VALUES ('bigint', 'int'), ('decimal', 'int'), ('int', 'int'), ('money', 'int'), ('numeric', 'int'), ('smallint', 'int'), ('smallmoney', 'int'), ('tinyint', 'int'), ('bit', 'bool'), ('float', 'float'), ('real', 'float'), ('%char%', 'str'), ('%text%', 'str'), ('%binary%', 'str'), ('%datetime%', 'timestamp'), ('time%', 'timestamp'), ('date', 'timestamp')) AS data_xlate (name, lookup) WHERE table_schema = \(table.table_schema) AND table_name = \(table.table_name) AND data_type LIKE data_xlate.name AND PATINDEX('%[^a-zA-Z0-9_]%', column_name) = 0;"
+		}
+		quote_start : "('"
+		quote_end : "')"
+		transformations : {
+			quote : utils_lib.str_transform.char_tmpl { char : "'"  replacement : "''" }
+			nonprint : utils_lib.str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "' + NCHAR(", utf8_0, ") + '" ] }
+			unicode : utils_lib.str_transform.range_tmpl { start : "\u0100"  end : "\uFFFF"  replacement : [ "' + NCHAR(", utf32, ") + '" ]  mode : mode_decimal }
+		}
+		expr : expr_tmpl {
+			extract +: {
+				year : "year"
+				month : "month"
+				day : "day"
+				hour : "hour"
+				minute : "minute"
+				second : "second"
+				sql_start : "DATEPART('"
+				sql_middle : "', "
+				sql_end : ")"
+			}
+			interval_const +: {
+				sql_expr : time Enforce Int
+			}
+			str_join : Template base_variadic_func_tmpl {
+				sql_func : "CONCAT"
+				sql_allowed_arg_type_id : sql_types.str.id
+			}
+			str_slice +: {
+				sql_substr_syntax : "SUBSTRING(" & specials.i.sql_expr & ", " & specials.s.sql_expr & ", " & specials.l.sql_expr & ")"
+			}
+			now +: {
+				sql_expr : If utc Then "GETUTCDATE()" Else "CURRENT_TIMESTAMP"
+			}
+		}
+		arithmetic_rules : sql_aritmetic_tmpl {
+			tv : {
+				ops : sql_arith_ops.add.id B| sql_arith_ops.sub.id
+				left_type : sql_types.timestamp.id
+				right_type : sql_types.interval.id
+				result_type : sql_types.timestamp
+				render : Template {
+					value : "DATEADD('second', 0 " & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ", " & specials.l.sql_expr Enforce Str & ")"
+				}
+			}
+			tt : {
+				ops : sql_arith_ops.sub.id
+				left_type : sql_types.timestamp.id
+				right_type : sql_types.timestamp.id
+				result_type : sql_types.interval
+				render : Template {
+					value : "DATEDIFF('second', " & specials.l.sql_expr Enforce Str & ", " & specials.r.sql_expr Enforce Str & ")"
+				}
+			}
+		}
+	}
 	mysql : sql_provider {
 		table_discovery +: {
 			sql_query : "SELECT QUOTE(TABLE_SCHEMA) AS tbl_schema, QUOTE(TABLE_NAME) AS tbl_name, CONCAT('`', TABLE_SCHEMA, '`.`', TABLE_NAME, '`') AS sql_from, CONCAT(LOWER(SUBSTRING(TABLE_NAME, 0, 1)), SUBSTRING(TABLE_NAME, 1)) AS ATTRNAME FROM information_schema.tables WHERE TABLE_SCHEMA NOT IN ('information_schema', 'performance_schema')"
