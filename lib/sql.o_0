@@ -444,6 +444,20 @@ expr_tmpl : Template {
 		sql_op : "||"
 		sql_allowed_arg_type_id : sql_types.str.id
 	}
+	str_slice : Template base_expr_tmpl {
+	  input : Required
+		start : Required
+		length : Required
+
+		sql_substr_syntax : "SUBSTRING(" & specials.i.sql_expr & " FROM " & specials.s.sql_expr & " FOR " & specials.l.sql_expr & ")"
+		specials : sql_marshall_list(args : { i : input  s : start  l : length }, provider : provider)
+		sql_type : sql_types.str
+		sql_expr :
+			If specials.i.sql_type.coerce B& sql_types.str.id == 0 Then Error "Input of string slice is not a string."
+			Else If specials.s.sql_type.coerce B& sql_types.int.id == 0 Then Error "Start of string slice is not an integer."
+			Else If specials.l.sql_type.coerce B& sql_types.int.id == 0 Then Error "Length of string slice is not an integer."
+			Else sql_substr_syntax
+	}
 	sub : Template base_arith_expr_tmpl {
 		sql_op : sql_arith_ops.sub
 	}
@@ -703,6 +717,9 @@ sql_providers : {
 			}
 			now +: {
 				sql_expr : "datetime('now', '\(If utc Then "utc" Else "localtime")')"
+			}
+			str_slice +: {
+				sql_substr_syntax : "SUBSTR(" & specials.i.sql_expr & ", " & specials.s.sql_expr & ", " & specials.l.sql_expr & ")"
 			}
 		}
 		arithmetic_rules : sql_aritmetic_tmpl {

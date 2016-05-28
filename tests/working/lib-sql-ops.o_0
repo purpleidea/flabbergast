@@ -7,13 +7,18 @@ test_query : Template sql_lib.offline_query {
 			left : 3
 			right : 4
 		}
+		b : expr.str_slice {
+			input : "foo"
+			start : 1
+			length : 2
+		}
 	}
 }
 
 sql_stmts : {
-	mysql : "SELECT (3+4) AS a FROM XXX"
-	postgresql : "SELECT (3+4) AS a FROM XXX"
-	sqlite : "SELECT (3+4) AS a FROM XXX"
+	mysql : "SELECT (3+4) AS a, SUBSTRING('foo' FROM 1 FOR 2) AS b FROM XXX"
+	postgresql : "SELECT (3+4) AS a, SUBSTRING(E'foo' FROM 1 FOR 2) AS b FROM XXX"
+	sqlite : "SELECT (3+4) AS a, SUBSTR('foo', 1, 2) AS b FROM XXX"
 }
 
 value : For provider : sql_lib.sql_providers, stmt : sql_stmts
