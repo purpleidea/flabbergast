@@ -12,7 +12,7 @@ test_query : Template sql_lib.offline_query {
 sql_stmts : {
 	mysql : "SELECT INTERVAL 3 SECONDS AS a FROM XXX"
 	postgresql : "SELECT INTERVAL '3' SECONDS AS a FROM XXX"
-	sqlite : Null
+	sqlite : "SELECT 3 AS a FROM XXX"
 }
 
 value : For provider : sql_lib.sql_providers, stmt : sql_stmts

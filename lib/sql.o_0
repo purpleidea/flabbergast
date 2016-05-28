@@ -688,7 +688,7 @@ sql_providers : {
 		}
 		expr : expr_tmpl {
 			interval_const +: {
-				sql_expr : Error "SQLite does not support intervals."
+				sql_expr : time Enforce Int
 			}
 			extract +: {
 				year : "Y"
@@ -713,6 +713,15 @@ sql_providers : {
 				result_type : sql_types.interval
 				render : Template {
 					value : "(strftime('%s', " & specials.l.sql_expr Enforce Str & ") - strftime('%s', " & specials.r.sql_expr Enforce Str & "))"
+				}
+			}
+			tv : {
+				ops : sql_arith_ops.add.id B| sql_arith_ops.sub.id
+				left_type : sql_types.timestamp.id
+				right_type : sql_types.interval.id
+				result_type : sql_types.timestamp
+				render : Template {
+					value : "datetime(" & specials.l.sql_expr & ", '" & sql_op.symbol Enforce Str & "' || " & specials.r.sql_expr Enforce Str & " || ' seconds')"
 				}
 			}
 		}
