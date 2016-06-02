@@ -78,7 +78,7 @@ query : Template queryifier(base : retrieve) {
 		\Mono{column.t.c}.}}}
 		column :
 			For t : table, name : Name
-				Select name : provider.column_discovery(connection : connection, table : t)
+				Select name : t.known_columns
 		{{{The default set of columns to retreive is all known columns from the selected tables.}}}
 		columns :
 			For col : column
@@ -590,7 +590,11 @@ sql_provider : Template {
 	{{{An SQL statement that returns tables and views as a frame of frames with a
 	\{sql_from} containing the string needed to include this entity in a
 	\Mono{FROM} clause. Other implementation-specific attributes are permitted.}}}
-	table_discovery : Template retrieve {}
+	table_discovery : Template retrieve {
+		sql_row_tmpl : Template {
+			known_columns : column_discovery(connection : connection, table : This)
+		}
+	}
 	{{{An SQL statement that will return the columns for a particular table or
 	view as a frame of frames extending \{expr.base_expr_tmpl}. Other
 	implementation-specific attributes are permitted.}}}
