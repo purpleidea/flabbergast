@@ -70,8 +70,12 @@ queryifier : Template {
 
 {{{Query an SQL database for the delicious records within.}}}
 query : Template queryifier(base : retrieve) {
+		{{{A template of templates to generate tables to be embedded in the query. See \{sql_literal_table_tmpl}.}}}
+		literal_tables : Template {}
 		{{{A collection of tables provided by the database. These may be reference in the \{tables} list.}}}
-		table : provider.table_discovery(connection : connection)
+		table :
+			For real : provider.table_discovery(connection : connection), literal : literal_tables {}, name : Name
+				Select name : real ?? (literal {})
 		{{{The collection of columns available from each of the tables specified in
 		\{tables}. These can be used in any place that accepts an expression. Given
 		there is a column \Mono{c} in a table \Mono{t}, reference it as
@@ -470,6 +474,22 @@ expr_tmpl : Template {
 	}
 }
 
+{{{A table from Flabbergast to be embedded in the query. It should probably be short.}}}
+sql_literal_table_tmpl : Template {
+  {{{A list of frames to convert to rows in the table. If any attributes are missing in some rows, nulls will be substituted. }}}
+	rows : Required
+	marshalled_rows : For row : rows Select sql_marshall_list(args : row, provider : provider)
+	column_types :
+		For row : marshalled_rows
+			Reduce
+				For r : row, a : acc, n : Name
+					Select n : If a Is Null || r Is Null Then r?.sql_type ?? a Else synthetic_sql_type { coerce : a.coerce B& r.sql_type.coerce }
+			With acc : {}
+	table_name : Id
+	known_columns : For type : column_types, name : Name Select name : { sql_expr : table_name Enforce Str & "." & name  sql_type : type }
+	sql_from : (provider.generate_literal_from {}).value
+}
+
 sql_arith_ops : {
 	add : { id : 1  symbol : "+" }
 	sub : { id : 2  symbol : "-" }
@@ -603,6 +623,37 @@ sql_provider : Template {
 	}
 	{{{List of arithmetic rules this database supports.}}}
 	arithmetic_rules : sql_aritmetic_tmpl {}
+	{{{Generate a FROM clause containing literal data.}}}
+	generate_literal_from : Template {
+		column_list :
+			(For name : Name, type : column_types, pos : Ordinal
+				Reduce acc & (If pos > 1 Then "," Else "") & name
+				With acc : table_name Enforce Str & "(") & ")"
+		value_list :
+			For row : marshalled_rows, pos : Ordinal
+				Reduce
+					acc &
+					(If pos > 1 Then "," Else "") &
+					(For column : row, type : column_types, name : Name, pos : Ordinal
+						Reduce acc & (If pos > 1 Then "," Else "") & (column?.sql_expr ?? "NULL")
+						With acc : "(") & ")"
+				With acc : ""
+		value : "(VALUES " & value_list Enforce Str & ") AS " & column_list
+	}
+}
+sql_provider_with_union_literal : Template sql_provider {
+	generate_literal_from : Template {
+		value_list :
+			For row : marshalled_rows, pos : Ordinal
+				Reduce
+					acc &
+					(If pos > 1 Then " UNION " Else "") &
+					(For column : row, type : column_types, name : Name, pos : Ordinal
+						Reduce acc & (If pos > 1 Then "," Else "") & (column?.sql_expr ?? "NULL") & " AS " & name
+						With acc : "SELECT ")
+				With acc : ""
+		value : "(" & value_list Enforce Str & ") AS " & table_name Enforce Str
+	}
 }
 sql_providers : {
 	mssql : sql_provider {
@@ -666,7 +717,7 @@ sql_providers : {
 			}
 		}
 	}
-	mysql : sql_provider {
+	mysql : sql_provider_with_union_literal {
 		table_discovery +: {
 			sql_query : "SELECT QUOTE(TABLE_SCHEMA) AS tbl_schema, QUOTE(TABLE_NAME) AS tbl_name, CONCAT('`', TABLE_SCHEMA, '`.`', TABLE_NAME, '`') AS sql_from, CONCAT(LOWER(SUBSTRING(TABLE_NAME, 0, 1)), SUBSTRING(TABLE_NAME, 1)) AS ATTRNAME FROM information_schema.tables WHERE TABLE_SCHEMA NOT IN ('information_schema', 'performance_schema')"
 		}
@@ -725,7 +776,7 @@ sql_providers : {
 			}
 		}
 	}
-	sqlite : sql_provider {
+	sqlite : sql_provider_with_union_literal {
 		table_discovery +: {
 			sql_query : "SELECT name AS \"ATTRNAME\", tbl_name AS sql_from FROM sqlite_master WHERE type = 'table'"
 		}
