@@ -67,7 +67,7 @@ function searchChange() {
         var starts_uses = [];
         var contains_defs = [];
         var contains_uses = [];
-        var unmatched = [];
+        var unmatched = ["#terms a.defnone", "#terms a.usenone"];
 
         var known_terms = getTerms();
         for (var it = 0; it < known_terms.length; it++) {
