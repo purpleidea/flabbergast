@@ -88,7 +88,7 @@ function searchChange() {
             }
         }
 
-        if (exact_defs.length > 0 || exact_uses.length > 0 || starts_defs.length > 0 || starts_defs.length > 0) {
+        if (exact_defs.length > 0 || exact_uses.length > 0 || starts_defs.length > 0 || starts_uses.length > 0) {
             termcss.innerHTML = cssForArray(exact_defs, "font-weight: bold; color: #4F94CD; display: block !important;") + cssForArray(exact_uses, "font-weight: bold; display: block !important;") + cssForArray(starts_defs, "color: #4F94CD; display: block !important;") + cssForArray(starts_uses, "display: block !important;") + cssForArray(unmatched.concat(contains_defs, contains_uses), "display: none;");
         } else {
             termcss.innerHTML = cssForArray(contains_defs, "font-weight: bold; color: #4F94CD; display: block !important;") + cssForArray(contains_uses, "font-weight: bold; display: block !important;") + cssForArray(unmatched, "display: none;");
