@@ -486,7 +486,12 @@ sql_literal_table_tmpl : Template {
 					Select n : If a Is Null || r Is Null Then r?.sql_type ?? a Else synthetic_sql_type { coerce : a.coerce B& r.sql_type.coerce }
 			With acc : {}
 	table_name : Id
-	known_columns : For type : column_types, name : Name Select name : { sql_expr : table_name Enforce Str & "." & name  sql_type : type }
+	known_columns :
+		For type : column_types, name : Name
+			Select name :
+				If type.coerce == 0
+					Then Error "Column “\(name)” in literal table does not have consistent type."
+					Else { sql_expr : table_name Enforce Str & "." & name  sql_type : type }
 	sql_from : (provider.generate_literal_from {}).value
 }
 
