@@ -83,7 +83,7 @@ queryifier : Template {
 query : Template queryifier(base : retrieve) {
 		{{{A template of templates to generate tables to be embedded in the query. See \{sql_literal_table_tmpl}.}}}
 		literal_tables : Template {}
-		{{{A collection of tables provided by the database. These may be reference in the \{tables} list.}}}
+		{{{A collection of tables provided by the database.}}}
 		table :
 			For real : provider.table_discovery(connection : connection), literal : literal_tables {}, name : Name
 				Select name : real ?? (literal {})
@@ -218,7 +218,7 @@ expr_tmpl : Template {
 		sql_tables :
 			For arg : sql_args
 				Reduce For table : arg.sql_tables, acc_table : acc, name : Name Select name : table ?? acc_table
-				With acc_table : {}
+				With acc : {}
 	}
 	base_infix_expr_tmpl : Template base_args_tmpl {
 		{{{The expressions to be put together.}}}
@@ -333,7 +333,7 @@ expr_tmpl : Template {
 				If when_specials.t.sql_type.coerce B& sql_allowed_test_type.coerce == 0
 					Then Error "Incompatible type \(when_specials.t.sql_type.name) used in test for WHEN. Expected \(sql_allowed_test_type.name)."
 					Else " WHEN \(when_specials.t.sql_expr) THEN \(when_specials.r.sql_expr)"
-			sql_tables : For test_table : when_specials.t.sql_tables, input_table : when_specials.r.sql_type, name : Name Select name : test_table ?? input_table
+			sql_tables : For test_table : when_specials.t.sql_tables, input_table : when_specials.r.sql_tables, name : Name Select name : test_table ?? input_table
 		}
 
 		specials : Template {
@@ -357,10 +357,11 @@ expr_tmpl : Template {
 							Else acc B& case.sql_type.coerce
 					With acc : If sql_specials.e Is Null Then sql_types.any Else sql_specials.e.sql_type.coerce
 		}
-		sql_tables : For s : specials
+		sql_tables : For s : sql_specials
+			Where !(s Is Null)
 			Reduce For table : s.sql_tables, acc_table : acc, name : Name Select name : table ?? acc_table
 			With acc : (For c : cases
-					Reduce For table : c.sql_types, acc_table : acc, name : Name Select name : table ?? acc_table
+					Reduce For table : c.sql_tables, acc_table : acc, name : Name Select name : table ?? acc_table
 					With acc : {})
 	}
 	case_bool : Template base_case_tmpl {

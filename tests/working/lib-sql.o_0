@@ -1,25 +1,36 @@
 sql_lib : From lib:sql
 
 test_query : Template sql_lib.offline_query {
-	tables : [ { sql_from : "XXX" }, { sql_from : "YYY" } ]
+	table : {
+		xxx : offline_table_tmpl {
+			table_schema : "BLAH"
+			table_name : "XXX"
+			columns +: {
+				aaa : column_tmpl { column_name : "AAA" }
+				bbb : column_tmpl { column_name : "BBB" }
+			}
+		}
+		yyy : offline_table_tmpl {
+			table_name : "YYY"
+			table_schema : "BLAH"
+			columns +: {
+				ccc : column_tmpl { column_name : "CCC"  sql_type : sql_types.int }
+				ddd : column_tmpl { column_name : "DDD"  sql_type : sql_types.float }
+			}
+		}
+	}
 	columns : {
 		a : expr.and {
 			args : [
 				expr.not {
 					arg : expr.is_null {
-						arg : expr.base_expr_tmpl {
-							sql_expr : "AAA"
-							sql_type : sql_types.str
-						}
+						arg : column.xxx.aaa
 					}
 				},
 				expr.le {
 					left : expr.cast {
 						sql_type : sql_types.int
-						arg : expr.base_expr_tmpl {
-							sql_type : sql_types.str
-							sql_expr : "BBB"
-						}
+						arg : column.xxx.bbb
 					}
 					right : 5
 				}
@@ -28,15 +39,9 @@ test_query : Template sql_lib.offline_query {
 		b : expr.avg {
 			args : [
 				expr.negate {
-					arg : expr.base_expr_tmpl {
-						sql_expr : "CCC"
-						sql_type : sql_types.int
-					}
+					arg : column.yyy.ccc
 				},
-				expr.base_expr_tmpl {
-					sql_expr : "DDD"
-					sql_type : sql_types.float
-				}
+				column.yyy.ddd
 			]
 		}
 	}
@@ -67,9 +72,10 @@ test_query : Template sql_lib.offline_query {
 }
 
 sql_stmts : {
-	mysql : "SELECT ((NOT (AAA IS NULL))AND((CAST(BBB AS INTEGER)) <= 5)) AS a, AVG((- CCC), DDD) AS b FROM XXX, YYY WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN 'foo' END) LIKE 'foo%')"
-	postgresql : "SELECT ((NOT (AAA IS NULL))AND((CAST(BBB AS INTEGER)) <= 5)) AS a, AVG((- CCC), DDD) AS b FROM XXX, YYY WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN E'foo' END) LIKE E'foo%')"
-	sqlite : "SELECT ((NOT (AAA IS NULL))AND((CAST(BBB AS INTEGER)) <= 5)) AS a, AVG((- CCC), DDD) AS b FROM XXX, YYY WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN 'foo' END) LIKE 'foo%')"
+	mssql : "SELECT ((NOT ([BLAH].[XXX].[AAA] IS NULL))AND((CAST([BLAH].[XXX].[BBB] AS INTEGER)) <= 5)) AS a, AVG((- [BLAH].[YYY].[CCC]), [BLAH].[YYY].[DDD]) AS b FROM [BLAH].[XXX], [BLAH].[YYY] WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN ('foo') END) LIKE ('foo%'))"
+	mysql : "SELECT ((NOT (`BLAH`.`XXX`.`AAA` IS NULL))AND((CAST(`BLAH`.`XXX`.`BBB` AS INTEGER)) <= 5)) AS a, AVG((- `BLAH`.`YYY`.`CCC`), `BLAH`.`YYY`.`DDD`) AS b FROM `BLAH`.`XXX`, `BLAH`.`YYY` WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN 'foo' END) LIKE 'foo%')"
+	postgresql : "SELECT ((NOT (\"BLAH\".\"XXX\".\"AAA\" IS NULL))AND((CAST(\"BLAH\".\"XXX\".\"BBB\" AS INTEGER)) <= 5)) AS a, AVG((- \"BLAH\".\"YYY\".\"CCC\"), \"BLAH\".\"YYY\".\"DDD\") AS b FROM \"BLAH\".\"XXX\", \"BLAH\".\"YYY\" WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN E'foo' END) LIKE E'foo%')"
+	sqlite : "SELECT ((NOT (\"BLAH\".\"XXX\".\"AAA\" IS NULL))AND((CAST(\"BLAH\".\"XXX\".\"BBB\" AS INTEGER)) <= 5)) AS a, AVG((- \"BLAH\".\"YYY\".\"CCC\"), \"BLAH\".\"YYY\".\"DDD\") AS b FROM \"BLAH\".\"XXX\", \"BLAH\".\"YYY\" WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN 'foo' END) LIKE 'foo%')"
 }
 
 value : For provider : sql_lib.sql_providers, stmt : sql_stmts
