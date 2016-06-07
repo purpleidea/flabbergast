@@ -36,6 +36,13 @@ queryifier : Template {
 		row in the results.}}}
 		where : Template {}
 
+		{{{The collection of columns available from each of the tables specified in
+		\{tables}. These can be used in any place that accepts an expression. Given
+		there is a column \Mono{c} in a table \Mono{t}, reference it as
+		\Mono{column.t.c}.}}}
+		column :
+			For t : table, name : Name
+				Select name : t.known_columns
 		{{{Provides templates for construction expressions. See \{expr_tmpl} for details.}}}
 		expr : provider.expr
 
@@ -76,13 +83,6 @@ query : Template queryifier(base : retrieve) {
 		table :
 			For real : provider.table_discovery(connection : connection), literal : literal_tables {}, name : Name
 				Select name : real ?? (literal {})
-		{{{The collection of columns available from each of the tables specified in
-		\{tables}. These can be used in any place that accepts an expression. Given
-		there is a column \Mono{c} in a table \Mono{t}, reference it as
-		\Mono{column.t.c}.}}}
-		column :
-			For t : table, name : Name
-				Select name : t.known_columns
 		{{{The default set of columns to retreive is all known columns from the selected tables.}}}
 		columns :
 			For col : column
@@ -99,6 +99,27 @@ query : Template queryifier(base : retrieve) {
 {{{Create an SQL query without a connection to the database. The tables and
 columns available must be manually curated.}}}
 offline_query : queryifier(base : Template { value : sql_query })
+{{{The template to create a table for an offline query.}}}
+offline_table_tmpl : Template {
+	{{{The name of the schema this table belongs to.}}}
+	table_schema : Required
+	{{{The name of this table in this schema.}}}
+	table_name : Required
+	{{{The columns in this table, using the \{column_tmpl}.}}}
+	columns : Template {}
+	{{{The template to use for each column.}}}
+	column_tmpl : Template provider.expr.base_expr_tmpl {
+		{{{The name of the column.}}}
+		column_name : Required
+		{{{The type of the column. If not specified, it is assumed to be a string.}}}
+		sql_type : sql_types.str
+
+		sql_expr : sql_from Enforce Str & "." & provider.symbol_start Enforce Str & column_name Enforce Str & provider.symbol_end Enforce Str
+	}
+
+	known_columns : columns {}
+	sql_from : (If table_schema Is Null Then "" Else provider.symbol_start Enforce Str & table_schema Enforce Str & provider.symbol_end Enforce Str & ".") & provider.symbol_start Enforce Str & table_name Enforce Str & provider.symbol_end Enforce Str
+}
 
 {{{Convert a value into a SQL expression if possible.}}}
 sql_marshall : utils_lib.str_concatifier(base : sql_marshall_list, delimiter : "")
@@ -612,6 +633,10 @@ sql_provider : Template {
 	quote_start : "'"
 	{{{The postamble end a string.}}}
 	quote_end : "'"
+	{{{The preamble of a symbol (table, schema, or column name).}}}
+	symbol_start : "\""
+	{{{The postamble of a symbol (table, schema, or column name).}}}
+	symbol_end : "\""
 	{{{An SQL statement that returns tables and views as a frame of frames with a
 	\{sql_from} containing the string needed to include this entity in a
 	\Mono{FROM} clause. Other implementation-specific attributes are permitted.}}}
@@ -670,6 +695,8 @@ sql_providers : {
 		}
 		quote_start : "('"
 		quote_end : "')"
+		symbol_start : "["
+		symbol_end : "]"
 		transformations : {
 			quote : utils_lib.str_transform.char_tmpl { char : "'"  replacement : "''" }
 			nonprint : utils_lib.str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "' + NCHAR(", utf8_0, ") + '" ] }
@@ -740,6 +767,8 @@ sql_providers : {
 			tab : utils_lib.str_transform.char_tmpl { char : "\t"  replacement : "\\t" }
 			eof : utils_lib.str_transform.char_tmpl { char : "\x1A"  replacement : "\\Z" }
 		}
+		symbol_start : "`"
+		symbol_end : "`"
 		expr : expr_tmpl {
 			interval_const +: {
 				sql_expr : "INTERVAL \(time Enforce Int) SECONDS"
