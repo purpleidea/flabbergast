@@ -26,10 +26,6 @@ queryifier : Template {
 	{{{The template to modify.}}}
 	base : Required
 	value : Template base {
-		{{{A list of tables, selected from the \{table} frame, to be included in this
-		query. Each of these must have a \{sql_from} attribute to be inserted into
-		the \Mono{FROM} clause.}}}
-		tables : Required
 		{{{A frame of expressions or columns to be included in the resulting table.}}}
 		columns : Required
 		{{{A collection of expressions (or columns) that must be true to include a
@@ -52,10 +48,19 @@ queryifier : Template {
 		{{{Expand the where template.}}}
 		exp_where : where {}
 
+		{{{A list of tables, inferred from \{columns}, to be included in this
+		query.}}}
+		tables :
+			For column : columns
+				Reduce For col_table : column.sql_tables, acc_table : acc, name : Name Select name : col_table ?? acc_table
+				With acc :
+					(For clause : exp_where
+					Reduce For where_table : clause.sql_tables, acc_table : acc, name : Name Select name : where_table ?? acc_table
+					With acc : {})
 		{{{Generate the \Mono{FROM} clause.}}}
 		from_clause :
 			For t : tables, pos : Ordinal
-				Reduce (If pos > 1 Then acc & ", " Else "") & t.sql_from
+				Reduce (If pos > 1 Then acc & ", " Else "") & t
 				With acc : Null
 		{{{Generate the columns in the \Mono{SELECT}.}}}
 		column_clause :
@@ -69,9 +74,8 @@ queryifier : Template {
 				With acc : ""
 		{{{Generate the total query.}}}
 		sql_query :
-			If from_clause Is Null Then Error "No tables specified in query."
-			Else If column_clause Is Null Then Error "No columns specified in query."
-			Else "SELECT " & column_clause Enforce Str & " FROM " & from_clause & where_clause Enforce Str
+			If column_clause Is Null Then Error "No columns specified in query."
+			Else "SELECT " & column_clause Enforce Str & (If from_clause Is Null Then provider.null_from Else " FROM " & from_clause Enforce Str) & where_clause Enforce Str
 	}
 }
 
@@ -114,6 +118,8 @@ offline_table_tmpl : Template {
 		{{{The type of the column. If not specified, it is assumed to be a string.}}}
 		sql_type : sql_types.str
 
+		sql_tables : Now utils_lib.frame(sql_from, name : Id)
+
 		sql_expr : sql_from Enforce Str & "." & provider.symbol_start Enforce Str & column_name Enforce Str & provider.symbol_end Enforce Str
 	}
 
@@ -135,10 +141,12 @@ sql_marshall_list : Template {
 			Else If arg Is Str Then {
 					sql_expr : provider.quote_start Enforce Str & utils_lib.str_escape(arg, transformations : provider.transformations) Enforce Str & provider.quote_end Enforce Str
 					sql_type : sql_types.str
+					sql_tables : {}
 				}
 			Else If arg Is Bool Then {
 					sql_expr : If arg Then "TRUE" Else "FALSE"
 					sql_type : sql_types.bool
+					sql_tables : {}
 				}
 			Else {
 					sql_expr : arg To Str
@@ -146,6 +154,7 @@ sql_marshall_list : Template {
 						If arg Is Int Then sql_types.int
 						Else If arg Is Float Then sql_types.float
 						Else Error "Can't convert value to SQL type."
+					sql_tables : {}
 				}
 }
 
@@ -178,6 +187,8 @@ expr_tmpl : Template {
 		{{{A member of \{sql_types} that represents the Flabbergast type to which
 		this expression will be converted.}}}
 		sql_type : Required
+		{{{All the tables required by this expression.}}}
+		sql_tables : Required
 	}
 	base_arith_expr_tmpl : Template base_expr_tmpl {
 		left : Required
@@ -200,8 +211,16 @@ expr_tmpl : Template {
 			If sql_rule Is Null
 				Then Error "Cannot find arithmetic for \(specials.l.sql_type.name) \(sql_op.symbol) \(specials.r.sql_type.name)."
 				Else (sql_rule.render{}).value
+		sql_tables : For left_table : specials.l.sql_tables, right_table : specials.r.sql_tables, name : Name Select name : left_table ?? right_table
 	}
-	base_infix_expr_tmpl : Template base_expr_tmpl {
+	base_args_tmpl : Template base_expr_tmpl {
+		sql_args : sql_marshall_list(args : args, provider : provider)
+		sql_tables :
+			For arg : sql_args
+				Reduce For table : arg.sql_tables, acc_table : acc, name : Name Select name : table ?? acc_table
+				With acc_table : {}
+	}
+	base_infix_expr_tmpl : Template base_args_tmpl {
 		{{{The expressions to be put together.}}}
 		args : Required
 
@@ -211,7 +230,6 @@ expr_tmpl : Template {
 		{{{The bits for the allowed types of arguments.}}}
 		sql_allowed_arg_type_id : Required
 
-		sql_args : sql_marshall_list(args : args, provider : provider)
 		sql_expr :
 			If sql_type.coerce == 0 Then Error "Cannot compute type." Else
 				(For arg : sql_args, pos : Ordinal
@@ -228,7 +246,7 @@ expr_tmpl : Template {
 					With acc : sql_allowed_arg_type_id
 		}
 	}
-	base_function_expr_tmpl : Template base_expr_tmpl {
+	base_function_expr_tmpl : Template base_args_tmpl {
 		{{{The expressions to be put together.}}}
 		args : Required
 
@@ -238,14 +256,14 @@ expr_tmpl : Template {
 		arg_types : Required
 
 		sql_expr :
-			(For arg : sql_marshall_list(args : args), arg_type : arg_types, pos : Ordinal
+			(For arg : sql_args, arg_type : arg_types, pos : Ordinal
 				Reduce
 					If arg_type.id B& arg.sql_type.coerce == 0
 						Then Error "Incompatible type \(arg.sql_type.name) for argument \(pos) to \(sql_func). Expected \(arg_type.name)."
 						Else acc & (If pos > 1 Then "," Else "") & arg.sql_expr
 				With acc : sql_func & "(") & ")"
 	}
-	base_variadic_func_tmpl : Template base_expr_tmpl {
+	base_variadic_func_tmpl : Template base_args_tmpl {
 		{{{The expressions aggregate.}}}
 		args : Required
 
@@ -255,7 +273,6 @@ expr_tmpl : Template {
 		{{{The bits for the allowed types of arguments.}}}
 		sql_allowed_arg_type_id : Required
 
-		sql_args : sql_marshall_list(args : args, provider : provider)
 		sql_expr :
 			If sql_type.coerce == 0 Then Error "Bad type in \(sql_func)." Else
 			(For arg : sql_args, pos : Ordinal
@@ -287,6 +304,7 @@ expr_tmpl : Template {
 			If specials.l.sql_type.coerce B& specials.r.sql_type.coerce B& type_mask == 0
 				Then Error "Incompatible types in comparison."
 				Else "(\(specials.l.sql_expr) \(sql_op) \(specials.r.sql_expr))"
+		sql_tables : For left_table : specials.l.sql_tables, right_table : specials.r.sql_tables, name : Name Select name : left_table ?? right_table
 	}
 
 	add : Template base_arith_expr_tmpl {
@@ -315,6 +333,7 @@ expr_tmpl : Template {
 				If when_specials.t.sql_type.coerce B& sql_allowed_test_type.coerce == 0
 					Then Error "Incompatible type \(when_specials.t.sql_type.name) used in test for WHEN. Expected \(sql_allowed_test_type.name)."
 					Else " WHEN \(when_specials.t.sql_expr) THEN \(when_specials.r.sql_expr)"
+			sql_tables : For test_table : when_specials.t.sql_tables, input_table : when_specials.r.sql_type, name : Name Select name : test_table ?? input_table
 		}
 
 		specials : Template {
@@ -338,6 +357,11 @@ expr_tmpl : Template {
 							Else acc B& case.sql_type.coerce
 					With acc : If sql_specials.e Is Null Then sql_types.any Else sql_specials.e.sql_type.coerce
 		}
+		sql_tables : For s : specials
+			Reduce For table : s.sql_tables, acc_table : acc, name : Name Select name : table ?? acc_table
+			With acc : (For c : cases
+					Reduce For table : c.sql_types, acc_table : acc, name : Name Select name : table ?? acc_table
+					With acc : {})
 	}
 	case_bool : Template base_case_tmpl {
 		sql_allowed_test_type : sql_types.bool
@@ -358,6 +382,7 @@ expr_tmpl : Template {
 		sql_expr : If sql_type.id B& arg.sql_type.cast == 0
 			Then Error "Cannot perform cast with provided types."
 			Else "(CAST(\(arg.sql_expr) AS \(sql_type.name)))"
+		sql_tables : arg.sql_tables
 	}
 	count : Template base_variadic_func_tmpl {
 		sql_func : "COUNT"
@@ -389,6 +414,7 @@ expr_tmpl : Template {
 			If arg.sql_type.coerce B& sql_types.timestamp.id == 0
 				Then Error "Cannot extract on non-timestamp \(arg.sql_type.name)."
 				Else sql_start Enforce Str & field Enforce Str & sql_middle Enforce Str & arg.sql_expr Enforce Str & sql_end Enforce Str
+		sql_tables : arg.sql_tables
 	}
 	ge : Template base_compare_op_tmpl {
 		sql_op : ">="
@@ -404,6 +430,7 @@ expr_tmpl : Template {
 		{{{The number of seconds in this interval.}}}
 		time : Required
 		sql_type : sql_types.interval
+		sql_tables : {}
 	}
 	is_null : Template base_expr_tmpl {
 		arg : Required
@@ -411,6 +438,7 @@ expr_tmpl : Template {
 		sql_expr :
 			If sql_type.coerce == 0 Then Error "Bad type in null check."
 				Else "(\(arg.sql_expr) IS NULL)"
+		sql_tables : arg.sql_tables
 	}
 	le : Template base_compare_op_tmpl {
 		sql_op : "<="
@@ -447,6 +475,7 @@ expr_tmpl : Template {
 			If arg.sql_type.coerce B& sql_types.numeric != 0
 				Then "(- \(arg.sql_expr))"
 				Else Error "Argument to negation is not numeric."
+		sql_tables : arg.sql_tables
 	}
 	not : Template base_expr_tmpl {
 		arg : Required
@@ -455,11 +484,13 @@ expr_tmpl : Template {
 			If arg.sql_type.coerce B& sql_types.bool.id != 0
 				Then "(NOT \(arg.sql_expr))"
 				Else Error "Argument to NOT expression is not Boolean."
+		sql_tables : arg.sql_tables
 	}
 	now : Template base_expr_tmpl {
 		{{{Use UTC rather than local time.}}}
 		utc : True
 		sql_type : sql_types.timestamp
+		sql_tables : {}
 	}
 	or : Template base_infix_expr_tmpl {
 		sql_op : "OR"
@@ -482,6 +513,7 @@ expr_tmpl : Template {
 			Else If specials.s.sql_type.coerce B& sql_types.int.id == 0 Then Error "Start of string slice is not an integer."
 			Else If specials.l.sql_type.coerce B& sql_types.int.id == 0 Then Error "Length of string slice is not an integer."
 			Else sql_substr_syntax
+		sql_tables : For input_table : specials.i.sql_tables, start_table : specials.s.sql_tables, length_table : specials.l.sql_tables, name : Name Select name : (input_table ?? start_table) ?? right_table
 	}
 	sub : Template base_arith_expr_tmpl {
 		sql_op : sql_arith_ops.sub
@@ -512,7 +544,8 @@ sql_literal_table_tmpl : Template {
 			Select name :
 				If type.coerce == 0
 					Then Error "Column “\(name)” in literal table does not have consistent type."
-					Else { sql_expr : table_name Enforce Str & "." & name  sql_type : type }
+					Else column_tmpl { sql_expr : table_name Enforce Str & "." & name  sql_type : type }
+	column_tmpl : Template { sql_tables : Now utils_lib.frame(sql_from, name : Id) }
 	sql_from : (provider.generate_literal_from {}).value
 }
 
@@ -637,6 +670,8 @@ sql_provider : Template {
 	symbol_start : "\""
 	{{{The postamble of a symbol (table, schema, or column name).}}}
 	symbol_end : "\""
+	{{{The \Mono{FROM} clause to use for a query with no tables.}}}
+	null_from : ""
 	{{{An SQL statement that returns tables and views as a frame of frames with a
 	\{sql_from} containing the string needed to include this entity in a
 	\Mono{FROM} clause. Other implementation-specific attributes are permitted.}}}
@@ -650,6 +685,9 @@ sql_provider : Template {
 	implementation-specific attributes are permitted.}}}
 	column_discovery : Template retrieve {
 		table : Required
+		sql_row_tmpl +: {
+			sql_tables : Now utils_lib.frame(table.sql_from, name : GenerateId table)
+		}
 	}
 	{{{List of arithmetic rules this database supports.}}}
 	arithmetic_rules : sql_aritmetic_tmpl {}
@@ -820,7 +858,7 @@ sql_providers : {
 			# get back, so we get to do it locally. Fun.
 			value +orig:
 				For col : orig
-					Select col.name : {
+					Select col.name : sql_row_tmpl {
 						sql_expr : "\(table.sql_from).\(col.name)"
 						sql_type :
 							If col.type Is Null Then sql_types.str
