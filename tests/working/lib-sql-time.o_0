@@ -1,7 +1,7 @@
 sql_lib : From lib:sql
 
 test_query : Template sql_lib.offline_query {
-	tables : [ { sql_from : "XXX" } ]
+	tables : [ { sql_from : "XXX"  known_columns : [] } ]
 	columns : {
 		a : expr.extract {
 			field : year
@@ -11,10 +11,10 @@ test_query : Template sql_lib.offline_query {
 }
 
 sql_stmts : {
-	mssql : "SELECT DATEPART('year', GETUTCDATE()) AS a FROM XXX"
-	mysql : "SELECT EXTRACT(YEAR FROM UTC_TIMESTAMP()) AS a FROM XXX"
-	postgresql : "SELECT EXTRACT(YEAR FROM (now() at time zone 'utc')) AS a FROM XXX"
-	sqlite : "SELECT CAST(strftime('%Y', datetime('now', 'utc')) AS INTEGER) AS a FROM XXX"
+	mssql : "SELECT DATEPART('year', GETUTCDATE()) AS a"
+	mysql : "SELECT EXTRACT(YEAR FROM UTC_TIMESTAMP()) AS a"
+	postgresql : "SELECT EXTRACT(YEAR FROM (now() at time zone 'utc')) AS a"
+	sqlite : "SELECT CAST(strftime('%Y', datetime('now', 'utc')) AS INTEGER) AS a"
 }
 
 value : For provider : sql_lib.sql_providers, stmt : sql_stmts
