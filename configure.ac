@@ -57,6 +57,7 @@ AM_CONDITIONAL([BUILD_FATJAR], [test x$enable_fatjar = xyes])
 AC_CONFIG_FILES([
 	Makefile
 	platform/cli/Makefile
+	platform/cli/AssemblyInfo.cs
 	platform/cli/config.cs
 	platform/jvm/Makefile
 	platform/jvm/runtime/flabbergast/Configuration.java

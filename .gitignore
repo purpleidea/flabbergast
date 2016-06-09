@@ -41,6 +41,7 @@ platform/*/*-build-cache
 platform/*/?flabbergast
 platform/*/?flabbergast-docgen
 platform/*/?flabbergast-repl
+platform/cli/AssemblyInfo.cs
 platform/cli/config.cs
 platform/jvm/runtime/flabbergast/Configuration.java
 update-flabbergast
