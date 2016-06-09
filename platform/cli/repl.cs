@@ -74,6 +74,7 @@ public class REPL {
         var unit = new CompilationUnit(module_builder, false);
         var collector = new ConsoleCollector();
         var task_master = new ConsoleTaskMaster();
+        task_master.AddUriHandler(new CurrentInformation(true));
         task_master.AddUriHandler(BuiltInLibraries.INSTANCE);
         task_master.AddUriHandler(DbUriHandler.INSTANCE);
         task_master.AddUriHandler(EnvironmentUriHandler.INSTANCE);

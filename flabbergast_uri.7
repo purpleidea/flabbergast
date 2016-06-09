@@ -8,6 +8,39 @@ Flabbergast provides several URI schemes to access external information and code
 The currently supported schemes are listed below.
 
 .TP
+\fBcurrent:\fRvariable
+Information about the executing Flabbergast instance.
+.RS
+.TP
+\fBcurrent:directory\fR
+The working directory of the executing Flabbergast instance.
+
+.TP
+\fBcurrent:interactive\fR
+True if the executing Flabbergast instance is executing interactive (REPL), false if in batch mode.
+
+.TP
+\fBcurrent:login\fR
+The OS-specific login name of the user executing Flabbergast.
+
+.TP
+\fBcurrent:version\fR
+The Flabbergast version, as a float.
+
+.TP
+\fBcurrent:vm/name\fR
+The virtual machine Flabbergast is executing on. Currently, either \fBCLR\fR or \fBJVM\fR.
+
+.TP
+\fBcurrent:vm/vendor\fR
+The creator of virtual machine Flabbergast is executing on.
+
+.TP
+\fBcurrent:vm/version\fR
+The version of virtual machine Flabbergast is executing on (as a string).
+.RE
+
+.TP
 \fBenv:\fRvariable
 Access UNIX environment variables. The variable name must consist of uppercase letters, numbers, and underscore, and must not begin with a number, per the IEEE Std 1003.1 section 8.1. If an environment variable is defined, it will be returned as a string. If the variable is undefined, \fBNull\fR will be returned instead.
 

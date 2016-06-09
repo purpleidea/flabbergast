@@ -50,6 +50,7 @@ public class Printer {
         var collector = new ConsoleCollector();
         var task_master = new ConsoleTaskMaster();
         var accessory_lib_path = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(files[0])), "lib");
+        task_master.AddUriHandler(new CurrentInformation(false));
         task_master.AddUriHandler(BuiltInLibraries.INSTANCE);
         task_master.AddUriHandler(DbUriHandler.INSTANCE);
         task_master.AddUriHandler(EnvironmentUriHandler.INSTANCE);

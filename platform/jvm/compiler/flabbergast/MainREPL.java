@@ -132,6 +132,7 @@ public class MainREPL {
             compiler.prependPath(accessory_lib_path);
         }
         ConsoleTaskMaster task_master = new ConsoleTaskMaster();
+        task_master.addUriHandler(new CurrentInformation(true));
         task_master.addUriHandler(BuiltInLibraries.INSTANCE);
         task_master.addUriHandler(JdbcUriHandler.INSTANCE);
         task_master.addUriHandler(EnvironmentUriHandler.INSTANCE);
