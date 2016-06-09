@@ -26,7 +26,7 @@ float_to_str_list : Template {
 		Let
 			format_code :
 				If digits Enforce Int < 0
-					Then Error "The number of digits must be positive."
+					Then Error "The number of digits must be non-negative."
 					Else
 						(For x : 1 Through digits Reduce acc & "0" With acc : "0.") &
 						(If exponential Then "E0" Else "")

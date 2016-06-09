@@ -79,7 +79,7 @@ driver_config_tmpl : Template {
 				ssl : bool_param {
 					jdbc_param : "ssl"
 					ado_net_param : "SSL"
-					help : "Requires SSL encrpytion with server."
+					help : "Requires SSL encryption with server."
 				}
 			}
 		}
