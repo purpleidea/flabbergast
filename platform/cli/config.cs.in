@@ -1,0 +1,5 @@
+namespace Flabbergast {
+	public static class Configuration {
+		public const double Version = @PACKAGE_VERSION@;
+	}
+}

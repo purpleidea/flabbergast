@@ -36,6 +36,7 @@
 		<Reference Include="System.Json"/>
 	</ItemGroup>
 	<ItemGroup>
+		<Compile Include="config.cs"/>
 		<Compile Include="data.cs"/>
 		<Compile Include="db-cli.cs"/>
 		<Compile Include="dlopen.cs"/>

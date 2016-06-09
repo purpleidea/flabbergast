@@ -57,7 +57,9 @@ AM_CONDITIONAL([BUILD_FATJAR], [test x$enable_fatjar = xyes])
 AC_CONFIG_FILES([
 	Makefile
 	platform/cli/Makefile
+	platform/cli/config.cs
 	platform/jvm/Makefile
+	platform/jvm/runtime/flabbergast/Configuration.java
 	vim/Makefile
 ]) 
 AC_CONFIG_FILES([update-flabbergast:update-flabbergast.in], [chmod +x update-flabbergast])

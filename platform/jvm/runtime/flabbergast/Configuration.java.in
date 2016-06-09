@@ -1,0 +1,4 @@
+package flabbergast;
+public interface Configuration {
+	public static final double VERSION = @PACKAGE_VERSION@;
+}

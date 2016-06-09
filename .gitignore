@@ -39,6 +39,8 @@ libtool
 pkgroot
 platform/*/*-build-cache
 platform/*/?flabbergast
-platform/*/?flabbergast-repl
 platform/*/?flabbergast-docgen
+platform/*/?flabbergast-repl
+platform/cli/config.cs
+platform/jvm/runtime/flabbergast/Configuration.java
 update-flabbergast
