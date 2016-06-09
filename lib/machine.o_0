@@ -6,6 +6,8 @@ machine_tmpl : Template {
 	name : Required
 	{{{The string that separates directores in lists of directories (\Emph{e.g.}, \Mono{PATH}).}}}
 	path_separator : Required
+	{{{The standard line-ending characters.}}}
+	line_ending : Required
 }
 
 {{{Microsoft Windows machines...and I guess ReactOS and WINE too.}}}
@@ -13,6 +15,7 @@ windows : machine_tmpl {
 	directory_separator : "\\"
 	name : "Windows"
 	path_separator : ";"
+	line_ending : "\r\n"
 }
 
 {{{UNIX-like machines.}}}
@@ -20,6 +23,7 @@ unix : machine_tmpl {
 	directory_separator : "/"
 	name : "UNIX"
 	path_separator : ":"
+	line_ending : "\n"
 }
 
 {{{The kind of machine currently in use.}}}

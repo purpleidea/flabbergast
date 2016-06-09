@@ -16,6 +16,7 @@ public abstract class Stringish
     public static Stringish[] BOOLEANS = new Stringish[] {
         new SimpleStringish("False"), new SimpleStringish("True")
     };
+    public static Stringish LINE_SEP = new SimpleStringish(String.format("%n"));
 
     public static Stringish fromCodepoint(long codepoint) {
         return new SimpleStringish(new String(new int[] { (int) codepoint}, 0, 1));
