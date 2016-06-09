@@ -66,25 +66,35 @@ circle : {
 }
 
 {{{Compute a running product.}}}
-cumulative_product : Template {
-	{{{The numbers to multiply.}}}
-	args : Used
+cumulative_product : cumulative_productifier(base : utils_lib.identity)
+
+{{{Convert a function-like template from one that returns a list of numbers
+into a list of cumulative products.}}}
+cumulative_productifier : Template {
+	base : Required
 	{{{The starting value.}}}
-	initial : 1
-	value : For arg : args, arg_name : Name
-		Accumulate arg * run With run : initial
-		Select arg_name : run
+	product_initial : 1
+	value : Template base {
+		value +original: For item : original, item_name : Name
+			Accumulate item * run With run : product_initial
+			Select item_name : run
+	}
 }
 
 {{{Compute a running sum.}}}
-cumulative_sum : Template {
-	{{{The numbers to sum.}}}
-	args : Used
+cumulative_sum : cumulative_sumifier(base : utils_lib.identity)
+
+{{{Convert a function-like template from one that returns a list of numbers
+into a list of cumulative sums.}}}
+cumulative_sumifier : Template {
+	base : Required
 	{{{The starting value.}}}
-	initial : 0
-	value : For arg : args, arg_name : Name
-		Accumulate arg + run With run : initial
-		Select arg_name : run
+	sum_initial : 0
+	value : Template base {
+		value +original: For item : original, item_name : Name
+			Accumulate item + run With run : sum_initial
+			Select item_name : run
+	}
 }
 
 {{{Compute the largest integral value less than or equal to the argument.}}}
