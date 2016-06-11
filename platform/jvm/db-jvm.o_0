@@ -15,7 +15,7 @@ driver_config : db_lib.driver_config_tmpl {
 					"\t\tout_properties.setProperty(\"\(param.jdbc_param)\", in_properties.getProperty(\"\(param_name)\"));\n\t}\n"
 				With acc : "") &
 			(For fixed_param : fixed_params Reduce acc & "\tout_properties.setProperty(\"\(fixed_param.jdbc_param)\", \(fixed_param.jdbc_value));\n" With acc : "") &
-			"\treturn \"jdbc:\(jdbc_name Enforce Str):\"\(tail Enforce Str);\n}\n"
+			"\treturn \"jdbc:\(jdbc_name Enforce Str)\"\(tail Enforce Str);\n}\n"
 
 	}
 

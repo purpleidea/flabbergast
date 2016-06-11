@@ -50,14 +50,14 @@ driver_config_tmpl : Template {
 	drivers : Template {
 		mssql : Template url_driver {
 			friendly_name : "Microsoft SQL Server"
-			jdbc_name : "sqlserver"
+			jdbc_name : "sqlserver:"
 			ado_net_name : "System.Data.SqlClient"
 			jdbc_db_param : "databaseName"
 			params : {}
 		}
 		mysql : Template url_driver {
 			friendly_name : "Oracle mySQL"
-			jdbc_name : "mysql"
+			jdbc_name : "mysql:"
 			ado_net_name : "MySql.Data.MySqlClient"
 			ado_net_user_param : "Uid"
 			ado_net_password_param : "Pwd"
@@ -73,7 +73,7 @@ driver_config_tmpl : Template {
 		}
 		postgresql : Template url_driver {
 			friendly_name : "PostgreSQL"
-			jdbc_name : "postgresql"
+			jdbc_name : "postgresql:"
 			ado_net_name : "Npgsql"
 			params : {
 				ssl : bool_param {
@@ -85,7 +85,7 @@ driver_config_tmpl : Template {
 		}
 		sqlite : Template file_driver {
 			friendly_name : "SQLite"
-			jdbc_name : "sqlite"
+			jdbc_name : "sqlite:"
 			ado_net_name : "System.Data.SQLite"
 			ado_net_file_param : "Data Source"
 			params : {}
