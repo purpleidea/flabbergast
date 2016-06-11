@@ -1,3 +1,5 @@
+Introduction{{{Operating system-specific constants.}}}
+
 {{{Platform-specific configuration.}}}
 machine_tmpl : Template {
 	{{{The string that separates paths into directories.}}}
