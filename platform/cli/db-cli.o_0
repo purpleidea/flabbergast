@@ -5,7 +5,9 @@ driver_config : db_lib.driver_config_tmpl {
 		parse : Required
 
 		value :
-			"if (provider == \"\(provider)\") {\n\tvar \(Id)_builder = new DbConnectionStringBuilder();\n" &
+			"if (provider == \"\(provider)\") {\n" &
+			"var \(Id)_factory = DbProviderFactories.GetFactory(\"\(ado_net_name Enforce Str)\");" &
+			"\tvar \(Id)_builder = \(Id)_factory.CreateConnectionStringBuilder();\n" &
 			parse Enforce Str &
 			"\tstring[] \(Id)_defined = {\(param_list Enforce Str)};\n\tif (!in_properties.Keys.All(k => \(Id)_defined.Contains(k))) { err = \"Unknown parameters specified.\"; return null; }\n" &
 			(For param : params, param_name : Name
@@ -14,7 +16,7 @@ driver_config : db_lib.driver_config_tmpl {
 					"\t\t\(Id)_builder[\"\(param.ado_net_param)\"] = in_properties[\"\(param_name)\"];\n\t}\n"
 				With acc : "") &
 			(For fixed_param : fixed_params Reduce acc & "\t\(Id)_builder[\"\(fixed_param.ado_net_param)\"] = \(fixed_param.ado_net_value);\n" With acc : "") &
-			"\tvar \(Id)_connection = DbProviderFactories.GetFactory(\"\(ado_net_name Enforce Str)\").CreateConnection();\n\t\(Id)_connection.ConnectionString = \(Id)_builder.ConnectionString;\n\treturn \(Id)_connection;\n}\n"
+			"\tvar \(Id)_connection = \(Id)_factory.CreateConnection();\n\t\(Id)_connection.ConnectionString = \(Id)_builder.ConnectionString;\n\treturn \(Id)_connection;\n}\n"
 	}
 
 	file_driver +: {
