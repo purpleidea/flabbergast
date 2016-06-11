@@ -56,7 +56,7 @@ driver_config_tmpl : Template {
 			params : {}
 		}
 		mysql : Template url_driver {
-			friendly_name : "Oracle mySQL"
+			friendly_name : "mySQL"
 			jdbc_name : "mysql:"
 			ado_net_name : "MySql.Data.MySqlClient"
 			ado_net_user_param : "Uid"
