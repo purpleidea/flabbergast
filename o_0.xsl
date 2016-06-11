@@ -69,6 +69,7 @@
           <span class="def" onclick="{concat('showDef(', $apos, @name, $apos, ');')}" title="Find definitions">
             <xsl:value-of select="@name"/>
           </span>
+          <xsl:text> </xsl:text>
         </xsl:when>
         <xsl:otherwise>
           <span class="use" onclick="{concat('showUse(', $apos, @name, $apos, ');')}" title="Find uses">
