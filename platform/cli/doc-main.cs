@@ -8,15 +8,18 @@ using NDesk.Options;
 
 namespace Flabbergast {
 public class Documenter {
-    private static bool Discover(string directory, int trim, string github, string output_root, ErrorCollector collector) {
+    private static bool Discover(string directory, int trim, string github, bool verbose, string output_root, ErrorCollector collector) {
         var success = true;
         foreach (var path in Directory.EnumerateDirectories(directory)) {
-            success &= Discover(path, trim, github, output_root, collector);
+            success &= Discover(path, trim, github, verbose, output_root, collector);
         }
         foreach (var file in Directory.EnumerateFiles(directory, "*.o_0")) {
             var file_fragment = file.Substring(trim, file.Length - 4 - trim);
             var uri = file_fragment.Replace(Path.DirectorySeparatorChar, '/');
             var output_filename = Path.Combine(output_root, "doc-" + file_fragment.Replace(Path.DirectorySeparatorChar, '-') + ".xml");
+            if (verbose) {
+                Console.WriteLine(file);
+            }
             var parser = Parser.Open(file);
             var doc = parser.DocumentFile(collector, uri, github);
             if (doc != null) {
@@ -31,9 +34,11 @@ public class Documenter {
         string github = null;
         string output_root = ".";
         var show_help = false;
+        var verbose = false;
         var options = new OptionSet {
             {"g=|github", "The URL to the GitHub version of these files.", v => github = v},
             {"o=|output", "The directory to place the docs.", v => output_root = v},
+            {"v=|verbose", "List files as they are being processed.", v => verbose = v != null},
             {"h|help", "show this message and exit", v => show_help = v != null}
         };
 
@@ -64,7 +69,7 @@ public class Documenter {
         var collector = new ConsoleCollector();
         var success = true;
         foreach (var dir in directories) {
-            Discover(dir, dir.Length + (dir[dir.Length - 1] == Path.DirectorySeparatorChar ? 0 : 1), github, output_root, collector);
+            Discover(dir, dir.Length + (dir[dir.Length - 1] == Path.DirectorySeparatorChar ? 0 : 1), github, verbose, output_root, collector);
         }
         return success ? 0 : 1;
     }

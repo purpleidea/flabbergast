@@ -21,12 +21,12 @@ import org.w3c.dom.Document;
 
 public class MainDocumenter {
 
-    private static boolean discover(File dir, int trim, String github,
+    private static boolean discover(File dir, int trim, String github, boolean verbose,
                                     String output_root, ErrorCollector collector) throws Exception {
         boolean success = true;
         for (File f : dir.listFiles()) {
             if (f.isDirectory()) {
-                success &= discover(f, trim, github, output_root, collector);
+                success &= discover(f, trim, github, verbose, output_root, collector);
             } else if (f.isFile() && f.getName().endsWith(".o_0")) {
                 String file = f.getCanonicalPath();
                 String file_fragment = file.substring(trim, file.length() - 4);
@@ -34,6 +34,9 @@ public class MainDocumenter {
                 String output_filename = output_root + File.separator + "doc-"
                                          + file_fragment.replace(File.separatorChar, '-')
                                          + ".xml";
+                if (verbose) {
+                    System.out.println(file);
+                }
                 Parser parser = Parser.open(file);
                 Document doc = parser.documentFile(collector, uri, github);
                 if (doc != null) {
@@ -57,6 +60,7 @@ public class MainDocumenter {
                           "The URL to the GitHub version of these files.");
         options.addOption("o", "output", true,
                           "The directory to place the docs.");
+        options.addOption("v", "verbose", false, "List files as they are being processed.");
         options.addOption("h", "help", false, "Show this message and exit");
         CommandLineParser cl_parser = new GnuParser();
         final CommandLine result;
@@ -90,7 +94,7 @@ public class MainDocumenter {
             for (String directory : directories) {
                 File dir = new File(directory);
                 success &= discover(dir, dir.getCanonicalPath().length() + 1,
-                                    result.getOptionValue('g'),
+                                    result.getOptionValue('g'), result.hasOption('v'),
                                     result.getOptionValue('o', "."), collector);
 
             }
