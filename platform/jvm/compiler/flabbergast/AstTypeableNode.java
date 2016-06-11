@@ -156,6 +156,9 @@ abstract class AstTypeableNode extends AstNode {
     }
 
     public TypeSet getInferredType() {
+        if (inferred_type == null) {
+            return TypeSet.ALL;
+        }
         return inferred_type;
     }
 
