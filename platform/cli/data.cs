@@ -226,7 +226,7 @@ public abstract class Frame : DynamicObject, IAttributeNames {
     * Returns: true if the value was available, false if the name does not exist.
     */
 
-    internal bool GetOrSubscribe(string name, ConsumeResult consumer) {
+    public bool GetOrSubscribe(string name, ConsumeResult consumer) {
         var result = this[name];
         if (result == null) {
             return false;
