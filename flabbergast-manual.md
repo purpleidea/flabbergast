@@ -3,6 +3,8 @@
 
 Flabbergast is a rather unique programming language. It is best-described as an object-oriented macro system, though it's best not to associate it too much with object-oriented programming. Conceptually, it is based on a proprietary programming language used at Google for creating configurations. At Google, this language is much despised because it is difficult to debug and has many design flaws. However, it is special in that it is a member of a unique language family. It has features from other languages: particularly functional languages and object-oriented languages. Flabbergast aims to be the second in that family of languages and, hopefully, be more loved by being easier to debug, easier to understand, and more semantically sturdy.
 
+Follow along at home with [Flabbergast Fiddle](http://fiddle.flabbergast.org/)!
+
 ## A Worked Example: Apache Aurora
 Let's start with an example for a simple job that runs on Apache Aurora. Aurora is a long-running job configuration system for Mesos. It's purposes is to collect and dispatch all the needed job information to Mesos. In Aurora, a file consists of many jobs, each with a task to perform. A task can have multiple processes that run inside of it. Most resources are configured on the job level; some on the task level.
 
