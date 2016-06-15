@@ -1,3 +1,21 @@
+flabbergast (0.16~ppa0) xenial; urgency=medium
+
+  * Rename MySQL driver
+  * Fix null pointer when no type is inferred
+  * Add introduction to lib:machine
+  * Add verbose flag to document generator
+  * Add current: URI handler
+  * Change cumulative functions into -ifiers in lib:math
+  * Add line endings to machine info
+  * Infer required tables in an SQL query from the used columns
+  * Add an offline table template
+  * Allow adding literal tables
+  * Add MS SQL Server templates
+  * Add SQL substring function
+  * Add intverval support to SQLite templates
+
+ -- Andre Masella <andre@masella.name>  Tue, 14 Jun 2016 21:03:58 -0400
+
 flabbergast (0.15~ppa0) xenial; urgency=medium
 
   * Force mySQL into Unicode

@@ -1,4 +1,4 @@
-AC_INIT([flabbergast], [0.15], [andre@masella.name], [flabbergast], [http://flabbergast.org])
+AC_INIT([flabbergast], [0.16], [andre@masella.name], [flabbergast], [http://flabbergast.org])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
