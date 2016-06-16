@@ -25,6 +25,9 @@ public class Builder {
             known_dlls[file] = true;
         }
     }
+    public static string RemoveBadDots(string input) {
+        return Regex.Replace(Regex.Replace(input, "\\.+", "."), "^\\.", "");
+    }
     public static int Main(string[] args) {
         if (args.Length != 0) {
             return 1;
@@ -39,10 +42,11 @@ public class Builder {
         foreach (var filename in sources) {
             var parser = Parser.Open(Path.GetFullPath(filename));
 
-            var dll_name = Path.ChangeExtension(Path.GetFileNameWithoutExtension(filename), ".dll");
+            var dir_prefix = Path.GetDirectoryName(filename).Replace(Path.DirectorySeparatorChar, '.');
+            var dll_name = RemoveBadDots(dir_prefix + "." + Path.GetFileNameWithoutExtension(filename) + ".dll");
             known_dlls.Remove(Path.Combine(".", dll_name));
             known_dlls.Remove(Path.Combine(".", Path.ChangeExtension(Path.GetFileNameWithoutExtension(filename), ".dll.mdb")));
-            var type_name = Regex.Replace("Flabbergast.Library." + Path.GetDirectoryName(filename).Replace(Path.DirectorySeparatorChar, '.') + Path.GetFileNameWithoutExtension(filename), "\\.+", ".");
+            var type_name = RemoveBadDots("Flabbergast.Library." + dir_prefix + "." + Path.GetFileNameWithoutExtension(filename));
             var assembly_name = new AssemblyName(type_name) {
                 CodeBase = "file://" + Path.GetDirectoryName(filename)
             };
