@@ -1209,7 +1209,6 @@ Not all SQL data types can be converted to Flabbergast. The templates in the lib
     sql_lib : From lib:sql
     results : sql_lib.retrieve {
        source : From sql:postgresql:pgdb.example.com/human_resources
-       tables : [ table.employees, table.payroll ]
        columns : {
         name : expr.str_join { args : [ column.employee.first_name, " ", column.employee.last_name ] }
         salary : column.payroll.salary
