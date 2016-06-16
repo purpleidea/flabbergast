@@ -72,10 +72,10 @@ test_query : Template sql_lib.offline_query {
 }
 
 sql_stmts : {
-	mssql : "SELECT ((NOT ([BLAH].[XXX].[AAA] IS NULL))AND((CAST([BLAH].[XXX].[BBB] AS INTEGER)) <= 5)) AS a, AVG((- [BLAH].[YYY].[CCC]), [BLAH].[YYY].[DDD]) AS b FROM [BLAH].[XXX], [BLAH].[YYY] WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN ('foo') END) LIKE ('foo%'))"
-	mysql : "SELECT ((NOT (`BLAH`.`XXX`.`AAA` IS NULL))AND((CAST(`BLAH`.`XXX`.`BBB` AS INTEGER)) <= 5)) AS a, AVG((- `BLAH`.`YYY`.`CCC`), `BLAH`.`YYY`.`DDD`) AS b FROM `BLAH`.`XXX`, `BLAH`.`YYY` WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN 'foo' END) LIKE 'foo%')"
-	postgresql : "SELECT ((NOT (\"BLAH\".\"XXX\".\"AAA\" IS NULL))AND((CAST(\"BLAH\".\"XXX\".\"BBB\" AS INTEGER)) <= 5)) AS a, AVG((- \"BLAH\".\"YYY\".\"CCC\"), \"BLAH\".\"YYY\".\"DDD\") AS b FROM \"BLAH\".\"XXX\", \"BLAH\".\"YYY\" WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN E'foo' END) LIKE E'foo%')"
-	sqlite : "SELECT ((NOT (\"BLAH\".\"XXX\".\"AAA\" IS NULL))AND((CAST(\"BLAH\".\"XXX\".\"BBB\" AS INTEGER)) <= 5)) AS a, AVG((- \"BLAH\".\"YYY\".\"CCC\"), \"BLAH\".\"YYY\".\"DDD\") AS b FROM \"BLAH\".\"XXX\", \"BLAH\".\"YYY\" WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN 'foo' END) LIKE 'foo%')"
+	mssql : "SELECT ((NOT ([BLAH].[XXX].[AAA] IS NULL))AND((CAST([BLAH].[XXX].[BBB] AS INTEGER)) <= 5)) AS [a], AVG((- [BLAH].[YYY].[CCC]), [BLAH].[YYY].[DDD]) AS [b] FROM [BLAH].[XXX], [BLAH].[YYY] WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN ('foo') END) LIKE ('foo%'))"
+	mysql : "SELECT ((NOT (`BLAH`.`XXX`.`AAA` IS NULL))AND((CAST(`BLAH`.`XXX`.`BBB` AS INTEGER)) <= 5)) AS `a`, AVG((- `BLAH`.`YYY`.`CCC`), `BLAH`.`YYY`.`DDD`) AS `b` FROM `BLAH`.`XXX`, `BLAH`.`YYY` WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN 'foo' END) LIKE 'foo%')"
+	postgresql : "SELECT ((NOT (\"BLAH\".\"XXX\".\"AAA\" IS NULL))AND((CAST(\"BLAH\".\"XXX\".\"BBB\" AS INTEGER)) <= 5)) AS \"a\", AVG((- \"BLAH\".\"YYY\".\"CCC\"), \"BLAH\".\"YYY\".\"DDD\") AS \"b\" FROM \"BLAH\".\"XXX\", \"BLAH\".\"YYY\" WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN E'foo' END) LIKE E'foo%')"
+	sqlite : "SELECT ((NOT (\"BLAH\".\"XXX\".\"AAA\" IS NULL))AND((CAST(\"BLAH\".\"XXX\".\"BBB\" AS INTEGER)) <= 5)) AS \"a\", AVG((- \"BLAH\".\"YYY\".\"CCC\"), \"BLAH\".\"YYY\".\"DDD\") AS \"b\" FROM \"BLAH\".\"XXX\", \"BLAH\".\"YYY\" WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN 'foo' END) LIKE 'foo%')"
 }
 
 value : For provider : sql_lib.sql_providers, stmt : sql_stmts

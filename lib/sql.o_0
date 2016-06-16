@@ -65,7 +65,7 @@ queryifier : Template {
 		{{{Generate the columns in the \Mono{SELECT}.}}}
 		column_clause :
 			For col : columns, name : Name, pos : Ordinal
-				Reduce (If pos > 1 Then acc & ", " Else "") & col.sql_expr & " AS " & name
+				Reduce (If pos > 1 Then acc & ", " Else "") & col.sql_expr & " AS "  & provider.symbol_start Enforce Str & name & provider.symbol_end Enforce Str
 				With acc : Null
 		{{{Generate the \Mono{WHERE} clause, if any.}}}
 		where_clause :
@@ -697,7 +697,7 @@ sql_provider : Template {
 		column_list :
 			(For name : Name, type : column_types, pos : Ordinal
 				Reduce acc & (If pos > 1 Then "," Else "") & name
-				With acc : table_name Enforce Str & "(") & ")"
+				With acc : symbol_start Enforce Str & table_name Enforce Str & symbol_end Enforce Str & "(") & ")"
 		value_list :
 			For row : marshalled_rows, pos : Ordinal
 				Reduce
@@ -721,7 +721,7 @@ sql_provider_with_union_literal : Template sql_provider {
 						Reduce acc & (If pos > 1 Then "," Else "") & (column?.sql_expr ?? "NULL") & " AS " & name
 						With acc : "SELECT ")
 				With acc : ""
-		value : "(" & value_list Enforce Str & ") AS " & table_name Enforce Str
+		value : "(" & value_list Enforce Str & ") AS " & symbol_start Enforce Str & table_name Enforce Str & symbol_end Enforce Str
 	}
 }
 sql_providers : {
