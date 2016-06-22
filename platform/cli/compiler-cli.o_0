@@ -22,6 +22,11 @@ parser : compiler_lib.parser_tmpl {
 		copy_instance : ""
 		parser_gen : parse_complete(ok : True, indent : indent )
 	}
+	allow_extensions +: {
+		class_gen : ""
+		copy_instance : ""
+		parser_gen : "\(indent)if (_position.Parser.DisableExtensions) {" & parse_complete(ok : False, indent : indent & "\t") & "\(indent)}"
+	}
 	# Call `ParserPosition.Match` and record a failure otherwise.
 	exact +: {
 		class_gen : ""
@@ -2604,6 +2609,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 					class_extra : "\t\tSystem.Reflection.ConstructorInfo constructor;"
 					pattern : parser.sequence {
 						of : [
+							parser.allow_extensions {},
 							parser.exact { word : "XComputation" },
 							space { mandatory : True },
 							parser.accumulate_string {
@@ -2670,6 +2676,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 					pretty_name : "invoke CLI method"
 					pattern : parser.sequence {
 						of : [
+							parser.allow_extensions {},
 							parser.exact { word : "XInvoke" },
 							space { mandatory : True },
 							parser.accumulate_string {
@@ -2747,6 +2754,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 					pretty_name : "access CLI field"
 					pattern : parser.sequence {
 						of : [
+							parser.allow_extensions {},
 							parser.exact { word : "XField" },
 							space { mandatory : True },
 							parser.accumulate_string {

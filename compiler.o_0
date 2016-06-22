@@ -4,6 +4,8 @@
 parser_tmpl : Template {
 	# Parses nothing, always succeeds.
 	nop : Template {}
+	# Only succeeds if the compiler allows extensions (`X` syntax)
+	allow_extensions : Template {}
 	# Match a literal string, exactly as provided.
 	exact : Template { word : Required }
 	# Match another parse element, but, if parsing fails, back up the parser and

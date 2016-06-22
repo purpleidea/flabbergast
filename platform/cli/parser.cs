@@ -65,6 +65,13 @@ public class Parser {
         get;
         private set;
     }
+		/**
+		 * Whether to allow platform-specific extenion syntax to be compiled.
+		 */
+		public bool DisableExtensions {
+				get;
+				set;
+		}
     /**
      * The characters to parse.
      */
