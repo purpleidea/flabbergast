@@ -2908,7 +2908,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 					]
 					ensure_type_is : ensure_type.filter {
 						types : Drop
-						type_bits : "TypeSet.fromNative(field.getType())"
+						type_bits : "(field == null ? TypeSet.EMPTY : TypeSet.fromNative(field.getType()))"
 					}
 					api_value : apigen.nop {}
 					code_value : codegen.gen_tmpl {

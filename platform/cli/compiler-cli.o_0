@@ -2784,7 +2784,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 					]
 					ensure_type_is : ensure_type.filter {
 						types : Drop
-						type_bits : "AstTypeableNode.TypeFromClrType(Field.FieldType)"
+						type_bits : "(Field == null ? 0 : AstTypeableNode.TypeFromClrType(Field.FieldType))"
 					}
 					api_value : apigen.nop {}
 					code_value : codegen.gen_tmpl {
