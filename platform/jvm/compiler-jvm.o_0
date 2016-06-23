@@ -25,7 +25,7 @@ parser : compiler_lib.parser_tmpl {
 	allow_extensions +: {
 		class_gen : ""
 		copy_instance : ""
-		parser_gen : "\(indent)if (_position.get().getParser().getDisableExtensions()) {" & parse_complete(ok : False, indent : indent & "\t") & "\(indent)}"
+		parser_gen : "\(indent)if (_position.get().getParser().getDisableExtensions()) {" & parse_complete(ok : False, indent : indent & "\t") & "\(indent)}" & parse_complete(ok : True, indent : indent)
 	}
 	# Call `Parser.Position.match` and record a failure otherwise.
 	exact +: {
