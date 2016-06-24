@@ -27,6 +27,14 @@ driver_config : db_lib.driver_config_tmpl {
 		parse :
 			"\tif (!DbUriHandler.ParseUri(uri_fragment, \(Id)_builder, \"\(ado_net_server_param)\", \"\(ado_net_port_param)\", \"\(ado_net_user_param)\", \"\(ado_net_password_param)\", \"\(ado_net_db_param)\", out err)) return null;\n"
 	}
+
+	weird_url_driver +: {
+		parse :
+			"\tif (!DbUriHandler.ParseUri(uri_fragment, \(Id)_builder, \"\(ado_net_user_param)\", \"\(ado_net_password_param)\", (\(Id)_host, \(Id)_port, \(Id)_db) => \(Id)_builder[\"\(ado_net_descriptor_param)\"] = String.Format(\"\(descriptor)\", \(Id)_host, \(Id)_port ?? \"\(default_port)\", \(Id)_db), out err)) return null;\n"
+		host_part : "{0}"
+		port_part : "{1}"
+		db_part : "{2}"
+	}
 }
 value : "using System;
 using System.Collections.Generic;

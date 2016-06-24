@@ -195,7 +195,18 @@ public class DbUriHandler : UriHandler {
         {"platform",  c => "ADO.NET"}
     };
 
+    internal delegate void HandleParams(string host, string port, string database);
+
     internal static bool ParseUri(String uri_fragment, DbConnectionStringBuilder builder, string host_param, string port_param, string user_param, string password_param, string database_param, out string err) {
+        return ParseUri(uri_fragment, builder, user_param, password_param, (host, port, database) => {
+            builder[host_param] = host;
+            if (port != null) {
+                builder[port_param] = port;
+            }
+            builder[database_param] = database;
+        }, out err);
+    }
+    internal static bool ParseUri(String uri_fragment, DbConnectionStringBuilder builder, string user_param, string password_param, HandleParams handle_params, out string err) {
         err = null;
         int host_start = 0;
         int user_end = 0;
@@ -244,6 +255,7 @@ public class DbUriHandler : UriHandler {
             err = "Missing “/” followed by database in SQL URI.";
             return false;
         }
+        string port = null;
         if (uri_fragment[host_end] == ':') {
             int port_start = host_end + 1;
             int port_end = port_start;
@@ -256,7 +268,7 @@ public class DbUriHandler : UriHandler {
                 err = "Non-numeric data in port in SQL URI.";
                 return false;
             }
-            builder[port_param] = uri_fragment.Substring(port_start, port_end - port_start);
+            port = uri_fragment.Substring(port_start, port_end - port_start);
             db_start = port_end + 1;
         } else if (uri_fragment[host_end] == '/') {
             db_start = host_end + 1;
@@ -265,14 +277,13 @@ public class DbUriHandler : UriHandler {
             return false;
         }
 
-        builder[host_param] = uri_fragment.Substring(host_start, host_end - host_start);
         int db_end = db_start;
         while (db_end < uri_fragment.Length && uri_fragment[db_end] != '/') db_end++;
         if (db_end < uri_fragment.Length) {
             err = "Junk after database in SQL URI.";
             return false;
         }
-        builder[database_param] = uri_fragment.Substring(db_start);
+        handle_params(uri_fragment.Substring(host_start, host_end - host_start), port, uri_fragment.Substring(db_start));
         return true;
     }
 

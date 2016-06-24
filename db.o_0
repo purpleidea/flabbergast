@@ -28,6 +28,20 @@ driver_config_tmpl : Template {
 		ado_net_password_param : "Password"
 	}
 
+	weird_url_driver : Template driver_tmpl {
+		jdbc_user_param : "user"
+		jdbc_password_param : "password"
+		ado_net_descriptor_param : "Data Source"
+		ado_net_user_param : "User Id"
+		ado_net_password_param : "Password"
+		descriptor : Required
+		default_port : Required
+
+		db_part : Required
+		host_part : Required
+		port_part : Required
+	}
+
 	fixed_param_tmpl : Template {
 		jdbc_param : Required
 		jdbc_value : Required

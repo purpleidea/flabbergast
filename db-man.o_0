@@ -21,6 +21,12 @@ driver_config : db_lib.driver_config_tmpl {
 	url_driver +: {
 		uri_format : net_uri_man
 	}
+	weird_url_driver +: {
+		uri_format : net_uri_man
+		host_part : ""
+		port_part : ""
+		db_part : ""
+	}
 }
 value : ".TH flabbergast_sql 7 \"\" \"1.0\" MISCELLANEOUS
 .SH NAME

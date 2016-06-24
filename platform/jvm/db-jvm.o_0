@@ -29,6 +29,14 @@ driver_config : db_lib.driver_config_tmpl {
 			"\tString db_fragment = JdbcUriHandler.parseUri(uri_fragment, out_properties, \"\(jdbc_user_param)\", \"\(jdbc_password_param)\", \(If jdbc_db_param Is Null Then "null" Else "\"\(jdbc_db_param)\""), err);\n\tif(db_fragment == null) return null;\n"
 		tail : "+ \"//\" + db_fragment"
 	}
+	weird_url_driver +: {
+		parse :
+			"\tString db_fragment = JdbcUriHandler.parseUri(uri_fragment, out_properties, \"\(jdbc_user_param)\", \"\(jdbc_password_param)\", null, err);\n\tif(db_fragment == null) return null;\n\tString[] outer = db_fragment.split(\"/\");\n\tString[] inner = outer[0].split(\":\");\n"
+		tail : "+ String.format(\"descriptor\", inner[0], inner.length > 1 ? inner[1] : \"\(default_port)\", outer[1])"
+		host_part : "$1"
+		port_part : "$2"
+		db_part : "$2"
+	}
 }
 
 value : "package flabbergast;
