@@ -263,6 +263,25 @@ expr_tmpl : Template {
 						Else acc & (If pos > 1 Then "," Else "") & arg.sql_expr
 				With acc : sql_func & "(") & ")"
 	}
+	base_aggregate_func_tmpl : Template base_expr_tmpl {
+		{{{The expression aggregate.}}}
+		arg : Required
+
+		{{{The function name.}}}
+		sql_func : Required
+
+		{{{The bits for the allowed types of arguments.}}}
+		sql_allowed_arg_type_mask : Required
+
+		sql_expr :
+			If arg.sql_type.coerce B& sql_allowed_arg_type_mask == 0
+				Then Error "Bad type in \(sql_func)."
+				Else sql_func & "(" & arg.sql_expr & ")"
+		sql_tables : arg.sql_tables
+		sql_type : synthetic_sql_type {
+			coerce : arg.sql_type.coerce B& sql_allowed_arg_type_mask
+		}
+	}
 	base_variadic_func_tmpl : Template base_args_tmpl {
 		{{{The expressions aggregate.}}}
 		args : Required
@@ -314,9 +333,9 @@ expr_tmpl : Template {
 		sql_op : "AND"
 		sql_allowed_arg_type_id : sql_types.bool.id
 	}
-	avg : Template base_variadic_func_tmpl {
+	avg : Template base_aggregate_func_tmpl {
 		sql_func : "AVG"
-		sql_allowed_arg_type_id : sql_types.numeric
+		sql_allowed_arg_type_mask : sql_types.numeric
 	}
 	base_case_tmpl : Template base_expr_tmpl {
 		cases : Required
@@ -385,9 +404,9 @@ expr_tmpl : Template {
 			Else "(CAST(\(arg.sql_expr) AS \(sql_type.name)))"
 		sql_tables : arg.sql_tables
 	}
-	count : Template base_variadic_func_tmpl {
+	count : Template base_aggregate_func_tmpl {
 		sql_func : "COUNT"
-		sql_allowed_arg_type_id : Drop
+		sql_allowed_arg_type_mask : sql_types.any
 		sql_type : sql_types.int
 	}
 	div : Template base_arith_expr_tmpl {
@@ -455,13 +474,13 @@ expr_tmpl : Template {
 	lt : Template base_compare_op_tmpl {
 		sql_op : "<"
 	}
-	max : Template base_variadic_func_tmpl {
+	max : Template base_aggregate_func_tmpl {
 		sql_func : "MAX"
-		sql_allowed_arg_type_id : sql_types.numeric
+		sql_allowed_arg_type_mask : sql_types.numeric
 	}
-	min : Template base_variadic_func_tmpl {
+	min : Template base_aggregate_func_tmpl {
 		sql_func : "MIN"
-		sql_allowed_arg_type_id : sql_types.numeric
+		sql_allowed_arg_type_mask : sql_types.numeric
 	}
 	mod : Template base_arith_expr_tmpl {
 		sql_op : sql_arith_ops.mod
@@ -519,9 +538,9 @@ expr_tmpl : Template {
 	sub : Template base_arith_expr_tmpl {
 		sql_op : sql_arith_ops.sub
 	}
-	sum : Template base_variadic_func_tmpl {
+	sum : Template base_aggregate_func_tmpl {
 		sql_func : "SUM"
-		sql_allowed_arg_type_id : sql_types.numeric
+		sql_allowed_arg_type_mask : sql_types.numeric
 	}
 	unequal : Template base_compare_op_tmpl {
 		sql_op : "<>"
