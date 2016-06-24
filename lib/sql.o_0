@@ -661,7 +661,7 @@ sql_types : {
 		coerce : interval.id B| str.id
 	}
 	str : {
-		name : "TEXT"
+		name : "VARCHAR(4096)"
 		id : 8
 		cast : bool.id B| int.id B| float.id B| str.id
 		coerce : str.id
@@ -840,6 +840,34 @@ sql_providers : {
 			}
 		}
 	}
+	oracle : sql_provider_with_union_literal {
+		table_discovery +: {
+			sql_query : "SELECT '\"' || table_name || '\"' AS \"sql_from\", table_name AS \"table_name\", REGEXP_REPLACE(REGEXP_REPLACE(LOWER(table_name), '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 't\\1') AS \"ATTRNAME\" FROM user_tables"
+		}
+		column_discovery +: {
+			sql_query : "SELECT '\"' || table_name || '\".\"' || column_name || '\"' AS \"sql_expr\", REGEXP_REPLACE(REGEXP_REPLACE(LOWER(column_name), '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 'c\\1') AS \"ATTRNAME\", data_type, 'sql_types.' || data_xlate.lookup AS \"\" FROM USER_TAB_COLUMNS , (SELECT objectschema name, objectname lookup FROM TABLE(sys.ODCIObjectList(sys.odciobject('NUMBER%', 'float'), sys.odciobject('%CHAR%', 'str'), sys.odciobject('BINARY_FLOAT', 'float'), sys.odciobject('BINARY_DOUBLE', 'float'), sys.odciobject('DATE%', 'timestamp'), sys.odciobject('TIMESTAMP%', 'timestamp'), sys.odciobject('INTERVAL%', 'interval')))) data_xlate WHERE table_name = '\(table_name)'  AND data_type LIKE data_xlate.name"
+		}
+		transformations : {
+			quote : utils_lib.str_transform.char_tmpl { char : "'"  replacement : "''" }
+		}
+		null_from : " FROM DUAL"
+		expr : expr_tmpl {
+			interval_const +: {
+				sql_expr : "INTERVAL '\(time Enforce Int)' SECOND"
+			}
+			now +: {
+				sql_expr : If utc Then "SYS_EXTRACT_UTC(CURRENT_TIMESTAMP)" Else "CURRENT_TIMESTAMP"
+			}
+			str_slice +: {
+				sql_substr_syntax : "SUBSTR(" & specials.i.sql_expr & ", " & specials.s.sql_expr & ", " & specials.l.sql_expr & ")"
+			}
+		}
+		generate_literal_from +: {
+			value : "(" & value_list Enforce Str & ") " & symbol_start Enforce Str & table_name Enforce Str & symbol_end Enforce Str
+		}
+	}
+	oracle_host : oracle
+	oracle_tns : oracle
 	postgresql : sql_provider {
 		table_discovery +: {
 			sql_query : "SELECT QUOTE_IDENT(table_schema) || '.' || QUOTE_IDENT(table_name) AS sql_from, QUOTE_LITERAL(table_schema) AS table_schema, QUOTE_LITERAL(table_name) AS table_name, regexp_replace(regexp_replace(table_schema || '_' || table_name, '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 't\\1') AS \"ATTRNAME\" FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema');"

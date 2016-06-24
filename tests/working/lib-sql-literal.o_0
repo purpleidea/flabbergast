@@ -25,6 +25,7 @@ test_query : Template sql_lib.offline_query {
 sql_stmts : {
 	mssql : "SELECT [ho].[hi].[a] AS [x], ([lit].[a]*[ho].[hi].[z]) AS [y] FROM (VALUES (5,NULL),(3,('x'))) AS [lit]([a],[b]), [ho].[hi]"
 	mysql : "SELECT `ho`.`hi`.`a` AS `x`, (`lit`.`a`*`ho`.`hi`.`z`) AS `y` FROM (SELECT 5 AS `a`,NULL AS `b` UNION SELECT 3 AS `a`,'x' AS `b`) AS `lit`, `ho`.`hi`"
+	oracle : "SELECT \"ho\".\"hi\".\"a\" AS \"x\", (\"lit\".\"a\"*\"ho\".\"hi\".\"z\") AS \"y\" FROM (SELECT 5 AS \"a\",NULL AS \"b\" FROM DUAL UNION SELECT 3 AS \"a\",'x' AS \"b\" FROM DUAL) \"lit\", \"ho\".\"hi\""
 	postgresql : "SELECT \"ho\".\"hi\".\"a\" AS \"x\", (\"lit\".\"a\"*\"ho\".\"hi\".\"z\") AS \"y\" FROM (VALUES (5,NULL),(3,E'x')) AS \"lit\"(\"a\",\"b\"), \"ho\".\"hi\""
 	sqlite : "SELECT \"ho\".\"hi\".\"a\" AS \"x\", (\"lit\".\"a\"*\"ho\".\"hi\".\"z\") AS \"y\" FROM (SELECT 5 AS \"a\",NULL AS \"b\" UNION SELECT 3 AS \"a\",'x' AS \"b\") AS \"lit\", \"ho\".\"hi\""
 }

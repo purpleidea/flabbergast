@@ -13,6 +13,7 @@ test_query : Template sql_lib.offline_query {
 sql_stmts : {
 	mssql : "SELECT 3 AS [a]"
 	mysql : "SELECT INTERVAL 3 SECONDS AS `a`"
+	oracle : "SELECT INTERVAL '3' SECOND AS \"a\" FROM DUAL"
 	postgresql : "SELECT INTERVAL '3' SECONDS AS \"a\""
 	sqlite : "SELECT 3 AS \"a\""
 }

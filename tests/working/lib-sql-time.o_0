@@ -14,6 +14,7 @@ test_query : Template sql_lib.offline_query {
 sql_stmts : {
 	mssql : "SELECT DATEPART('year', GETUTCDATE()) AS [a]"
 	mysql : "SELECT EXTRACT(YEAR FROM UTC_TIMESTAMP()) AS `a`"
+	oracle : "SELECT EXTRACT(YEAR FROM SYS_EXTRACT_UTC(CURRENT_TIMESTAMP)) AS \"a\" FROM DUAL"
 	postgresql : "SELECT EXTRACT(YEAR FROM (now() at time zone 'utc')) AS \"a\""
 	sqlite : "SELECT CAST(strftime('%Y', datetime('now', 'utc')) AS INTEGER) AS \"a\""
 }

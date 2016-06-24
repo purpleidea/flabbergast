@@ -86,6 +86,22 @@ driver_config_tmpl : Template {
 				}
 			]
 		}
+		oracle_host : Template weird_url_driver {
+			friendly_name : "Oracle via Host"
+			jdbc_name : "oracle:oci:@"
+			ado_net_name : "Oracle.DataAccess.Client"
+			default_port : 1521
+			descriptor : "(DESCRIPTION=(ADDRESS_LIST=(ADDRESS=(PROTOCOL=TCP)(HOST=\(host_part))(PORT=\(port_part))))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=\(db_part))))"
+			params : {}
+		}
+		oracle_tns : Template file_driver {
+			friendly_name : "Oracle via TNS"
+			jdbc_name : "oracle:oci:@"
+			ado_net_name : "Oracle.DataAccess.Client"
+			ado_net_file_param : "Data Source"
+			file_regex : "^[A-Za-z0-9_]+$"
+			params : {}
+		}
 		postgresql : Template url_driver {
 			friendly_name : "PostgreSQL"
 			jdbc_name : "postgresql:"
