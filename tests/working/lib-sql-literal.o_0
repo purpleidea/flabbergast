@@ -1,4 +1,6 @@
 sql_lib : From lib:sql
+utils_lib : From lib:utils
+
 test_query : Template sql_lib.offline_query {
 	columns : {
 		x : column.foo.a
@@ -27,9 +29,7 @@ sql_stmts : {
 	sqlite : "SELECT \"ho\".\"hi\".\"a\" AS \"x\", (\"lit\".\"a\"*\"ho\".\"hi\".\"z\") AS \"y\" FROM (SELECT 5 AS \"a\",NULL AS \"b\" UNION SELECT 3 AS \"a\",'x' AS \"b\") AS \"lit\", \"ho\".\"hi\""
 }
 
-checks : For provider : sql_lib.sql_providers, stmt : sql_stmts, name : Name
+results : For provider : sql_lib.sql_providers, stmt : sql_stmts, name : Name
 	Select name : stmt Is Null || test_query(provider : provider) == stmt
 
-value : For check : checks
-	Reduce acc && check
-	With acc : True
+value : utils_lib.all(args : results)

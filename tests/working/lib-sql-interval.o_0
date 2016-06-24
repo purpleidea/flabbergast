@@ -1,4 +1,5 @@
 sql_lib : From lib:sql
+utils_lib : From lib:utils
 
 test_query : Template sql_lib.offline_query {
 	table : [ { sql_from : "XXX"  known_columns : [] } ]
@@ -16,6 +17,7 @@ sql_stmts : {
 	sqlite : "SELECT 3 AS \"a\""
 }
 
-value : For provider : sql_lib.sql_providers, stmt : sql_stmts
-	Reduce acc && (stmt Is Null || test_query(provider : provider) == stmt)
-	With acc : True
+results : For provider : sql_lib.sql_providers, stmt : sql_stmts, name : Name
+	Select name : stmt Is Null || test_query(provider : provider) == stmt
+
+value : utils_lib.all(args : results)

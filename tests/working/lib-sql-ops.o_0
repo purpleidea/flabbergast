@@ -1,4 +1,5 @@
 sql_lib : From lib:sql
+utils_lib : From lib:utils
 
 test_query : Template sql_lib.offline_query {
 	table : { t : sql_lib.offline_table_tmpl { table_schema : "Z"  table_name : "XXX" columns +: { x : column_tmpl { column_name : $x } } } }
@@ -23,6 +24,7 @@ sql_stmts : {
 	sqlite : "SELECT (3+4) AS \"a\", SUBSTR('foo', 1, 2) AS \"b\", \"Z\".\"XXX\".\"x\" AS \"y\" FROM \"Z\".\"XXX\""
 }
 
-value : For provider : sql_lib.sql_providers, stmt : sql_stmts
-	Reduce acc && (stmt Is Null || test_query(provider : provider) == stmt)
-	With acc : True
+results : For provider : sql_lib.sql_providers, stmt : sql_stmts, name : Name
+	Select name : stmt Is Null || test_query(provider : provider) == stmt
+
+value : utils_lib.all(args : results)
