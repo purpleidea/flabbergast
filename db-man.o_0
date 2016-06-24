@@ -18,10 +18,10 @@ driver_config : db_lib.driver_config_tmpl {
 		uri_format : file_uri_man
 	}
 
-	url_driver +: {
+	host_driver +: {
 		uri_format : net_uri_man
 	}
-	weird_url_driver +: {
+	weird_host_driver +: {
 		uri_format : net_uri_man
 		host_part : ""
 		port_part : ""

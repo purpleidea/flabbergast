@@ -17,7 +17,7 @@ driver_config_tmpl : Template {
 		file_regex : "."
 	}
 
-	url_driver : Template driver_tmpl {
+	host_driver : Template driver_tmpl {
 		jdbc_db_param : Null
 		jdbc_user_param : "user"
 		jdbc_password_param : "password"
@@ -28,7 +28,7 @@ driver_config_tmpl : Template {
 		ado_net_password_param : "Password"
 	}
 
-	weird_url_driver : Template driver_tmpl {
+	weird_host_driver : Template driver_tmpl {
 		jdbc_user_param : "user"
 		jdbc_password_param : "password"
 		ado_net_descriptor_param : "Data Source"
@@ -63,14 +63,14 @@ driver_config_tmpl : Template {
 	}
 
 	drivers : Template {
-		mssql : Template url_driver {
+		mssql : Template host_driver {
 			friendly_name : "Microsoft SQL Server"
 			jdbc_name : "sqlserver:"
 			ado_net_name : "System.Data.SqlClient"
 			jdbc_db_param : "databaseName"
 			params : {}
 		}
-		mysql : Template url_driver {
+		mysql : Template host_driver {
 			friendly_name : "mySQL"
 			jdbc_name : "mysql:"
 			ado_net_name : "MySql.Data.MySqlClient"
@@ -86,7 +86,7 @@ driver_config_tmpl : Template {
 				}
 			]
 		}
-		oracle_host : Template weird_url_driver {
+		oracle_host : Template weird_host_driver {
 			friendly_name : "Oracle via Host"
 			jdbc_name : "oracle:oci:@"
 			ado_net_name : "Oracle.DataAccess.Client"
@@ -102,7 +102,7 @@ driver_config_tmpl : Template {
 			file_regex : "^[A-Za-z0-9_]+$"
 			params : {}
 		}
-		postgresql : Template url_driver {
+		postgresql : Template host_driver {
 			friendly_name : "PostgreSQL"
 			jdbc_name : "postgresql:"
 			ado_net_name : "Npgsql"
