@@ -20,7 +20,7 @@ driver_config : db_lib.driver_config_tmpl {
 	}
 
 	file_driver +: {
-		parse : "\tif (uri_fragment.Length == 0) { err = \"No file specified.\"; return null; }\n\t\(Id)_builder[\"\(ado_net_file_param)\"] = uri_fragment;\n"
+		parse : "\tif (!Regex.IsMatch(uri_fragment, \"\(file_regex)\")) { err = \"Invalid file specified.\"; return null; }\n\t\(Id)_builder[\"\(ado_net_file_param)\"] = uri_fragment;\n"
 	}
 
 	url_driver +: {

@@ -20,7 +20,7 @@ driver_config : db_lib.driver_config_tmpl {
 	}
 
 	file_driver +: {
-		parse : "\nif (uri_fragment.length() == 0) { err.set(\"No file specified.\"); return null; }\n"
+		parse : "\nif (!Pattern.matches(\"\(file_regex)\", uri_fragment)) { err.set(\"Invalid file specified.\"); return null; }\n"
 		tail : " + uri_fragment"
 	}
 
