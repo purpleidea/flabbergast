@@ -308,7 +308,7 @@ public class Parser {
     Map<Integer, Map<Class<? extends AstNode>, Memory>> cache = new HashMap<Integer, Map<Class<? extends AstNode>, Memory>>();
     int column;
     private String file_name;
-		private boolean disable_extensions;
+    private boolean disable_extensions;
     /**
      * The position of the most helpful error yet produced by the parser.
      */
@@ -350,12 +350,12 @@ public class Parser {
         return null;
     }
 
-		/**
-		 * Whether to allow platform-specific extenion syntax to be compiled.
-		 */
-		public boolean getDisableExtensions() {
-			return disable_extensions;
-		}
+    /**
+     * Whether to allow platform-specific extenion syntax to be compiled.
+     */
+    public boolean getDisableExtensions() {
+        return disable_extensions;
+    }
 
     /**
      * The name of the file being parsed for debugging and error information.
@@ -478,12 +478,12 @@ public class Parser {
         return null;
     }
 
-		/**
-		 * Whether to allow platform-specific extenion syntax to be compiled.
-		 */
-		public void setDisableExtensions(boolean disable_extensions) {
-			this.disable_extensions = disable_extensions;
-		}
+    /**
+     * Whether to allow platform-specific extenion syntax to be compiled.
+     */
+    public void setDisableExtensions(boolean disable_extensions) {
+        this.disable_extensions = disable_extensions;
+    }
 
     public void setTrace(boolean trace) {
         this.trace = trace;
