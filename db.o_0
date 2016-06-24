@@ -13,6 +13,7 @@ driver_config_tmpl : Template {
 	}
 
 	file_driver : Template driver_tmpl {
+		path_name : "path"
 		ado_net_file_param : Required
 		file_regex : "."
 	}
@@ -96,6 +97,7 @@ driver_config_tmpl : Template {
 		}
 		oracle_tns : Template file_driver {
 			friendly_name : "Oracle via TNS"
+			path_name : "tnsname"
 			jdbc_name : "oracle:oci:@"
 			ado_net_name : "Oracle.DataAccess.Client"
 			ado_net_file_param : "Data Source"
