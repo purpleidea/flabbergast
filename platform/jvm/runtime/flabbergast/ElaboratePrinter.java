@@ -92,6 +92,9 @@ public abstract class ElaboratePrinter implements ConsumeResult {
                 }
             }
             write("\"\n");
+        } else if (result instanceof byte[]) {
+            write(Integer.toString(((byte[]) result).length));
+            write(" bytes of Unspeakable Horror\n");
         } else {
             write(result.toString());
             write("\n");

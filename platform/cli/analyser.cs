@@ -14,7 +14,8 @@ public enum Type {
     Int = 8,
     Str = 16,
     Template = 32,
-    Unit = 64
+    Unit = 64,
+    Bin = 128
 }
 internal abstract class AstTypeableNode : AstNode {
     protected Environment Environment;
@@ -133,6 +134,8 @@ internal abstract class AstTypeableNode : AstNode {
             return Type.Template;
         } else if (clr_type == typeof(Unit)) {
             return Type.Unit;
+        } else if (clr_type == typeof(byte[])) {
+            return Type.Bin;
         } else if (clr_type == typeof(object)) {
             return NameInfo.AnyType;
         } else {
@@ -153,6 +156,7 @@ internal abstract class AstTypeableNode : AstNode {
         if (type.HasFlag(Type.Str)) types[index++] = typeof(Stringish);
         if (type.HasFlag(Type.Template)) types[index++] = typeof(Template);
         if (type.HasFlag(Type.Unit)) types[index++] = typeof(Unit);
+        if (type.HasFlag(Type.Bin)) types[index++] = typeof(byte[]);
         return types;
     }
     public static Type HorrendousTypeMerge(Type expr_result, Type original) {
@@ -175,7 +179,7 @@ internal class EnvironmentPrioritySorter : IComparer<AstTypeableNode> {
     }
 }
 internal abstract class NameInfo {
-    public const Type AnyType = Type.Bool | Type.Float | Type.Frame | Type.Int | Type.Str | Type.Template | Type.Unit;
+    public const Type AnyType = Type.Bin | Type.Bool | Type.Float | Type.Frame | Type.Int | Type.Str | Type.Template | Type.Unit;
     protected Dictionary<string, NameInfo> Children = new Dictionary<string, NameInfo>();
     public string Name {
         get;

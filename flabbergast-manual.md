@@ -466,7 +466,7 @@ In Flabbergast, all keywords start with a capital letter and identifiers start w
 
 ### Types and Constants
 
-Flabbergast has a small handful of types: integers (`Int`), floating-pointer numbers (`Float`), Boolean values (`Bool`), text strings (`Str`), frames (`Frame`) and templates (`Template`).
+Flabbergast has a small handful of types: integers (`Int`), floating-pointer numbers (`Float`), Boolean values (`Bool`), text strings (`Str`), binary strings (`Bin`), frames (`Frame`) and templates (`Template`).
 
 Integral and floating-point number literals are specified in the familiar way. They can also be manipulated using the typical `+`, `-`, `*`, `/` and `%` operators. In mixed-type expressions, integers are automatically promoted to floating-point numbers. They also can be compared using `==`, `!=`, `<`, `<=`, `>`, `>=`, and `<=>`. The `<=>` operator will be familiar to Perl and Ruby programmers: it compares two values and returns -1, 0, or 1 if the left operand is less than, equal to, or greater than the right operand, respectively. There is also a unary negation operator `-`. A few floating-point exceptional tests are provided: `Is Finite` and `Is NaN` to check if the number is finite or not-a-number in the IEEE sense, respectively. Also, the floating-point constants `NaN`, `Infinity`, `FloatMax`, and `FloatMin`, and integer constants `IntMax` and `IntMin` are provided.
 
@@ -484,6 +484,8 @@ Sometimes, attribute names are provided as strings and, since not all strings ar
 
     x : $foo == "foo" # True
     y : $5 # Error
+
+Binary strings are handled mostly by library functions as a way to pass binary data around, including conversion to and from text strings, hashing, and database interaction.
 
 Frames are collections of attributes. Literal frames are specified starting with `{`, followed by a list of attributes, and terminated with a matching `}`. Each attribute is a name, followed by `:`, and an expression. Frames inherit the context of the frame in which they are defined. Templates look similar except that they are preceded by the `Template` keyword. There are two important differences between templates and frames: frames are immutable while templates can be manipulated and variable resolution can look inside frames, but not inside of templates. Neither can be coerced to strings. More details on frames are provided later.
 

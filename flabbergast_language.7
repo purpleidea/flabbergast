@@ -27,6 +27,9 @@ Future versions may extend the keyword system to Unicode.
 
 .SH TYPES IN THE LANGUAGE
 .TP
+Bin
+a byte string
+.TP
 Bool
 a Boolean value. Maybe either \fBTrue\fR or \fBFalse\fR.
 .TP
@@ -528,6 +531,13 @@ Returns the Unicode character count of the provided string.
 String character length
 .SEM Γ ⊢ \fBLength\fR expr:E\*<+\*> ↓ n :: Int
 Γ ⊢ expr \fBTo Str\fR ↓ "c\*<1\*>c\*<2\*>...c\*<n\*>" :: Str
+.SEME
+
+Returns the number of bytes of the provided binary data.
+.TP
+Binary data length
+.SEM Γ ⊢ \fBLength\fR expr:E\*<+\*> ↓ n :: Int
+Γ ⊢ expr ↓ [[x\*<1\*>x\*<2\*>...x\*<n\*>]] :: Bin
 .SEME
 
 .SS EXPRESSION SYNTAX (E) – REMOTE LOOKUP

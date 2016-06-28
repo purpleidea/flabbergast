@@ -28,6 +28,7 @@ The VM uses static single assignment with the note that variable resolution and 
  - an integer (`Int`), as in the Flabbergast language.
  - a floating point number (`Float`), as in the Flabbergast language.
  - a Boolean (`Bool`), as in the Flabbergast language.
+ - an array of bytes (`Bin`), as in the Flabbergast language.
  - a string (`Str`), as in the Flabbergast language.
  - a frame (`Frame`), where keys are strings and values are any type.
  - the null type (`Unit`). This is distinct from the empty list.
@@ -333,6 +334,13 @@ Add item to a template. If the requested name is already present, an error occur
 Get item from a template. If the requested name is not in the template, a “null function” is returned.
 
     r : Function = template_get(tmpl : Template, name : Str)
+
+### Bin Operations
+
+#### Bin Length
+Returns the number of bytes in a binary string.
+
+    r : Int = binary_length(b : Bin)
 
 ### String Operations
 

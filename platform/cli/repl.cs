@@ -169,6 +169,8 @@ public class REPL {
             provider.GenerateCodeFromExpression(new CodePrimitiveExpression(result.ToString()), Console.Out, null);
             Console.Out.Flush();
             Console.WriteLine();
+        } else if (result is byte[]) {
+            Console.WriteLine("{0} bytes of Unspeakable Horror", ((byte[]) result).Length);
         } else {
             Console.WriteLine(result);
         }

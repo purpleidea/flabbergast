@@ -267,6 +267,7 @@ environment_tmpl : Template {
 }
 # The definitions for all the types in the Flabbergast language.
 known_types_tmpl : Template {
+	bin : Required
 	bool : Required
 	float : Required
 	frame : Required
@@ -378,6 +379,11 @@ kws_tmpl : Template {
 	base_tmpl : Template codegen.gen_tmpl {
 		arguments : Required
 		return_type : Required
+	}
+	binary_length : Template base_tmpl {
+		source : Required
+		arguments : [ { value : source  type : known_types.bin } ]
+		return_type : known_types.int
 	}
 	bool_negate : Template base_tmpl {
 		source : Required
@@ -4292,19 +4298,31 @@ language_tmpl : Template {
 					}
 				}
 				length : Template unary_tmpl {
-					pretty_name : "string length"
+					pretty_name : "length"
 					level : 15
 					operator : "Length"
 					ensure_type_is : ensure_type.stop {}
 					type_demand : ensure_type.filter {
-						types : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
+						types : [ known_types.bin, known_types.bool, known_types.float, known_types.int, known_types.str ]
 						needs_unbox : False
 						ensure_type_of : ensure_type.propagate { fields : [ $expr ] }
 					}
-					code_value : kws.string_length {
-						source : kws.cast_to_string {
-							source : codegen.other_code { field : $expr }
+					code_value : codegen.type_dispatch {
+						of : codegen.other_code { field : $expr }
+						default_action : kws.string_length {
+							source : kws.cast_to_string {
+								source : converted_result
+							}
 						}
+
+						choices : [
+							choice_tmpl {
+								type : known_types.bin
+								action : kws.binary_length {
+									source : converted_result
+								}
+							}
+						]
 					}
 				}
 

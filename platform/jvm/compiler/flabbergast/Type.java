@@ -5,7 +5,7 @@ public enum Type {
             Float.class, float.class), Frame(4, Frame.class), Int(8,
                     long.class, Long.class, Integer.class, int.class, Short.class,
                     short.class, Byte.class, byte.class), Str(16, Stringish.class,
-                            String.class), Template(32, Template.class), Unit(64, Unit.class);
+                            String.class), Template(32, Template.class), Unit(64, Unit.class), Bin(128, byte[].class);
     public static Type fromNative(Class<?> clazz) {
         for (Type t : values()) {
             for (Class<?> c : t.clazz)

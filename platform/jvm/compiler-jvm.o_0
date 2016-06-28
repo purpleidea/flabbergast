@@ -606,6 +606,12 @@ environment : compiler_lib.environment_tmpl {
 # types used by the environments to propagate type information (a.k.a.
 # `union_type`).
 known_types : compiler_lib.known_types_tmpl {
+	bin : {
+		union_type : "flabbergast.Type.Bin"
+		real_type : "byte[]"
+		name : "Bin"
+		unbox : True
+	}
 	bool : {
 		union_type : "flabbergast.Type.Bool"
 		real_type : "boolean"
@@ -1391,6 +1397,11 @@ kws : compiler_lib.kws_repl_tmpl {
 	string_length +: {
 		opcode : "Stringish.class.getMethod(\"getLength\")"
 		emit_method : Null
+	}
+	binary_length +: {
+		opcode : "ARRAYLENGTH"
+		emit_method : "visitInsn"
+		extra_post : "\(indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.I2L);"
 	}
 	numeric_constant +: {
 		extra_indent : ""

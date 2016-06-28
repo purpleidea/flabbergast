@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TypeSet {
-    public static TypeSet ALL = new TypeSet(127);
+    public static TypeSet ALL = new TypeSet(255);
     public static final TypeSet EMPTY = new TypeSet(0);
 
     public static TypeSet fromNative(Class<?> type) {

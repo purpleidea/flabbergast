@@ -2,6 +2,7 @@ package flabbergast;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.text.Collator;
 import java.text.DecimalFormat;
@@ -72,6 +73,9 @@ public abstract class Stringish
         }
         if (t == Unit.class) {
             return "Null";
+        }
+        if (t == byte[].class) {
+            return "Bin";
         }
         return t.getSimpleName();
     }
@@ -158,6 +162,28 @@ public abstract class Stringish
     public final void write(Writer writer) throws IOException {
         for (String s : this) {
             writer.write(s);
+        }
+    }
+
+    public final byte[] toUtf8() {
+        try {
+            return toString().getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            return new byte[0];
+        }
+    }
+    public final byte[] toUtf16(boolean big) {
+        try {
+            return toString().getBytes("UTF-16" + (big ? "BE" : "LE"));
+        } catch (UnsupportedEncodingException e) {
+            return new byte[0];
+        }
+    }
+    public final byte[] toUtf32(boolean big) {
+        try {
+            return toString().getBytes("UTF-32" + (big ? "BE" : "LE"));
+        } catch (UnsupportedEncodingException e) {
+            return new byte[0];
         }
     }
 }

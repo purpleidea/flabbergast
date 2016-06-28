@@ -141,6 +141,21 @@ str_trim_list : Template {
 		For arg : args, arg_name : Name
 		Select arg_name : XInvoke java.lang.String trim (arg To Str)
 }
+str_utf8_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke flabbergast.Stringish toUtf8 (arg To Str)
+}
+str_utf16_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke flabbergast.Stringish toUtf16 (arg To Str, big_endian)
+}
+str_utf32_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke flabbergast.Stringish toUtf32 (arg To Str, big_endian)
+}
 str_utf8_length_list : Template {
 	value :
 		For arg : args, arg_name : Name

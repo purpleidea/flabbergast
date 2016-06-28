@@ -71,6 +71,7 @@ public abstract class Stringish : IComparable<Stringish> {
         if (typeof(bool) == t) return "Bool";
         if (typeof(double) == t) return "Float";
         if (typeof(long) == t) return "Int";
+        if (typeof(byte[]) == t) return "Bin";
         return t.ToString();
     }
 
@@ -111,6 +112,16 @@ public abstract class Stringish : IComparable<Stringish> {
         while (stream.MoveNext()) {
             writer.Write(stream.Current);
         }
+    }
+
+    public byte[] ToUtf8() {
+        return System.Text.Encoding.UTF8.GetBytes(this.ToString());
+    }
+    public byte[] ToUtf16(bool big) {
+        return new System.Text.UnicodeEncoding(big, false).GetBytes(this.ToString());
+    }
+    public byte[] ToUtf32(bool big) {
+        return new System.Text.UTF32Encoding(big, false).GetBytes(this.ToString());
     }
 }
 

@@ -594,6 +594,37 @@ str_trim_list : Template ( From lib:utilsinterop ).str_trim_list {
 	args : Used
 }
 
+{{{Get the UTF-8 bytes in a string.}}}
+str_utf8 : firstifier(base : str_utf8_list)
+
+{{{Get a list of the UTF-8 bytes in a list of strings.}}}
+str_utf8_list : Template (From lib:utilsinterop).str_utf8_list {
+	{{{A list of strings to convert.}}}
+	args : Used
+}
+
+{{{Get the UTF-16 bytes in a string.}}}
+str_utf16 : firstifier(base : str_utf16_list)
+
+{{{Get a list of the UTF-16 bytes in a list of strings.}}}
+str_utf16_list : Template (From lib:utilsinterop).str_utf16_list {
+	{{{A list of strings to convert.}}}
+	args : Used
+	{{{Whether to encode bytes a big endian or little endian.}}}
+	big_endian : True
+}
+
+{{{Get the UTF-32 bytes in a string.}}}
+str_utf32 : firstifier(base : str_utf32_list)
+
+{{{Get a list of the UTF-32 bytes in a list of strings.}}}
+str_utf32_list : Template (From lib:utilsinterop).str_utf32_list {
+	{{{A list of strings to convert.}}}
+	args : Used
+	{{{Whether to encode bytes a big endian or little endian.}}}
+	big_endian : True
+}
+
 {{{Get the UTF-8 length of a string.}}}
 str_utf8_length : sumifier(base : str_utf8_length_list)
 

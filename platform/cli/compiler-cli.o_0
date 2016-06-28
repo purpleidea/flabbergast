@@ -579,6 +579,12 @@ environment : compiler_lib.environment_tmpl {
 # types used by the environments to propagate type information (a.k.a.
 # `union_type`).
 known_types : compiler_lib.known_types_tmpl {
+	bin : {
+		union_type : "Flabbergast.Type.Bin"
+		real_type : "byte[]"
+		name : "Bin"
+		unbox : True
+	}
 	bool : {
 		union_type : "Flabbergast.Type.Bool"
 		real_type : "bool"
@@ -1296,6 +1302,13 @@ kws : compiler_lib.kws_repl_tmpl {
 		opcode : "Callvirt"
 		gen_gen +: {
 			extra_emit : ", typeof(Stringish).GetMethod(\"get_Length\")"
+		}
+	}
+	binary_length +: {
+		opcode : "Ldlen"
+		gen_gen +: {
+			extra_post :
+				"\(sum_indent)\(builder).Emit(System.Reflection.Emit.OpCodes.Conv_I8);"
 		}
 	}
 	numeric_constant +: {
