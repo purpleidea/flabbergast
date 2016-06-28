@@ -132,6 +132,70 @@ public class StringToCodepoints : Computation {
     }
 }
 
+public class StringFromBytes : Computation {
+    private System.Text.Encoding[] encodings = new System.Text.Encoding[] {
+        new System.Text.UTF32Encoding(true, false, true),
+        new System.Text.UTF32Encoding(false, false, true),
+        new System.Text.UnicodeEncoding(true, false, true),
+        new System.Text.UnicodeEncoding(false, false, true),
+        new System.Text.UTF8Encoding(false, true)
+    };
+
+    private int interlock = 3;
+    private byte[] input;
+    private System.Text.Encoding encoding;
+
+    private SourceReference source_reference;
+    private Context context;
+
+    public StringFromBytes(TaskMaster task_master, SourceReference source_ref,
+                           Context context, Frame self, Frame container) : base(task_master) {
+        this.source_reference = source_ref;
+        this.context = context;
+    }
+    protected override bool Run() {
+        if (input == null) {
+            Computation input_lookup = new Lookup(task_master, source_reference, new [] {"arg"}, context);
+            input_lookup.Notify(input_result => {
+                if (input_result is byte[]) {
+                    input = (byte[]) input_result;
+                    if (Interlocked.Decrement(ref interlock) == 0) {
+                        task_master.Slot(this);
+                    }
+                } else {
+                    task_master.ReportOtherError(source_reference, "Input argument must be a Bin.");
+                }
+            });
+
+            Computation encoding_lookup = new Lookup(task_master, source_reference, new [] {"encoding"}, context);
+            encoding_lookup.Notify(encoding_result => {
+                if (encoding_result is long) {
+                    var index = (long) encoding_result;
+                    if (index >= 0 && index < encodings.Length) {
+                        encoding = encodings[index];
+                        if (Interlocked.Decrement(ref interlock) == 0) {
+                            task_master.Slot(this);
+                            return;
+                        }
+                    }
+                }
+                task_master.ReportOtherError(source_reference, "Invalid encoding.");
+            });
+
+            if (Interlocked.Decrement(ref interlock) > 0) {
+                return false;
+            }
+        }
+        try {
+            result = new SimpleStringish(encoding.GetString(input));
+            return true;
+        } catch (DecoderFallbackException e) {
+            task_master.ReportOtherError(source_reference, String.Format("Cannot decode byte {0}.", e.Index));
+            return false;
+        }
+    }
+}
+
 public class ParseDouble : Computation {
 
     private int interlock = 2;

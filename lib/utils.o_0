@@ -25,6 +25,51 @@ anyifier : Template {
 	}
 }
 
+{{{Convert binary data to a string by decoding it as UTF-8.}}}
+bin_to_str_utf8 : str_concatifier(base : bin_to_str_utf8_list)
+
+{{{Convert a list of binary data to a list of strings by decoding it as UTF-8.}}}
+bin_to_str_utf8_list : Template (From lib:utilsinterop).bin_to_str_utf8_list {
+	{{{The binary data to convert to strings.}}}
+	args : Used
+}
+
+{{{Convert binary data to a string by decoding it as big-endian UTF-16.}}}
+bin_to_str_utf16be : str_concatifier(base : bin_to_str_utf16be_list)
+
+{{{Convert a list of binary data to a list of strings by decoding it as big-endian UTF-16.}}}
+bin_to_str_utf16be_list : Template (From lib:utilsinterop).bin_to_str_utf16be_list {
+	{{{The binary data to convert to strings.}}}
+	args : Used
+}
+
+{{{Convert binary data to a string by decoding it as little-endian UTF-16.}}}
+bin_to_str_utf16le : str_concatifier(base : bin_to_str_utf16be_list)
+
+{{{Convert a list of binary data to a list of strings by decoding it as little-endian UTF-16.}}}
+bin_to_str_utf16le_list : Template (From lib:utilsinterop).bin_to_str_utf16be_list {
+	{{{The binary data to convert to strings.}}}
+	args : Used
+}
+
+{{{Convert binary data to a string by decoding it as big-endian UTF-32.}}}
+bin_to_str_utf32be : str_concatifier(base : bin_to_str_utf32be_list)
+
+{{{Convert a list of binary data to a list of strings by decoding it as big-endian UTF-32.}}}
+bin_to_str_utf32be_list : Template (From lib:utilsinterop).bin_to_str_utf32be_list {
+	{{{The binary data to convert to strings.}}}
+	args : Used
+}
+
+{{{Convert binary data to a string by decoding it as little-endian UTF-32.}}}
+bin_to_str_utf32le : str_concatifier(base : bin_to_str_utf32le_list)
+
+{{{Convert a list of binary data to a list of strings by decoding it as little-endian UTF-32.}}}
+bin_to_str_utf32le_list : Template (From lib:utilsinterop).bin_to_str_utf32le_list {
+	{{{The binary data to convert to strings.}}}
+	args : Used
+}
+
 {{{Limits the range of a list of values. For details, see \{clampifier}.}}}
 clamp_list : clampifier(base : identity)
 
