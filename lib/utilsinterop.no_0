@@ -193,3 +193,23 @@ bin_to_str_utf16le_list : Template bin_to_str_list { encoding : 3 }
 bin_to_str_utf16be_list : Template bin_to_str_list { encoding : 2 }
 bin_to_str_utf32le_list : Template bin_to_str_list { encoding : 1 }
 bin_to_str_utf32be_list : Template bin_to_str_list { encoding : 0 }
+bin_hash_list_md5 : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke Flabbergast.StaticFunctions,Flabbergast.Runtime ComputeMD5 (arg)
+}
+bin_hash_list_sha1 : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke Flabbergast.StaticFunctions,Flabbergast.Runtime ComputeSHA1 (arg)
+}
+bin_hash_list_sha256 : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke Flabbergast.StaticFunctions,Flabbergast.Runtime ComputeSHA256 (arg)
+}
+bin_to_hex_str_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke Flabbergast.StaticFunctions,Flabbergast.Runtime BytesToHex (arg, delimiter, uppercase)
+}

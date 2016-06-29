@@ -5,6 +5,31 @@ using System.Text;
 using System.Threading;
 
 namespace Flabbergast {
+public class StaticFunctions {
+    public static byte[] ComputeMD5(byte[] input) {
+        return System.Security.Cryptography.MD5.Create().ComputeHash(input);
+    }
+    public static byte[] ComputeSHA1(byte[] input) {
+        return System.Security.Cryptography.SHA1.Create().ComputeHash(input);
+    }
+    public static byte[] ComputeSHA256(byte[] input) {
+        return System.Security.Cryptography.SHA256.Create().ComputeHash(input);
+    }
+    public static string BytesToHex(byte[] input, string delimiter, bool upper) {
+        StringBuilder builder = new StringBuilder();
+        bool first = true;
+        foreach (byte b in input) {
+            if (first) {
+                first = false;
+            } else {
+                builder.Append(delimiter);
+            }
+            builder.Append(String.Format(upper ? "{0:X2}" : "{0:x2}", b));
+        }
+        return builder.ToString();
+    }
+
+}
 public class CharacterCategory : Computation {
     private static readonly Dictionary<UnicodeCategory, string> categories = new Dictionary<UnicodeCategory, string> {
         { UnicodeCategory.LowercaseLetter, "letter_lower" },

@@ -25,7 +25,48 @@ anyifier : Template {
 	}
 }
 
+{{{Compute the hash of binary data.}}}
+bin_hash : {
+	md5 : firstifier(base : bin_hash_list.md5)
+	sha1 : firstifier(base : bin_hash_list.sha1)
+	sha256 : firstifier(base : bin_hash_list.sha256)
+}
 
+{{{Compute a list of hashes of a list of binary data.}}}
+bin_hash_list : {
+	md5 : Template (From lib:utilsinterop).bin_hash_list_md5 {
+		{{{The binary data to hash.}}}
+		args : Used
+	}
+	sha1 : Template (From lib:utilsinterop).bin_hash_list_sha1 {
+		{{{The binary data to hash.}}}
+		args : Used
+	}
+	sha256 : Template (From lib:utilsinterop).bin_hash_list_sha256 {
+		{{{The binary data to hash.}}}
+		args : Used
+	}
+}
+
+{{{Convert binary data into a hexadecimal string.}}}
+bin_to_hex_str : str_concatifier(base : bin_to_hex_str_list)
+
+{{{Convert a list of binary data into a list of hexadecimal strings.}}}
+bin_to_hex_str_list : Template (From lib:utilsinterop).bin_to_hex_str_list {
+		{{{The binary data to convert.}}}
+		args : Used
+		{{{The separator between bytes.}}}
+		delimiter : ""
+		{{{Whether to use upper or lowercase alphabetical characters.}}}
+		uppercase : False
+}
+
+{{{Convert binary data into a C-style hexadecimal array.}}}
+bin_to_c_array_str : Template str_concatifier(base : bin_to_hex_str_list) {
+	value +orig: "0x" & orig Enforce Str
+	delimiter : ", 0x"
+	uppercase : True
+}
 
 {{{Convert binary data to a string by decoding it.}}}
 bin_to_str : {
