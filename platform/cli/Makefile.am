@@ -26,12 +26,33 @@ cli_DATA = \
 compilerdir = $(pkgdatadir)/compiler
 compiler_SCRIPTS = cli-build-cache
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = \
+	flabbergast-compiler-cli.pc \
+	flabbergast-runtime-cli.pc \
+	$(NULL)
+
 TESTS = bin/Debug/flabbergast-test.exe
 TEST_EXTENSIONS = .exe
 EXE_LOG_COMPILER = cli
 
 $(cli_DATA) $(TEST): $(wildcard *.cs *.sln *.csproj)
 	$(XBUILD) /verbosity:quiet flabbergast.sln
+
+flabbergast-runtime-cli.pc: Makefile
+	@echo Libraries=$(clidir)/Flabbergast.Runtime.dll > $@
+	@echo Name: Flabbergast Runtime >> $@
+	@echo Description: The Flabbergast runtime support library >> $@
+	@echo Version: $(VERSION) >> $@
+	@echo Libs: -r:Flabbergast.Runtime.dll >> $@
+
+flabbergast-compiler-cli.pc: Makefile
+	@echo Libraries=$(clidir)/Flabbergast.Compiler.dll > $@
+	@echo Name: Flabbergast Compiler >> $@
+	@echo Description: The Flabbergast compiler-as-a-service library >> $@
+	@echo Version: $(VERSION) >> $@
+	@echo Requires: flabbergast-runtime-cli >> $@
+	@echo Libs: -r:Flabbergast.Compiler.dll >> $@
 
 cli-build-cache: Makefile
 	@echo '#!/bin/sh' > $@

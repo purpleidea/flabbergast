@@ -1,6 +1,7 @@
 *.?db
 *.dll
 *.il
+*.pc
 *.suo
 *.user
 *.userprefs

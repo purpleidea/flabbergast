@@ -1,4 +1,5 @@
 usr/bin/nflabbergast*
+usr/lib/pkgconfig/*-cli.pc
 usr/share/flabbergast/cli
 usr/share/flabbergast/compiler/cli-build-cache
 usr/share/flabbergast/lib/*.no_0
