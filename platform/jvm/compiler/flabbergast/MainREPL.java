@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import jline.console.ConsoleReader;
 import jline.console.completer.StringsCompleter;
+import jline.console.history.FileHistory;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -86,6 +87,18 @@ public class MainREPL {
                 keep_running = (Boolean) result;
             }
         }
+    }
+
+    private static File getDataDir() {
+        String userHome = System.getProperty("user.home");
+        for (String path : new String[] { System.getenv("XDG_DATA_HOME"), userHome + File.separator + ".config", userHome + File.separator + "Library" + File.separator + "Application Support" , userHome}) {
+            if (path == null) continue;
+            File file = new File(path);
+            if (file.exists() && file.isDirectory()) {
+                return file;
+            }
+        }
+        return null;
     }
 
     public static void main(String[] args) {
@@ -177,6 +190,7 @@ public class MainREPL {
         CurrentFrame current = new CurrentFrame(root.get());
 
         try {
+            FileHistory history = new FileHistory(new File(getDataDir(), "flabbergast.history"));
             ConsoleReader reader = new ConsoleReader();
             reader.addCompleter(new StringsCompleter("args", "value", "Append",
                                 "Bool", "By", "Container", "Drop", "Each", "Else",
@@ -188,6 +202,7 @@ public class MainREPL {
                                 "Select", "Str", "Template", "Then", "This", "Through",
                                 "To", "True", "Used", "Where", "With"));
             reader.setPrompt("‽ ");
+            reader.setHistory(history);
             reader.setHistoryEnabled(true);
             reader.setPaginationEnabled(true);
             reader.setExpandEvents(false);
@@ -218,6 +233,7 @@ public class MainREPL {
                     task_master.reportCircularEvaluation();
                 }
             }
+            history.flush();
         } catch (Exception e) {
             e.printStackTrace();
         }
