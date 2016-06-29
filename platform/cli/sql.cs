@@ -26,6 +26,11 @@ public class DbQuery : Computation {
         AddUnpacker((rs, position, task_master) => rs.GetBoolean(position), typeof(bool));
         AddUnpacker((rs, position, task_master) => Time.BaseTime.MakeTime(rs.GetDateTime(position), task_master), typeof(DateTime));
         AddUnpacker((rs, position, task_master) => {
+            var result = new byte[rs.GetBytes(position, 0, null, 0, 0)];
+            rs.GetBytes(position, 0, result, 0, result.Length);
+            return result;
+        }, typeof(byte[]));
+        AddUnpacker((rs, position, task_master) => {
             var result = rs.GetValue(position);
             if (result == null) {
                 return Unit.NULL;
@@ -44,6 +49,9 @@ public class DbQuery : Computation {
             }
             if (result is DateTime) {
                 return Time.BaseTime.MakeTime(rs.GetDateTime(position), task_master);
+            }
+            if (result is byte[]) {
+                return result;
             }
             return Unit.NULL;
         }, typeof(object));

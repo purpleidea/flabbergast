@@ -148,6 +148,11 @@ sql_marshall_list : Template {
 					sql_type : sql_types.bool
 					sql_tables : {}
 				}
+			Else If arg Is Bin Then {
+					sql_expr : provider.blob_start Enforce Str & utils_lib.bin_to_hex_str(arg, uppercase : True) Enforce Str & provider.blob_end Enforce Str
+					sql_type : sql_types.blob
+					sql_tables : {}
+				}
 			Else {
 					sql_expr : arg To Str
 					sql_type :
@@ -401,7 +406,7 @@ expr_tmpl : Template {
 		sql_type : Required
 		sql_expr : If sql_type.id B& arg.sql_type.cast == 0
 			Then Error "Cannot perform cast with provided types."
-			Else "(CAST(\(arg.sql_expr) AS \(sql_type.name)))"
+			Else "(CAST(\(arg.sql_expr Enforce Str) AS \(If sql_type.id Enforce Int == sql_types.blob.id Then provider.blob_type Enforce Str Else sql_type.name Enforce Str)))"
 		sql_tables : arg.sql_tables
 	}
 	count : Template base_aggregate_func_tmpl {
@@ -636,6 +641,12 @@ sql_aritmetic_tmpl : Template {
 }
 
 sql_types : {
+	bin : {
+		name : "BLOB"
+		id : 64
+		cast : blob.id
+		coerce : blob.id
+	}
 	bool : {
 		name : "BOOLEAN"
 		id : 1
@@ -672,7 +683,7 @@ sql_types : {
 		cast : 0
 		coerce : str.id B| timestamp.id
 	}
-	any : bool.id B| int.id B| interval.id B| float.id B| str.id B| timestamp.id
+	any : blob.id B| bool.id B| int.id B| interval.id B| float.id B| str.id B| timestamp.id
 	numeric : int.id B| float.id
 }
 
@@ -690,6 +701,12 @@ sql_provider : Template {
 	symbol_start : "\""
 	{{{The postamble of a symbol (table, schema, or column name).}}}
 	symbol_end : "\""
+	{{{The preamble of a blob.}}}
+	blob_start : "X'"
+	{{{The postamble of a blob.}}}
+	blob_end : "'"
+	{{{The type of a blob.}}}
+	blob_type : "BLOB"
 	{{{The \Mono{FROM} clause to use for a query with no tables.}}}
 	null_from : ""
 	{{{An SQL statement that returns tables and views as a frame of frames with a
@@ -749,12 +766,13 @@ sql_providers : {
 			sql_query : "SELECT QUOTENAME(table_schema) + '.' + QUOTENAME(table_name) AS sql_from, QUOTENAME(table_schema, '''') as table_schema, QUOTENAME(table_name, '''') AS table_name, LOWER(LEFT(table_schema, 1)) + RIGHT(table_schema, LEN(table_schema) - 1) + '_' + table_name AS [ATTRNAME] FROM information_schema.tables WHERE UPPER(table_schema) NOT IN ('SYS', 'INFORMATION_SCHEMA') AND PATINDEX('%[^a-zA-Z0-9_]%', table_schema) = 0 AND PATINDEX('%[^a-zA-Z0-9_]%', table_name) = 0;"
 		}
 		column_discovery +: {
-			sql_query : "SELECT QUOTENAME(table_schema) + '.' + QUOTENAME(table_name) + '.' + QUOTENAME(column_name) AS sql_expr, LOWER(LEFT(column_name, 1)) + RIGHT(column_name, LEN(column_name) - 1) AS [ATTRNAME], data_type, 'sql_types.' + data_xlate.lookup AS [$sql_type] FROM information_schema.columns, (VALUES ('bigint', 'int'), ('decimal', 'int'), ('int', 'int'), ('money', 'int'), ('numeric', 'int'), ('smallint', 'int'), ('smallmoney', 'int'), ('tinyint', 'int'), ('bit', 'bool'), ('float', 'float'), ('real', 'float'), ('%char%', 'str'), ('%text%', 'str'), ('%binary%', 'str'), ('%datetime%', 'timestamp'), ('time%', 'timestamp'), ('date', 'timestamp')) AS data_xlate (name, lookup) WHERE table_schema = \(table.table_schema) AND table_name = \(table.table_name) AND data_type LIKE data_xlate.name AND PATINDEX('%[^a-zA-Z0-9_]%', column_name) = 0;"
+			sql_query : "SELECT QUOTENAME(table_schema) + '.' + QUOTENAME(table_name) + '.' + QUOTENAME(column_name) AS sql_expr, LOWER(LEFT(column_name, 1)) + RIGHT(column_name, LEN(column_name) - 1) AS [ATTRNAME], data_type, 'sql_types.' + data_xlate.lookup AS [$sql_type] FROM information_schema.columns, (VALUES ('bigint', 'int'), ('decimal', 'int'), ('int', 'int'), ('money', 'int'), ('numeric', 'int'), ('smallint', 'int'), ('smallmoney', 'int'), ('tinyint', 'int'), ('bit', 'bool'), ('float', 'float'), ('real', 'float'), ('%char%', 'str'), ('%text%', 'str'), ('%binary%', 'str'), ('%datetime%', 'timestamp'), ('time%', 'timestamp'), ('date', 'timestamp'), ('%binary', 'blob')) AS data_xlate (name, lookup) WHERE table_schema = \(table.table_schema) AND table_name = \(table.table_name) AND data_type LIKE data_xlate.name AND PATINDEX('%[^a-zA-Z0-9_]%', column_name) = 0;"
 		}
 		quote_start : "('"
 		quote_end : "')"
 		symbol_start : "["
 		symbol_end : "]"
+		blob_type : "VARBINARY(MAX)"
 		transformations : {
 			quote : utils_lib.str_transform.char_tmpl { char : "'"  replacement : "''" }
 			nonprint : utils_lib.str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "' + NCHAR(", utf8_0, ") + '" ] }
@@ -812,7 +830,7 @@ sql_providers : {
 			sql_query : "SELECT QUOTE(TABLE_SCHEMA) AS tbl_schema, QUOTE(TABLE_NAME) AS tbl_name, CONCAT('`', TABLE_SCHEMA, '`.`', TABLE_NAME, '`') AS sql_from, CONCAT(LOWER(SUBSTRING(TABLE_NAME, 0, 1)), SUBSTRING(TABLE_NAME, 1)) AS ATTRNAME FROM information_schema.tables WHERE TABLE_SCHEMA NOT IN ('information_schema', 'performance_schema')"
 		}
 		column_discovery +: {
-			sql_query : "SELECT CONCAT('`', TABLE_SCHEMA, '`.`', TABLE_NAME, '`.`', COLUMN_NAME, '`') AS sql_expr, CONCAT(LOWER(SUBSTRING(COLUMN_NAME, 1, 1)), SUBSTRING(COLUMN_NAME, 2)) AS ATTRNAME, lookup AS `$sql_type` FROM information_schema.COLUMNS, (SELECT 'bit%' AS type_pattern, 'sql_types.bool' AS lookup UNION SELECT '%int%' AS type_pattern, 'sql_types.int' AS lookup UNION SELECT 'float%' AS type_pattern, 'sql_types.float' AS lookup UNION SELECT 'double%' AS type_pattern, 'sql_types.float' AS lookup UNION SELECT 'decimal%' AS type_pattern, 'sql_types.float' AS lookup UNION SELECT '%char%' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT '%blob%' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT 'enum%' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT 'text' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT 'date' AS type_pattern, 'sql_types.timestamp' AS lookup UNION SELECT 'time%' AS type_pattern, 'sql_types.timestamp' AS lookup UNION SELECT 'year%' AS type_pattern, 'sql_types.timestamp' AS lookup UNION SELECT 'interval%' AS type_pattern, 'sql_types.interval' AS lookup) AS type_info WHERE COLUMN_TYPE LIKE type_pattern AND TABLE_SCHEMA=\(table.tbl_schema) AND TABLE_NAME=\(table.tbl_name)"
+			sql_query : "SELECT CONCAT('`', TABLE_SCHEMA, '`.`', TABLE_NAME, '`.`', COLUMN_NAME, '`') AS sql_expr, CONCAT(LOWER(SUBSTRING(COLUMN_NAME, 1, 1)), SUBSTRING(COLUMN_NAME, 2)) AS ATTRNAME, lookup AS `$sql_type` FROM information_schema.COLUMNS, (SELECT 'bit%' AS type_pattern, 'sql_types.bool' AS lookup UNION SELECT '%int%' AS type_pattern, 'sql_types.int' AS lookup UNION SELECT 'float%' AS type_pattern, 'sql_types.float' AS lookup UNION SELECT 'double%' AS type_pattern, 'sql_types.float' AS lookup UNION SELECT 'decimal%' AS type_pattern, 'sql_types.float' AS lookup UNION SELECT '%char%' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT '%blob%' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT 'enum%' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT 'text' AS type_pattern, 'sql_types.str' AS lookup UNION SELECT 'date' AS type_pattern, 'sql_types.timestamp' AS lookup UNION SELECT 'time%' AS type_pattern, 'sql_types.timestamp' AS lookup UNION SELECT 'year%' AS type_pattern, 'sql_types.timestamp' AS lookup UNION SELECT 'interval%' AS type_pattern, 'sql_types.interval' AS lookup UNION SELECT 'varbinary%' AS type_pattern, 'sql_types.blob' AS lookup UNION SELECT 'blob%' AS type_pattern, 'sql_types.blob' AS lookup) AS type_info WHERE COLUMN_TYPE LIKE type_pattern AND TABLE_SCHEMA=\(table.tbl_schema) AND TABLE_NAME=\(table.tbl_name)"
 		}
 		transformations : {
 			backslash : utils_lib.str_transform.char_tmpl { char : "\\"  replacement : "\\\\" }
@@ -845,7 +863,7 @@ sql_providers : {
 			sql_query : "SELECT '\"' || table_name || '\"' AS \"sql_from\", table_name AS \"table_name\", REGEXP_REPLACE(REGEXP_REPLACE(LOWER(table_name), '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 't\\1') AS \"ATTRNAME\" FROM user_tables"
 		}
 		column_discovery +: {
-			sql_query : "SELECT '\"' || table_name || '\".\"' || column_name || '\"' AS \"sql_expr\", REGEXP_REPLACE(REGEXP_REPLACE(LOWER(column_name), '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 'c\\1') AS \"ATTRNAME\", data_type, 'sql_types.' || data_xlate.lookup AS \"\" FROM USER_TAB_COLUMNS , (SELECT objectschema name, objectname lookup FROM TABLE(sys.ODCIObjectList(sys.odciobject('NUMBER%', 'float'), sys.odciobject('%CHAR%', 'str'), sys.odciobject('BINARY_FLOAT', 'float'), sys.odciobject('BINARY_DOUBLE', 'float'), sys.odciobject('DATE%', 'timestamp'), sys.odciobject('TIMESTAMP%', 'timestamp'), sys.odciobject('INTERVAL%', 'interval')))) data_xlate WHERE table_name = '\(table_name)'  AND data_type LIKE data_xlate.name"
+			sql_query : "SELECT '\"' || table_name || '\".\"' || column_name || '\"' AS \"sql_expr\", REGEXP_REPLACE(REGEXP_REPLACE(LOWER(column_name), '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 'c\\1') AS \"ATTRNAME\", data_type, 'sql_types.' || data_xlate.lookup AS \"\" FROM USER_TAB_COLUMNS , (SELECT objectschema name, objectname lookup FROM TABLE(sys.ODCIObjectList(sys.odciobject('NUMBER%', 'float'), sys.odciobject('%CHAR%', 'str'), sys.odciobject('BINARY_FLOAT', 'float'), sys.odciobject('BINARY_DOUBLE', 'float'), sys.odciobject('DATE%', 'timestamp'), sys.odciobject('TIMESTAMP%', 'timestamp'), sys.odciobject('INTERVAL%', 'interval'), sys.odciobject('%LOB', 'blob'), sys.odciobject('BFILE', 'blob')))) data_xlate WHERE table_name = '\(table_name)'  AND data_type LIKE data_xlate.name"
 		}
 		transformations : {
 			quote : utils_lib.str_transform.char_tmpl { char : "'"  replacement : "''" }
@@ -873,9 +891,11 @@ sql_providers : {
 			sql_query : "SELECT QUOTE_IDENT(table_schema) || '.' || QUOTE_IDENT(table_name) AS sql_from, QUOTE_LITERAL(table_schema) AS table_schema, QUOTE_LITERAL(table_name) AS table_name, regexp_replace(regexp_replace(table_schema || '_' || table_name, '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 't\\1') AS \"ATTRNAME\" FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema');"
 		}
 		column_discovery +: {
-			sql_query : "SELECT QUOTE_IDENT(table_schema) || '.' || QUOTE_IDENT(table_name) || '.' || QUOTE_IDENT(column_name) AS sql_expr, regexp_replace(regexp_replace(column_name, '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 'c\\1') AS \"ATTRNAME\", data_type, 'sql_types.' || data_xlate.lookup AS \"$sql_type\" FROM information_schema.columns, (VALUES ('bigint', 'int'), ('bigserial', 'int'), ('integer', 'int'), ('interval%', 'int'), ('serial', 'int'), ('smallint', 'int'), ('boolean', 'bool'), ('numeric%', 'float'), ('double precision', 'float'), ('real', 'float'), ('bytea', 'str'), ('character%', 'bool'), ('text', 'str'), ('date', 'timestamp'), ('time%', 'timestamp'), ('interval%', 'interval')) AS data_xlate (name, lookup) WHERE table_schema = \(table.table_schema) AND table_name = \(table.table_name) AND data_type LIKE data_xlate.name"
+			sql_query : "SELECT QUOTE_IDENT(table_schema) || '.' || QUOTE_IDENT(table_name) || '.' || QUOTE_IDENT(column_name) AS sql_expr, regexp_replace(regexp_replace(column_name, '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 'c\\1') AS \"ATTRNAME\", data_type, 'sql_types.' || data_xlate.lookup AS \"$sql_type\" FROM information_schema.columns, (VALUES ('bigint', 'int'), ('bigserial', 'int'), ('integer', 'int'), ('interval%', 'int'), ('serial', 'int'), ('smallint', 'int'), ('boolean', 'bool'), ('numeric%', 'float'), ('double precision', 'float'), ('real', 'float'), ('bytea', 'str'), ('character%', 'bool'), ('text', 'str'), ('date', 'timestamp'), ('time%', 'timestamp'), ('interval%', 'interval'), ('bytea', 'blob') AS data_xlate (name, lookup) WHERE table_schema = \(table.table_schema) AND table_name = \(table.table_name) AND data_type LIKE data_xlate.name"
 		}
 		quote_start : "E'"
+		blob_start : "E'\\x"
+		blob_type : "bytea"
 		transformations : {
 			backslash : utils_lib.str_transform.char_tmpl { char : "\\"  replacement : "\\\\" }
 			backspace : utils_lib.str_transform.char_tmpl { char : "\b"  replacement : "\\b" }
@@ -927,6 +947,8 @@ sql_providers : {
 								col.type == "DOUBLE" ||
 								col.type == "DOUBLE PRECISION" ||
 								col.type == "FLOAT" Then sql_types.float
+							Else If
+								col.type == "BLOB" Then sql_types.blob
 							Else sql_types.str
 					}
 		}

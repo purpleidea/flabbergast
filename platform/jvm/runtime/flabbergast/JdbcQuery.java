@@ -92,6 +92,13 @@ public class JdbcQuery extends Computation {
                            new DateTime(rs.getTimestamp(position)), task_master);
             }
         }, Types.DATE, Types.TIME, Types.TIMESTAMP);
+        addUnpacker(new Unpacker() {
+            @Override
+            Object invoke(ResultSet rs, int position, TaskMaster task_master)
+            throws SQLException {
+                return rs.getBytes(position);
+            }
+        }, Types.BLOB, Types.BINARY, Types.NCHAR, Types.NCLOB, Types.VARBINARY);
     }
 
     static void addUnpacker(Unpacker unpacker, int... sql_types) {
