@@ -25,49 +25,57 @@ anyifier : Template {
 	}
 }
 
-{{{Convert binary data to a string by decoding it as UTF-8.}}}
-bin_to_str_utf8 : str_concatifier(base : bin_to_str_utf8_list)
 
-{{{Convert a list of binary data to a list of strings by decoding it as UTF-8.}}}
-bin_to_str_utf8_list : Template (From lib:utilsinterop).bin_to_str_utf8_list {
-	{{{The binary data to convert to strings.}}}
-	args : Used
+
+{{{Convert binary data to a string by decoding it.}}}
+bin_to_str : {
+	{{{Convert binary data to a string by decoding it as UTF-8.}}}
+	utf8 : str_concatifier(base : bin_to_str_list.utf8)
+
+	{{{Convert binary data to a string by decoding it as big-endian UTF-16.}}}
+	utf16be : str_concatifier(base : bin_to_str_list.utf16be)
+
+	{{{Convert binary data to a string by decoding it as little-endian UTF-16.}}}
+	utf16le : str_concatifier(base : bin_to_str_list.utf16be)
+
+	{{{Convert binary data to a string by decoding it as big-endian UTF-32.}}}
+	utf32be : str_concatifier(base : bin_to_str_list.utf32be)
+
+	{{{Convert binary data to a string by decoding it as little-endian UTF-32.}}}
+	utf32le : str_concatifier(base : bin_to_str_list.utf32le)
 }
 
-{{{Convert binary data to a string by decoding it as big-endian UTF-16.}}}
-bin_to_str_utf16be : str_concatifier(base : bin_to_str_utf16be_list)
+{{{Convert a list of binary data to a list of strings by decoding.}}}
+bin_to_str_list : {
+	{{{Convert a list of binary data to a list of strings by decoding it as UTF-8.}}}
+	utf8 : Template (From lib:utilsinterop).bin_to_str_utf8_list {
+		{{{The binary data to convert to strings.}}}
+		args : Used
+	}
 
-{{{Convert a list of binary data to a list of strings by decoding it as big-endian UTF-16.}}}
-bin_to_str_utf16be_list : Template (From lib:utilsinterop).bin_to_str_utf16be_list {
-	{{{The binary data to convert to strings.}}}
-	args : Used
-}
+	{{{Convert a list of binary data to a list of strings by decoding it as big-endian UTF-16.}}}
+	utf16be : Template (From lib:utilsinterop).bin_to_str_utf16be_list {
+		{{{The binary data to convert to strings.}}}
+		args : Used
+	}
 
-{{{Convert binary data to a string by decoding it as little-endian UTF-16.}}}
-bin_to_str_utf16le : str_concatifier(base : bin_to_str_utf16be_list)
+	{{{Convert a list of binary data to a list of strings by decoding it as little-endian UTF-16.}}}
+	utf16le : Template (From lib:utilsinterop).bin_to_str_utf16be_list {
+		{{{The binary data to convert to strings.}}}
+		args : Used
+	}
 
-{{{Convert a list of binary data to a list of strings by decoding it as little-endian UTF-16.}}}
-bin_to_str_utf16le_list : Template (From lib:utilsinterop).bin_to_str_utf16be_list {
-	{{{The binary data to convert to strings.}}}
-	args : Used
-}
+	{{{Convert a list of binary data to a list of strings by decoding it as big-endian UTF-32.}}}
+	utf32be : Template (From lib:utilsinterop).bin_to_str_utf32be_list {
+		{{{The binary data to convert to strings.}}}
+		args : Used
+	}
 
-{{{Convert binary data to a string by decoding it as big-endian UTF-32.}}}
-bin_to_str_utf32be : str_concatifier(base : bin_to_str_utf32be_list)
-
-{{{Convert a list of binary data to a list of strings by decoding it as big-endian UTF-32.}}}
-bin_to_str_utf32be_list : Template (From lib:utilsinterop).bin_to_str_utf32be_list {
-	{{{The binary data to convert to strings.}}}
-	args : Used
-}
-
-{{{Convert binary data to a string by decoding it as little-endian UTF-32.}}}
-bin_to_str_utf32le : str_concatifier(base : bin_to_str_utf32le_list)
-
-{{{Convert a list of binary data to a list of strings by decoding it as little-endian UTF-32.}}}
-bin_to_str_utf32le_list : Template (From lib:utilsinterop).bin_to_str_utf32le_list {
-	{{{The binary data to convert to strings.}}}
-	args : Used
+	{{{Convert a list of binary data to a list of strings by decoding it as little-endian UTF-32.}}}
+	utf32le : Template (From lib:utilsinterop).bin_to_str_utf32le_list {
+		{{{The binary data to convert to strings.}}}
+		args : Used
+	}
 }
 
 {{{Limits the range of a list of values. For details, see \{clampifier}.}}}
@@ -639,35 +647,55 @@ str_trim_list : Template ( From lib:utilsinterop ).str_trim_list {
 	args : Used
 }
 
-{{{Get the UTF-8 bytes in a string.}}}
-str_utf8 : firstifier(base : str_utf8_list)
+{{{Get the encoded bytes in a string.}}}
+str_to_bin : {
+	{{{Get the UTF-8 bytes in a string.}}}
+	utf8 : firstifier(base : str_to_bin_list.utf8)
 
-{{{Get a list of the UTF-8 bytes in a list of strings.}}}
-str_utf8_list : Template (From lib:utilsinterop).str_utf8_list {
-	{{{A list of strings to convert.}}}
-	args : Used
+	{{{Get the big-endian UTF-16 bytes in a string.}}}
+	utf16be : firstifier(base : str_to_bin_list.utf16be)
+
+	{{{Get the little-endian UTF-16 bytes in a string.}}}
+	utf16le : firstifier(base : str_to_bin_list.utf16le)
+
+	{{{Get the big-endian UTF-32 bytes in a string.}}}
+	utf32be : firstifier(base : str_to_bin_list.utf32be)
+
+	{{{Get the little-endian UTF-32 bytes in a string.}}}
+	utf32le : firstifier(base : str_to_bin_list.utf32le)
 }
 
-{{{Get the UTF-16 bytes in a string.}}}
-str_utf16 : firstifier(base : str_utf16_list)
+{{{Get a list of the bytes in a list of strings.}}}
+str_to_bin_list : {
+	{{{Get a list of the UTF-8 bytes in a list of strings.}}}
+	utf8 : Template (From lib:utilsinterop).str_utf8_list {
+		{{{A list of strings to convert.}}}
+		args : Used
+	}
 
-{{{Get a list of the UTF-16 bytes in a list of strings.}}}
-str_utf16_list : Template (From lib:utilsinterop).str_utf16_list {
-	{{{A list of strings to convert.}}}
-	args : Used
-	{{{Whether to encode bytes a big endian or little endian.}}}
-	big_endian : True
-}
+	{{{Get a list of the big-endian UTF-16 bytes in a list of strings.}}}
+	utf16be : Template (From lib:utilsinterop).str_utf16be_list {
+		{{{A list of strings to convert.}}}
+		args : Used
+	}
 
-{{{Get the UTF-32 bytes in a string.}}}
-str_utf32 : firstifier(base : str_utf32_list)
+	{{{Get a list of the little-endian UTF-16 bytes in a list of strings.}}}
+	utf16le : Template (From lib:utilsinterop).str_utf16le_list {
+		{{{A list of strings to convert.}}}
+		args : Used
+	}
 
-{{{Get a list of the UTF-32 bytes in a list of strings.}}}
-str_utf32_list : Template (From lib:utilsinterop).str_utf32_list {
-	{{{A list of strings to convert.}}}
-	args : Used
-	{{{Whether to encode bytes a big endian or little endian.}}}
-	big_endian : True
+	{{{Get a list of the little-endian UTF-32 bytes in a list of strings.}}}
+	utf32le : Template (From lib:utilsinterop).str_utf32le_list {
+		{{{A list of strings to convert.}}}
+		args : Used
+	}
+
+	{{{Get a list of the UTF-32 bytes in a list of strings.}}}
+	utf32be : Template (From lib:utilsinterop).str_utf32be_list {
+		{{{A list of strings to convert.}}}
+		args : Used
+	}
 }
 
 {{{Get the UTF-8 length of a string.}}}

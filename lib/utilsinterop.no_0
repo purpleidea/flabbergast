@@ -147,15 +147,25 @@ str_utf8_list : Template {
 		For arg : args, arg_name : Name
 		Select arg_name : XInvoke Flabbergast.Stringish,Flabbergast.Runtime ToUtf8 (arg To Str)
 }
-str_utf16_list : Template {
+str_utf16le_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XInvoke Flabbergast.Stringish,Flabbergast.Runtime ToUtf16 (arg To Str, big_endian)
+		Select arg_name : XInvoke Flabbergast.Stringish,Flabbergast.Runtime ToUtf16 (arg To Str, False)
 }
-str_utf32_list : Template {
+str_utf16be_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XInvoke Flabbergast.Stringish,Flabbergast.Runtime ToUtf32 (arg To Str, big_endian)
+		Select arg_name : XInvoke Flabbergast.Stringish,Flabbergast.Runtime ToUtf16 (arg To Str, True)
+}
+str_utf32le_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke Flabbergast.Stringish,Flabbergast.Runtime ToUtf32 (arg To Str, False)
+}
+str_utf32be_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke Flabbergast.Stringish,Flabbergast.Runtime ToUtf32 (arg To Str, True)
 }
 str_utf8_length_list : Template {
 	value :
