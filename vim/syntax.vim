@@ -40,7 +40,7 @@ syn keyword flabbergastConditional If Then Else
 syn keyword flabbergastKeyword Accumulate Append Container Enforce Error Finite Function GenerateId Id In Is Length Let Lookup Template This Through To Where
 syn match flabbergastOperators '\(<=\=\|<=>\|>=\=\|==\|||\|-\|!=\=\|/\|\*\|&\|&&\|%\|+\|??\|B|\|B^\|B&\|B!\)' display
 syn keyword flabbergastTodo contained containedin=flabbergastComment TODO FIXME XXX
-syn keyword flabbergastType Bool Float Frame Int Str
+syn keyword flabbergastType Bin Bool Float Frame Int Str
 syn match flabbergastImplDefined "\<X[a-zA-Z0-9]*\>" display
 syn match flabbergastConstant "\<\d\+[kMG]i\=\>" display
 syn match flabbergastConstant "\<\(\d\+[dhms]\)\+\>" display
