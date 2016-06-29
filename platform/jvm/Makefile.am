@@ -43,7 +43,7 @@ else
 COMPILER_JAR = flabbergast-runtime-$(VERSION).jar flabbergast-compiler-$(VERSION).jar
 endif
 
-INSTALLED_CP = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) $(addprefix $(javadir)/, $(COMPILER_JAR))):$${CLASSPATH:-}
+INSTALLED_CP = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) $(addprefix $(javadir)/, $(COMPILER_JAR))):$${CLASSPATH:-}:$(pkgdatadir)/jvm/*
 
 TESTS = flabbergast-testing-$(VERSION).jar
 TEST_EXTENSIONS = .jar
