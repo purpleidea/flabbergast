@@ -84,6 +84,9 @@ bin_to_str : {
 
 	{{{Convert binary data to a string by decoding it as little-endian UTF-32.}}}
 	utf32le : str_concatifier(base : bin_to_str_list.utf32le)
+
+	{{{Convert binary data to a string by encoding it as Base64.}}}
+	base64 : str_concatifier(base : bin_to_str_list.base64)
 }
 
 {{{Convert a list of binary data to a list of strings by decoding.}}}
@@ -114,6 +117,12 @@ bin_to_str_list : {
 
 	{{{Convert a list of binary data to a list of strings by decoding it as little-endian UTF-32.}}}
 	utf32le : Template (From lib:utilsinterop).bin_to_str_utf32le_list {
+		{{{The binary data to convert to strings.}}}
+		args : Used
+	}
+
+	{{{Convert a list of binary data to a list of strings by encoding it as Base64.}}}
+	base64 : Template (From lib:utilsinterop).bin_to_str_base64_list {
 		{{{The binary data to convert to strings.}}}
 		args : Used
 	}
@@ -704,6 +713,9 @@ str_to_bin : {
 
 	{{{Get the little-endian UTF-32 bytes in a string.}}}
 	utf32le : firstifier(base : str_to_bin_list.utf32le)
+
+	{{{Get the bytes in a Base64 string.}}}
+	base64 : firstifier(base : str_to_bin_list.base64)
 }
 
 {{{Get a list of the bytes in a list of strings.}}}
@@ -734,6 +746,12 @@ str_to_bin_list : {
 
 	{{{Get a list of the UTF-32 bytes in a list of strings.}}}
 	utf32be : Template (From lib:utilsinterop).str_utf32be_list {
+		{{{A list of strings to convert.}}}
+		args : Used
+	}
+
+	{{{Get a list of the UTF-32 bytes in a list of strings.}}}
+	base64 : Template (From lib:utilsinterop).str_base64_list {
 		{{{A list of strings to convert.}}}
 		args : Used
 	}
