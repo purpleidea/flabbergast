@@ -641,7 +641,7 @@ sql_aritmetic_tmpl : Template {
 }
 
 sql_types : {
-	bin : {
+	blob : {
 		name : "BLOB"
 		id : 64
 		cast : blob.id
