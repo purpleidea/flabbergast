@@ -3087,6 +3087,11 @@ language_tmpl : Template {
 				api_value : apigen.nop {}
 			}
 			rules +: {
+				bin : Template type_element {
+					friendly_name : "Bin"
+					type : known_types.bin
+					castable_from : [ ]
+				}
 				bool : Template type_element {
 					friendly_name : "Bool"
 					type : known_types.bool
