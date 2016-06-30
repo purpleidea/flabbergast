@@ -77,7 +77,7 @@ bin_to_str : {
 	utf16be : str_concatifier(base : bin_to_str_list.utf16be)
 
 	{{{Convert binary data to a string by decoding it as little-endian UTF-16.}}}
-	utf16le : str_concatifier(base : bin_to_str_list.utf16be)
+	utf16le : str_concatifier(base : bin_to_str_list.utf16le)
 
 	{{{Convert binary data to a string by decoding it as big-endian UTF-32.}}}
 	utf32be : str_concatifier(base : bin_to_str_list.utf32be)
@@ -104,7 +104,7 @@ bin_to_str_list : {
 	}
 
 	{{{Convert a list of binary data to a list of strings by decoding it as little-endian UTF-16.}}}
-	utf16le : Template (From lib:utilsinterop).bin_to_str_utf16be_list {
+	utf16le : Template (From lib:utilsinterop).bin_to_str_utf16le_list {
 		{{{The binary data to convert to strings.}}}
 		args : Used
 	}
