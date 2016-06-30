@@ -1,0 +1,9 @@
+utils_lib : From lib:utils
+results :
+	For marshall : utils_lib.str_to_bin, unmarshall : utils_lib.bin_to_str, name : Name
+		Where name != "base64"
+		Select name : unmarshall(marshall("Παν語")) == "Παν語"
+
+base64 : utils_lib.bin_to_str.utf8(utils_lib.str_to_bin.base64(utils_lib.bin_to_str.base64(utils_lib.str_to_bin.utf8("Παν語")))) == "Παν語"
+
+value : utils_lib.all(args : results) && base64

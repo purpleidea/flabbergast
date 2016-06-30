@@ -1,0 +1,12 @@
+utils_lib : From lib:utils
+results :
+	For hash : utils_lib.bin_hash, hash_str : hash_results, name : Name
+		Select name : utils_lib.bin_to_hex_str(hash(utils_lib.str_to_bin.utf8("thisisatest"))) == hash_str
+
+hash_results : {
+	md5 : "f830f69d23b8224b512a0dc2f5aec974"
+	sha1 : "42d4a62c53350993ea41069e9f2cfdefb0df097d"
+	sha256 : "a7c96262c21db9a06fd49e307d694fd95f624569f9b35bb3ffacd880440f9787"
+}
+
+value : utils_lib.all(args : results)
