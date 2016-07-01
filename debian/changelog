@@ -1,3 +1,18 @@
+flabbergast (0.17~ppa0) xenial; urgency=medium
+
+  * Add pkgconfig support to CLR edition
+  * Include path for library JARs
+  * Persist Java REPL history to disk
+  * Add Bin type, includin SQL support, hashing, base64 and UTF encoding
+  * Add Oracle support
+  * Quote all SQL identifiers
+  * Change aggregation functions to a separate type
+  * Avoid throwing an exception when the field isn't found in XField
+  * Create option to disable platform-specific syntax when parsing
+  * Fix DLL file name generation once and for all
+
+ -- Andre Masella <andre@masella.name>  Thu, 30 Jun 2016 20:29:00 -0400
+
 flabbergast (0.16~ppa0) xenial; urgency=medium
 
   * Rename MySQL driver
