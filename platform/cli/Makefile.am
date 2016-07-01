@@ -26,7 +26,7 @@ cli_DATA = \
 compilerdir = $(pkgdatadir)/compiler
 compiler_SCRIPTS = cli-build-cache
 
-pkgconfigdir = $(libdir)/pkgconfig
+pkgconfigdir = $(prefix)/lib/pkgconfig
 pkgconfig_DATA = \
 	flabbergast-compiler-cli.pc \
 	flabbergast-runtime-cli.pc \
