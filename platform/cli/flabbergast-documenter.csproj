@@ -34,7 +34,7 @@
 		<Reference Include="System.Xml"/>
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="doc-main.cs"/>
+		<Compile Include="main-documenter.cs"/>
 		<Compile Include="Options.cs"/>
 	</ItemGroup>
 	<Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets"/>

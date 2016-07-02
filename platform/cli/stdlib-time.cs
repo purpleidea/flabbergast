@@ -101,6 +101,7 @@ public abstract class BaseTime : Computation {
         return MakeTime(time, task_master);
     }
 }
+
 abstract class BaseParts : BaseTime {
     protected long milliseconds;
     protected long seconds;
@@ -170,6 +171,7 @@ class Compare : BaseTime {
         return true;
     }
 }
+
 class FromUnix : BaseTime {
     public FromUnix(TaskMaster task_master, SourceReference source_ref, Context context, Frame self, Frame container) : base(task_master, source_ref, context, self, container) {}
     protected override bool Run() {
@@ -180,6 +182,7 @@ class FromUnix : BaseTime {
         return false;
     }
 }
+
 class FromParts : BaseParts {
     private bool first = true;
     private DateTimeKind kind;
@@ -207,6 +210,7 @@ class FromParts : BaseParts {
         return true;
     }
 }
+
 class LocalNow : BaseTime {
     public LocalNow(TaskMaster task_master, SourceReference source_ref, Context context, Frame self, Frame container) : base(task_master, source_ref, context, self, container) {}
     protected override bool Run() {
@@ -214,6 +218,7 @@ class LocalNow : BaseTime {
         return true;
     }
 }
+
 class Modify : BaseParts {
     private bool first = true;
     private DateTime initial;
@@ -239,6 +244,7 @@ class Modify : BaseParts {
         return true;
     }
 }
+
 class SwitchZone : BaseTime {
     private bool first = true;
     private DateTime initial;
@@ -267,6 +273,7 @@ class SwitchZone : BaseTime {
         return true;
     }
 }
+
 class UtcNow : BaseTime {
     public UtcNow(TaskMaster task_master, SourceReference source_ref, Context context, Frame self, Frame container) : base(task_master, source_ref, context, self, container) {}
     protected override bool Run() {

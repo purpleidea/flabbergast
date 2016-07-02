@@ -5,12 +5,7 @@ using System.Linq;
 using System.Reflection;
 
 namespace Flabbergast {
-public enum LibraryFailure {
-    None,
-    Missing,
-    Corrupt,
-    BadName
-}
+
 public class BuiltInLibraries : UriLoader {
     public static readonly BuiltInLibraries INSTANCE = new BuiltInLibraries();
     private BuiltInLibraries() {}

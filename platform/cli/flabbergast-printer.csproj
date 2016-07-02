@@ -32,7 +32,7 @@
 		<Reference Include="System" />
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="printer.cs" />
+		<Compile Include="main-printer.cs" />
 		<Compile Include="Options.cs" />
 	</ItemGroup>
 	<Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

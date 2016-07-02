@@ -35,12 +35,12 @@
 		<Reference Include="System.Xml"/>
 	</ItemGroup>
 	<ItemGroup>
+		<Compile Include="compiler-analyser.cs"/>
 		<Compile Include="compiler-cli.cs"/>
-		<Compile Include="analyser.cs"/>
-		<Compile Include="dlcompile.cs"/>
-		<Compile Include="library-compiler.cs"/>
-		<Compile Include="generator.cs"/>
-		<Compile Include="parser.cs"/>
+		<Compile Include="compiler-generator.cs"/>
+		<Compile Include="compiler-misc.cs"/>
+		<Compile Include="compiler-parser.cs"/>
+		<Compile Include="uri-compile.cs"/>
 		<Compile Include="AssemblyInfo.cs"/>
 	</ItemGroup>
 	<Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets"/>

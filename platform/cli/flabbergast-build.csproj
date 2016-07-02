@@ -33,7 +33,7 @@
 		<Reference Include="System"/>
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="build-main.cs"/>
+		<Compile Include="main-build.cs"/>
 		<Compile Include="Options.cs"/>
 	</ItemGroup>
 	<Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets"/>
