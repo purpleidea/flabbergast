@@ -34,6 +34,7 @@
 		<Reference Include="System"/>
 		<Reference Include="System.Data"/>
 		<Reference Include="System.Json"/>
+		<Reference Include="System.Web"/>
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="config.cs"/>
@@ -60,6 +61,8 @@
 		<Compile Include="uri-current.cs"/>
 		<Compile Include="uri-dlopen.cs"/>
 		<Compile Include="uri-environment.cs"/>
+		<Compile Include="uri-file.cs"/>
+		<Compile Include="uri-net.cs"/>
 		<Compile Include="AssemblyInfo.cs"/>
 	</ItemGroup>
 	<Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets"/>

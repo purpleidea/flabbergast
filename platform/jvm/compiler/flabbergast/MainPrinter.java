@@ -62,6 +62,9 @@ public class MainPrinter {
         task_master.addUriHandler(BuiltInLibraries.INSTANCE);
         task_master.addUriHandler(JdbcUriHandler.INSTANCE);
         task_master.addUriHandler(EnvironmentUriHandler.INSTANCE);
+        task_master.addUriHandler(FtpHandler.INSTANCE);
+        task_master.addUriHandler(HttpHandler.INSTANCE);
+        task_master.addUriHandler(FileHandler.INSTANCE);
         if (!result.hasOption('p')) {
             LoadPrecompiledLibraries precomp = new LoadPrecompiledLibraries();
             task_master.addUriHandler(precomp);
