@@ -1,6 +1,7 @@
 *.asc
 *.manifest
 *.pom
+.build
 build
 compiler/flabbergast/compiler-jvm.java
 flabbergast-*.jar
