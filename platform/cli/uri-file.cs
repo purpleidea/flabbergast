@@ -4,14 +4,14 @@ using System.Web;
 
 namespace Flabbergast {
 public class FileHandler : UriHandler {
-    public static readonly FileLoader INSTANCE = new FileLoader();
+    public static readonly FileHandler INSTANCE = new FileHandler();
     public string UriName {
         get {
             return "local files";
         }
     }
 
-    private FileLoader() {
+    private FileHandler() {
     }
 
     public Computation ResolveUri(TaskMaster master, string uri, out LibraryFailure reason) {
