@@ -1296,7 +1296,7 @@ Due to contextual lookup, it is possible to define templates inside to change th
      flabbergast_value : foo.json_root.json_value
 
 ### Parsing (`lib:parse`)
-TODO
+A mirror to `lib:render`, this contains `parse_json`, which parses a string containing JSON and produces templates compatible with `lib:render`.
 
 ### Apache Aurora (`lib:apache/aurora`)
 Configures jobs for running on the Apache Aurora framework, which managers long-running jobs on Mesos.

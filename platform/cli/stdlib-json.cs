@@ -1,20 +1,31 @@
 using System;
-using System.IO;
 using System.Json;
-using System.Net;
+using System.Threading;
+
 namespace Flabbergast {
-public class JsonUriHandler : UriHandler {
-    public static readonly JsonUriHandler INSTANCE = new JsonUriHandler();
+public class JsonParser : Computation {
+    private int interlock = 2;
+    private string input;
+    private SourceReference source_ref;
+    private Context context;
+    private Frame self;
+    public JsonParser(TaskMaster task_master, SourceReference source_ref,
+                      Context context, Frame self, Frame container) : base(task_master) {
+        this.source_ref = source_ref;
+        this.context = context;
+        this.self = self;
+    }
+
     internal static ComputeValue Dispatch(object name, JsonValue node) {
-        return (TaskMaster task_master, SourceReference src_ref, Context context, Frame self, Frame container) => {
+        return (TaskMaster task_master, SourceReference source_ref, Context context, Frame self, Frame container) => {
             if (node == null) {
-                return new Instantiation(task_master, src_ref, context, self, "json", "scalar") {
+                return new Instantiation(task_master, source_ref, context, self, "json", "scalar") {
                     { "json_name", name }, { "arg", Unit.NULL }
                 };
             }
             switch (node.JsonType) {
             case JsonType.Array:
-                return new Instantiation(task_master, src_ref, context, self, "json", "list") {
+                return new Instantiation(task_master, source_ref, context, self, "json", "list") {
                     { "json_name", name }, { "children",
                         (ComputeValue)((TaskMaster a_task_master, SourceReference a_reference, Context a_context, Frame a_self, Frame a_container) => {
                             var a_arg_frame = new MutableFrame(a_task_master, a_reference, a_context, a_self);
@@ -28,15 +39,15 @@ public class JsonUriHandler : UriHandler {
                     }
                 };
             case JsonType.Boolean:
-                return new Instantiation(task_master, src_ref, context, self, "json", "scalar") {
+                return new Instantiation(task_master, source_ref, context, self, "json", "scalar") {
                     { "json_name", name }, { "arg", (bool) node }
                 };
             case JsonType.Number:
-                return new Instantiation(task_master, src_ref, context, self, "json", "scalar") {
+                return new Instantiation(task_master, source_ref, context, self, "json", "scalar") {
                     { "json_name", name }, { "arg", (double) node }
                 };
             case JsonType.Object:
-                return new Instantiation(task_master, src_ref, context, self, "json", "object") {
+                return new Instantiation(task_master, source_ref, context, self, "json", "object") {
                     { "json_name", name }, { "children",
                         (ComputeValue)((TaskMaster o_task_master, SourceReference o_reference, Context o_context, Frame o_self, Frame o_container) => {
                             var o_arg_frame = new MutableFrame(o_task_master, o_reference, o_context, o_self);
@@ -50,40 +61,41 @@ public class JsonUriHandler : UriHandler {
                     }
                 };
             case JsonType.String:
-                return new Instantiation(task_master, src_ref, context, self, "json", "scalar") {
+                return new Instantiation(task_master, source_ref, context, self, "json", "scalar") {
                     { "json_name", name }, { "arg", new SimpleStringish((string) node) }
                 };
             default:
-                return new FailureComputation(task_master, src_ref, "Unknown JSON entry.");
+                return new FailureComputation(task_master, source_ref, "Unknown JSON entry.");
             }
         };
     }
-    private JsonUriHandler() {}
-    public string UriName {
-        get {
-            return "JSON importer";
+    private void HandleArg(object result) {
+        if (result is Stringish) {
+            input = result.ToString();
+            if (Interlocked.Decrement(ref interlock) == 0) {
+                task_master.Slot(this);
+            }
+        } else {
+            task_master.ReportOtherError(source_ref, String.Format("Expected type “Str” but got “{0}”.", Stringish.NameForType(result.GetType())));
         }
     }
-    public Computation ResolveUri(TaskMaster task_master, string uri, out LibraryFailure reason) {
-        if (!uri.StartsWith("json:")) {
-            reason = LibraryFailure.Missing;
-            return null;
-        }
-        reason = LibraryFailure.None;
-        try {
-            string json_text;
-            var uri_obj = new Uri(uri.Substring(5));
-            if (uri_obj.Scheme == "file") {
-                json_text = File.ReadAllText(uri_obj.LocalPath);
-            } else {
-                json_text = new WebClient().DownloadString(uri_obj);
+    protected override bool Run() {
+        if (input == null) {
+            var input_lookup = new Lookup(task_master, source_ref, new [] {"arg"}, context);
+            input_lookup.Notify(HandleArg);
+            if (Interlocked.Decrement(ref interlock) > 0) {
+                return false;
             }
-            var json_value = JsonValue.Parse(json_text);
-            var tmpl = new Template(new NativeSourceReference(uri), null, null);
+        }
+        try {
+            var json_value = JsonValue.Parse(input);
+            var tmpl = new Template(source_ref,  context, self);
             tmpl["json_root"] = Dispatch(Unit.NULL, json_value);
-            return new Precomputation(tmpl);
+            result = tmpl;
+            return true;
         } catch (Exception e) {
-            return new FailureComputation(task_master, new NativeSourceReference(uri), e.InnerException == null ? e.Message : e.InnerException.Message);
+            task_master.ReportOtherError(source_ref, e.Message);
+            return false;
         }
     }
 }

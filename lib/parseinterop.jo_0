@@ -1,0 +1,3 @@
+parse_json_list : Template {
+	value : For arg : args, arg_name : Name Select arg_name : XComputation flabbergast.JsonParser
+}

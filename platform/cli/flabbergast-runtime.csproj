@@ -52,6 +52,7 @@
 		<Compile Include="stdlib-bin.cs"/>
 		<Compile Include="stdlib-escape.cs"/>
 		<Compile Include="stdlib-instantiate.cs"/>
+		<Compile Include="stdlib-json.cs"/>
 		<Compile Include="stdlib-parse.cs"/>
 		<Compile Include="stdlib-time.cs"/>
 		<Compile Include="stdlib-unicode.cs"/>
@@ -59,7 +60,6 @@
 		<Compile Include="uri-current.cs"/>
 		<Compile Include="uri-dlopen.cs"/>
 		<Compile Include="uri-environment.cs"/>
-		<Compile Include="uri-json.cs"/>
 		<Compile Include="AssemblyInfo.cs"/>
 	</ItemGroup>
 	<Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets"/>

@@ -78,7 +78,6 @@ public class REPL {
         task_master.AddUriHandler(BuiltInLibraries.INSTANCE);
         task_master.AddUriHandler(DbUriHandler.INSTANCE);
         task_master.AddUriHandler(EnvironmentUriHandler.INSTANCE);
-        task_master.AddUriHandler(JsonUriHandler.INSTANCE);
         var accessory_lib_path = Path.Combine(files.Count == 1 ? Path.GetDirectoryName(Path.GetFullPath(files[0])) : Environment.CurrentDirectory, "lib");
         if (use_precompiled) {
             var precomp = new LoadPrecompiledLibraries();

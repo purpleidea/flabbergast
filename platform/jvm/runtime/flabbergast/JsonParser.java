@@ -1,18 +1,14 @@
 package flabbergast;
 
-import flabbergast.TaskMaster.LibraryFailure;
-
-import java.net.URL;
 import java.util.Iterator;
-import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-public class JsonUriHandler implements UriHandler {
-    public static final JsonUriHandler INSTANCE = new JsonUriHandler();
+public class JsonParser extends Computation {
     private static class Dispatch implements ComputeValue {
         Object name;
         Object node;
@@ -110,30 +106,53 @@ public class JsonUriHandler implements UriHandler {
             return computation;
         }
     }
-    private JsonUriHandler() {
+    private String json_text;
+    private SourceReference source_ref;
+    private Context context;
+    private Frame self;
+    private AtomicInteger interlock = new AtomicInteger(2);
+
+    public JsonParser(TaskMaster task_master, SourceReference source_ref,
+                      Context context, Frame self, Frame container) {
+        super(task_master);
+        this.source_ref = source_ref;
+        this.context = context;
+        this.self = self;
     }
-    public String getUriName() {
-        return "JSON importer";
-    }
-    public Computation resolveUri(TaskMaster task_master, String uri,
-                                  Ptr<LibraryFailure> reason) {
-        if (!uri.startsWith("json:")) {
-            reason.set(LibraryFailure.MISSING);
-            return null;
+
+    @Override
+    protected void run() {
+        if (json_text == null) {
+            Lookup input_lookup = new Lookup(task_master, source_ref,
+                                             new String[] {"arg"}, context);
+            input_lookup.listen(new ConsumeResult() {
+                @Override
+                public void consume(Object result) {
+                    if (result instanceof Stringish) {
+                        json_text = result.toString();
+                        if (interlock.decrementAndGet() == 0) {
+                            task_master.slot(JsonParser.this);
+                        }
+                    } else {
+                        task_master.reportOtherError(source_ref, String.format(
+                                                         "Expected “arg” to be a string. Got %s instead.",
+                                                         Stringish.nameForClass(result.getClass())));
+                    }
+                }
+            });
+            if (interlock.decrementAndGet() > 0) {
+                return;
+            }
         }
         try {
-            String json_text = new Scanner(
-                new URL(uri.substring(5)).openStream()).useDelimiter("\\Z")
-            .next();
             JSONTokener json_value = new JSONTokener(json_text);
-            Template tmpl = new Template(new NativeSourceReference(uri), null,
-                                         null);
+            Template tmpl = new Template(source_ref, context,
+                                         self);
             tmpl.set("json_root",
                      new Dispatch(Unit.NULL, json_value.nextValue()));
-            return new Precomputation(tmpl);
+            result = tmpl;
         } catch (Exception e) {
-            return new FailureComputation(task_master,
-                                          new NativeSourceReference(uri), e.getMessage());
+            task_master.reportOtherError(source_ref, e.getMessage());
         }
     }
 }
