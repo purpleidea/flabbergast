@@ -16,6 +16,10 @@ public class FixedFrame extends Frame {
         attributes.put(name, value);
     }
 
+    public void add(String name, byte[] value) {
+        attributes.put(name, value);
+    }
+
     public void add(String name, String value) {
         attributes.put(name, new SimpleStringish(value));
     }

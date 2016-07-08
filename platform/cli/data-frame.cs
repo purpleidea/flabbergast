@@ -321,7 +321,9 @@ public class FixedFrame : Frame, IEnumerable<string> {
     public void Add(string name, long val) {
         attributes[name] = val;
     }
-
+    public void Add(string name, byte[] val) {
+        attributes[name] = val;
+    }
     public void Add(string name, string val) {
         attributes[name] = new SimpleStringish(val);
     }
