@@ -65,6 +65,9 @@ public class MainPrinter {
         task_master.addUriHandler(FtpHandler.INSTANCE);
         task_master.addUriHandler(HttpHandler.INSTANCE);
         task_master.addUriHandler(FileHandler.INSTANCE);
+        ResourceHandler resource_handler = new ResourceHandler();
+        resource_handler.prependPath(accessory_lib_path);
+        task_master.addUriHandler(resource_handler);
         if (!result.hasOption('p')) {
             LoadPrecompiledLibraries precomp = new LoadPrecompiledLibraries();
             task_master.addUriHandler(precomp);

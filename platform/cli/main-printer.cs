@@ -57,6 +57,9 @@ public class Printer {
         task_master.AddUriHandler(HttpHandler.INSTANCE);
         task_master.AddUriHandler(FtpHandler.INSTANCE);
         task_master.AddUriHandler(FileHandler.INSTANCE);
+        var resource_handler = new ResourceHandler();
+        resource_handler.PrependPath(accessory_lib_path);
+        task_master.AddUriHandler(resource_handler);
         if (use_precompiled) {
             var precomp = new LoadPrecompiledLibraries();
             precomp.PrependPath(accessory_lib_path);

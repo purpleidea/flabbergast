@@ -96,6 +96,10 @@ The directory \fB/usr/local/share/flabbergast/lib\fR.
 In some cases, the JVM edition of Flabbergast ships with a \fBstdlib\fR JAR. This JAR contains a precompiled version of the libraries distributed with Flabbergast. These are chosen as a final fallback.
 
 .TP
+\fBres:\fRpath
+Reads a file and returns the contents as a \fBBin\fR. The same set of directories as for \fBlib\fR is searched. This is meant for resource files.
+
+.TP
 \fBsql:\fRprovider\fB:\fRdatabase
 This accesses an SQL database. This URI scheme returns a frame representing a database connection. This is useless on its own, but can be combined with templates in \fBlib:sql\fR to perform queries on the database. Flabbergast makes use of the underlying VM's database system, JDBC on the JVM and ADO.NET on the CLR. This means that to use a particular database vendor/provider, Flabbergast must support this vendor and the correct driver must be installed in the VM. For the JVM, this means placing the appropriate JAR in the \fBCLASSPATH\fR, or, for the CLR, adding the DLL to the GAC and editing the \fBmachine.confg\fR.
 

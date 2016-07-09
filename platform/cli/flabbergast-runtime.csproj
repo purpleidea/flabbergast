@@ -63,6 +63,7 @@
 		<Compile Include="uri-environment.cs"/>
 		<Compile Include="uri-file.cs"/>
 		<Compile Include="uri-net.cs"/>
+		<Compile Include="uri-res.cs"/>
 		<Compile Include="AssemblyInfo.cs"/>
 	</ItemGroup>
 	<Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets"/>
