@@ -1231,8 +1231,14 @@ For a list of supported databases and their options, view `man flabbergast_sql`.
 ### Environment Variables (`env:`)
 Current environment variables may be accessed with `env:` URIs. For instance, to access the current path, use `env:PATH`.
 
-### JSON File Import (`json:`)
-JSON files can be imported from the local file system or the Internet using `json:` URIs. The import will be returned as a template of the form:
+### External Files (`ftp:`, `ftps:`, `file:`, and `res:`)
+These read data from an external file and provide a `Bin` value containing the contents of the file. The `res:` URI gathers data from files intended to be resources. It searches the same paths as `lib:` URIs for a matching file name.
+
+### HTTP Files (`http:`, `https:`)
+These read data from a web URL and provide a frame with two attributes: `data` containing the contents of the file, as a `Bin` value; `content_type` containing the content-type string provided by the server.
+
+### Parsing (`lib:parse`)
+A mirror to `lib:render`, this contains `parse_json`, which parses a string containing JSON and produces templates compatible with `lib:render`. It will produce a template of the form:
 
      Template {
        json : Used
@@ -1242,14 +1248,15 @@ JSON files can be imported from the local file system or the Internet using `jso
 The structure of the JSON file is preserved using template instantiations: `json.object`, `json.list`, and `json.scalar`. These mirror exactly the format in `lib:render`. This means a JSON file can be re-encoded using:
 
      render_lib : From lib:render
-     foo : From json:http://www.example.com/foo.json {
+     parse_lib : From lib:parse
+     foo : parse_lib.parse_json(json_data) {
         json : render_lib.json
      }
      value : foo.json_root.json_value
 
 It is reasonable to supply other templates to convert the JSON input to something else. For instance, these transform it in to Flabbergast objects, assuming all the names are Flabbergast-compatible:
 
-     foo : From json:http://www.example.com/foo.json {
+     foo : parse_lib.parse_json(json_data) {
         json : {
           list : Template {
             value : children
@@ -1266,7 +1273,7 @@ It is reasonable to supply other templates to convert the JSON input to somethin
 
 Due to contextual lookup, it is possible to define templates inside to change the behaviour at lower levels:
 
-     foo : From json:http://www.example.com/foo.json {
+     foo : parse_lib.parse_json(json_data) {
         json : {
           list : Template {
             # If there is a list in attribute named “integers”, convert all the
@@ -1294,9 +1301,6 @@ Due to contextual lookup, it is possible to define templates inside to change th
         }
      }
      flabbergast_value : foo.json_root.json_value
-
-### Parsing (`lib:parse`)
-A mirror to `lib:render`, this contains `parse_json`, which parses a string containing JSON and produces templates compatible with `lib:render`.
 
 ### Apache Aurora (`lib:apache/aurora`)
 Configures jobs for running on the Apache Aurora framework, which managers long-running jobs on Mesos.
