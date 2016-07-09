@@ -34,4 +34,7 @@ flabbergast_sql.7: db-man.o_0 db.o_0
 almost-clean:
 	git clean -f -x $(addprefix -e , $(MAGIC_TARGETS))
 
-.PHONY: almost-clean all
+genclean:
+	rm -f $(MAGIC_TARGETS)
+
+.PHONY: almost-clean all genclean
