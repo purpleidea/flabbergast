@@ -6,7 +6,7 @@ do
 	astyle --mode=cs -nqpHU < $SRC | cmp $SRC -
 done
 
-for SRC in $(find $(dirname $0)/platform/jvm -name '*.java' -not -name 'compiler-jvm.java' -not -name 'db-jvm.java' -not -name 'Configuration.java')
+for SRC in $(find $(dirname $0)/platform/jvm -name '*.java' -not -name 'compiler-jvm.java' -not -name 'db-jvm.java' -not -name 'Configuration.java' -not -name 'Type.java')
 do
 	astyle --mode=java --style=java -nqpHU < $SRC | cmp $SRC -
 done
