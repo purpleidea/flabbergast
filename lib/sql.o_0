@@ -912,7 +912,7 @@ sql_providers : {
 				sql_expr : "INTERVAL '\(time Enforce Int)' SECONDS"
 			}
 			now +: {
-				sql_expr : "(now() \(If utc Then "at time zone 'utc'" Else ""))"
+				sql_expr : "(NOW() \(If utc Then "AT TIME ZONE 'utc'" Else ""))"
 			}
 		}
 	}
@@ -969,12 +969,12 @@ sql_providers : {
 				hour : "H"
 				minute : "M"
 				second : "s"
-				sql_start : "CAST(strftime('%"
+				sql_start : "CAST(STRFTIME('%"
 				sql_middle : "', "
 				sql_end : ") AS INTEGER)"
 			}
 			now +: {
-				sql_expr : "datetime('now', '\(If utc Then "utc" Else "localtime")')"
+				sql_expr : "DATETIME('now', '\(If utc Then "utc" Else "localtime")')"
 			}
 			str_slice +: {
 				sql_substr_syntax : "SUBSTR(" & specials.i.sql_expr & ", " & specials.s.sql_expr & ", " & specials.l.sql_expr & ")"
@@ -987,7 +987,7 @@ sql_providers : {
 				right_type : sql_types.timestamp.id
 				result_type : sql_types.interval
 				render : Template {
-					value : "(strftime('%s', " & specials.l.sql_expr Enforce Str & ") - strftime('%s', " & specials.r.sql_expr Enforce Str & "))"
+					value : "(STRFTIME('%s', " & specials.l.sql_expr Enforce Str & ") - STRFTIME('%s', " & specials.r.sql_expr Enforce Str & "))"
 				}
 			}
 			tv : {
@@ -996,7 +996,7 @@ sql_providers : {
 				right_type : sql_types.interval.id
 				result_type : sql_types.timestamp
 				render : Template {
-					value : "datetime(" & specials.l.sql_expr & ", '" & sql_op.symbol Enforce Str & "' || " & specials.r.sql_expr Enforce Str & " || ' seconds')"
+					value : "DATETIME(" & specials.l.sql_expr & ", '" & sql_op.symbol Enforce Str & "' || " & specials.r.sql_expr Enforce Str & " || ' seconds')"
 				}
 			}
 		}
