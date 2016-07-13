@@ -130,6 +130,10 @@ public class CompilationUnit {
  * Helper to generate code for a particular function or override function.
  */
 internal abstract class Generator {
+    internal static string ToString(RevCons<char> list) {
+        if (list == null) return "";
+        return new string(list.ToArray());
+    }
     /**
      * Generate code with no input.
      */

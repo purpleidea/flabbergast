@@ -319,7 +319,8 @@ parser : compiler_lib.parser_tmpl {
 		parent_unicode_accumulate_char : Lookup accumulate_char In Container
 		parse_complete : Template {
 			ok : Required
-			save_char : (parent_unicode_accumulate_char { input : "java.lang.Character.toChars(" & unicode_accumulate_char & ")" }).value
+			char_iter : Id & "_c"
+			save_char : "\(indent)for(Character \(char_iter) : java.lang.Character.toChars(" & unicode_accumulate_char & ")) { " & (parent_unicode_accumulate_char { input : char_iter }).value & "\(indent)}"
 			pok : parent_parse_complete(ok : True, indent : indent)
 			perr : parent_parse_complete(ok : False, indent : indent)
 			value : If ok Then (save_char & pok) Else perr
@@ -349,7 +350,7 @@ parser : compiler_lib.parser_tmpl {
 		float_accumulate_buffer : "_float_acc_" & Id
 		accumulate_char : Template {
 			input : Required
-			value : indent & float_accumulate_buffer & ".append(" & input & ");"
+			value : indent & float_accumulate_buffer & " = new RevCons<Character>(" & input & ", " & float_accumulate_buffer & ");"
 		}
 		parent_parse_complete : Lookup parse_complete In Container
 		parse_complete : Template {
@@ -357,7 +358,7 @@ parser : compiler_lib.parser_tmpl {
 			value : If ok
 				Then
 					"\(indent)try {" &
-					"\(indent)\t_obj.get().\(field) = java.lang.Double.parseDouble(\(float_accumulate_buffer).toString());" &
+					"\(indent)\t_obj.get().\(field) = java.lang.Double.parseDouble(RevCons.toString(\(float_accumulate_buffer)));" &
 					pok &
 					"\(indent)} catch(java.lang.NumberFormatException e) {" &
 					perr &
@@ -366,7 +367,7 @@ parser : compiler_lib.parser_tmpl {
 			pok : parent_parse_complete(ok : True, indent : indent & "\t")
 			perr : parent_parse_complete(ok : False, indent : indent & "\t")
 		}
-		parser_gen : "java.lang.StringBuilder \(float_accumulate_buffer) = new java.lang.StringBuilder();" & in.parser_gen
+		parser_gen : "RevCons<Character> \(float_accumulate_buffer) = null;" & in.parser_gen
 	}
 	# Accumulates items into a list. There is a second buffer to prevent
 	# duplication, prepopulated with forbidden values.
@@ -400,14 +401,14 @@ parser : compiler_lib.parser_tmpl {
 	accumulate_string +: {
 		require_definition : If field Is Null Then False Else
 			(For common_field : Name, common_type : expanded_common Where common_field == field Reduce False With acc : True)
-		class_gen : If require_definition Then "\tjava.lang.StringBuilder " & field & " = new java.lang.StringBuilder();\n" & in.class_gen Else ""
+		class_gen : If require_definition Then "\tRevCons<Character> " & field & " = null;\n" & in.class_gen Else ""
 		copy_instance : If require_definition
-			Then "\t\t_obj.\(field).append(\(field).toString());\n" & in.copy_instance
+			Then "\t\t_obj.\(field) = \(field);\n" & in.copy_instance
 			Else ""
 
 		accumulate_char : Template {
 			input : Required
-			value : "\(indent)_obj.get().\(field).append(\(input));"
+			value : "\(indent)_obj.get().\(field) = new RevCons(\(input), _obj.get().\(field));"
 		}
 		parser_gen : in.parser_gen
 	}
@@ -421,7 +422,7 @@ parser : compiler_lib.parser_tmpl {
 			ok : Required
 			value : If ok
 				Then
-					(accumulate_char { input : "java.lang.Character.toChars(" & codepoint & ")" }).value &
+					(accumulate_char { input : "java.lang.Character.toChars(" & codepoint & ")[0]" }).value &
 					parent_parse_complete(ok : True, indent : indent)
 				Else parent_parse_complete(ok : False, indent : indent)
 		}
@@ -451,7 +452,7 @@ parser : compiler_lib.parser_tmpl {
 						Then ""
 						Else
 							(Let dedup_container : "_obj.get()." & (Lookup field In Container) Enforce Str & "_dedup"
-								In "if (\(Id)_success) { if (\(dedup_container).contains(\(Id)_iresult.get().\(deduplicate.dedup_key Enforce Str))) { \(Id)_iposition.get().nameConstraint(\(Id)_iresult.get().\(deduplicate.dedup_key)); return false; } else { \(dedup_container).add(\(Id)_iresult.get().\(deduplicate.dedup_key)); } } ")) &
+								In "if (\(Id)_success) { \(deduplicate.dedup_type) \(Id)_key = \(deduplicate.dedup_transform)(\(Id)_iresult.get().\(Lookup field_name In deduplicate Enforce Str)); if (\(dedup_container).contains(\(Id)_key)) { \(Id)_iposition.get().nameConstraint(\(Id)_key); return false; } else { \(dedup_container).add(\(Id)_key); } } ")) &
 					"return \(Id)_success; } }"
 				Else base
 		parse_call : If field Is Null
@@ -468,28 +469,28 @@ parser : compiler_lib.parser_tmpl {
 # define the rules.
 common_fields : compiler_lib.common_fields_tmpl {
 	str +: {
-		class_gen : "\tjava.lang.StringBuilder \(field_name) = new java.lang.StringBuilder();\n"
-		copy_instance : "\t\t_obj.\(field_name).append(\(field_name).toString());\n"
+		class_gen : "\tRevCons<Character> \(field_name) = null;\n"
+		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
 		dedup_type : "String"
-		dedup_key : "\(field_name).toString()"
+		dedup_transform : "RevCons.toString"
 	}
 	int +: {
 		class_gen : "\tlong \(field_name);\n"
 		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
 		dedup_type : "Integer"
-		dedup_key : field_name
+		dedup_transform : ""
 	}
 	float +: {
 		class_gen : "\tinternal double \(field_name);\n"
 		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
 		dedup_type : "Double"
-		dedup_key : field_name
+		dedup_transform : ""
 	}
 	other +: {
 		class_gen : "\t\(type) \(field_name);\n"
 		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
 		dedup_type : type
-		dedup_key : field_name
+		dedup_transform : ""
 	}
 }
 
@@ -580,11 +581,11 @@ environment : compiler_lib.environment_tmpl {
 			class_gen : ""
 		}
 		mask_from_fields +: {
-			value : "\t\t\(type_storage) = \(current_environment).addMask(\(name_field).toString(), \(expr_field));\n"
+			value : "\t\t\(type_storage) = \(current_environment).addMask(RevCons.toString(\(name_field)), \(expr_field));\n"
 			class_gen : "\tRestrictableType \(type_storage);\n"
 		}
 		override_name_from_field +: {
-			value : "\t\t\(type_storage) = \(current_environment).addOverrideName(\(field).toString());\n"
+			value : "\t\t\(type_storage) = \(current_environment).addOverrideName(RevCons.toString(\(field)));\n"
 			class_gen : "\tRestrictableType \(type_storage);\n"
 		}
 		forbidden_name +: {
@@ -592,7 +593,7 @@ environment : compiler_lib.environment_tmpl {
 			class_gen : ""
 		}
 		forbidden_name_from_field +: {
-			value : "\t\t\(current_environment).addForbiddenName(\(field).toString());\n"
+			value : "\t\t\(current_environment).addForbiddenName(RevCons.toString(\(field)));\n"
 			class_gen : ""
 		}
 	}
@@ -1319,7 +1320,7 @@ kws : compiler_lib.kws_repl_tmpl {
 		gen_gen +: {
 			value : base_code
 			load_name :
-				"\(sum_indent)\(generator).getBuilder().visitLdcInsn(\(name_field).toString());"
+				"\(sum_indent)\(generator).getBuilder().visitLdcInsn(RevCons.toString(\(name_field)));"
 		}
 	}
 	tmpl_get +: {
@@ -1338,7 +1339,7 @@ kws : compiler_lib.kws_repl_tmpl {
 		opcode : "Template.class.getMethod(\"get\", String.class)"
 		emit_method : Null
 		gen_gen +: {
-			extra_emit : "\(sum_indent)\(builder).visitLdcInsn(\(field).toString());"
+			extra_emit : "\(sum_indent)\(builder).visitLdcInsn(RevCons.toString(\(field)));"
 		}
 	}
 	tmpl_new +: {
@@ -1392,7 +1393,7 @@ kws : compiler_lib.kws_repl_tmpl {
 		source : "\"" & str & "\""
 	}
 	string_constant_from_field +: {
-		source : field & ".toString()"
+		source : "RevCons.toString(" & field & ")"
 	}
 	string_length +: {
 		opcode : "Stringish.class.getMethod(\"getLength\")"
@@ -1443,7 +1444,7 @@ kws : compiler_lib.kws_repl_tmpl {
 		uri_str : "\"\(uri)\""
 	}
 	external_from_field +: {
-		uri_str : "\(field).toString()"
+		uri_str : "RevCons.toString(\(field))"
 	}
 	compare +: {
 		extra_indent : left.extra_indent & right.extra_indent & "\t"
@@ -1806,10 +1807,10 @@ kws : compiler_lib.kws_repl_tmpl {
 			name_str : "\"\(name)\""
 		}
 		field_case +: {
-			name_str : "\(field).toString()"
+			name_str : "RevCons.toString(\(field))"
 		}
 		list_case +: {
-			name_str : "\(current_element).\(name_field).toString()"
+			name_str : "RevCons.toString(\(current_element).\(name_field))"
 			current_element : Id
 			loop_tab : "\t"
 			count : " + \(field).size()"
@@ -2382,10 +2383,10 @@ codegen : compiler_lib.codegen_tmpl {
 
 apigen : compiler_lib.apigen_tmpl {
 	add_name +: {
-		value : "\t\t\(current_api).registerUse(\(field));\n"
+		value : "\t\t\(current_api).registerUse(RevCons.toString(\(field));\n"
 	}
 	add_reference +: {
-		value : "\t\t\(current_api).registerRef(\(field).toString());\n"
+		value : "\t\t\(current_api).registerRef(RevCons.toString(\(field)));\n"
 	}
 	create_node +: {
 		name_field : Required
@@ -2400,15 +2401,15 @@ apigen : compiler_lib.apigen_tmpl {
 			For action : actions
 				Reduce acc & action.value
 				With acc :
-					"\t\tApiGenerator \(current_api) = _collect_names ? \(parent_api).createChild(\(name_field).toString(), this, \(inferred_type), \(If informative Then "true" Else "false")) : \(parent_api);\n\t\tfor(AstNode \(Id) : \(description_field)) \(Id).generateApi(\(current_api), true);\n"
+					"\t\tApiGenerator \(current_api) = _collect_names ? \(parent_api).createChild(RevCons.toString(\(name_field)), this, \(inferred_type), \(If informative Then "true" Else "false")) : \(parent_api);\n\t\tfor(AstNode \(Id) : \(description_field)) \(Id).generateApi(\(current_api), true);\n"
 	}
 	description_text +: {
-		value : "\t\t\(current_api).appendDescriptionText(\(contents_field).toString());\n"
+		value : "\t\t\(current_api).appendDescriptionText(RevCons.toString(\(contents_field)));\n"
 	}
 	description_tag_tmpl +: {
 		value :
 			(For a : attr, n : Name
-				Reduce acc & "\t\t\(Id).setAttribute(\"\(n)\", \(a).toString());\n"
+				Reduce acc & "\t\t\(Id).setAttribute(\"\(n)\", RevCons.toString(\(a)));\n"
 				With acc :
 					"\t\tString \(Id)_contents = \(contents);\n" &
 					(If require_prefix Is Null
@@ -2420,7 +2421,7 @@ apigen : compiler_lib.apigen_tmpl {
 						Else "\t\t}\n")
 	}
 	description_tag +: {
-		contents : contents_field & ".toString()"
+		contents : "RevCons.toString(" & contents_field & ")"
 	}
 	description_tag_collapse +: {
 		contents : "AstNode.join(\"\(delimiter)\", \(field))"
@@ -2670,7 +2671,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 		attribute +: {
 			interface_extra : ", Maskable"
 			super_class_extra :
-				"\tpublic void addMask(ErrorCollector collector, Environment environment) { environment.addMask(name.toString(), this); }\n"
+				"\tpublic void addMask(ErrorCollector collector, Environment environment) { environment.addMask(RevCons.toString(name), this); }\n"
 		}
 		fricassee_merge_input +: {
 			prepare_operations : {
@@ -2693,7 +2694,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 			}
 			interface_extra : ", Maskable"
 			super_class_extra :
-				"\tpublic void addMask(ErrorCollector collector, Environment environment) { environment.addMask(name.toString(), this); }\n" &
+				"\tpublic void addMask(ErrorCollector collector, Environment environment) { environment.addMask(RevCons.toString(name), this); }\n" &
 				"\tabstract void prepareValue(" &
 					generation_flavour.parameter_str &
 					"final LoadableValue _matched_frame, final LoadableValue _ordinal, final LoadableValue _name, final LoadableValue _target_frame) throws java.lang.Exception;\n" &
@@ -2719,12 +2720,12 @@ compiler : compiler_lib.language_with_repl_tmpl {
 		}
 		named_definition +: {
 			interface_extra : ", Maskable"
-			super_class_extra : "\tpublic void addMask(ErrorCollector collector, Environment environment) { _bound_info = environment.addMask(name.toString(), this); }\n\tRestrictableType _bound_info;\n"
+			super_class_extra : "\tpublic void addMask(ErrorCollector collector, Environment environment) { _bound_info = environment.addMask(RevCons.toString(name), this); }\n\tRestrictableType _bound_info;\n"
 		}
 		identifier +: {
 			rules +: {
 				literal_identifier +: {
-					class_extra : "\tpublic String toString() { return name.toString(); }\n"
+					class_extra : "\tpublic String toString() { return RevCons.toString(name); }\n"
 				}
 			}
 		}
@@ -2765,7 +2766,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 								result : current_type
 								value :
 									"\(indent)try {" &
-									"\(indent)\tClass<?> clazz = Class.forName(type_name.toString());" &
+									"\(indent)\tClass<?> clazz = Class.forName(RevCons.toString(type_name));" &
 									"\(indent)\tconstructor = clazz.getConstructor(TaskMaster.class, SourceReference.class, Context.class, Frame.class, Frame.class);" &
 									"\(indent)\tif (!Computation.class.isAssignableFrom(clazz)) {" &
 									"\(indent)\t\t_success.set(false);" &
@@ -2858,7 +2859,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 						environment.application_action {
 							class_gen : ""
 							value :
-								"\t\treflectMethod(_collector, this, type_name.toString(), method_name.toString(), arguments.size(), methods, _success);\n"
+								"\t\treflectMethod(_collector, this, RevCons.toString(type_name), RevCons.toString(method_name), arguments.size(), methods, _success);\n"
 						}
 					]
 					ensure_type_is : {
@@ -2914,7 +2915,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 						environment.application_action {
 							class_gen : ""
 							value :
-								"\t\tfield = reflectField(_collector, this, type_name.toString(), field_name.toString(), _success);\n"
+								"\t\tfield = reflectField(_collector, this, RevCons.toString(type_name), RevCons.toString(field_name), _success);\n"
 						}
 					]
 					ensure_type_is : ensure_type.filter {

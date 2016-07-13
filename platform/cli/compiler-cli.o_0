@@ -307,7 +307,7 @@ parser : compiler_lib.parser_tmpl {
 		parent_unicode_accumulate_char : Lookup accumulate_char In Container
 		parse_complete : Template {
 			ok : Required
-			save_char : (parent_unicode_accumulate_char { input : "System.Char.ConvertFromUtf32(" & unicode_accumulate_char & ")" }).value
+			save_char : (parent_unicode_accumulate_char { input : "System.Char.ConvertFromUtf32(" & unicode_accumulate_char & ")[0]" }).value
 			pok : parent_parse_complete(ok : True, indent : indent)
 			perr : parent_parse_complete(ok : False, indent : indent)
 			value : If ok Then (save_char & pok) Else perr
@@ -337,14 +337,14 @@ parser : compiler_lib.parser_tmpl {
 		float_accumulate_buffer : "_float_acc_" & Id
 		accumulate_char : Template {
 			input : Required
-			value : indent & float_accumulate_buffer & ".Append(" & input & ");"
+			value : indent & float_accumulate_buffer & " = new RevCons<char>(" & input & ", " & float_accumulate_buffer & ");"
 		}
 		parent_parse_complete : Lookup parse_complete In Container
 		parse_complete : Template {
 			ok : Required
 			value : If ok
 				Then
-					"\(indent)if (System.Double.TryParse(\(float_accumulate_buffer).ToString(), out _obj.\(field))) {" &
+					"\(indent)if (System.Double.TryParse(Generator.ToString(\(float_accumulate_buffer)), out _obj.\(field))) {" &
 					pok &
 					"\(indent)} else {" &
 					perr &
@@ -353,7 +353,7 @@ parser : compiler_lib.parser_tmpl {
 			pok : parent_parse_complete(ok : True, indent : indent & "\t")
 			perr : parent_parse_complete(ok : False, indent : indent & "\t")
 		}
-		parser_gen : "var \(float_accumulate_buffer) = new System.Text.StringBuilder();" & in.parser_gen
+		parser_gen : "RevCons<char> \(float_accumulate_buffer) = null;" & in.parser_gen
 	}
 	# Accumulates items into a list. There is a second buffer to prevent
 	# duplication, prepopulated with forbidden values.
@@ -382,14 +382,14 @@ parser : compiler_lib.parser_tmpl {
 	accumulate_string +: {
 		require_definition : If field Is Null Then False Else
 			(For common_field : Name, common_type : expanded_common Where common_field == field Reduce False With acc : True)
-		class_gen : If require_definition Then "\tinternal System.Text.StringBuilder " & field & " = new System.Text.StringBuilder();\n" & in.class_gen Else ""
+		class_gen : If require_definition Then "\tinternal RevCons<char> " & field & " = null;\n" & in.class_gen Else ""
 		copy_instance : If require_definition
-			Then "\t\t_obj.\(field).Append(\(field).ToString());\n" & in.copy_instance
+			Then "\t\t_obj.\(field) = \(field);\n" & in.copy_instance
 			Else ""
 
 		accumulate_char : Template {
 			input : Required
-			value : "\(indent)_obj.\(field).Append(\(input));"
+			value : "\(indent)_obj.\(field) = new RevCons<char>(\(input), _obj.\(field));"
 		}
 		parser_gen : in.parser_gen
 	}
@@ -401,9 +401,12 @@ parser : compiler_lib.parser_tmpl {
 		parent_parse_complete : Lookup parse_complete In Container
 		parse_complete : Template {
 			ok : Required
+			char_iter : Id & "_c"
 			value : If ok
 				Then
-					(accumulate_char { input : "System.Char.ConvertFromUtf32(" & codepoint & ")" }).value &
+					"\(indent)foreach (var \(char_iter) in System.Char.ConvertFromUtf32(\(codepoint))) {" &
+					(accumulate_char { input : char_iter }).value &
+					"\(indent)}" &
 					parent_parse_complete(ok : True, indent : indent)
 				Else parent_parse_complete(ok : False, indent : indent)
 		}
@@ -429,7 +432,7 @@ parser : compiler_lib.parser_tmpl {
 				If field Is Null && !(deduplicate Is Null)
 				Then
 					Let dedup_container : "_obj." & Lookup field In Container & "_dedup"
-					In "(ref ParserPosition _iposition, out \(type) _iresult) => { if (\(base)(ref _iposition, out _iresult)) { if (\(dedup_container).ContainsKey(_iresult.\(deduplicate.dedup_key))) { _iposition.NameConstraint(_iresult.\(deduplicate.dedup_key)); return false; } else { \(dedup_container)[_iresult.\(deduplicate.dedup_key)] = true; return true; } } else { return false; } }"
+					In "(ref ParserPosition _iposition, out \(type) _iresult) => { if (\(base)(ref _iposition, out _iresult)) { var \(Id)_key = \(deduplicate.dedup_transform)(_iresult.\(Lookup field_name In deduplicate Enforce Str)); if (\(dedup_container).ContainsKey(\(Id)_key)) { _iposition.NameConstraint(\(Id)_key); return false; } else { \(dedup_container)[\(Id)_key] = true; return true; } } else { return false; } }"
 				Else base
 		parse_call : If field Is Null
 			Then "ParserPosition.ParseIntoList(ref _position, _obj.\(Lookup field In Container), \(target_rule))"
@@ -441,28 +444,28 @@ parser : compiler_lib.parser_tmpl {
 # define the rules.
 common_fields : compiler_lib.common_fields_tmpl {
 	str +: {
-		class_gen : "\tinternal System.Text.StringBuilder \(field_name) = new System.Text.StringBuilder();\n"
-		copy_instance : "\t\t_obj.\(field_name).Append(\(field_name).ToString());\n"
+		class_gen : "\tinternal RevCons<char> \(field_name) = null;\n"
+		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
 		dedup_type : "string"
-		dedup_key : "\(field_name).ToString()"
+		dedup_transform : "Generator.ToString"
 	}
 	int +: {
 		class_gen : "\tinternal long \(field_name);\n"
 		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
 		dedup_type : "int"
-		dedup_key : field_name
+		dedup_transform : ""
 	}
 	float +: {
 		class_gen : "\tinternal double \(field_name);\n"
 		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
 		dedup_type : "float"
-		dedup_key : field_name
+		dedup_transform : ""
 	}
 	other +: {
 		class_gen : "\tinternal \(type) \(field_name);\n"
 		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
 		dedup_type : type
-		dedup_key : field_name
+		dedup_transform : ""
 	}
 }
 
@@ -553,11 +556,11 @@ environment : compiler_lib.environment_tmpl {
 			class_gen : ""
 		}
 		mask_from_fields +: {
-			value : "\t\t\(type_storage) = \(current_environment).AddMask(\(name_field).ToString(), \(expr_field));\n"
+			value : "\t\t\(type_storage) = \(current_environment).AddMask(Generator.ToString(\(name_field)), \(expr_field));\n"
 			class_gen : "\tRestrictableType \(type_storage);\n"
 		}
 		override_name_from_field +: {
-			value : "\t\t\(type_storage) = \(current_environment).AddOverrideName(\(field).ToString());\n"
+			value : "\t\t\(type_storage) = \(current_environment).AddOverrideName(Generator.ToString(\(field)));\n"
 			class_gen : "\tRestrictableType \(type_storage);\n"
 		}
 		forbidden_name +: {
@@ -565,7 +568,7 @@ environment : compiler_lib.environment_tmpl {
 			class_gen : ""
 		}
 		forbidden_name_from_field +: {
-			value : "\t\t\(current_environment).AddForbiddenName(\(field).ToString());\n"
+			value : "\t\t\(current_environment).AddForbiddenName(Generator.ToString(\(field)));\n"
 			class_gen : ""
 		}
 	}
@@ -1218,7 +1221,7 @@ kws : compiler_lib.kws_repl_tmpl {
 		gen_gen +: {
 			value : base_code
 			load_name :
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(name_field).ToString());"
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, Generator.ToString(\(name_field)));"
 		}
 	}
 	tmpl_get +: {
@@ -1242,7 +1245,7 @@ kws : compiler_lib.kws_repl_tmpl {
 	tmpl_get_from_field +: {
 		opcode : "Ldstr"
 		gen_gen +: {
-			extra_emit : ", \(field).ToString()"
+			extra_emit : ", Generator.ToString(\(field))"
 			extra_post:
 				"\(sum_indent)\(builder).Emit(System.Reflection.Emit.OpCodes.Call, typeof(Template).GetMethod(\"get_Item\", new System.Type[] { typeof(string) }));"
 		}
@@ -1296,7 +1299,7 @@ kws : compiler_lib.kws_repl_tmpl {
 		source : "\"" & str & "\""
 	}
 	string_constant_from_field +: {
-		source : field & ".ToString()"
+		source : "Generator.ToString(" & field & ")"
 	}
 	string_length +: {
 		opcode : "Callvirt"
@@ -1351,7 +1354,7 @@ kws : compiler_lib.kws_repl_tmpl {
 		uri_str : "\"\(uri)\""
 	}
 	external_from_field +: {
-		uri_str : "\(field).ToString()"
+		uri_str : "Generator.ToString(\(field))"
 	}
 	compare +: {
 		extra_indent : left.extra_indent & right.extra_indent & "\t"
@@ -1704,10 +1707,10 @@ kws : compiler_lib.kws_repl_tmpl {
 			name_str : "\"\(name)\""
 		}
 		field_case +: {
-			name_str : "\(field).ToString()"
+			name_str : "Generator.ToString(\(field))"
 		}
 		list_case +: {
-			name_str : "\(current_element).\(name_field).ToString()"
+			name_str : "Generator.ToString(\(current_element).\(name_field))"
 			current_element : Id
 			loop_tab : "\t"
 			count : " + \(field).Count"
@@ -2266,10 +2269,10 @@ codegen : compiler_lib.codegen_tmpl {
 
 apigen : compiler_lib.apigen_tmpl {
 	add_name +: {
-		value : "\t\t\(current_api).RegisterUse(\(field).Select(\(Id) => \(Id).ToString());\n"
+		value : "\t\t\(current_api).RegisterUse(\(field).Select(\(Id) => Generator.ToString(\(Id)));\n"
 	}
 	add_reference +: {
-		value : "\t\t\(current_api).RegisterRef(\(field).ToString());\n"
+		value : "\t\t\(current_api).RegisterRef(Generator.ToString(\(field)));\n"
 	}
 	create_node +: {
 		name_field : Required
@@ -2284,15 +2287,15 @@ apigen : compiler_lib.apigen_tmpl {
 			For action : actions
 				Reduce acc & action.value
 				With acc :
-					"\t\tvar \(current_api) = _collect_names ? \(parent_api).CreateChild(\(name_field).ToString(), this, \(inferred_type), \(If informative Then "true" Else "false")) : \(parent_api);\n\t\tforeach(var \(Id) in \(description_field)) \(Id).GenerateApi(\(current_api), true);\n"
+					"\t\tvar \(current_api) = _collect_names ? \(parent_api).CreateChild(Generator.ToString(\(name_field)), this, \(inferred_type), \(If informative Then "true" Else "false")) : \(parent_api);\n\t\tforeach(var \(Id) in \(description_field)) \(Id).GenerateApi(\(current_api), true);\n"
 	}
 	description_text +: {
-		value : "\t\t\(current_api).AppendDescriptionText(\(contents_field).ToString());\n"
+		value : "\t\t\(current_api).AppendDescriptionText(Generator.ToString(\(contents_field)));\n"
 	}
 	description_tag_tmpl +: {
 		value :
 			(For a : attr, n : Name
-				Reduce acc & "\t\t\(Id).SetAttribute(\"\(n)\", \(a).ToString());\n"
+				Reduce acc & "\t\t\(Id).SetAttribute(\"\(n)\", Generator.ToString(\(a)));\n"
 				With acc :
 					"\t\t#pragma warning disable 219\n" &
 					"\t\tvar \(Id)_contents = \(contents);\n" &
@@ -2305,7 +2308,7 @@ apigen : compiler_lib.apigen_tmpl {
 						Else "\t\t}\n")
 	}
 	description_tag +: {
-		contents : contents_field & ".ToString()"
+		contents : "Generator.ToString(" & contents_field & ")"
 	}
 	description_tag_collapse +: {
 		contents : "System.String.Join(\"\(delimiter)\", \(field).Select(\(Id)_item => \(Id)_item.ToString()))"
@@ -2551,7 +2554,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 	rule_groups +: {
 		attribute +: {
 			super_class_extra :
-				"\tinternal void AddMask(ErrorCollector collector, Environment environment) { environment.AddMask(name.ToString(), this); }\n"
+				"\tinternal void AddMask(ErrorCollector collector, Environment environment) { environment.AddMask(Generator.ToString(name), this); }\n"
 		}
 		fricassee_merge_input +: {
 			prepare_operations : {
@@ -2573,7 +2576,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 				}
 			}
 			super_class_extra :
-				"\tinternal void AddMask(ErrorCollector collector, Environment environment) { environment.AddMask(name.ToString(), this); }\n" &
+				"\tinternal void AddMask(ErrorCollector collector, Environment environment) { environment.AddMask(Generator.ToString(name), this); }\n" &
 				"\tinternal abstract void PrepareValue(" &
 					generation_flavour.parameter_str &
 					"LoadableValue _matched_frame, LoadableValue _ordinal, LoadableValue _name, LoadableValue _target_frame);\n" &
@@ -2598,12 +2601,12 @@ compiler : compiler_lib.language_with_repl_tmpl {
 				}
 		}
 		named_definition +: {
-			super_class_extra : "\tinternal void AddMask(ErrorCollector collector, Environment environment) { BoundInfo = environment.AddMask(name.ToString(), this); }\n\tinternal RestrictableType BoundInfo;\n"
+			super_class_extra : "\tinternal void AddMask(ErrorCollector collector, Environment environment) { BoundInfo = environment.AddMask(Generator.ToString(name), this); }\n\tinternal RestrictableType BoundInfo;\n"
 		}
 		identifier +: {
 			rules +: {
 				literal_identifier +: {
-					class_extra : "\tpublic override string ToString() { return name.ToString(); }\n"
+					class_extra : "\tpublic override string ToString() { return Generator.ToString(name); }\n"
 				}
 			}
 		}
@@ -2643,7 +2646,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 							{
 								result : current_type
 								value :
-									"\(indent)System.Type type = System.Type.GetType(type_name.ToString(), false);" &
+									"\(indent)System.Type type = System.Type.GetType(Generator.ToString(type_name), false);" &
 									"\(indent)if (type == null) {" &
 									"\(indent)\t_success = false;" &
 									"\(indent)\t_collector.ReportRawError(this, \"No such type \" + type_name + \".\");" &
@@ -2736,7 +2739,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 						environment.application_action {
 							class_gen : ""
 							value :
-								"\t\tReflectMethod(_collector, this, type_name.ToString(), method_name.ToString(), arguments.Count, Methods, ref _success);\n"
+								"\t\tReflectMethod(_collector, this, Generator.ToString(type_name), Generator.ToString(method_name), arguments.Count, Methods, ref _success);\n"
 						}
 					]
 					ensure_type_is : {
@@ -2792,7 +2795,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 						environment.application_action {
 							class_gen : ""
 							value :
-								"\t\tField = ReflectField(_collector, this, type_name.ToString(), field_name.ToString(), ref _success);\n"
+								"\t\tField = ReflectField(_collector, this, Generator.ToString(type_name), Generator.ToString(field_name), ref _success);\n"
 						}
 					]
 					ensure_type_is : ensure_type.filter {

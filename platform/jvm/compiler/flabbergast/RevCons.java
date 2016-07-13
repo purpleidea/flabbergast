@@ -5,6 +5,16 @@ import java.util.Collections;
 import java.util.List;
 
 class RevCons<T> {
+
+    public static String toString(RevCons<Character> list) {
+        if (list == null) return "";
+        char[] chars = new char[list.index + 1];
+        for (RevCons<Character> current = list; current != null; current = current.tail) {
+            chars[current.index] = current.head;
+        }
+        return new String(chars);
+    }
+
     private final T head;
     private final int index;
     private final RevCons<T> tail;
