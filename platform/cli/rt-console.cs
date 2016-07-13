@@ -120,7 +120,7 @@ public class PrintResult : Computation {
                 if (!(result is Stringish))
                     Console.WriteLine();
             } else {
-                File.WriteAllText(output_filename, result.ToString(), Encoding.UTF8);
+                File.WriteAllText(output_filename, result.ToString(), new UTF8Encoding(false));
             }
         } else {
             Console.Error.WriteLine("Cowardly refusing to print result of type {0}.", Stringish.NameForType(result.GetType()));
