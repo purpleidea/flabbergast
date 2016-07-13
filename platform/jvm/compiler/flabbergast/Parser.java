@@ -331,7 +331,7 @@ public class Parser {
 
     public Parser(String filename, String input) {
         file_name = filename;
-        this.input = input;
+        this.input = input.startsWith("\uFEFF") ? input.substring(1) : input;
     }
     public Document documentFile(ErrorCollector collector, String lib_name,
                                  String github) throws ParserConfigurationException {

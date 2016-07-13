@@ -119,7 +119,7 @@ public class Parser {
 
     public Parser(string filename, string input) {
         FileName = filename;
-        Input = input;
+        Input = input.Trim(new char[] {'\uFEFF'});
     }
     public XmlDocument DocumentFile(ErrorCollector collector, string lib_name, string github) {
         file result;
