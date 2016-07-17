@@ -1,6 +1,16 @@
 Introduction{{{Miscellaneous helper functions. Consider this the standard
 library of Flabbergast.}}}
 
+{{{Adds a constant the values in a frame.}}}
+add : Template {
+	args : Used
+	{{{The constant to add.}}}
+	plus : Required
+	value :
+		For arg : args, arg_name : Name
+			Select arg_name : arg + plus
+}
+
 {{{Return the conjunction (and) of the arguments.}}}
 all : allifier(base : identity)
 
@@ -164,6 +174,18 @@ count_list : Template {
 			arg_name : (For x : arg Reduce k + 1 With k : 0)
 }
 
+{{{Divides the values in a frame by a constant or divides a constant by the values in a frame.}}}
+divide : Template {
+	args : Used
+	{{{The constant to divide by.}}}
+	denominator : Null
+	{{{The constant to be divide.}}}
+	numerator : Null
+	value :
+		For arg : args, arg_name : Name
+			Select arg_name : (numerator ?? arg) / (denominator ?? arg)
+}
+
 {{{Selects all frames which have \{enabled} set to true in the values in a frame.}}}
 enabled : Template {
 	args : Used
@@ -171,6 +193,17 @@ enabled : Template {
 		For arg : args, arg_name : Name
 			Where arg.enabled
 			Select arg_name : arg
+}
+
+{{{Checks if the values in a frame are equal to a constant.}}}
+equal : Template {
+	args : Used
+	{{{The reference value to compare against.}}}
+	to : Required
+	value :
+		For arg : args, arg_name : Name
+			Where arg.enabled
+			Select arg_name : arg == to
 }
 
 {{{Flatten a list of lists into a single list.}}}
@@ -217,6 +250,28 @@ frame : Template {
 	{{{The name to use}}}
 	name : Required
 	value : For arg : args Select name : arg
+}
+
+{{{Checks if the values in a frame are greater than a constant.}}}
+greater : Template {
+	args : Used
+	{{{The reference value to compare against.}}}
+	to : Required
+	value :
+		For arg : args, arg_name : Name
+			Where arg.enabled
+			Select arg_name : arg > to
+}
+
+{{{Checks if the values in a frame are greater than or equal to a constant.}}}
+greater_or_equal : Template {
+	args : Used
+	{{{The reference value to compare against.}}}
+	to : Required
+	value :
+		For arg : args, arg_name : Name
+			Where arg.enabled
+			Select arg_name : arg >= to
 }
 
 {{{Function-like template that returns its arguments.}}}
@@ -278,6 +333,28 @@ lastifier : Template {
 	}
 }
 
+{{{Checks if the values in a frame are less than a constant.}}}
+lesser : Template {
+	args : Used
+	{{{The reference value to compare against.}}}
+	to : Required
+	value :
+		For arg : args, arg_name : Name
+			Where arg.enabled
+			Select arg_name : arg < to
+}
+
+{{{Checks if the values in a frame are less than or equal to a constant.}}}
+lesser_or_equal : Template {
+	args : Used
+	{{{The reference value to compare against.}}}
+	to : Required
+	value :
+		For arg : args, arg_name : Name
+			Where arg.enabled
+			Select arg_name : arg <= to
+}
+
 {{{Remove attribute names from a frame or compact entries in a list.}}}
 list : listifier(base : identity)
 
@@ -336,6 +413,16 @@ minifier : Template {
 					Else If acc < item Then acc Else item
 			With acc : Null
 	}
+}
+
+{{{Multiplies the values in a frame by a constant.}}}
+multiply : Template {
+	args : Used
+	{{{The constant to multiply by.}}}
+	times : Required
+	value :
+		For arg : args, arg_name : Name
+			Select arg_name : arg * times
 }
 
 {{{Selects all non-null values in a frame.}}}
@@ -784,6 +871,16 @@ str_upper_case_list : Template ( From lib:utilsinterop ).str_upper_case_list {
 	args : Used
 }
 
+{{{Subtracts a constant the values in a frame.}}}
+subtract : Template {
+	args : Used
+	{{{The constant to subtract.}}}
+	minus : Required
+	value :
+		For arg : args, arg_name : Name
+			Select arg_name : arg - minus
+}
+
 {{{Sum a list of numbers.}}}
 sum : sumifier(base : identity)
 
@@ -794,6 +891,17 @@ sumifier : Template {
 	value : Template base {
 		value +original: For item : original Reduce acc + item With acc : 0
 	}
+}
+
+{{{Checks if the values in a frame are not equal to a constant.}}}
+unequal : Template {
+	args : Used
+	{{{The reference value to compare against.}}}
+	to : Required
+	value :
+		For arg : args, arg_name : Name
+			Where arg.enabled
+			Select arg_name : arg != to
 }
 
 {{{The currently logged in user. This is platform dependent.}}}
