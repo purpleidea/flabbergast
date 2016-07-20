@@ -903,6 +903,3 @@ unequal : Template {
 			Where arg.enabled
 			Select arg_name : arg != to
 }
-
-{{{The currently logged in user. This is platform dependent.}}}
-user : (From lib:utilsinterop).user Enforce Str

@@ -187,8 +187,6 @@ str_upper_case_list : Template {
 		Select arg_name : XInvoke java.lang.String toUpperCase (arg To Str)
 }
 
-user : XInvoke java.lang.System getProperty ("user.name")
-
 bin_to_str_list : Template {
 	value :
 		For arg : args, arg_name : Name

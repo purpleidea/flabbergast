@@ -187,7 +187,6 @@ str_upper_case_list : Template {
 		For arg : args, arg_name : Name
 		Select arg_name : XInvoke System.String ToUpper (arg To Str)
 }
-user : XInvoke System.Environment get_UserName ()
 bin_to_str_list : Template {
 	value :
 		For arg : args, arg_name : Name
