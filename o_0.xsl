@@ -105,6 +105,9 @@
       </xsl:if>
     </dd>
   </xsl:template>
+  <xsl:template match="o_0:type[text()='Bin']">
+    <span class="type" title="Bin">⯑</span>
+  </xsl:template>
   <xsl:template match="o_0:type[text()='Bool']">
     <span class="type" title="Bool">◑</span>
   </xsl:template>
