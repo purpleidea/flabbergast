@@ -31,6 +31,6 @@ sql_stmts : {
 }
 
 results : For provider : sql_lib.sql_providers, stmt : sql_stmts, name : Name
-	Select name : stmt Is Null || test_query(provider : provider) == stmt
+	Select name : stmt Is Null || test_query(provider : provider {}) == stmt
 
 value : utils_lib.all(args : results)
