@@ -111,9 +111,32 @@ switch_zone_list : Template (From lib:timeinterop ).switch_zone_list {
 	to_utc : True
 }
 
+{{{Convert a time interval (a number of seconds expresssed as an integer) into a string.}}}
+interval_to_str : utils_lib.str_concatifier(base : interval_to_str_list)
+
+{{{Convert a list of time intervals (a number of seconds expresssed as an integer) into a list of strings.}}}
+interval_to_str_list : Template {
+	args : Used
+	value : For arg : args, arg_name : Name
+		Select arg_name :
+			(If arg Enforce Int > 604800 Then arg / 604800 & "w" Else "") &
+			(If arg Enforce Int % 604800 > 86400 Then arg % 604800 / 86400 & "d" Else "") &
+			(If arg Enforce Int % 86400 > 3600 Then arg % 86400 / 3600 & "h" Else "") &
+			(If arg Enforce Int % 3600 > 60 Then arg % 3600 / 60 & "m" Else "") &
+			(If arg Enforce Int % 60 > 0 Then arg % 60 Else "")
+}
+
 {{{All the days, for convience of not remembering them numerically.}}}
 days : (From lib:timeinterop ).days Enforce Frame
 {{{All the months, for convience of not remembering them numerically.}}}
 months : (From lib:timeinterop ).months Enforce Frame
+
+{{{The number of seconds in each time unit.}}}
+parts : [
+	{ symbol : "m"  duration : 60  name : "minute"  name_plural : "minutes" },
+	{ symbol : "h"  duration : 3600  name : "hour"  name_plural : "hours" },
+	{ symbol : "d"  duration : 86400  name : "day"  name_plural : "days" },
+	{ symbol : "w"  duration : 604800  name : "week"  name_plural : "weeks" }
+]
 
 utils_lib : From lib:utils
