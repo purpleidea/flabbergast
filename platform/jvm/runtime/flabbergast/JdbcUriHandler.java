@@ -237,7 +237,8 @@ public class JdbcUriHandler implements UriHandler {
             }
             ReflectedFrame connection_proxy = ReflectedFrame.create(
                                                   task_master, connection, connection_hooks);
-            connection_proxy.set("provider", new SimpleStringish(provider));
+            int underscore_position = provider.indexOf('_');
+            connection_proxy.set("provider", new SimpleStringish(underscore_position == -1 ? provider : provider.substring(0, underscore_position)));
             return new Precomputation(connection_proxy);
         } catch (SQLException e) {
             if (src_ref == null) {

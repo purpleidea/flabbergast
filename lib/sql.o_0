@@ -903,8 +903,6 @@ sql_providers : {
 			value : "(" & value_list Enforce Str & ") " & symbol_start Enforce Str & table_name Enforce Str & symbol_end Enforce Str
 		}
 	}
-	oracle_host : oracle
-	oracle_tns : oracle
 	postgresql : Template sql_provider {
 		table_discovery +: {
 			sql_query : "SELECT QUOTE_IDENT(table_schema) || '.' || QUOTE_IDENT(table_name) AS sql_from, QUOTE_LITERAL(table_schema) AS table_schema, QUOTE_LITERAL(table_name) AS table_name, regexp_replace(regexp_replace(table_schema || '_' || table_name, '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 't\\1') AS \"ATTRNAME\" FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema');"

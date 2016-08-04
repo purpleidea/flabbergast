@@ -195,7 +195,7 @@ public class DbUriHandler : UriHandler {
     public static UriHandler INSTANCE = new DbUriHandler();
 
     private static readonly Dictionary<string, Func<DbConnection, object>> connection_hooks = new Dictionary<string, Func<DbConnection, object>> {
-        {"database",  c =>  c.Database},
+        {"database",  c => c.Database},
         {"product_name",  c => c.DataSource},
         {"product_version",  c => c.ServerVersion},
         {"driver_name",  c => c.GetType().Name},
@@ -342,7 +342,8 @@ public class DbUriHandler : UriHandler {
             connection.Open();
 
             var connection_proxy = ReflectedFrame.Create(task_master, connection, connection_hooks);
-            connection_proxy.Set("provider", new SimpleStringish(provider));
+            var underscore_position = provider.IndexOf('_');
+            connection_proxy.Set("provider", new SimpleStringish(underscore_position == -1 ? provider : provider.Substring(0, underscore_position)));
             return new Precomputation(connection_proxy);
         } catch (Exception e) {
             return new FailureComputation(task_master, new ClrSourceReference(e), e.Message);
