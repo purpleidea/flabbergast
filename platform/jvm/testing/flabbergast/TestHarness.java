@@ -56,6 +56,7 @@ public class TestHarness {
                               : "FAIL", "M", type, file.getName());
             all_succeeded &= collector.isParseDirty();
         }
+        ResourcePathFinder resource_finder = new ResourcePathFinder();
         TaskMaster task_master = new TestTaskMaster();
         task_master.addUriHandler(BuiltInLibraries.INSTANCE);
         for (File file : alwaysIterable(new File(root, "errors")
@@ -64,6 +65,7 @@ public class TestHarness {
             try {
                 DirtyCollector collector = new DirtyCollector();
                 DynamicCompiler compiler = new DynamicCompiler(collector);
+                compiler.setFinder(resource_finder);
                 Parser parser = Parser.open(file.getAbsolutePath());
                 int test_id = id.get();
                 id.set(test_id + 1);

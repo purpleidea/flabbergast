@@ -49,7 +49,9 @@ public class Printer {
         var unit = new CompilationUnit(module_builder, true);
         var collector = new ConsoleCollector();
         var task_master = new ConsoleTaskMaster();
-        var accessory_lib_path = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(files[0])), "lib");
+        var resource_finder = new ResourcePathFinder();
+        resource_finder.PrependPath(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(files[0])), "lib"));
+        resource_finder.AddDefault();
         task_master.AddUriHandler(new CurrentInformation(false));
         task_master.AddUriHandler(BuiltInLibraries.INSTANCE);
         task_master.AddUriHandler(DbUriHandler.INSTANCE);
@@ -58,15 +60,15 @@ public class Printer {
         task_master.AddUriHandler(FtpHandler.INSTANCE);
         task_master.AddUriHandler(FileHandler.INSTANCE);
         var resource_handler = new ResourceHandler();
-        resource_handler.PrependPath(accessory_lib_path);
+        resource_handler.Finder = resource_finder;
         task_master.AddUriHandler(resource_handler);
         if (use_precompiled) {
             var precomp = new LoadPrecompiledLibraries();
-            precomp.PrependPath(accessory_lib_path);
+            precomp.Finder = resource_finder;
             task_master.AddUriHandler(precomp);
         }
         var dyncomp = new DynamicallyCompiledLibraries(collector);
-        dyncomp.PrependPath(accessory_lib_path);
+        dyncomp.Finder = resource_finder;
         task_master.AddUriHandler(dyncomp);
         var parser = Parser.Open(files[0]);
         parser.Trace = trace;

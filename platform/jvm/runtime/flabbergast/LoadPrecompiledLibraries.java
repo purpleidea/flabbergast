@@ -1,6 +1,5 @@
 package flabbergast;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 
@@ -22,14 +21,9 @@ public class LoadPrecompiledLibraries extends LoadLibraries {
     public Class<? extends Computation> resolveUri(String uri,
             Ptr<LibraryFailure> reason) {
         if (class_loader == null) {
-            URL[] urls = new URL[paths.size()];
+            URL[] urls = new URL[getFinder().size()];
             for (int it = 0; it < urls.length; it++) {
-                try {
-                    urls[it] = new URL("file", "", paths.get(it));
-                } catch (MalformedURLException e) {
-                    System.err.println(e.getMessage());
-                }
-
+                urls[it] = getFinder().get(it);
             }
             class_loader = new URLClassLoader(urls);
         }

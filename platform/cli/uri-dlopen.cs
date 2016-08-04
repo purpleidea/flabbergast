@@ -31,23 +31,9 @@ public class BuiltInLibraries : UriLoader {
     }
 }
 
-public abstract class LoadLibraries : UriLoader {
-    protected readonly List<string> paths = GenerateDefaultPaths();
-    public abstract string UriName {
-        get;
-    }
-    public abstract Type ResolveUri(string uri, out LibraryFailure reason);
-
-    public void AppendPath(string path) {
-        paths.Add(path);
-    }
-
-    public void ClearPaths() {
-        paths.Clear();
-    }
-
-    public static List<string> GenerateDefaultPaths() {
-        var paths = new List<string>();
+public class ResourcePathFinder {
+    protected readonly List<string> paths = new List<string>();
+    public void AddDefault() {
         var env_var = Environment.GetEnvironmentVariable("FLABBERGAST_PATH");
         if (env_var != null) {
             paths.AddRange(env_var.Split(Path.PathSeparator).Select(Path.GetFullPath));
@@ -60,12 +46,44 @@ public abstract class LoadLibraries : UriLoader {
             paths.Add("/usr/share/flabbergast/lib");
             paths.Add("/usr/local/share/flabbergast/lib");
         }
-        return paths;
     }
+
+    public void AppendPath(string path) {
+        paths.Add(path);
+    }
+
+    public void ClearPaths() {
+        paths.Clear();
+    }
+
+    public List<string> FindAll(string basename, params string[] extensions) {
+        var found = new List<string>();
+        foreach (var path in paths) {
+            foreach (var extension in extensions) {
+                var file = Path.Combine(path, basename + extension);
+                if (File.Exists(file)) {
+                    found.Add(file);
+                }
+            }
+        }
+        return found;
+    }
+
 
     public void PrependPath(string path) {
         paths.Insert(0, path);
     }
+}
+
+public abstract class LoadLibraries : UriLoader {
+    public ResourcePathFinder Finder {
+        get;
+        set;
+    }
+    public abstract string UriName {
+        get;
+    }
+    public abstract Type ResolveUri(string uri, out LibraryFailure reason);
 }
 
 public class LoadPrecompiledLibraries : LoadLibraries {
@@ -78,12 +96,7 @@ public class LoadPrecompiledLibraries : LoadLibraries {
     public override Type ResolveUri(string uri, out LibraryFailure reason) {
         var base_name = uri.Substring(4).Replace('/', '.');
         var type_name = "Flabbergast.Library." + base_name;
-        var dll_name = base_name + ".dll";
-        foreach (var path in paths) {
-            var dll_file = Path.Combine(path, dll_name);
-            if (!File.Exists(dll_file)) {
-                continue;
-            }
+        foreach (var dll_file in Finder.FindAll(type_name, ".dll")) {
             var assembly = Assembly.LoadFrom(dll_file);
             if (assembly == null) {
                 reason = LibraryFailure.Corrupt;

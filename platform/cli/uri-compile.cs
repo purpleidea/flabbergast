@@ -30,18 +30,12 @@ public sealed class DynamicallyCompiledLibraries : LoadLibraries {
         }
         var base_name = uri.Substring(4);
         var type_name = "Flabbergast.Library." + base_name.Replace('/', '.');
-        foreach (var path in paths) {
-            foreach (var extension in new[] { ".no_0", ".o_0"}) {
-                var src_file = Path.Combine(path, base_name + extension);
-                if (!File.Exists(src_file)) {
-                    continue;
-                }
-                var parser = Parser.Open(src_file);
-                var type = parser.ParseFile(collector, unit, type_name);
-                reason = type == null ? LibraryFailure.Corrupt : LibraryFailure.None;
-                cache[uri] = type;
-                return type;
-            }
+        foreach (var src_file in Finder.FindAll(base_name, ".no_0", ".o_0")) {
+            var parser = Parser.Open(src_file);
+            var type = parser.ParseFile(collector, unit, type_name);
+            reason = type == null ? LibraryFailure.Corrupt : LibraryFailure.None;
+            cache[uri] = type;
+            return type;
         }
         cache[uri] = null;
         reason = LibraryFailure.Missing;

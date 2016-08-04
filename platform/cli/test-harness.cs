@@ -92,8 +92,8 @@ public class TestHarness {
         var id = 0;
         var success = true;
         var lib = new DynamicallyCompiledLibraries(new DirtyCollector());
-        lib.ClearPaths();
-        lib.AppendPath(Path.Combine(directory, "..", "..", "..", "..", "lib"));
+        lib.Finder = new ResourcePathFinder();
+        lib.Finder.AppendPath(Path.Combine(directory, "..", "..", "..", "..", "lib"));
         success &= DoTests(Path.Combine(directory, "..", "..", "..", "..", "tests"), "*", unit, lib, ref id);
         success &= DoTests(Path.Combine(directory, "..", "..", "tests"), "I", unit, lib, ref id);
         return success ? 0 : 1;

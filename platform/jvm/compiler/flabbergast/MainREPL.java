@@ -131,19 +131,18 @@ public class MainREPL {
             System.exit(1);
         }
 
-        String accessory_lib_path = null;
+        ResourcePathFinder resource_finder = new ResourcePathFinder();
         try {
-            accessory_lib_path = new File(files.length == 1
-                                          ? new File(files[0]).getParentFile()
-                                          : new File("."), "lib").getCanonicalPath();
+            resource_finder.prependPath(new File(files.length == 1
+                                                 ? new File(files[0]).getParentFile()
+                                                 : new File("."), "lib").getCanonicalPath());
         } catch (IOException e) {
             e.printStackTrace();
         }
+        resource_finder.addDefaults();
         ErrorCollector collector = new ConsoleCollector();
         DynamicCompiler compiler = new DynamicCompiler(collector);
-        if (accessory_lib_path != null) {
-            compiler.prependPath(accessory_lib_path);
-        }
+        compiler.setFinder(resource_finder);
         ConsoleTaskMaster task_master = new ConsoleTaskMaster();
         task_master.addUriHandler(new CurrentInformation(true));
         task_master.addUriHandler(BuiltInLibraries.INSTANCE);
@@ -153,14 +152,12 @@ public class MainREPL {
         task_master.addUriHandler(HttpHandler.INSTANCE);
         task_master.addUriHandler(FileHandler.INSTANCE);
         ResourceHandler resource_handler = new ResourceHandler();
-        resource_handler.prependPath(accessory_lib_path);
+        resource_handler.setFinder(resource_finder);
         task_master.addUriHandler(resource_handler);
         if (!result.hasOption('p')) {
             LoadPrecompiledLibraries precomp = new LoadPrecompiledLibraries();
             task_master.addUriHandler(precomp);
-            if (accessory_lib_path != null) {
-                precomp.prependPath(accessory_lib_path);
-            }
+            precomp.setFinder(resource_finder);
         }
         task_master.addUriHandler(compiler);
         final Ptr<Frame> root = new Ptr<Frame>();
