@@ -8,3 +8,4 @@ flabbergast-*.jar
 manifest
 maven-deploy
 runtime/flabbergast/db-jvm.java
+testingclasspath.sh

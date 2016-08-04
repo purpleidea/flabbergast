@@ -1,0 +1,28 @@
+#!/bin/sh
+
+set -exu
+
+# Check the source tree is proper
+./check-format
+
+# Prepare the source tree for building
+./autogen.sh
+
+# See if we can bootstrap using the installed Flabbergast
+# TODO: This should be empty, but the current Flabbergast package can't deal with that
+export FLABBERGAST_PATH=/nonexistent
+./bootstrap
+sed -i '1 s/^\xef\xbb\xbf//' platform/jvm/compiler/flabbergast/compiler-jvm.java platform/jvm/runtime/flabbergast/db-jvm.java
+./configure
+make clean all check
+
+# See if we can boostrap using the built CLR Flabbergast
+export FLABBERGAST_PATH=$(pwd)/lib
+FLABBERGAST="cli platform/cli/bin/Debug/flabbergast.exe" ./bootstrap genclean all
+make clean all check
+
+# See if we can boostrap using the built JVM Flabbergast
+make -C platform/jvm testingclasspath.sh
+. platform/jvm/testingclasspath.sh
+FLABBERGAST="java -XX:MaxPermSize=512m flabbergast.MainPrinter" ./bootstrap genclean all
+make clean all check

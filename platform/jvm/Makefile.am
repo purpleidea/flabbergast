@@ -127,6 +127,9 @@ jflabbergast-docgen: Makefile
 	@echo '#!/bin/sh' > $@
 	@echo 'exec $(JAVA) -cp $(INSTALLED_CP) flabbergast.MainDocumenter "$$@"' >> $@
 
+testingclasspath.sh: Makefile
+	@echo export CLASSPATH=$(TESTING_CLASSPATH) > $@
+
 install-data-hook:
 if BUILD_FATJAR
 	$(LN_S) -f flabbergast-$(VERSION).jar $(DESTDIR)$(datadir)/java/flabbergast.jar
