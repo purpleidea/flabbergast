@@ -52,6 +52,7 @@ public class MainPrinter {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        resource_finder.addDefaults();
         ErrorCollector collector = new ConsoleCollector();
         DynamicCompiler compiler = new DynamicCompiler(collector);
         compiler.setFinder(resource_finder);
