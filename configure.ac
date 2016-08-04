@@ -59,11 +59,13 @@ AC_CONFIG_FILES([
 	platform/cli/Makefile
 	platform/cli/AssemblyInfo.cs
 	platform/cli/config.cs
+	platform/cli/flabbergast.nuspec
 	platform/jvm/Makefile
 	platform/jvm/runtime/flabbergast/Configuration.java
 	vim/Makefile
 ]) 
 AC_CONFIG_FILES([update-flabbergast:update-flabbergast.in], [chmod +x update-flabbergast])
+AC_CONFIG_FILES([platform/cli/nuget-deploy:platform/cli/nuget-deploy.in], [chmod +x platform/cli/nuget-deploy])
 AC_CONFIG_FILES([platform/jvm/maven-deploy:platform/jvm/maven-deploy.in], [chmod +x platform/jvm/maven-deploy])
 AC_CONFIG_FILES([build-macos-pkg:build-macos-pkg.in], [chmod +x build-macos-pkg])
 AC_OUTPUT

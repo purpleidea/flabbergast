@@ -1,6 +1,8 @@
 *.?db
 *.dll
 *.il
+*.nupkg
+*.nuspec
 *.pc
 *.suo
 *.user
@@ -8,5 +10,6 @@
 bin
 compiler-cli.cs
 db-cli.cs
+nuget-deploy
 obj
 xdb.s
