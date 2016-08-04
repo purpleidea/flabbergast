@@ -128,6 +128,15 @@ driver_config_tmpl : Template {
 			ado_net_file_param : "Data Source"
 			params : {}
 		}
+
+		sqlite_res : Template resource_driver {
+			friendly_name : "SQLite via Resource"
+			jdbc_name : "sqlite:"
+			ado_net_name : "System.Data.SQLite"
+			ado_net_file_param : "Data Source"
+			params : {}
+			extensions : [ ".sqlite", ".sqlite3", ".db", ".db3", ".s3db" ]
+		}
 	}
 
 	value :
