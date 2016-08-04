@@ -15,7 +15,7 @@ driver_config_tmpl : Template {
 	file_driver : Template driver_tmpl {
 		path_name : "path"
 		ado_net_file_param : Required
-		file_regex : "."
+		file_regex : ".*"
 	}
 
 	host_driver : Template driver_tmpl {
