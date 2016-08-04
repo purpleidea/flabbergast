@@ -16,7 +16,9 @@ public class ResourcePathFinder implements Iterable<String> {
         String env_var = System.getenv("FLABBERGAST_PATH");
         if (env_var != null) {
             for (String path : env_var.split(File.pathSeparator)) {
-                paths.add(new File(path).getAbsolutePath());
+                if (path.trim().length() > 0) {
+                    paths.add(new File(path).getAbsolutePath());
+                }
             }
         }
         boolean isntWindows = !System.getProperty("os.name").startsWith(
@@ -41,7 +43,9 @@ public class ResourcePathFinder implements Iterable<String> {
     }
 
     public void appendPath(String path) {
-        paths.add(path);
+        if (path.trim().length() > 0) {
+            paths.add(path);
+        }
     }
     public List<File> findAll(String basename, String... extensions) {
         List<File> files = new ArrayList<File>();
@@ -68,7 +72,9 @@ public class ResourcePathFinder implements Iterable<String> {
         return paths.iterator();
     }
     public void prependPath(String path) {
-        paths.add(0, path);
+        if (path.trim().length() > 0) {
+            paths.add(0, path);
+        }
     }
     public int size() {
         return paths.size();

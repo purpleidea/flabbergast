@@ -36,7 +36,7 @@ public class ResourcePathFinder {
     public void AddDefault() {
         var env_var = Environment.GetEnvironmentVariable("FLABBERGAST_PATH");
         if (env_var != null) {
-            paths.AddRange(env_var.Split(Path.PathSeparator).Select(Path.GetFullPath));
+            paths.AddRange(env_var.Split(Path.PathSeparator).Where(x => !String.IsNullOrWhiteSpace(x)).Select(Path.GetFullPath));
         }
         paths.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "flabbergast", "lib"));
         var full_path = Assembly.GetAssembly(typeof(Frame)).Location;
@@ -49,7 +49,9 @@ public class ResourcePathFinder {
     }
 
     public void AppendPath(string path) {
-        paths.Add(path);
+        if (!String.IsNullOrWhiteSpace(path)) {
+            paths.Add(path);
+        }
     }
 
     public void ClearPaths() {
@@ -71,7 +73,9 @@ public class ResourcePathFinder {
 
 
     public void PrependPath(string path) {
-        paths.Insert(0, path);
+        if (!String.IsNullOrWhiteSpace(path)) {
+            paths.Insert(0, path);
+        }
     }
 }
 
