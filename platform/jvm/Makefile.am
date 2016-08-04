@@ -1,5 +1,7 @@
 NULL =
 
+BUILDDIR = $(shell pwd)
+
 bin_SCRIPTS = \
 	jflabbergast \
 	jflabbergast-repl \
@@ -38,9 +40,9 @@ JAVA_COMPILER_DEPS = \
 	$(NULL)
 
 if BUILD_FATJAR
-COMPILER_JAR = flabbergast-$(VERSION).jar
+COMPILER_JAR = $(BUILDDIR)/flabbergast-$(VERSION).jar
 else
-COMPILER_JAR = flabbergast-runtime-$(VERSION).jar flabbergast-compiler-$(VERSION).jar
+COMPILER_JAR = $(BUILDDIR)/flabbergast-runtime-$(VERSION).jar $(BUILDDIR)/flabbergast-compiler-$(VERSION).jar
 endif
 
 INSTALLED_CP = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) $(addprefix $(javadir)/, $(COMPILER_JAR))):$${CLASSPATH:-}:$(pkgdatadir)/jvm/*
@@ -49,7 +51,7 @@ TESTS = flabbergast-testing-$(VERSION).jar
 TEST_EXTENSIONS = .jar
 JAR_LOG_COMPILER = ./run_test
 AM_JAR_LOG_FLAGS = "$(TESTING_CLASSPATH)"
-TESTING_CLASSPATH = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) flabbergast-stdlib-$(VERSION).jar $(COMPILER_JAR))
+TESTING_CLASSPATH = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) $(BUILDDIR)/flabbergast-stdlib-$(VERSION).jar $(COMPILER_JAR))
 
 RUNTIME_INPUTS = $(wildcard runtime/flabbergast/*.java runtime/flabbergast/*/*.java)
 COMPILER_INPUTS = $(wildcard compiler/flabbergast/*.java)
@@ -80,7 +82,7 @@ flabbergast-stdlib-$(VERSION).jar flabbergast-stdlib-$(VERSION)-sources.jar flab
 	mkdir .build
 	rsync -a --include '**.o_0' --include '**.jo_0' --include '**/' --exclude '*' ../../lib/ .build
 	$(JAR) cfm flabbergast-stdlib-$(VERSION)-sources.jar stdlib.manifest -C .build .
-	cd .build && $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) $(addprefix ../, $(COMPILER_JAR))) flabbergast.MainBuildCache -P
+	cd .build && $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) $(COMPILER_JAR)) flabbergast.MainBuildCache -P
 	find .build -type f -a -not -name '*.class' -exec rm {} \;
 	$(JAR) cfm flabbergast-stdlib-$(VERSION).jar stdlib.manifest -C .build .
 	rm -rf .build
