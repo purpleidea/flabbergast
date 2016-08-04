@@ -240,8 +240,8 @@ public class JdbcUriHandler implements UriHandler {
             }
             ReflectedFrame connection_proxy = ReflectedFrame.create(
                                                   task_master, connection, connection_hooks);
-            int underscore_position = provider.indexOf('_');
-            connection_proxy.set("provider", new SimpleStringish(underscore_position == -1 ? provider : provider.substring(0, underscore_position)));
+            int plus_position = provider.indexOf('+');
+            connection_proxy.set("provider", new SimpleStringish(plus_position == -1 ? provider : provider.substring(0, plus_position)));
             return new Precomputation(connection_proxy);
         } catch (SQLException e) {
             if (src_ref == null) {

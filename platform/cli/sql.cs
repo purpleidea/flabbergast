@@ -345,8 +345,8 @@ public class DbUriHandler : UriHandler {
             connection.Open();
 
             var connection_proxy = ReflectedFrame.Create(task_master, connection, connection_hooks);
-            var underscore_position = provider.IndexOf('_');
-            connection_proxy.Set("provider", new SimpleStringish(underscore_position == -1 ? provider : provider.Substring(0, underscore_position)));
+            var plus_position = provider.IndexOf('+');
+            connection_proxy.Set("provider", new SimpleStringish(plus_position == -1 ? provider : provider.Substring(0, plus_position)));
             return new Precomputation(connection_proxy);
         } catch (Exception e) {
             return new FailureComputation(task_master, new ClrSourceReference(e), e.Message);

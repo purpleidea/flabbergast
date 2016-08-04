@@ -8,7 +8,7 @@ driver_config : db_lib.driver_config_tmpl {
 		uri_format : Required
 
 		value :
-			".SS \(friendly_name) (\(provider))\nThis database uses the \\fBsql:\(provider)\\fR\(uri_format Enforce Str) URI format.\n\n" &
+			".SS \(friendly_name) (\(uri_schema))\nThis database uses the \\fBsql:\(uri_schema)\\fR\(uri_format Enforce Str) URI format.\n\n" &
 			(For param : params, param_name : Name, pos : Ordinal
 				Reduce (If pos > 1 Then acc Else "") & ".TP\n\(param_name)\n\(param.man)\n"
 				With acc : "No parameters are supported.\n") & "\n"

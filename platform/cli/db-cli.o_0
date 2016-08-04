@@ -5,7 +5,7 @@ driver_config : db_lib.driver_config_tmpl {
 		parse : Required
 
 		value :
-			"if (provider == \"\(provider)\") {\n" &
+			"if (provider == \"\(uri_schema)\") {\n" &
 			"var \(Id)_factory = DbProviderFactories.GetFactory(\"\(ado_net_name Enforce Str)\");" &
 			"\tvar \(Id)_builder = \(Id)_factory.CreateConnectionStringBuilder();\n" &
 			parse Enforce Str &

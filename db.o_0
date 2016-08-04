@@ -10,6 +10,7 @@ driver_config_tmpl : Template {
 			For param : params, param_name : Name, pos : Ordinal
 				Reduce (If pos > 1 Then acc & ", " Else "") & "\"\(param_name)\""
 				With acc : ""
+		uri_schema : (From lib:utils).str_replace(provider, str : "_", with : "+")
 	}
 
 	file_driver : Template driver_tmpl {

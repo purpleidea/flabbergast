@@ -6,7 +6,7 @@ driver_config : db_lib.driver_config_tmpl {
 		parse : Required
 
 		value :
-			"if (provider.equals(\"\(provider)\")) {\n" &
+			"if (provider.equals(\"\(uri_schema)\")) {\n" &
 			parse Enforce Str &
 			"\tif (!Arrays.asList(\(param_list Enforce Str)).containsAll(in_properties.stringPropertyNames())) { err.set(\"Unknown parameters specified.\"); return null; }\n" &
 			(For param : params, param_name : Name
