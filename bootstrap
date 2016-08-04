@@ -16,20 +16,20 @@ all: $(MAGIC_TARGETS)
 bootstrap.tar.bz2: all
 	tar cfj $@ $(MAGIC_TARGETS)
 
-platform/jvm/compiler/flabbergast/compiler-jvm.java: platform/jvm/compiler-jvm.o_0 compiler.o_0
-	FLABBERGAST_PATH=. flabbergast -p -o $@ $(firstword $^)
+platform/jvm/compiler/flabbergast/compiler-jvm.java: platform/jvm/compiler-jvm.o_0 src/compiler.o_0
+	FLABBERGAST_PATH=src flabbergast -p -o $@ $(firstword $^)
 
-platform/cli/compiler-cli.cs: platform/cli/compiler-cli.o_0 compiler.o_0
-	FLABBERGAST_PATH=. flabbergast -p -o $@ $(firstword $^)
+platform/cli/compiler-cli.cs: platform/cli/compiler-cli.o_0 src/compiler.o_0
+	FLABBERGAST_PATH=src flabbergast -p -o $@ $(firstword $^)
 
-platform/jvm/runtime/flabbergast/db-jvm.java: platform/jvm/db-jvm.o_0 db.o_0
-	FLABBERGAST_PATH=. flabbergast -p -o $@ $(firstword $^)
+platform/jvm/runtime/flabbergast/db-jvm.java: platform/jvm/db-jvm.o_0 src/db.o_0
+	FLABBERGAST_PATH=src flabbergast -p -o $@ $(firstword $^)
 
-platform/cli/db-cli.cs: platform/cli/db-cli.o_0 db.o_0
-	FLABBERGAST_PATH=. flabbergast -p -o $@ $(firstword $^)
+platform/cli/db-cli.cs: platform/cli/db-cli.o_0 src/db.o_0
+	FLABBERGAST_PATH=src flabbergast -p -o $@ $(firstword $^)
 
-flabbergast_sql.7: db-man.o_0 db.o_0
-	FLABBERGAST_PATH=. flabbergast -p -o $@ $(firstword $^)
+flabbergast_sql.7: src/db-man.o_0 src/db.o_0
+	FLABBERGAST_PATH=src flabbergast -p -o $@ $(firstword $^)
 
 almost-clean:
 	git clean -f -x $(addprefix -e , $(MAGIC_TARGETS))
