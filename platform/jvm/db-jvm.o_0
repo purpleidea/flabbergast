@@ -24,6 +24,12 @@ driver_config : db_lib.driver_config_tmpl {
 		tail : " + uri_fragment"
 	}
 
+	resource_driver +: {
+		extensions_str : For ex : extensions Reduce acc & ", \"\(ex)\"" With acc : ""
+		parse : "\nif (!Pattern.matches(\"^[A-Za-z0-9/]*$\", uri_fragment)) { err.set(\"Invalid resource file specified.\"); return null; }\njava.util.List<java.io.File> \(Id)_files = finder.findAll(uri_fragment\(extensions_str));\nif(\(Id)_files.size() == 0) { err.set(\"Cannot find resource “\" + uri_fragment + \"”.\"); return null; }\n"
+		tail : " + \(Id)_files.get(0).getAbsolutePath()"
+	}
+
 	host_driver +: {
 		parse :
 			"\tString db_fragment = JdbcUriHandler.parseUri(uri_fragment, out_properties, \"\(jdbc_user_param)\", \"\(jdbc_password_param)\", \(If jdbc_db_param Is Null Then "null" Else "\"\(jdbc_db_param)\""), err);\n\tif(db_fragment == null) return null;\n"
@@ -44,7 +50,7 @@ import java.util.Arrays;
 import java.util.Properties;
 import java.util.regex.Pattern;
 class JdbcParser {
-public static String parse(String provider, String uri_fragment, Properties in_properties, Properties out_properties, Ptr<String> err) {
+public static String parse(String provider, String uri_fragment, Properties in_properties, Properties out_properties, ResourcePathFinder finder, Ptr<String> err) {
 " &
 driver_config.value &
 "

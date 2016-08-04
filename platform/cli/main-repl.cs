@@ -76,7 +76,6 @@ public class REPL {
         var task_master = new ConsoleTaskMaster();
         task_master.AddUriHandler(new CurrentInformation(true));
         task_master.AddUriHandler(BuiltInLibraries.INSTANCE);
-        task_master.AddUriHandler(DbUriHandler.INSTANCE);
         task_master.AddUriHandler(EnvironmentUriHandler.INSTANCE);
         task_master.AddUriHandler(HttpHandler.INSTANCE);
         task_master.AddUriHandler(FtpHandler.INSTANCE);
@@ -84,6 +83,9 @@ public class REPL {
         var resource_finder = new ResourcePathFinder();
         resource_finder.PrependPath(Path.Combine(files.Count == 1 ? Path.GetDirectoryName(Path.GetFullPath(files[0])) : Environment.CurrentDirectory, "lib"));
         resource_finder.AddDefault();
+        var db_handler = new DbUriHandler();
+        db_handler.Finder = resource_finder;
+        task_master.AddUriHandler(db_handler);
         var resource_handler = new ResourceHandler();
         resource_handler.Finder = resource_finder;
         task_master.AddUriHandler(resource_handler);

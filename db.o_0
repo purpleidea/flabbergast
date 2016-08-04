@@ -18,6 +18,11 @@ driver_config_tmpl : Template {
 		file_regex : ".*"
 	}
 
+	resource_driver : Template driver_tmpl {
+		ado_net_file_param : Required
+		extensions : Required
+	}
+
 	host_driver : Template driver_tmpl {
 		jdbc_db_param : Null
 		jdbc_user_param : "user"

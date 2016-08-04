@@ -13,8 +13,6 @@ import java.util.Properties;
 
 public class JdbcUriHandler implements UriHandler {
 
-    public static UriHandler INSTANCE = new JdbcUriHandler();
-
     private static Map<String, Transform<Connection>> connection_hooks = new HashMap<String, Transform<Connection>>();
     static {
         connection_hooks.put("database", new Transform<Connection>() {
@@ -167,8 +165,13 @@ public class JdbcUriHandler implements UriHandler {
             return uri_fragment.substring(host_start, host_end);
         }
     }
+    private ResourcePathFinder finder;
 
-    private JdbcUriHandler() {
+    public JdbcUriHandler() {
+    }
+
+    public ResourcePathFinder getFinder() {
+        return finder;
     }
 
     public String getUriName() {
@@ -224,7 +227,7 @@ public class JdbcUriHandler implements UriHandler {
             Ptr<String> err = new Ptr<String> ("Bad URI.");
             Properties properties = new Properties();
             String jdbc_uri = JdbcParser.parse(provider, uri_fragment, params,
-                                               properties, err);
+                                               properties, finder, err);
             if (jdbc_uri == null) {
                 return new FailureComputation(task_master,
                                               new JavaSourceReference(), err.get());
@@ -246,5 +249,8 @@ public class JdbcUriHandler implements UriHandler {
             }
             return new FailureComputation(task_master, src_ref, e.getMessage());
         }
+    }
+    public void setFinder(ResourcePathFinder finder) {
+        this.finder = finder;
     }
 }

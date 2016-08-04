@@ -18,6 +18,13 @@ driver_config : db_lib.driver_config_tmpl {
 		uri_format : file_uri_man & path_name
 	}
 
+	resource_driver +: {
+		uri_format : file_uri_man & "file"
+		value +orig: orig &
+			"The specified file will be searched in locations where the \\fBres:\\fR URI will search with the possible extensions:\n" &
+			(For ex : extensions Reduce acc & ".IP \\(bu 4\n.B \(ex)\n" With acc : "")
+	}
+
 	host_driver +: {
 		uri_format : net_uri_man
 	}

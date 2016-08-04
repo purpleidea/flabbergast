@@ -54,7 +54,9 @@ public class Printer {
         resource_finder.AddDefault();
         task_master.AddUriHandler(new CurrentInformation(false));
         task_master.AddUriHandler(BuiltInLibraries.INSTANCE);
-        task_master.AddUriHandler(DbUriHandler.INSTANCE);
+        var db_handler = new DbUriHandler();
+        db_handler.Finder = resource_finder;
+        task_master.AddUriHandler(db_handler);
         task_master.AddUriHandler(EnvironmentUriHandler.INSTANCE);
         task_master.AddUriHandler(HttpHandler.INSTANCE);
         task_master.AddUriHandler(FtpHandler.INSTANCE);

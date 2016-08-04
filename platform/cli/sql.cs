@@ -192,8 +192,6 @@ public class DbQuery : Computation {
 
 public class DbUriHandler : UriHandler {
 
-    public static UriHandler INSTANCE = new DbUriHandler();
-
     private static readonly Dictionary<string, Func<DbConnection, object>> connection_hooks = new Dictionary<string, Func<DbConnection, object>> {
         {"database",  c => c.Database},
         {"product_name",  c => c.DataSource},
@@ -295,7 +293,12 @@ public class DbUriHandler : UriHandler {
         return true;
     }
 
-    private DbUriHandler() {
+    public DbUriHandler() {
+    }
+
+    public ResourcePathFinder Finder {
+        get;
+        set;
     }
 
     public string UriName {
@@ -334,7 +337,7 @@ public class DbUriHandler : UriHandler {
             }
 
             string error;
-            var connection = DbParser.Parse(provider, uri_fragment, param, out error);
+            var connection = DbParser.Parse(provider, uri_fragment, param, Finder, out error);
             if (connection == null) {
                 return new FailureComputation(task_master, new ClrSourceReference(), error ?? "Bad URI.");
             }

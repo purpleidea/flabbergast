@@ -58,7 +58,9 @@ public class MainPrinter {
         ConsoleTaskMaster task_master = new ConsoleTaskMaster();
         task_master.addUriHandler(new CurrentInformation(false));
         task_master.addUriHandler(BuiltInLibraries.INSTANCE);
-        task_master.addUriHandler(JdbcUriHandler.INSTANCE);
+        JdbcUriHandler jdbc_handler = new JdbcUriHandler();
+        jdbc_handler.setFinder(resource_finder);
+        task_master.addUriHandler(jdbc_handler);
         task_master.addUriHandler(EnvironmentUriHandler.INSTANCE);
         task_master.addUriHandler(FtpHandler.INSTANCE);
         task_master.addUriHandler(HttpHandler.INSTANCE);

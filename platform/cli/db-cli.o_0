@@ -23,6 +23,11 @@ driver_config : db_lib.driver_config_tmpl {
 		parse : "\tif (!Regex.IsMatch(uri_fragment, \"\(file_regex)\")) { err = \"Invalid file specified.\"; return null; }\n\t\(Id)_builder[\"\(ado_net_file_param)\"] = uri_fragment;\n"
 	}
 
+	resource_driver +: {
+		extensions_str : For ex : extensions Reduce acc & ", \"\(ex)\"" With acc : ""
+		parse : "\tif (!Regex.IsMatch(uri_fragment, \"^[A-Za-z0-9/]*$\")) { err = \"Invalid resource file specified.\"; return null; }\n\tvar \(Id)_files = finder.FindAll(uri_fragment\(extensions_str)); if (\(Id)_files.Count == 0) { err = \"Cannot find resource “\" + uri_fragment + \"”.\"; return null; } else { \(Id)_builder[\"\(ado_net_file_param)\"] = \(Id)_files[0]; }\n"
+	}
+
 	host_driver +: {
 		parse :
 			"\tif (!DbUriHandler.ParseUri(uri_fragment, \(Id)_builder, \"\(ado_net_server_param)\", \"\(ado_net_port_param)\", \"\(ado_net_user_param)\", \"\(ado_net_password_param)\", \"\(ado_net_db_param)\", out err)) return null;\n"
@@ -43,7 +48,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 namespace Flabbergast {
 class DbParser {
-public static DbConnection Parse(string provider, string uri_fragment, Dictionary<string, string> in_properties, out string err) {
+public static DbConnection Parse(string provider, string uri_fragment, Dictionary<string, string> in_properties, ResourcePathFinder finder, out string err) {
 err = null;
 " &
 driver_config.value &
