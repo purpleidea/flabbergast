@@ -1,3 +1,19 @@
+flabbergast (0.18~ppa0) trusty; urgency=medium
+
+  * Increase permgen size
+  * Exclude empty paths from FLABBERGAST_PATH
+  * Add SQLite resource URI
+  * Add interval decomposition to lib:time
+  * Remove user from lib:utils
+  * Create lifted operators in lib:utils
+  * Add string aggregation function to SQL
+  * Ignore any BOM at the start of input
+  * Do not emit BOM in CLR output
+  * Add http:, ftp:, file:, and res: resource URI schemes
+  * Move JSON parsing to a library
+
+ -- Andre Masella <andre@masella.name>  Thu, 04 Aug 2016 20:34:57 -0400
+
 flabbergast (0.17~ppa0) xenial; urgency=medium
 
   * Add pkgconfig support to CLR edition

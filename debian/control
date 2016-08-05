@@ -2,8 +2,8 @@ Source: flabbergast
 Section: devel
 Priority: optional
 Maintainer: Andre Masella <andre@masella.name>
-Build-Depends: debhelper (>= 9.0.0), autotools-dev, mono-xbuild, mono-mcs, cli-common-dev (>= 0.8~), javahelper, default-jdk, libasm4-java, libandroid-json-org-java, libcommons-cli-java, libjline2-java, libjoda-time-java, rsync
-Standards-Version: 3.9.5
+Build-Depends: debhelper (>= 9.0.0), autotools-dev, mono-xbuild, mono-mcs, cli-common-dev (>= 0.8~), javahelper, default-jdk (>= 1.7), libasm4-java, libandroid-json-org-java, libcommons-cli-java, libjline2-java, libjoda-time-java, rsync
+Standards-Version: 3.9.7
 Homepage: https://flabbergast.org/
 Vcs-Git: git://github.com/flabbergast-config/flabbergast/
 Vcs-Browser: https://github.com/flabbergast-config/flabbergast/
