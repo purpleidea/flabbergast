@@ -117,11 +117,13 @@ jvm-build-cache: Makefile
 
 jflabbergast: Makefile
 	@echo '#!/bin/sh' > $@
-	@echo 'exec $(JAVA) -XX:MaxPermSize=512m -cp $(INSTALLED_CP) flabbergast.MainPrinter "$$@"' >> $@
+	@echo 'if [ $$(java -version 2>&1 | head -n 1 | cut -f 2 -d .) -le 7 ]; then JVM_OPTS=-XX:MaxPermSize=512m; else JVM_OPTS=""; fi' >> $@
+	@echo 'exec $(JAVA) $${JVM_OPTS} -cp $(INSTALLED_CP) flabbergast.MainPrinter "$$@"' >> $@
 
 jflabbergast-repl: Makefile
 	@echo '#!/bin/sh' > $@
-	@echo 'exec $(JAVA) -XX:MaxPermSize=512m -cp $(INSTALLED_CP) flabbergast.MainREPL "$$@"' >> $@
+	@echo 'if [ $$(java -version 2>&1 | head -n 1 | cut -f 2 -d .) -le 7 ]; then JVM_OPTS=-XX:MaxPermSize=512m; else JVM_OPTS=""; fi' >> $@
+	@echo 'exec $(JAVA) $${JVM_OPTS} -cp $(INSTALLED_CP) flabbergast.MainREPL "$$@"' >> $@
 
 jflabbergast-docgen: Makefile
 	@echo '#!/bin/sh' > $@
