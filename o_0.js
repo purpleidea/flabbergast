@@ -88,11 +88,46 @@ function searchChange() {
             }
         }
 
+        var cssParts;
         if (exact_defs.length > 0 || exact_uses.length > 0 || starts_defs.length > 0 || starts_uses.length > 0) {
-            termcss.innerHTML = cssForArray(exact_defs, "font-weight: bold; color: #4F94CD; display: block !important;") + cssForArray(exact_uses, "font-weight: bold; display: block !important;") + cssForArray(starts_defs, "color: #4F94CD; display: block !important;") + cssForArray(starts_uses, "display: block !important;") + cssForArray(unmatched.concat(contains_defs, contains_uses), "display: none;");
+            cssParts = [{
+                items: exact_defs,
+                css: "font-weight: bold; color: #4F94CD; display: block !important;"
+            },
+            {
+                items: exact_uses,
+                css: "font-weight: bold; display: block !important;"
+            },
+            {
+                items: starts_defs,
+                css: "color: #4F94CD; display: block !important;"
+            },
+            {
+                items: starts_uses,
+                css: "display: block !important;"
+            },
+            {
+                items: unmatched.concat(contains_defs, contains_uses),
+                css: "display: none;"
+            }];
         } else {
-            termcss.innerHTML = cssForArray(contains_defs, "font-weight: bold; color: #4F94CD; display: block !important;") + cssForArray(contains_uses, "font-weight: bold; display: block !important;") + cssForArray(unmatched, "display: none;");
+            cssParts = [{
+                items: contains_defs,
+                css: "font-weight: bold; color: #4F94CD; display: block !important;"
+            },
+            {
+                items: contains_uses,
+                css: "font-weight: bold; display: block !important;"
+            },
+            {
+                items: unmatched,
+                css: "display: none;"
+            }];
         }
+
+        termcss.innerHTML = cssParts.map(function(part) {
+            return cssForArray(part.items, part.css);
+        }).join('');
         checkNoMatches();
     } else {
         searchbox.className = "error";
