@@ -44,6 +44,14 @@ or you can download the JARs alone using:
 
 substituting `$VESRION` as appropriate. To run it, invoke Java on the JARs and run `flabbergast.MainPrinter` to run the default interface, which simply runs the provided script and dumps the output, or `flabbergast.MainREPL` to access the interactive debugger.
 
+NuGet users can install the CLI edition from [NuGET](http://nuget.org/packages/flabbergast/). You can install the package at the package management console using:
+
+    Install-Package flabbergast
+
+or from the command line using:
+
+    nuget install flabbergast
+
 ## Building
 To build Flabbergast, you will need to have an existing copy of Flabbergast or obtain the generated compiler sources directly. You will need GNU AutoTools, Flabbergast, Make, rsync, and the preqrequistes to build one of either the JVM edition or the CLI edition. For the JVM edition, you will need the JVM 1.7 or later, [ObjectWeb ASM](http://asm.ow2.org), [JLine](http://jline.sourceforge.net/), [Commons CLI](https://commons.apache.org/cli/), [Joda Time](http://www.joda.org/joda-time/), and [Android JSON](http://source.android.com/index.html). If you are building the CLI edition, you will need either Mono or the Common Language Runtime, the C# compiler, and either MSBuild or XBuild.
 
