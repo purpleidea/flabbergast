@@ -688,9 +688,9 @@ internal abstract class Generator {
         var reference = MakeField("source_reference", typeof(SourceReference));
         Builder.Emit(OpCodes.Ldarg_0);
         if (node is attribute) {
-            Builder.Emit(OpCodes.Ldstr, String.Format("{0}: {1}", node.PrettyName, (node as attribute).name));
+            Builder.Emit(OpCodes.Ldstr, String.Format("{0}: {1}", node.PrettyName, ToString((node as attribute).name)));
         } else if (node is named_definition) {
-            Builder.Emit(OpCodes.Ldstr, String.Format("{0}: {1}", node.PrettyName, (node as named_definition).name));
+            Builder.Emit(OpCodes.Ldstr, String.Format("{0}: {1}", node.PrettyName, ToString((node as named_definition).name)));
         } else {
             Builder.Emit(OpCodes.Ldstr, node.PrettyName);
         }

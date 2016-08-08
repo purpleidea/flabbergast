@@ -996,10 +996,10 @@ abstract class Generator {
         pushSourceReferenceStart();
         if (node instanceof attribute) {
             builder.visitLdcInsn(String.format("%s: %s", node.getPrettyName(),
-                                               ((attribute) node).name));
+                                               RevCons.toString(((attribute) node).name)));
         } else if (node instanceof named_definition) {
             builder.visitLdcInsn(String.format("%s: %s", node.getPrettyName(),
-                                               ((named_definition) node).name));
+                                               RevCons.toString(((named_definition) node).name)));
         } else {
             builder.visitLdcInsn(node.getPrettyName());
         }
