@@ -32,6 +32,10 @@ queryifier : Template {
 		row in the results.}}}
 		where : Template {}
 
+		{{{A collection of expressions (or columns) by which to group the resulting
+		columns.}}}
+		group_by : Template {}
+
 		{{{The collection of columns available from each of the tables specified in
 		\{tables}. These can be used in any place that accepts an expression. Given
 		there is a column \Mono{c} in a table \Mono{t}, reference it as
@@ -47,6 +51,9 @@ queryifier : Template {
 
 		{{{Expand the where template.}}}
 		exp_where : where {}
+
+		{{{Expand the group by template.}}}
+		exp_group : ({ value : group_by {}  sql_aggregate_context : "GROUP BY" }).value
 
 		{{{A list of tables, inferred from \{columns}, to be included in this
 		query.}}}
@@ -72,10 +79,37 @@ queryifier : Template {
 			For clause : exp_where, position : Ordinal
 				Reduce (If position > 1 Then acc & " AND " Else " WHERE ") & clause.sql_expr
 				With acc : ""
+		sql_aggregate_context : Null
+		sql_non_aggregate_result_cols :
+			For x : columns Append exp_where
+				Reduce For acc_cols : acc, x_cols : x.sql_non_aggregate_columns, name : Name Select name : acc_cols ?? x_cols
+				With acc : {}
+		sql_group_cols :
+			For x : exp_group
+				Reduce For acc_cols : acc, x_cols : x.sql_non_aggregate_columns, name : Name Select name : acc_cols ?? x_cols
+				With acc : {}
+		sql_results_contain_aggregate :
+			For x : columns Append exp_where
+				Reduce acc || x.sql_contains_aggregate
+				With acc : False
+
+		ungrouped_aggregate_cols :
+			For group : sql_group_cols, result : sql_non_aggregate_result_cols
+					Where group Is Null
+					Reduce acc & " " & result
+					With acc : ""
+
+		group_clause :
+			If sql_results_contain_aggregate && Length (ungrouped_aggregate_cols Enforce Str) > 0
+				Then Error ("The following columns are not grouped:" & ungrouped_aggregate_cols)
+				Else
+					(For clause : exp_group, position : Ordinal
+						Reduce (If position > 1 Then acc & ", " Else " GROUP BY ") & clause.sql_expr
+						With acc : "")
 		{{{Generate the total query.}}}
 		sql_query :
 			If column_clause Is Null Then Error "No columns specified in query."
-			Else "SELECT " & column_clause Enforce Str & (If from_clause Is Null Then provider.null_from Else " FROM " & from_clause Enforce Str) & where_clause Enforce Str
+			Else "SELECT " & column_clause Enforce Str & (If from_clause Is Null Then provider.null_from Else " FROM " & from_clause Enforce Str) & where_clause Enforce Str & group_clause Enforce Str
 	}
 }
 
@@ -121,6 +155,8 @@ offline_table_tmpl : Template {
 		sql_tables : Now utils_lib.frame(sql_from, name : Id)
 
 		sql_expr : sql_from Enforce Str & "." & provider.symbol_start Enforce Str & column_name Enforce Str & provider.symbol_end Enforce Str
+		sql_non_aggregate_columns : utils_lib.frame(sql_expr, name : Id)
+		sql_contains_aggregate : False
 	}
 
 	known_columns : columns {}
@@ -133,33 +169,34 @@ sql_marshall : utils_lib.str_concatifier(base : sql_marshall_list, delimiter : "
 {{{Convert a list of Flabbergast items to an SQL expression.}}}
 sql_marshall_list : Template {
 	provider : Required
+	value_tmpl : Now Template {
+		sql_tables : {}
+		sql_non_aggregate_columns : {}
+		sql_contains_aggregate : False
+	}
 	value :
 		For arg : args, arg_name : Name
 		Select arg_name :
 			If arg Is Null Then Null
 			Else If arg Is Frame Then arg
-			Else If arg Is Str Then {
+			Else If arg Is Str Then value_tmpl {
 					sql_expr : provider.quote_start Enforce Str & utils_lib.str_escape(arg, transformations : provider.transformations) Enforce Str & provider.quote_end Enforce Str
 					sql_type : sql_types.str
-					sql_tables : {}
 				}
-			Else If arg Is Bool Then {
+			Else If arg Is Bool Then value_tmpl {
 					sql_expr : If arg Then "TRUE" Else "FALSE"
 					sql_type : sql_types.bool
-					sql_tables : {}
 				}
-			Else If arg Is Bin Then {
+			Else If arg Is Bin Then value_tmpl {
 					sql_expr : provider.blob_start Enforce Str & utils_lib.bin_to_hex_str(arg, uppercase : True) Enforce Str & provider.blob_end Enforce Str
 					sql_type : sql_types.blob
-					sql_tables : {}
 				}
-			Else {
+			Else value_tmpl {
 					sql_expr : arg To Str
 					sql_type :
 						If arg Is Int Then sql_types.int
 						Else If arg Is Float Then sql_types.float
 						Else Error "Can't convert value to SQL type."
-					sql_tables : {}
 				}
 }
 
@@ -201,7 +238,11 @@ sql_literal_table_tmpl : Template {
 				If type.coerce == 0
 					Then Error "Column “\(name)” in literal table does not have consistent type."
 					Else column_tmpl { sql_expr : provider.symbol_start Enforce Str & table_name Enforce Str & provider.symbol_end Enforce Str & "." & provider.symbol_start Enforce Str & name & provider.symbol_end Enforce Str  sql_type : type }
-	column_tmpl : Template { sql_tables : Now utils_lib.frame(sql_from, name : Id) }
+	column_tmpl : Template {
+		sql_tables : Now utils_lib.frame(sql_from, name : Id)
+		sql_non_aggregate_columns : utils_lib.frame(sql_expr, name : Id)
+		sql_contains_aggregate : False
+	}
 	sql_from : (provider.generate_literal_from {}).value
 }
 
@@ -387,6 +428,10 @@ sql_provider : Template {
 			sql_type : Required
 			{{{All the tables required by this expression.}}}
 			sql_tables : Required
+			{{{Any columns that are not arguments to an aggregate function.}}}
+			sql_non_aggregate_columns : Required
+			{{{Whether this expression contains an aggregate function.}}}
+			sql_contains_aggregate : Required
 		}
 		base_arith_expr_tmpl : Template base_expr_tmpl {
 			left : Required
@@ -410,6 +455,8 @@ sql_provider : Template {
 					Then Error "Cannot find arithmetic for \(specials.l.sql_type.name) \(sql_op.symbol) \(specials.r.sql_type.name)."
 					Else (sql_rule.render{}).value
 			sql_tables : For left_table : specials.l.sql_tables, right_table : specials.r.sql_tables, name : Name Select name : left_table ?? right_table
+			sql_non_aggregate_columns : For left_cols : specials.l.sql_non_aggregate_columns, right_cols : specials.r.sql_non_aggregate_columns, name : Name Select name : left_cols ?? right_cols
+			sql_contains_aggregate : specials.l.sql_contains_aggregate || specials.r.sql_contains_aggregate
 		}
 		base_args_tmpl : Template base_expr_tmpl {
 			sql_args : sql_marshall_list(args : args, provider : provider)
@@ -443,6 +490,11 @@ sql_provider : Template {
 								Else acc B& arg.sql_type.coerce
 						With acc : sql_allowed_arg_type_id
 			}
+			sql_non_aggregate_columns :
+				For arg : sql_args
+					Reduce For acc_cols : acc, arg_cols : arg.sql_non_aggregate_columns, name : Name Select name : acc_cols ?? arg_cols
+					With acc : {}
+			sql_contains_aggregate : For arg : sql_args Reduce acc || arg.sql_contains_aggregate With acc : False
 		}
 		base_function_expr_tmpl : Template base_args_tmpl {
 			{{{The expressions to be put together.}}}
@@ -460,6 +512,11 @@ sql_provider : Template {
 							Then Error "Incompatible type \(arg.sql_type.name) for argument \(pos) to \(sql_func). Expected \(arg_type.name)."
 							Else acc & (If pos > 1 Then "," Else "") & arg.sql_expr
 					With acc : sql_func & "(") & ")"
+			sql_non_aggregate_columns :
+				For arg : sql_args
+					Reduce For acc_cols : acc, arg_cols : arg.sql_non_aggregate_columns, name : Name Select name : acc_cols ?? arg_cols
+					With acc : {}
+			sql_contains_aggregate : For arg : sql_args Reduce acc || arg.sql_contains_aggregate With acc : False
 		}
 		base_aggregate_func_tmpl : Template base_expr_tmpl {
 			{{{The expression aggregate.}}}
@@ -472,14 +529,21 @@ sql_provider : Template {
 			{{{Extra arguments, if required.}}}
 			sql_extra_args : ""
 
+			sql_aggregate_context : sql_func & " function arguments"
+			parent_sql_aggregate_context : Lookup sql_aggregate_context In Container
+
 			sql_expr :
-				If arg.sql_type.coerce B& sql_allowed_arg_type_mask == 0
+				If !(parent_sql_aggregate_context Is Null)
+					Then Error "Aggregate function \(sql_func) not allowed in \(parent_sql_aggregate_context)."
+				Else If arg.sql_type.coerce B& sql_allowed_arg_type_mask == 0
 					Then Error "Bad type in \(sql_func)."
 					Else sql_func & "(" & arg.sql_expr & sql_extra_args & ")"
 			sql_tables : arg.sql_tables
 			sql_type : synthetic_sql_type {
 				coerce : arg.sql_type.coerce B& sql_allowed_arg_type_mask
 			}
+			sql_non_aggregate_columns : {}
+			sql_contains_aggregate : True
 		}
 		base_variadic_func_tmpl : Template base_args_tmpl {
 			{{{The expressions aggregate.}}}
@@ -506,6 +570,11 @@ sql_provider : Template {
 								Else acc B& arg.sql_type.coerce
 						With acc : sql_allowed_arg_type_id
 			}
+			sql_non_aggregate_columns :
+				For arg : sql_args
+					Reduce For acc_cols : acc, arg_cols : arg.sql_non_aggregate_columns, name : Name Select name : acc_cols ?? arg_cols
+					With acc : {}
+			sql_contains_aggregate : For arg : sql_args Reduce acc || arg.sql_contains_aggregate With acc : False
 		}
 
 		base_compare_op_tmpl : Template base_expr_tmpl {
@@ -523,6 +592,8 @@ sql_provider : Template {
 					Then Error "Incompatible types in comparison."
 					Else "(\(specials.l.sql_expr) \(sql_op) \(specials.r.sql_expr))"
 			sql_tables : For left_table : specials.l.sql_tables, right_table : specials.r.sql_tables, name : Name Select name : left_table ?? right_table
+			sql_non_aggregate_columns : For left_cols : specials.l.sql_non_aggregate_columns, right_cols : specials.r.sql_non_aggregate_columns, name : Name Select name : left_cols ?? right_cols
+			sql_contains_aggregate : specials.l.sql_contains_aggregate || specials.r.sql_contains_aggregate
 		}
 
 		add : Template base_arith_expr_tmpl {
@@ -552,6 +623,8 @@ sql_provider : Template {
 						Then Error "Incompatible type \(when_specials.t.sql_type.name) used in test for WHEN. Expected \(sql_allowed_test_type.name)."
 						Else " WHEN \(when_specials.t.sql_expr) THEN \(when_specials.r.sql_expr)"
 				sql_tables : For test_table : when_specials.t.sql_tables, input_table : when_specials.r.sql_tables, name : Name Select name : test_table ?? input_table
+				sql_non_aggregate_columns : For test_cols : when_specials.t.sql_non_aggregate_columns, result_cols : when_specials.r.sql_non_aggregate_columns, name : Name Select name : test_cols ?? result_cols
+				sql_contains_aggregate : when_specials.t.sql_contains_aggregate || when_specials.r.sql_contains_aggregate
 			}
 
 			specials : Template {
@@ -581,6 +654,19 @@ sql_provider : Template {
 				With acc : (For c : cases
 						Reduce For table : c.sql_tables, acc_table : acc, name : Name Select name : table ?? acc_table
 						With acc : {})
+			sql_non_aggregate_columns : For s : sql_specials
+				Where !(s Is Null)
+				Reduce For acc_cols : acc, special_cols : s.sql_non_aggregate_columns, name : Name Select name : acc_cols ?? special_cols
+				With acc : (For c : cases
+					Reduce For acc_cols : acc, case_cols : c.sql_non_aggregate_columns, name : Name Select name : acc_cols ?? case_cols
+					With acc : {})
+
+			sql_contains_aggregate : For s : sql_specials
+				Where !(s Is Null)
+				Reduce acc || s.sql_contains_aggregate
+				With acc : (For c : cases
+					Reduce acc || c.sql_contains_aggregate
+					With acc : False)
 		}
 		case_bool : Template base_case_tmpl {
 			sql_allowed_test_type : sql_types.bool
@@ -602,6 +688,8 @@ sql_provider : Template {
 				Then Error "Cannot perform cast with provided types."
 				Else "(CAST(\(arg.sql_expr Enforce Str) AS \(If sql_type.id Enforce Int == sql_types.blob.id Then provider.blob_type Enforce Str Else sql_type.name Enforce Str)))"
 			sql_tables : arg.sql_tables
+			sql_non_aggregate_columns : arg.sql_non_aggregate_columns
+			sql_contains_aggregate : arg.sql_contains_aggregate
 		}
 		count : Template base_aggregate_func_tmpl {
 			sql_func : "COUNT"
@@ -634,6 +722,8 @@ sql_provider : Template {
 					Then Error "Cannot extract on non-timestamp \(arg.sql_type.name)."
 					Else sql_start Enforce Str & field Enforce Str & sql_middle Enforce Str & arg.sql_expr Enforce Str & sql_end Enforce Str
 			sql_tables : arg.sql_tables
+			sql_non_aggregate_columns : arg.sql_non_aggregate_columns
+			sql_contains_aggregate : arg.sql_contains_aggregate
 		}
 		ge : Template base_compare_op_tmpl {
 			sql_op : ">="
@@ -650,6 +740,8 @@ sql_provider : Template {
 			time : Required
 			sql_type : sql_types.interval
 			sql_tables : {}
+			sql_non_aggregate_columns : {}
+			sql_contains_aggregate : False
 		}
 		is_null : Template base_expr_tmpl {
 			arg : Required
@@ -658,6 +750,8 @@ sql_provider : Template {
 				If sql_type.coerce == 0 Then Error "Bad type in null check."
 					Else "(\(arg.sql_expr) IS NULL)"
 			sql_tables : arg.sql_tables
+			sql_non_aggregate_columns : arg.sql_non_aggregate_columns
+			sql_contains_aggregate : arg.sql_contains_aggregate
 		}
 		le : Template base_compare_op_tmpl {
 			sql_op : "<="
@@ -695,6 +789,8 @@ sql_provider : Template {
 					Then "(- \(arg.sql_expr))"
 					Else Error "Argument to negation is not numeric."
 			sql_tables : arg.sql_tables
+			sql_non_aggregate_columns : arg.sql_non_aggregate_columns
+			sql_contains_aggregate : arg.sql_contains_aggregate
 		}
 		not : Template base_expr_tmpl {
 			arg : Required
@@ -704,12 +800,16 @@ sql_provider : Template {
 					Then "(NOT \(arg.sql_expr))"
 					Else Error "Argument to NOT expression is not Boolean."
 			sql_tables : arg.sql_tables
+			sql_non_aggregate_columns : arg.sql_non_aggregate_columns
+			sql_contains_aggregate : arg.sql_contains_aggregate
 		}
 		now : Template base_expr_tmpl {
 			{{{Use UTC rather than local time.}}}
 			utc : True
 			sql_type : sql_types.timestamp
 			sql_tables : {}
+			sql_non_aggregate_columns : {}
+			sql_contains_aggregate : False
 		}
 		or : Template base_infix_expr_tmpl {
 			sql_op : "OR"
@@ -740,6 +840,12 @@ sql_provider : Template {
 				Else If specials.l.sql_type.coerce B& sql_types.int.id == 0 Then Error "Length of string slice is not an integer."
 				Else sql_substr_syntax
 			sql_tables : For input_table : specials.i.sql_tables, start_table : specials.s.sql_tables, length_table : specials.l.sql_tables, name : Name Select name : (input_table ?? start_table) ?? right_table
+			sql_non_aggregate_columns : For s : specials
+				Reduce For acc_cols : acc, special_cols : s.sql_non_aggregate_columns, name : Name Select name : acc_cols ?? special_cols
+				With acc : {}
+			sql_contains_aggregate : For s : specials
+				Reduce acc || s.sql_contains_aggregate
+				With acc : False
 		}
 		sub : Template base_arith_expr_tmpl {
 			sql_op : sql_arith_ops.sub
