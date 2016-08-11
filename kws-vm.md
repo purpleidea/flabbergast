@@ -43,10 +43,10 @@ Most operations do not mutate values, unless explicitly specified. Each operatio
 
 Operations are organised in blocks:
 
-    [predefined_variable]{
+    [predefined_variable] {
       o1 = operation1(predefined_variable)
       o2 = operation2(o1)
-      return o2
+      return(o2)
     }
 
 The VM uses single static assignment. Unlike most SSA, there are no phi nodes are paths are not permitted to merge again; each basic block must end in a terminal instruction, typically a `return`.
@@ -430,7 +430,7 @@ A dispatcher is a block that takes the current value of the accumulator and the 
 
 Dispatchers come in two flavours: a default dispatcher and zero or more special dispatchers. The default dispatcher also has the current key name bound upon entry. The special dispatchers define a key name; they are always invoked, even if the key is not present in any of the inputs. They are invoked at the lexicographically appropriate time.
 
-    r : T = iterate(initial : T, item1 : (Frame|Template), ..., itemN : (Frame | Template))
+    r : T = iterate<T : Type>(initial : T, item1 : (Frame|Template), ..., itemN : (Frame | Template))
 				[name : Str, accumulator : T, ord : Int] { ... }
 				<name1 : Str>[accumulator : T, ord : Int] { ... }
         ...
@@ -439,7 +439,7 @@ Dispatchers come in two flavours: a default dispatcher and zero or more special 
 ### Iterate with Custom Order
 Iterate over all the keys (attribute names) in a collection of frames and/or templates, in a user-specified order. The order is determined by the natural ordering of integers, floating pointer numbers or strings. Iteration proceeds in two phases: during the first phase, each item is converted into a value, of the right type, and then the iteration is performed a second time, in the correct sequence.
 
-    r : T = iterate_ordered<S : (Float|Int|Str)>(initial : T, item1 : (Frame|Template), ..., itemN : (Frame | Template))
+    r : T = iterate_ordered<S : Type = (Float|Int|Str)>(initial : T, item1 : (Frame|Template), ..., itemN : (Frame | Template))
 				[name : Str] { ... continue(v : S) }
 				[name : Str, accumulator : T, ord : Int] { ... continue(v : T) }
 
