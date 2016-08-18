@@ -76,6 +76,7 @@ public class REPL {
         var task_master = new ConsoleTaskMaster();
         task_master.AddUriHandler(new CurrentInformation(true));
         task_master.AddUriHandler(BuiltInLibraries.INSTANCE);
+        task_master.AddUriHandler(SettingsHandler.INSTANCE);
         task_master.AddUriHandler(EnvironmentUriHandler.INSTANCE);
         task_master.AddUriHandler(HttpHandler.INSTANCE);
         task_master.AddUriHandler(FtpHandler.INSTANCE);

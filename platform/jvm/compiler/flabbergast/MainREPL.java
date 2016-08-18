@@ -149,6 +149,7 @@ public class MainREPL {
         JdbcUriHandler jdbc_handler = new JdbcUriHandler();
         jdbc_handler.setFinder(resource_finder);
         task_master.addUriHandler(jdbc_handler);
+        task_master.addUriHandler(SettingsHandler.INSTANCE);
         task_master.addUriHandler(EnvironmentUriHandler.INSTANCE);
         task_master.addUriHandler(FtpHandler.INSTANCE);
         task_master.addUriHandler(HttpHandler.INSTANCE);
