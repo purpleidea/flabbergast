@@ -1,7 +1,9 @@
 package flabbergast;
 
+import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.zip.GZIPOutputStream;
 
 public class StaticFunctions {
 
@@ -27,5 +29,27 @@ public class StaticFunctions {
             builder.append(String.format(upper ? "%02X" : "%02x", b));
         }
         return builder.toString();
+    }
+
+    public static byte[] compress(byte[] input) {
+        try {
+            ByteArrayOutputStream output =
+                new ByteArrayOutputStream();
+            try {
+                GZIPOutputStream gzip =
+                    new GZIPOutputStream(output);
+                try {
+                    gzip.write(input);
+                } finally {
+                    gzip.close();
+                }
+
+            } finally {
+                output.close();
+            }
+            return output.toByteArray();
+        } catch (Exception e) {
+            return new byte[0];
+        }
     }
 }

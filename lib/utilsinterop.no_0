@@ -222,3 +222,13 @@ bin_to_hex_str_list : Template {
 		For arg : args, arg_name : Name
 		Select arg_name : XInvoke Flabbergast.StaticFunctions,Flabbergast.Runtime BytesToHex (arg, delimiter, uppercase)
 }
+bin_gzip_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XInvoke Flabbergast.StaticFunctions,Flabbergast.Runtime Compress (arg)
+}
+bin_gunzip_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XComputation Flabbergast.Decompress,Flabbergast.Runtime
+}

@@ -35,6 +35,32 @@ anyifier : Template {
 	}
 }
 
+{{{Compress binary data.}}}
+bin_compress : {
+	gzip : firstifier(base : bin_compress_list.gzip)
+}
+
+{{{Compress lists of binary data.}}}
+bin_compress_list : {
+	gzip : Template (From lib:utilsinterop).bin_gzip_list {
+		{{{The binary data to hash.}}}
+		args : Used
+	}
+}
+
+{{{Dedecompress binary data.}}}
+bin_decompress : {
+	gzip : firstifier(base : bin_decompress_list.gzip)
+}
+
+{{{Dedecompress lists of binary data.}}}
+bin_decompress_list : {
+	gzip : Template (From lib:utilsinterop).bin_gunzip_list {
+		{{{The binary data to hash.}}}
+		args : Used
+	}
+}
+
 {{{Compute the hash of binary data.}}}
 bin_hash : {
 	md5 : firstifier(base : bin_hash_list.md5)
