@@ -56,7 +56,7 @@ TESTING_CLASSPATH = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS
 
 RUNTIME_INPUTS = $(wildcard runtime/flabbergast/*.java runtime/flabbergast/*/*.java)
 COMPILER_INPUTS = $(wildcard compiler/flabbergast/*.java)
-STDLIB_INPUTS = $(find ../../lib/ -name '*.o_0' -o -name '*.jo_0')
+STDLIB_INPUTS = $(find ../../stdlib/ -name '*.o_0' -o -name '*.jo_0')
 TESTING_INPUTS = $(wildcard testing/flabbergast/*.java)
 
 SPACE = $(NULL) $(NULL)
@@ -81,7 +81,7 @@ endif
 flabbergast-stdlib-$(VERSION).jar flabbergast-stdlib-$(VERSION)-sources.jar flabbergast-stdlib-$(VERSION)-javadoc.jar: stdlib.manifest $(STDLIB_INPUTS) $(COMPILER_JAR)
 	rm -rf .build
 	mkdir .build
-	rsync -a --include '**.o_0' --include '**.jo_0' --include '**/' --exclude '*' ../../lib/ .build
+	rsync -a --include '**.o_0' --include '**.jo_0' --include '**/' --exclude '*' ../../stdlib/ .build
 	$(JAR) cfm flabbergast-stdlib-$(VERSION)-sources.jar stdlib.manifest -C .build .
 	cd .build && $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) $(BUILD_COMPILER_JAR)) flabbergast.MainBuildCache -P
 	find .build -type f -a -not -name '*.class' -exec rm {} \;

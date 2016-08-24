@@ -41,9 +41,9 @@ pkgdata_DATA = \
 	$(NULL)
 
 install-data-hook:
-	@for f in $$(find lib -name '*.o_0' -o -name '*.?o_0' -type f); do \
-		$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/$$(dirname $$f); \
-		$(INSTALL_DATA) $(srcdir)/$$f $(DESTDIR)$(pkgdatadir)/$$f; \
+	@for f in $$(find stdlib -name '*.o_0' -o -name '*.?o_0' -type f); do \
+		$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/$$(dirname $${f\#std}); \
+		$(INSTALL_DATA) $(srcdir)/$$f $(DESTDIR)$(pkgdatadir)/$${f\#std}; \
 	done	
 
 clean-local:
