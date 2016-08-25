@@ -17,7 +17,7 @@ sed -i '1 s/^\xef\xbb\xbf//' platform/jvm/compiler/flabbergast/compiler-jvm.java
 make clean all check
 
 # See if we can boostrap using the built CLR Flabbergast
-export FLABBERGAST_PATH=$(pwd)/lib
+export FLABBERGAST_PATH=$(pwd)/stdlib
 FLABBERGAST="cli platform/cli/bin/Debug/flabbergast.exe" ./bootstrap genclean all
 make clean all check
 
