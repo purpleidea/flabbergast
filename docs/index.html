@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Flabbergast Configuration Language</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Flabbergast Configuration Language</h1>
+        <h2>Making configuration files less o_0</h2>
+        <a href="https://github.com/flabbergast-config/flabbergast" class="button"><small>View project on</small> GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h3>
+<a id="configuration-of-applications-servers-and-containers" class="anchor" href="#configuration-of-applications-servers-and-containers" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration of Applications, Servers, and Containers</h3>
+
+<p>Complicated applications, deployed on multiple servers, have complicated configurations. How do you describe the configuration of a single part of that system, and all the layers underneath, and get it right? Once you have that right, now make a testing environment, or migrate to a new cloud provider. To get a background in why configurations are getting complicated, watch <a href="https://www.usenix.org/conference/srecon15europe/program/presentation/masella">Configuration Pinocchio</a>, presented at SREcon15 Europe.</p>
+
+<p>Flabbergast makes this easier: it helps to describe configuration and it can handle the whole stack: from application to metal. Flabbergast provides a flexible template system to compose and recompose configurations and generate an output description, in any format you need. It happily nests systems together: the templates for an application and a container manager can be married with a minimum of fuss and “plumbing”, copying data from one place to another.</p>
+
+<h3>
+<a id="what-it-is-and-isnt" class="anchor" href="#what-it-is-and-isnt" aria-hidden="true"><span class="octicon octicon-link"></span></a>What it is and isn't</h3>
+
+<p>Flabbergast is two things: a programming language geared to generating configurations and a library of templates to help generate correct configurations before they are deployed. Unlike Chef or Puppet, Flabbergast doesn't deploy configurations; it's a system for describing configuration. A way to explain the state of the world to push out, through whatever means suit your application.</p>
+
+<p>Bascially, you write a Flabbergast program that generates some complicated output file.</p>
+
+<p>As a language, Flabbergast is a little unusual. In most languages, it's your job as the programmer to move data around through parameters, arguments, fields, and closures. For configuration files, you don't want to have to shuttle information around, so Flabbergast does it for you. It uses contextual lookup to find information so you can define things where it makes sense and not worry about copying it to where it gets used.</p>
+
+<h3>
+<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span class="octicon octicon-link"></span></a>Getting Started</h3>
+
+<p>For a quick introduction, have a look at the <a href="https://docs.google.com/presentation/d/10YLdBBC0a2nIxbttvg0jg95rHXa3-UxwyA-ZwiDdq7E/edit?usp=sharing">primer slide deck</a>. To really get started, take a look at <a href="https://github.com/flabbergast-config/flabbergast/blob/master/flabbergast-manual.md">the manual</a>. There are some <a href="https://github.com/flabbergast-config/flabbergast/tree/master/examples">serious examples</a> and some fun <a href="https://github.com/flabbergast-config/flabbergast/tree/master/rosettacode">Rosetta Code examples</a>. The <a href="http://docs.flabbergast.org/">API docs</a> are also available.</p>
+
+<p>If you are on Ubuntu or Debian, it's a snap using a PPA. The most recent version is also posted to Maven Central. Follow the <a href="https://github.com/flabbergast-config/flabbergast/blob/master/README.md#installation">installation instructions</a>.</p>
+
+<p>Here's a small example for generating an Apache Aurora configuration.</p>
+
+<pre>
+<span class="def">aurora_lib</span> : <span class="keyword">From</span> lib:apache/aurora <span class="comment"># Import the Aurora library.</span>
+<span class="def">cluster</span> : <span class="str">"cluster1"</span>
+<span class="def">role</span> : <span class="str">"jrhacker"</span>
+<span class="def">resources</span> : {
+  <span class="def">cpu</span> : 0.1
+  <span class="def">ram</span> : 16Mi
+  <span class="def">disk</span> : 16Mi
+}
+<span class="def">hw_file</span> : aurora_lib.aurora_file { <span class="comment"># Create an Aurora configuration file</span>
+  <span class="def">jobs</span> : [
+    job { <span class="comment"># Create a job. This could also be <i>aurora_lib.job</i>, but we have nothing else named <i>job</i>.</span>
+      <span class="def">instances</span> : 1 <span class="comment"># One replica of this job should run.</span>
+      <span class="def">job_name</span> : <span class="str">"hello_world"</span> <span class="comment"># Provide a friendly job name.</span>
+      <span class="def">task</span> : aurora_lib.task {
+        <span class="def">processes</span> : { <span class="comment"># Define the processes ⋯</span>
+          <span class="def">hw</span> : process { <span class="comment"># ⋯ using process template</span>
+            <span class="def">process_name</span> : <span class="str">"hw"</span> <span class="comment"># The name of this process will be <i>hw</i></span>
+            <span class="def">command_line</span> : [ <span class="str">"echo hello world"</span> ] <span class="comment"># The command line we want to run.</span>
+          }
+        }
+      }
+    }
+  ]
+}
+<span class="def">value</span> : hw_file.value <span class="comment"># Flabbergast is going to dump this string to the output.</span>
+</pre>
+
+<p>One of the things that makes Flabbergast special is it uses contextual lookup, that allows you to define thing where they make sense for your needs, rather than what the original author imagined. So, you can write the above config as:</p>
+
+<pre>
+<span class="def">aurora_lib</span> : <span class="keyword">From</span> lib:apache/aurora
+<span class="def">cluster</span> : <span class="str">"cluster1"</span>
+<span class="def">role</span> : <span class="str">"jrhacker"</span>
+<span class="def">resources</span> : {
+  <span class="def">cpu</span> : 0.1
+  <span class="def">ram</span> : 16Mi
+  <span class="def">disk</span> : 8Mi
+}
+<span class="def">hw_file</span> : aurora_lib.aurora_file {
+  <span class="def">jobs</span> : [
+    job {
+      <span class="def">resources</span> : {
+        <span class="def">disk</span> : 16Mi <span class="comment">This disk resource will be used since it is “closer”.</span>
+      }
+      <span class="def">instances</span> : 1
+      <span class="def">job_name</span> : <span class="str">"hello_world"</span>
+      <span class="def">task</span> : aurora_lib.task {
+        <span class="def">processes</span> : {
+          <span class="def">hw</span> : process {
+            <span class="def">process_name</span> : <span class="str">"hw"</span>
+            <span class="def">command_line</span> : [ <span class="str">"echo hello world"</span> ]
+          }
+        }
+      }
+    }
+  ]
+}
+<span class="def">value</span> : hw_file.value
+</pre>
+
+<p>and get the same result. Flabbbergast's contextual lookup will find the “closest” match, so you can shuffle your definitions to share things that should be shared without having to copy variables around.</p>
+
+<p>Have a look at a <a href="https://github.com/flabbergast-config/flabbergast/tree/master/examples/complex">sophisticated Flabbergast+Aurora example</a> that makes use of Flabbergast's lookup to provide multiple geographic configurations, repeated server configuration, service discovery, and testing configurations.</p>
+
+<h3>
+<a id="comparison" class="anchor" href="#comparison" aria-hidden="true"><span class="octicon octicon-link"></span></a>Comparison</h3>
+
+<table>
+<thead>
+<tr>
+<th>Language</th>
+<th>Flabbergast</th>
+<th><a href="https://code.google.com/p/coil/%01">Coil</a></th>
+<th><a href="https://github.com/typesafehub/config">HOCON</a></th>
+<th><a href="http://google.github.io/jsonnet/doc/">Jsonnet</a></th>
+<th><a href="http://nixos.org/">NixOS</a></th>
+<th><a href="http://www.quattor.org/">Pan</a></th>
+<th><a href="https://github.com/wickman/pystachio">Pystachio</a></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>Paradigm</th>
+<td>Functional</td>
+<td>Functional</td>
+<td>Imperative°</td>
+<td>Functional</td>
+<td>Functional</td>
+<td>Imperative</td>
+<td>Imperative</td>
+</tr>
+<tr>
+<th>Side-effect Free</th>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+<td>Hybrid°</td>
+</tr>
+<tr>
+<th>Inheritance</th>
+<td>Prototype</td>
+<td>Prototype</td>
+<td>Prototype</td>
+<td>Prototype</td>
+<td>None</td>
+<td>Class-based</td>
+<td>Class-based</td>
+</tr>
+<tr>
+<th>Typing Strength</th>
+<td>Strong</td>
+<td>Weak</td>
+<td>Weak</td>
+<td>Strong</td>
+<td>Strong</td>
+<td>Strong</td>
+<td>Strong</td>
+</tr>
+<tr>
+<th>Typing Enforcement</th>
+<td>Dynamic</td>
+<td>Dynamic</td>
+<td>Dynamic</td>
+<td>Dynamic</td>
+<td>Dynamic</td>
+<td>Hybrid°</td>
+<td>Dynamic</td>
+</tr>
+<tr>
+<th>Schema Validation</th>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>None</td>
+<td>Assignment</td>
+<td>Request</td>
+</tr>
+<tr>
+<th>Turing Complete</th>
+<td>Yes</td>
+<td>No</td>
+<td>No</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>Yes</td>
+<td>No</td>
+</tr>
+<tr>
+<th>Scoping</th>
+<td>Dynamic</td>
+<td>Lexical</td>
+<td>Lexical</td>
+<td>Lexical</td>
+<td>Lexical</td>
+<td>Lexical</td>
+<td>Hybrid°</td>
+</tr>
+<tr>
+<th>Default Propagation</th>
+<td>Scope, inheritance</td>
+<td>Inheritance</td>
+<td>Inheritance</td>
+<td>Inheritance</td>
+<td>Operator</td>
+<td>Inheritance</td>
+<td>Inheritance</td>
+</tr>
+<tr>
+<th>Output Format</th>
+<td>Text, Custom</td>
+<td>Python objects</td>
+<td>Java, Python, or Ruby objects</td>
+<td>JSON</td>
+<td>Java objects</td>
+<td>JSON, XML</td>
+<td>Python objects</td>
+</tr>
+</tbody>
+</table>
+
+<p>° Depends on context. See SREcon15 Europe <a href="http://www.masella.name/%7Eandre/2015-srecon-andre_masella.pdf">Configuration Pinocchio</a> paper for details.</p>
+
+<h3>
+<a id="support-and-community" class="anchor" href="#support-and-community" aria-hidden="true"><span class="octicon octicon-link"></span></a>Support and Community</h3>
+
+<p>We are on the Internet, and plan to stay there. You can try FreeNode IRC in <code>#flabbergast</code>, <a href="https://groups.google.com/forum/#!forum/flabbergast-users">Google Groups</a>, <a href="http://twitter.com/co_0nfig">Twitter</a>, <a href="https://plus.google.com/communities/103010827049942376743">Google+</a>, or <a href="https://flabbergast-config/flabbergast">GitHub</a>.</p>
+        </section>
+
+        <aside id="sidebar">
+          <a href="http://fiddle.flabbergast.org/" class="button"><small>Try, play, and </small>Fiddle</a>
+          <a href="http://docs.flabbergast.org/" class="button"><small>Read the</small>Documentation</a>
+          <a href="https://launchpad.net/~flabbergast/+archive/ubuntu/ppa" class="button"><small>Download</small>Ubuntu Package</a>
+          <a href="http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.github.apmasell.flabbergast%22" class="button"><small>Download</small>Maven Central</a>
+          <a href="http://nuget.org/packages/flabbergast/" class="button"><small>Download</small>NuGet</a>
+					<a href="https://groups.google.com/forum/#!forum/flabbergast-users" class="button"><small>Connect on</small>Google Groups</a>
+					<a href="http://twitter.com/co_0nfig" class="button"><small>Connect on</small>Twitter</a>
+					<a href="https://plus.google.com/communities/103010827049942376743" class="button"><small>Connect on</small>Google+</a>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
