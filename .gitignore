@@ -2,11 +2,11 @@
 *.class
 *.log
 *.pdf
-*.png
 *.swp
 *.tar.gz
 *.trs
 *~
+/*.png
 ChangeLog
 Makefile
 Makefile.in
