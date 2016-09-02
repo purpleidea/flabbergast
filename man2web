@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+
+MANS = $(wildcard ./*.7) $(wildcard ./*.1) $(wildcard platform/*/*.1)
+TARGETS = $(addprefix www/, $(notdir $(patsubst %, %.pdf, $(MANS)) $(patsubst %, %.html, $(MANS))))
+
+all: $(TARGETS)
+
+define MANBLOCK
+www/$(2).pdf: $(1)
+	man -Tdvi -l $$< > $(2).dvi
+	dvipdfm -q $(2).dvi
+	rm -f $(2).dvi
+
+www/$(2).html: $(1)
+	man -Thtml -t $$< > $$@
+endef
+
+$(foreach i, $(MANS), $(eval $(call MANBLOCK,$(i),$(notdir $(i)))))
+
+clean:
+	rm -f $(TARGETS)
+
+.PHONY: all clean

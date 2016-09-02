@@ -1,0 +1,30 @@
+h1 {
+color:#36648B;
+}
+
+table {
+border:1px solid #36648B;
+box-shadow:.1em .1em .3em 0 rgba(0,0,0,0.45);
+left:1em;
+right:1em;
+width:100%;
+margin: 1em;
+}
+
+tr {
+text-align:left;
+}
+
+th {
+background-color:#4F94CD;
+color:#fff;
+}
+
+tbody tr:nth-child(even) {
+background-color:#eee;
+}
+
+th,td {
+margin:0;
+padding:.5em;
+}
