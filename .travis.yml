@@ -12,3 +12,10 @@ script: "./.travis-build"
 notifications:
   on_success: never
   on_failure: change
+deploy:
+  provider: s3
+  access_key_id: AKIAJY7JELRUQJ6ESEWA
+  secret_access_key: zp+y+ChONJCjH7NA3juWJHTh7mOVnlpVSlrpW+2h0bFFS1IGwQ9Zdtplfxjf3zwycEj1bYYWSYM5ORbi5G0zAxsnfqoVMWVrUpPpfuoYwSuBPVMkDWuQ1zZSMnhVT0rDB4jBnamoYV9W1c4sT62i64CgjIhxzgza9lnnF74qhuI=
+  bucket: docs.flabbergast.org
+  skip_cleanup: true
+  local_dir: www
