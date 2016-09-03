@@ -9,6 +9,7 @@ define MANBLOCK
 www/$(2).pdf: $(1)
 	man -Tdvi -l ./$(1) > $(2).dvi
 	dvipdfm -q $(2).dvi
+	mv $(2).pdf $$@
 	rm -f $(2).dvi
 
 www/$(2).html: $(1)
