@@ -7,12 +7,12 @@ all: $(TARGETS)
 
 define MANBLOCK
 www/$(2).pdf: $(1)
-	man -Tdvi -l $$< > $(2).dvi
+	man -Tdvi -l ./$(1) > $(2).dvi
 	dvipdfm -q $(2).dvi
 	rm -f $(2).dvi
 
 www/$(2).html: $(1)
-	man -Thtml -t $$< > $$@
+	man -Thtml -t $(1) > $$@
 endef
 
 $(foreach i, $(MANS), $(eval $(call MANBLOCK,$(i),$(notdir $(i)))))
