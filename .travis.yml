@@ -21,3 +21,4 @@ deploy:
   bucket: docs.flabbergast.org
   skip_cleanup: true
   local_dir: www
+  acl: public_read
