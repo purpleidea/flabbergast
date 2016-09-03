@@ -17,6 +17,9 @@ endef
 
 $(foreach i, $(MANS), $(eval $(call MANBLOCK,$(i),$(notdir $(i)))))
 
+print:
+	@echo $(MANS)
+
 clean:
 	rm -f $(TARGETS)
 
