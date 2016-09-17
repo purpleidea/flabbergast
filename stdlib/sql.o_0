@@ -440,6 +440,13 @@ sql_provider : Template {
 			sql_non_aggregate_columns : arg.sql_non_aggregate_columns
 			sql_contains_aggregate : arg.sql_contains_aggregate
 		}
+		base_unary_function_tmpl : Template base_unary_expr_tmpl {
+			sql_arg_type : Required
+			sql_func : Required
+			sql_expr : If sql_arg_type.id B& arg.sql_type.coerce == 0
+				Then Error "Cannot convert \(arg.sql_type.name) to \(sql_arg_type.name)."
+				Else sql_func Enforce Str & "(" & arg.sql_expr Enforce Str & ")"
+		}
 		base_binary_expr_tmpl : Template base_expr_tmpl {
 			left : Required
 			right : Required
@@ -748,6 +755,10 @@ sql_provider : Template {
 		like : Template base_compare_op_tmpl {
 			sql_op : "LIKE"
 			type_mask : sql_types.str.id
+		lower : Template base_unary_function_tmpl {
+			sql_arg_type : sql_types.str
+			sql_type : sql_types.str
+			sql_func : "LOWER"
 		}
 		lt : Template base_compare_op_tmpl {
 			sql_op : "<"
@@ -830,6 +841,11 @@ sql_provider : Template {
 		}
 		unequal : Template base_compare_op_tmpl {
 			sql_op : "<>"
+		}
+		upper : Template base_unary_function_tmpl {
+			sql_arg_type : sql_types.str
+			sql_type : sql_types.str
+			sql_func : "UPPER"
 		}
 	}
 }
