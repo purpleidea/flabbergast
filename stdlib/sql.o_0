@@ -752,9 +752,17 @@ sql_provider : Template {
 			sql_func : "LEAST"
 			sql_allowed_arg_type_id : sql_types.numeric
 		}
-		like : Template base_compare_op_tmpl {
-			sql_op : "LIKE"
-			type_mask : sql_types.str.id
+		like : Template base_binary_expr_tmpl {
+			{{{Whether the matching should be case-sensitive.}}}
+			case_sensitive : True
+			sql_type : sql_types.bool
+			sql_expr :
+				If specials.l.sql_type.coerce B& specials.r.sql_type.coerce B& sql_types.str.id == 0
+					Then Error "Incompatible types in comparison."
+					Else If case_sensitive
+						Then "(\(specials.l.sql_expr) LIKE \(specials.r.sql_expr))"
+						Else "(UPPER(\(specials.l.sql_expr)) LIKE UPPER(\(specials.r.sql_expr)))"
+		}
 		lower : Template base_unary_function_tmpl {
 			sql_arg_type : sql_types.str
 			sql_type : sql_types.str
