@@ -12,6 +12,10 @@ a:hover,a:active,a:focus,.show {
 color:#36648B;
 }
 
+.show {
+cursor:pointer;
+}
+
 dt {
 border:1px solid #fff;
 margin-top:.2em;
