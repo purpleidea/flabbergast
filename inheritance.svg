@@ -170,12 +170,12 @@
          x="26"
          y="412.2226"
          id="tspan4528"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas;-inkscape-font-specification:Consolas Bold">Template x {}</tspan><tspan
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas,Inconsolata,monospace;-inkscape-font-specification:Consolas,Inconsolata,monospace Bold">Template x {}</tspan><tspan
          sodipodi:role="line"
          x="26"
          y="429.7226"
          id="tspan4530"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas;-inkscape-font-specification:Consolas Bold">x +: {}</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas,Inconsolata,monospace;-inkscape-font-specification:Consolas,Inconsolata,monospace Bold">x +: {}</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:14px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Sans"
@@ -191,7 +191,7 @@
          x="268.88867"
          y="420.9726"
          id="tspan4536"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas;-inkscape-font-specification:Consolas Bold">x {}</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas,Inconsolata,monospace;-inkscape-font-specification:Consolas,Inconsolata,monospace Bold">x {}</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:14px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Sans"
@@ -207,7 +207,7 @@
          x="153.07861"
          y="333.23969"
          id="tspan4542"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas;-inkscape-font-specification:Consolas Bold">Template {}</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas,Inconsolata,monospace;-inkscape-font-specification:Consolas,Inconsolata,monospace Bold">Template {}</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:14px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Sans"
@@ -223,7 +223,7 @@
          x="384.93457"
          y="305.185"
          id="tspan4548"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas;-inkscape-font-specification:Consolas Bold">{}</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas,Inconsolata,monospace;-inkscape-font-specification:Consolas,Inconsolata,monospace Bold">{}</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:14px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Sans"
@@ -239,7 +239,7 @@
          x="384.76367"
          y="361.185"
          id="tspan4554"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas;-inkscape-font-specification:Consolas Bold">[]</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas,Inconsolata,monospace;-inkscape-font-specification:Consolas,Inconsolata,monospace Bold">[]</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:14px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Sans"
@@ -255,7 +255,7 @@
          x="534"
          y="405.01285"
          id="tspan4560"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas;-inkscape-font-specification:Consolas Bold">For ... Select ...</tspan><tspan
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas,Inconsolata,monospace;-inkscape-font-specification:Consolas,Inconsolata,monospace Bold">For ... Select ...</tspan><tspan
          sodipodi:role="line"
          x="534"
          y="425.19003"
@@ -264,7 +264,7 @@
          sodipodi:role="line"
          x="534"
          y="440.01285"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas;-inkscape-font-specification:Consolas Bold"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas,Inconsolata,monospace;-inkscape-font-specification:Consolas,Inconsolata,monospace Bold"
          id="tspan3028"> x Append y</tspan></text>
     <text
        xml:space="preserve"
@@ -281,7 +281,7 @@
          x="385.17041"
          y="487.3725"
          id="tspan4566"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas;-inkscape-font-specification:Consolas Bold">For ... Reduce ...</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:Consolas,Inconsolata,monospace;-inkscape-font-specification:Consolas,Inconsolata,monospace Bold">For ... Reduce ...</tspan></text>
     <path
        style="opacity:0.23451329;fill:none;stroke:#000000;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-start:url(#Arrow1Mstart);marker-end:url(#DotM)"
        d="m 429,363.36218 c 4.75,-34.20833 3.5,-77.41667 -45.75,-69.625"
