@@ -38,6 +38,7 @@ pkgdata_DATA = \
 	o_0.css \
 	o_0.js \
 	o_0.xsl \
+	o_0-xref.xsl \
 	$(NULL)
 
 install-data-hook:

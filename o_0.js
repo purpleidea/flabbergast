@@ -32,15 +32,90 @@ function expandAll(id) {
 }
 
 function pageLoad() {
-    var term = document.location.hash;
-    if (term.startsWith("#term-")) {
-        term = term.substring(6);
-        var searchbox = document.getElementById('search');
-        searchbox.value = term;
-        searchChange();
-    } else if (term.startsWith("#item-")) {
-        expandAll(term.substring(1));
+    var showTerm = function() {
+        var term = document.location.hash;
+        if (term.startsWith("#term-")) {
+            term = term.substring(6);
+            var searchbox = document.getElementById('search');
+            searchbox.value = term;
+            searchChange();
+        } else if (term.startsWith("#item-")) {
+            expandAll(term.substring(1));
+        }
+    };
+    var libraryNames = getLibraries();
+    if (libraryNames.length == 0) {
+        showTerm();
+        return;
     }
+    var makeLibraryInfo = function(name) {
+        return {
+            "name": name,
+            "nameParts": name.split("-")
+        }
+    };
+    var libraries = libraryNames.map(makeLibraryInfo);
+    var inflight = libraries.length;
+    var unref = function() {
+        if (--inflight > 0) {
+            return;
+        }
+        var searchlistdiv = document.getElementById('terms').getElementsByTagName('div')[0];
+        libraries.sort(function(a, b) {
+            var result = 0;
+            for (var i = 0; result == 0 && i < a.nameParts.length && i < b.nameParts.length; i++) {
+                result = a.nameParts[i].localeCompare(b.nameParts[i]);
+            }
+            return result || (a.nameParts.length - b.nameParts.length);
+        }).forEach(function(info) {
+            searchlistdiv.appendChild(info.links);
+        });
+        showTerm();
+    };
+
+    var termsForExternal = new XSLTProcessor();
+    termsForExternal.setParameter(null, "knownterms", getTerms().map(function(t) {
+        return "[" + t + "]";
+    }).join(""));
+    var downloadLibrary = function(info) {
+        var request = new XMLHttpRequest();
+        request.addEventListener("error", unref);
+        request.addEventListener("load", function() {
+            info.links = termsForExternal.transformToFragment(request.responseXML, document);
+            var newLibraries = request.responseXML.evaluate("//o_0:ref/text()[not(contains(., 'interop'))]", request.responseXML.documentElement, request.responseXML.createNSResolver(request.responseXML.documentElement), XPathResult.UNORDERED_NODE_ITERATOR_TYPE);
+            for (var newNameNode = newLibraries.iterateNext(); newNameNode; newNameNode = newLibraries.iterateNext()) {
+                var newName = newNameNode.textContent.replace("/", "-");
+                if (libraries.every(function(existing) {
+                    existing.name != newName;
+                })) {
+                    var newInfo = makeLibraryInfo(newName);
+                    libraries.push(newInfo);
+                    inflight++;
+                    downloadLibrary(newInfo);
+                }
+            }
+            unref();
+        });
+        request.open("GET", "doc-" + info.name + ".xml", true);
+        request.send();
+    };
+    var xsltRequest = new XMLHttpRequest();
+    xsltRequest.addEventListener("error", unref);
+    xsltRequest.addEventListener("load", function() {
+        try {
+            termsForExternal.importStylesheet(xsltRequest.responseXML);
+
+            for (var i = 0; i < libraries.length; i++) {
+                downloadLibrary(libraries[i]);
+            }
+        } catch(e) {
+            console.log(e);
+            unref();
+        }
+    });
+    xsltRequest.open("GET", "o_0-xref.xsl", true);
+    xsltRequest.overrideMimeType("text/xml");
+    xsltRequest.send();
 }
 
 function searchClear(clear_element) {
