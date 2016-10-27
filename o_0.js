@@ -32,6 +32,8 @@ function expandAll(id) {
 }
 
 function pageLoad() {
+    document.getElementById("hidePartials").className = hidePartials ? "option-on" : "option-off";
+    document.getElementById("hideExternals").className = hideExternals ? "option-on" : "option-off";
     var showTerm = function() {
         var term = document.location.hash;
         if (term.startsWith("#term-")) {
@@ -165,6 +167,7 @@ function searchChange() {
 
         var cssParts;
         if (exact_defs.length > 0 || exact_uses.length > 0 || starts_defs.length > 0 || starts_uses.length > 0) {
+            var showPartials = !hidePartials || (exact_defs.length == 0 && exact_uses.length == 0);
             cssParts = [{
                 items: exact_defs,
                 css: "font-weight: bold; color: #4F94CD; display: block !important;"
@@ -175,11 +178,11 @@ function searchChange() {
             },
             {
                 items: starts_defs,
-                css: "color: #4F94CD; display: block !important;"
+                css: showPartials ? "color: #4F94CD; display: block !important;" : "display: none;"
             },
             {
                 items: starts_uses,
-                css: "display: block !important;"
+                css: showPartials ? "display: block !important;" : "display: none;"
             },
             {
                 items: unmatched.concat(contains_defs, contains_uses),
@@ -202,7 +205,7 @@ function searchChange() {
 
         termcss.innerHTML = cssParts.map(function(part) {
             return cssForArray(part.items, part.css);
-        }).join('');
+        }).join('') + (hideExternals ? "\n#terms a.external { display: none !important; }" : "");
         checkNoMatches();
     } else {
         searchbox.className = "error";
@@ -234,6 +237,22 @@ function showHide(roller) {
     var is_hidden = roller.parentNode.className == "hidden";
     roller.textContent = is_hidden ? "▼" : "▶";
     roller.parentNode.className = is_hidden ? "" : "hidden";
+}
+
+function showOnly(name, value) {
+    document.getElementById(name).className = value ? "option-on" : "option-off";
+    window.localStorage.setItem(name, value ? "true" : "false");
+    searchChange();
+}
+
+function toggleExternals() {
+    hideExternals = !hideExternals;
+    showOnly("hideExternals", hideExternals);
+}
+
+function togglePartials() {
+    hidePartials = !hidePartials;
+    showOnly("hidePartials", hidePartials);
 }
 
 function updateRefs(term) {

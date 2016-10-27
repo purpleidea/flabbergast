@@ -15,13 +15,17 @@
         <script type="text/javascript">
           function getTerms() { return [ <xsl:for-each select="(//o_0:def/text()|//o_0:use/text())[generate-id() = generate-id(key('terms', .)[1])]"> "<xsl:value-of select="translate(., '.', '-')"/>", </xsl:for-each> ]; }
           function getLibraries() { return [ <xsl:for-each select="(//o_0:ref/text())[not(contains(., 'interop')) and generate-id() = generate-id(key('refs', .)[1])]"> "<xsl:value-of select="translate(., '/', '-')"/>", </xsl:for-each> ]; }
+          hidePartials = (window.localStorage.getItem("hidePartials") || "true") === "true";
+          hideExternals = (window.localStorage.getItem("hideExternals") || "false") === "true";
         </script>
       </head>
       <body onload="pageLoad();">
         <div id="searchpane">
           <div id="searcharea">
             <input type="text" id="search" onchange="searchChange();" onkeypress="searchChange();" onpaste="searchChange();" oninput="searchChange();"/>
-            <span onclick="searchClear(this)">⌫</span>
+            <span onclick="searchClear(this)">⌫</span><br/>
+            <span id="hidePartials" onclick="togglePartials();">Exact</span>
+            <span id="hideExternals" onclick="toggleExternals();">Local</span>
           </div>
           <div id="terms">
             <div>

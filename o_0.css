@@ -8,10 +8,6 @@ a:visited,a:link,a:hover,a:active,a:focus,.show {
 text-decoration:none;
 }
 
-a:hover,a:active,a:focus,.show {
-color:#36648B;
-}
-
 .show {
 cursor:pointer;
 }
@@ -140,6 +136,17 @@ color:gray;
 padding:.2em;
 }
 
+#searcharea .option-off,#searcharea .option-on {
+border-radius:.3em;
+border:1px solid #36648B;
+font-size:80%;
+}
+
+#searcharea .option-on {
+background-color:#4F94CD;
+color:#fff;
+}
+
 #search.error {
 background-color:#F2DEDE;
 border-color:#AA4542;
@@ -183,4 +190,8 @@ font-weight:700;
 border:1px solid #4F94CD;
 border-radius:.2em;
 transition:border-color 1s ease-in-out;
+}
+
+a:hover,a:active,a:focus,.show,#searcharea .option-off {
+color:#36648B;
 }
