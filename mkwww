@@ -28,4 +28,4 @@ do
 done
 echo '</o_0:index>' >> ${TARGET}
 
-cp -u o_0.css o_0.js o_0.xsl www
+cp -u o_0.css o_0.js o_0.xsl o_0-xref.xsl www
