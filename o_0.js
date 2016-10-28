@@ -84,7 +84,7 @@ function pageLoad() {
         request.addEventListener("error", unref);
         request.addEventListener("load", function() {
             info.links = termsForExternal.transformToFragment(request.responseXML, document);
-            var newLibraries = request.responseXML.evaluate("//o_0:ref/text()[not(contains(., 'interop'))]", request.responseXML.documentElement, request.responseXML.createNSResolver(request.responseXML.documentElement), XPathResult.UNORDERED_NODE_ITERATOR_TYPE);
+            var newLibraries = request.responseXML.evaluate("//o_0:ref/text()[not(contains(., 'interop'))]", request.responseXML.documentElement, request.responseXML.createNSResolver(request.responseXML.documentElement), XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null);
             for (var newNameNode = newLibraries.iterateNext(); newNameNode; newNameNode = newLibraries.iterateNext()) {
                 var newName = newNameNode.textContent.replace("/", "-");
                 if (libraries.every(function(existing) {
