@@ -24,8 +24,8 @@
           <div id="searcharea">
             <input type="text" id="search" onchange="searchChange();" onkeypress="searchChange();" onpaste="searchChange();" oninput="searchChange();"/>
             <span onclick="searchClear(this)">⌫</span><br/>
-            <span id="hidePartials" onclick="togglePartials();">Exact</span>
-            <span id="hideExternals" onclick="toggleExternals();">Local</span>
+            <span id="hidePartials" onclick="togglePartials();" title="If an exact match is found, don't display any partial matches, even if longer.">Exact</span>
+            <span id="hideExternals" onclick="toggleExternals();" title="Only display matches for this library, not libraries it uses.">Local</span>
           </div>
           <div id="terms">
             <div>
