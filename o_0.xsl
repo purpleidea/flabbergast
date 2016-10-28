@@ -90,7 +90,7 @@
         <xsl:apply-templates select="o_0:type"/>
         <xsl:choose>
           <xsl:when test="/o_0:lib/@github">
-            <a href="{concat(/o_0:lib/@github, '#L', @startline, '-L', @endline)}">
+            <a href="{concat(/o_0:lib/@github, '#L', @startline, '-L', @endline)}" title="View Source">
               <xsl:value-of select="concat(/o_0:lib/@name, '.o_0:', @startline, ':', @startcol, '-', @endline, ':', @endcol)"/>
             </a>
           </xsl:when>
@@ -150,6 +150,7 @@
   </xsl:template>
   <xsl:template match="o_0:ref[not(contains(text(), 'interop'))]">
     <a href="{concat('doc-', translate(text(), '/', '_'), '.xml')}">lib:<xsl:value-of select="text()"/></a>
+    <xsl:text> </xsl:text>
   </xsl:template>
   <xsl:template match="o_0:ref">
     <span class="show" title="Documentation not available.">lib:<xsl:value-of select="text()"/></span>
