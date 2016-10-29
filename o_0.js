@@ -43,6 +43,10 @@ function pageLoad() {
             searchChange();
         } else if (term.startsWith("#item-")) {
             expandAll(term.substring(1));
+            // Bug: https://bugzilla.mozilla.org/show_bug.cgi?id=645075A
+            if (navigator.userAgent.indexOf("Firefox") > -1) {
+                location.href += '';
+            }
         }
     };
     var libraryNames = getLibraries();
