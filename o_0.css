@@ -171,7 +171,7 @@ width:90%;
 border:1px solid #A7ACAF;
 border-radius:.3em;
 overflow-y:scroll;
-height:90vh;
+height:calc(90vh - 3em);
 }
 
 #terms a {
