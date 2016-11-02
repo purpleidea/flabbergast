@@ -171,28 +171,48 @@ sql_marshall_list : Template {
 	provider : Required
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name :
-			If arg Is Null Then Null
-			Else If arg Is Frame Then arg
-			Else If arg Is Str Then provider.expr.base_const_tmpl {
-					sql_expr : provider.quote_start Enforce Str & utils_lib.str_escape(arg, transformations : provider.transformations) Enforce Str & provider.quote_end Enforce Str
-					sql_type : sql_types.str
-				}
-			Else If arg Is Bool Then provider.expr.base_const_tmpl {
-					sql_expr : If arg Then "TRUE" Else "FALSE"
-					sql_type : sql_types.bool
-				}
-			Else If arg Is Bin Then provider.expr.base_const_tmpl {
-					sql_expr : provider.blob_start Enforce Str & utils_lib.bin_to_hex_str(arg, uppercase : True) Enforce Str & provider.blob_end Enforce Str
-					sql_type : sql_types.blob
-				}
-			Else provider.expr.base_const_tmpl {
-					sql_expr : arg To Str
-					sql_type :
-						If arg Is Int Then sql_types.int
-						Else If arg Is Float Then sql_types.float
-						Else Error "Can't convert value to SQL type."
-				}
+		Select arg_name : (TypeOf arg With sql_marshall_converters {}).value
+}
+
+sql_marshall_converters : {
+	bin :
+		Template {
+			value : provider.expr.base_const_tmpl {
+				sql_expr : provider.blob_start Enforce Str & utils_lib.bin_to_hex_str(arg, uppercase : True) Enforce Str & provider.blob_end Enforce Str
+				sql_type : sql_types.blob
+			}
+		}
+	bool :
+		Template {
+			value : provider.expr.base_const_tmpl {
+				sql_expr : If arg Then "TRUE" Else "FALSE"
+				sql_type : sql_types.bool
+			}
+		}
+	float :
+		Template {
+			value : provider.expr.base_const_tmpl {
+				sql_expr : arg To Str
+				sql_type : sql_types.float
+			}
+		}
+	frame : Template { value : arg }
+	int :
+		Template {
+			value : provider.expr.base_const_tmpl {
+				sql_expr : arg To Str
+				sql_type : sql_types.int
+			}
+		}
+	null : Template { value :  Null }
+	template : Template { value : Error "Cannot convert template to SQL." }
+	str :
+		Template {
+			value : provider.expr.base_const_tmpl {
+				sql_expr : provider.quote_start Enforce Str & utils_lib.str_escape(arg, transformations : provider.transformations) Enforce Str & provider.quote_end Enforce Str
+				sql_type : sql_types.str
+			}
+		}
 }
 
 {{{Compute the SQL type of a complex expression.}}}
