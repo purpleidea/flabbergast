@@ -633,7 +633,7 @@ known_types : compiler_lib.known_types_tmpl {
 		name : "Template"
 		unbox : True
 	}
-	unit : {
+	null : {
 		union_type : "Flabbergast.Type.Unit"
 		real_type : "Flabbergast.Unit"
 		name : "Null"
@@ -1113,6 +1113,23 @@ kws : compiler_lib.kws_repl_tmpl {
 				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(field)[\(Id)_iter].ToString());" &
 				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem, typeof(string));" &
 				"\(sum_indent)}"
+		}
+	}
+	lookup_prefixed +: {
+		gen_gen +: {
+			load_names :
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(prefix_field).Count + 1);" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newarr, typeof(string));" &
+				"\(sum_indent)for (var \(Id)_iter = 0; \(Id)_iter < \(prefix_field).Count; \(Id)_iter++) {" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(Id)_iter);" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \(prefix_field)[\(Id)_iter].ToString());" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem, typeof(string));" &
+				"\(sum_indent)}" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Dup);" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(prefix_field).Count);" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \"\(suffix_name)\");" &
+				"\(sum_indent)\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem, typeof(string));"
 		}
 	}
 	lookup_dynamic +: {

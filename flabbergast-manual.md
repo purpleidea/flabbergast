@@ -508,6 +508,8 @@ The `Enforce` operator ensures that a value is of a particular type, if not, an 
     y : 4 Is Int # True
     z : 4.5 Is Int # False
 
+Also see the `TypeOf` expression.
+
 ### Special Frame Literals
 
 Two special frame literals are provided: the literal list and the range operator.
@@ -726,7 +728,7 @@ is almost rewritten as:
       }.value
     }
 
-In this example, `c` would be circular evaluation when using normal evaluation semantics, but because the evaluation of the parameters happens in the containing context, this is fine. There is a subtle different too: the resulting tuple's container will not be the one where it is instantiated, but the one where it is defined.
+In this example, `c` would be circular evaluation when using normal evaluation semantics, but because the evaluation of the parameters happens in the containing context, this is fine. There is a subtle different too: the resulting frame's container will not be the one where it is instantiated, but the one where it is defined.
 
 For Java programmers, there's an analogy for the two modes of template instantiation: anonymous inner classes. Creating a template is a bit like instantiating an anonymous inner class. If that class has multiple methods, then template instantiation gives similar behaviour. If only one method is of interest, then it can be instantiated using function-like instantiation, much like lambda notation in Java 8.
 
@@ -738,6 +740,40 @@ It's useful to remember how all the pieces of structured data manipulation in th
 
 Templates can be made from scratch or from existing templates. Frames can be made from scratch, by instantiating templates, the fricassée `Select` operations, or the `Append` expression. Scalar values can be distilled from frames using the fricassée `Reduce` operation. Scalar values can be manipulated a number of ways not shown in the diagram.
 
+### TypeOf Expression
+The `TypeOf` expression allows type-directed lookup. This operation gets the type of a value. Rather than return that value as a string or type type, it performs a lookup so that a user-defined value is returned.
+
+For instance, `TypeOf "x"` will perform a lookup for `str` and return whatever value that is. The name of the variable looked up is the same as the types but lower case.
+
+The expression takes an optional prefix specified using `With`: `TypeOf "x" With foo` would resolve to `foo.str`
+
+This allows the `TypeOf` expression to change the semantics as desired. For instance, here is a case where direct comparison is desired:
+
+    type_id : { bin : 0  bool : 1  int : 2  float :  3  frame : 4  null : 5  str : 6  template : 7 }
+    are_x_and_y_the_same_type : TypeOf x With type_id == TypeOf y With type_id
+
+Suppose we want to know if a type can be converted to an SQL literal:
+
+    has_sql_literal : { bin : True  bool : True  int : True float :  True  frame : False  null : True  str : True  template : False }
+    can_x_be_an_sql_literal : TypeOf has_sql_literal With x
+
+We can even be craftier and convert a value by lookup:
+
+    create_sql_literal : {
+      bin : Template { value : provider.blob_start & utils_lib.bin_to_hex_str(input, uppercase : True) & provider.blob_end }
+      bool : Template { value : If input Then "true" Else "false" }
+      int : Template { value : input To Str }
+      float :  Template { value : input To Str }
+      frame : Template { value : Error "Cannot convert frame to SQL." }
+      null : Template { value : "NULL" }
+      str :  Template { value : provider.quote_start & utils_lib.str_escape(input, transformations : provider.transformations) & provider.quote_end }
+      template :  Template { value : Error "Cannot convert template to SQL." }
+    }
+    value : (TypeOf x With create_sql_literal)(input : x)
+
+That is, use `TypeOf` to find a function-like template and then call it on the value.
+
+
 ### Miscellaneous
 
 The `Let` expression allows binding a value to a new name. For example, `Let a : 3 In a * a`. This is a convenient way to eliminate common subexpressions. Be advised that the normal short-circuiting rules do not apply: all the values in the expression must be evaluated first. Multiple attributes can be bound at once (_e.g._, `Let a : 3, b : 4 In a * a + b * b`).
@@ -748,7 +784,14 @@ The `From` expression allows importing external content into the program. This d
 
     foo_lib : From lib:foo
 
-Presently, there are handlers for SQL databases, JSON files, and environment variables.
+Presently, there are handlers for:
+
+* SQL databases (`sql:`)
+* local files (`file:` and `res:`)
+* FTP and HTTP URLs (`ftp:`, `ftps:`, `http:`, and `https:`)
+* VM-specific settings using `java.lang.System.getProperty` on the JVM and `System.Configuration.ConfigurationManager.AppSettings` (`settings:`)
+* environment variables (`env:`)
+* Flabbergast runtime information (`current:`)
 
     version : From env:EXAMPLE_VERSION
     release_db : From sql:postgresql://o_0@db.example.com/release

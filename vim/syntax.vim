@@ -25,6 +25,13 @@ syn match flabbergastTrailingWhite "[ \t]\+$" containedin=ALL
 syn match flabbergastAttribute "+:\|+\|:\([ \t]*\(Drop\|Now\|Required\|Used\)\)\?" display contained
 syn match flabbergastIdentifier "\<args\>" display
 syn match flabbergastIdentifier "\<value\>" display
+syn match flabbergastIdentifier "\<bin\>" display
+syn match flabbergastIdentifier "\<bool\>" display
+syn match flabbergastIdentifier "\<float\>" display
+syn match flabbergastIdentifier "\<frame\>" display
+syn match flabbergastIdentifier "\<int\>" display
+syn match flabbergastIdentifier "\<template\>" display
+syn match flabbergastIdentifier "\<str\>" display
 syn match flabbergastIdentifier "\<[a-z][A-Za-z0-9_]*\>[ \t\n]*\(+\([a-z][A-Za-z0-9_]*\)\?\)\?[ \t\n]*:" display contains=flabbergastAttribute
 syn match flabbergastComment "#.*$" contains=flabbergastTodo,@Spell display
 syn keyword flabbergastInt IntMax IntMin
@@ -37,7 +44,7 @@ syn match flabbergastFrom "[A-Za-z0-9.+-]\+:[A-Za-z0-9~!*'_;@&=+$,/?%#.+-:]\+" d
 syn keyword flabbergastFrom From
 syn keyword flabbergastFricassee By Each For Name Order Ordinal Reduce Reverse Select With
 syn keyword flabbergastConditional If Then Else
-syn keyword flabbergastKeyword Accumulate Append Container Enforce Error Finite Function GenerateId Id In Is Length Let Lookup Template This Through To Where
+syn keyword flabbergastKeyword Accumulate Append Container Enforce Error Finite Function GenerateId Id In Is Length Let Lookup Template This Through To TypeOf Where
 syn match flabbergastOperators '\(<=\=\|<=>\|>=\=\|==\|||\|-\|!=\=\|/\|\*\|&\|&&\|%\|+\|??\|B|\|B^\|B&\|B!\)' display
 syn keyword flabbergastTodo contained containedin=flabbergastComment TODO FIXME XXX
 syn keyword flabbergastType Bin Bool Float Frame Int Str

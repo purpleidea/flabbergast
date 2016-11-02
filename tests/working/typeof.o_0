@@ -1,0 +1,12 @@
+v : {
+	bin : (From lib:utils).str_to_bin.utf8("thisisatest")
+	bool : True
+	float : 3.0
+	frame : {}
+	int : 3
+	str : "x"
+	template : Template {}
+}
+names : For x : v, name : Name Select name : name
+values : For x : v, name : Name Select name : (TypeOf x With names) Enforce Str == name
+value : For x : values Reduce acc && x With acc : True

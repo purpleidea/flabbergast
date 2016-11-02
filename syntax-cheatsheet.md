@@ -1,6 +1,8 @@
 # Flabbergast Syntax Quick Reference
 
 ## Types
+`Bin` – a blob of arbitrary data.
+
 `Bool` – a Boolean value.
 
 `Float` – IEEE floating point number.
@@ -53,6 +55,8 @@ Type assertion: `x Enforce t` (_e.g._, `x Enforce Float`)
 Type coercion: `x To t` (_e.g._, `3 To Float`)
 
 Type check: `x Is t` (_e.g._, `3 Is Bool`, `a Is Null`)
+
+Type determination: `TypeOf x` or `TypeOf x With foo` (_e.g._, `TypeOf "x" With foo` will `foo.str`)
 
 Finite: `x Is Finite`
 

@@ -272,9 +272,9 @@ known_types_tmpl : Template {
 	float : Required
 	frame : Required
 	int : Required
+	null : Required
 	str : Required
 	template : Required
-	unit : Required
 }
 known_vm_types_tmpl : Template {
 	any : Required
@@ -653,6 +653,10 @@ kws_tmpl : Template {
 	}
 	lookup_field : Template lookup_tmpl {
 		field : Required
+	}
+	lookup_prefixed : Template lookup_tmpl {
+		prefix_field : Required
+		suffix_name : Required
 	}
 	lookup_dynamic : Template lookup_tmpl {
 		name : Required
@@ -4075,12 +4079,12 @@ language_tmpl : Template {
 							},
 							# Null → *
 							choice_tmpl {
-								type : known_types.unit
+								type : known_types.null
 								action : codegen.type_dispatch_parsed {
 									field : $right
 									choices : [
 										choice_tmpl {
-											type : known_types.unit
+											type : known_types.null
 											action : left_result
 										}
 									]
@@ -4276,7 +4280,7 @@ language_tmpl : Template {
 						}
 						choices : [
 							choice_tmpl {
-								type : known_types.unit
+								type : known_types.null
 								action : kws.numeric_constant {
 									type : known_types.bool
 									number : max
@@ -4443,7 +4447,7 @@ language_tmpl : Template {
 						actions : [
 							ensure_type.propagate { fields : [ $right ] },
 							ensure_type.propagate {
-								extra_types : [ known_types.unit ]
+								extra_types : [ known_types.null ]
 								fields : [ $left ]
 							}
 						]
@@ -4453,7 +4457,7 @@ language_tmpl : Template {
 						default_action : converted_result
 						choices : [
 							choice_tmpl {
-								type : known_types.unit
+								type : known_types.null
 								action : codegen.prepare_lookup_cache {
 									name : $optional_environment
 									in : codegen.other_code { field : $right }
@@ -4487,7 +4491,7 @@ language_tmpl : Template {
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.intrinsic { needs_unbox : False }
 					type_demand : ensure_type.filter {
-						types : [ known_types.frame, known_types.unit ]
+						types : [ known_types.frame, known_types.null ]
 						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
 					}
 					api_value : apigen.other { fields : [ $expression ] }
@@ -4495,7 +4499,7 @@ language_tmpl : Template {
 						of : codegen.other_code { field : $expression }
 						choices : [
 							choice_tmpl {
-								type : known_types.unit
+								type : known_types.null
 								action : kws.null_constant {}
 							},
 							choice_tmpl {
@@ -4558,6 +4562,53 @@ language_tmpl : Template {
 									context : parameters.context
 								}
 							}
+						}
+					}
+				}
+				type_of : Template expression_tmpl {
+					pretty_name : "type-directed lookup"
+					level : 19
+					pattern : parser.sequence {
+						of : [
+							parser.exact { word : "TypeOf" },
+							space { mandatory : True },
+							child_expression { field : $expression },
+							parser.optional {
+								of : parser.sequence {
+									of : [
+										space { mandatory : True },
+										parser.exact { word : "With" },
+										parser.accumulate_list {
+											type : $identifier
+											field : $names
+											in : parser.many_word {
+												of : parser.other {
+													type : $identifier
+													field : Null
+												}
+												separator_word : "."
+											}
+										}
+									]
+								}
+							}
+						]
+					}
+					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
+					ensure_type_is : ensure_type.intrinsic { needs_unbox : False }
+					type_demand : ensure_type.propagate { fields : [ $expression ] }
+					api_value : apigen.other { fields : [ $expression ] }
+					code_value : codegen.return_intrinsic_dispatch {
+						of : codegen.type_dispatch {
+							of : codegen.other_code { field : $expression }
+							choice_tmpl +: {
+								action : kws.lookup_prefixed {
+									prefix_field : $names
+									suffix_name : name
+									source : parameters.context
+								}
+							}
+							choices : For t : known_types, name : Name Select choice_tmpl { type : t }
 						}
 					}
 				}
@@ -5042,7 +5093,7 @@ language_tmpl : Template {
 				null : Template literal_tmpl {
 					pretty_name : "null value"
 					name : "Null"
-					ensure_type_is : ensure_type.filter { types : [ known_types.unit ] }
+					ensure_type_is : ensure_type.filter { types : [ known_types.null ] }
 					code_value : kws.null_constant {}
 				}
 				this : Template literal_tmpl {

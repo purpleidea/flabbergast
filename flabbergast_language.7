@@ -672,6 +672,96 @@ Extracts the unique identifier from a frame. The implementation makes no guarant
 
 This expression is meant to have a similar function to LISP's \fIgensym\fR or XPath's \fIgenerate-id\fR. It is intended to allow generating unique, though unhelpfully opaque, identifiers in generated code. For instance, to generate temporary variable names when generating the compiler. The \fBId\fR function is similar Clojure's auto-\fIgensym\fR syntax; with the scope of a frame, the same identifier is available.
 
+.TP
+Perform type-directed lookup
+
+.SEM Γ ⊢ \fBTypeOf\fR expr:E\*<+\*> ↓ t
+Γ ⊢ expr ↓ v :: Bin,
+
+Γ ⊢ \fBbin\fR ↓ t
+.SEME
+
+.SEM Γ ⊢ \fBTypeOf\fR expr:E\*<+\*> ↓ t
+Γ ⊢ expr ↓ v :: Bool,
+
+Γ ⊢ \fBbool\fR ↓ t
+.SEME
+
+.SEM Γ ⊢ \fBTypeOf\fR expr:E\*<+\*> ↓ t
+Γ ⊢ expr ↓ v :: Float,
+
+Γ ⊢ \fBfloat\fR ↓ t
+.SEME
+
+.SEM Γ ⊢ \fBTypeOf\fR expr:E\*<+\*> ↓ t
+Γ ⊢ expr ↓ v :: Frame,
+
+Γ ⊢ \fBframe\fR ↓ t
+.SEME
+
+.SEM Γ ⊢ \fBTypeOf\fR expr:E\*<+\*> ↓ t
+Γ ⊢ expr ↓ v :: Int,
+
+Γ ⊢ \fBint\fR ↓ t
+.SEME
+
+.SEM Γ ⊢ \fBTypeOf\fR expr:E\*<+\*> ↓ t
+Γ ⊢ expr ↓ v :: Unit,
+
+Γ ⊢ \fBnull\fR ↓ t
+.SEME
+
+.SEM Γ ⊢ \fBTypeOf\fR expr:E\*<+\*> ↓ t
+Γ ⊢ expr ↓ v :: Template,
+
+Γ ⊢ \fBtemplate\fR ↓ t
+.SEME
+
+.TP
+Perform type-directed lookup with a prefix
+
+.SEM Γ ⊢ \fBTypeOf\fR expr:E\*<+\*> \fBWith\fR name:I name:(\fB.\fRI)* ↓ t
+Γ ⊢ expr ↓ v :: Bin,
+
+Γ ⊢  (name\fB.\fR)+ \fBbin\fR ↓ t
+.SEME
+
+.SEM Γ ⊢ \fBTypeOf\fR expr:E\*<+\*> \fBWith\fR name:I name:(\fB.\fRI)* ↓ t
+Γ ⊢ expr ↓ v :: Bool,
+
+Γ ⊢ (name\fB.\fR)+ \fBbool\fR ↓ t
+.SEME
+
+.SEM Γ ⊢ \fBTypeOf\fR expr:E\*<+\*> \fBWith\fR name:I name:(\fB.\fRI)* ↓ t
+Γ ⊢ expr ↓ v :: Float,
+
+Γ ⊢ (name\fB.\fR)+ \fBfloat\fR ↓ t
+.SEME
+
+.SEM Γ ⊢ \fBTypeOf\fR expr:E\*<+\*> \fBWith\fR name:I name:(\fB.\fRI)* ↓ t
+Γ ⊢ expr ↓ v :: Frame,
+
+Γ ⊢ (name\fB.\fR)+ \fBframe\fR ↓ t
+.SEME
+
+.SEM Γ ⊢ \fBTypeOf\fR expr:E\*<+\*> \fBWith\fR name:I name:(\fB.\fRI)* ↓ t
+Γ ⊢ expr ↓ v :: Int,
+
+Γ ⊢ (name\fB.\fR)+ \fBint\fR ↓ t
+.SEME
+
+.SEM Γ ⊢ \fBTypeOf\fR expr:E\*<+\*> \fBWith\fR name:I name:(\fB.\fRI)* ↓ t
+Γ ⊢ expr ↓ v :: Unit,
+
+Γ ⊢ (name\fB.\fR)+ \fBnull\fR ↓ t
+.SEME
+
+.SEM Γ ⊢ \fBTypeOf\fR expr:E\*<+\*> \fBWith\fR name:I name:(\fB.\fRI)* ↓ t
+Γ ⊢ expr ↓ v :: Template,
+
+Γ ⊢ (name\fB.\fR)+ \fBtemplate\fR ↓ t
+.SEME
+
 .SS EXPRESSION SYNTAX (E) – FUNCTION-LIKE TEMPLATE INSTANTIATION
 
 .TP

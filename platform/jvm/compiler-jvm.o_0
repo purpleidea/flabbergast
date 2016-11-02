@@ -658,7 +658,7 @@ known_types : compiler_lib.known_types_tmpl {
 		name : "Template"
 		unbox : True
 	}
-	unit : {
+	null : {
 		union_type : "flabbergast.Type.Unit"
 		real_type : "flabbergast.Unit"
 		name : "Null"
@@ -1212,6 +1212,23 @@ kws : compiler_lib.kws_repl_tmpl {
 				"\(sum_indent)\t\(generator).getBuilder().visitLdcInsn(\(field).get(\(Id)_iter).toString());" &
 				"\(sum_indent)\t\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.AASTORE);" &
 				"\(sum_indent)}"
+		}
+	}
+	lookup_prefixed +: {
+		gen_gen +: {
+			load_names :
+				"\(sum_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(prefix_field).size() + 1);" &
+				"\(sum_indent)\(generator).getBuilder().visitTypeInsn(org.objectweb.asm.Opcodes.ANEWARRAY, org.objectweb.asm.Type.getInternalName(String.class));" &
+				"\(sum_indent)for (int \(Id)_iter = 0; \(Id)_iter < \(prefix_field).size(); \(Id)_iter++) {" &
+				"\(sum_indent)\t\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+				"\(sum_indent)\t\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(Id)_iter);" &
+				"\(sum_indent)\t\(generator).getBuilder().visitLdcInsn(\(prefix_field).get(\(Id)_iter).toString());" &
+				"\(sum_indent)\t\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.AASTORE);" &
+				"\(sum_indent)}" &
+				"\(sum_indent)\t\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.DUP);" &
+				"\(sum_indent)\t\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(prefix_field).size());" &
+				"\(sum_indent)\t\(generator).getBuilder().visitLdcInsn(\"\(name)\");" &
+				"\(sum_indent)\t\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.AASTORE);"
 		}
 	}
 	lookup_dynamic +: {
