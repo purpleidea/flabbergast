@@ -2400,7 +2400,11 @@ codegen : compiler_lib.codegen_tmpl {
 
 apigen : compiler_lib.apigen_tmpl {
 	add_name +: {
-		value : "\t\t\(current_api).registerUse(RevCons.toString(\(field));\n"
+		value :
+			"\t\tjava.util.List<String> \(Id) = new java.util.ArrayList<String>();\t\tfor (Object \(Id)_o : \(field)) { \(Id).add(\(Id)_o.toString()); }\n" &
+			(For s : suffixes
+				Reduce acc & ", \"\(s)\""
+				With acc :  "\t\t\(current_api).registerUse(\(Id)") & ");\n"
 	}
 	add_reference +: {
 		value : "\t\t\(current_api).registerRef(RevCons.toString(\(field)));\n"

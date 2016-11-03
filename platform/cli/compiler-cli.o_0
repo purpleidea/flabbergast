@@ -2286,7 +2286,10 @@ codegen : compiler_lib.codegen_tmpl {
 
 apigen : compiler_lib.apigen_tmpl {
 	add_name +: {
-		value : "\t\t\(current_api).RegisterUse(\(field).Select(\(Id) => Generator.ToString(\(Id)));\n"
+		value :
+			(For s : suffixes
+				Reduce acc & ", \"\(s)\""
+				With acc : "\t\t\(current_api).RegisterUse(\(field).Select(\(Id) => \(Id).ToString())") & ");\n"
 	}
 	add_reference +: {
 		value : "\t\t\(current_api).RegisterRef(Generator.ToString(\(field)));\n"

@@ -1046,6 +1046,7 @@ apigen_tmpl : Template {
 	collect_names : False
 	add_name : Template {
 		field : Required
+		suffixes : []
 	}
 	add_reference : Template {
 		field : Required
@@ -4597,7 +4598,15 @@ language_tmpl : Template {
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					ensure_type_is : ensure_type.intrinsic { needs_unbox : False }
 					type_demand : ensure_type.propagate { fields : [ $expression ] }
-					api_value : apigen.other { fields : [ $expression ] }
+					api_value : apigen.many {
+						actions : [
+							apigen.add_name {
+								field : $names
+								suffixes : For t : known_types, name : Name Select name
+							},
+							apigen.other { fields : [ $expression ] }
+						]
+					}
 					code_value : codegen.return_intrinsic_dispatch {
 						of : codegen.type_dispatch {
 							of : codegen.other_code { field : $expression }

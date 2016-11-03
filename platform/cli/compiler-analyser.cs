@@ -881,8 +881,15 @@ internal class ApiGenerator {
             Register(refs, "o_0:ref", uri.Substring(4));
         }
     }
-    public void RegisterUse(IEnumerable<string> names) {
-        RegisterUse(string.Join(".", names));
+    public void RegisterUse(IEnumerable<string> names, params string[] suffixes) {
+        var basename = string.Join(".", names);
+        if (suffixes.Length == 0) {
+            RegisterUse(basename);
+        } else {
+            foreach (var suffix in suffixes) {
+                RegisterUse(basename == string.Empty ? suffix : (basename + "." + suffix));
+            }
+        }
     }
     public void RegisterUse(string name) {
         Register(uses, "o_0:use", name);

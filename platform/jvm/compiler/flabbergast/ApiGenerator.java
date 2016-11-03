@@ -137,7 +137,7 @@ class ApiGenerator {
             register(refs, "o_0:ref", uri.substring(4));
         }
     }
-    public void registerUse(Iterable<? extends Object> names) {
+    public void registerUse(Iterable<? extends Object> names, String...suffixes) {
         StringBuilder sb = new StringBuilder();
         boolean first = true;
         for (Object name : names) {
@@ -148,7 +148,17 @@ class ApiGenerator {
             }
             sb.append(name.toString());
         }
-        registerUse(sb.toString());
+        if (suffixes.length == 0) {
+            registerUse(sb.toString());
+        } else {
+            if (sb.length() > 0) {
+                sb.append(".");
+            }
+            String prefix = sb.toString();
+            for (String suffix : suffixes) {
+                registerUse(prefix + suffix);
+            }
+        }
     }
     public void registerUse(String name) {
         register(uses, "o_0:use", name);
