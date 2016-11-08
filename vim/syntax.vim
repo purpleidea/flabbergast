@@ -17,7 +17,7 @@ syn region flabbergastString matchgroup=flabbergastDelimiter start='"' end='"' s
 syn match flabbergastEscapeError contained "\\." display
 syn match flabbergastEscapeError "\\)" display
 syn match flabbergastEscape contained containedin=flabbergastString '\\[abfnvrt"\\]' display
-syn match flabbergastEscape contained containedin=flabbergastString "\\\(\o\{3}\|x\x\{2}\|u\x\{4}\)" display
+syn match flabbergastEscape contained containedin=flabbergastString "\\\(\o\{3}\|x\x\{2}\|u\x\{4}\|U\x\{8}\)" display
 syn region flabbergastInterpolation contained contains=TOP matchgroup=flabbergastDelimiter start="\\(" end=")"
 
 syn match flabbergastTrailingWhite "[ \t]\+$"

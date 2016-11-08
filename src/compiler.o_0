@@ -3229,6 +3229,22 @@ language_tmpl : Template {
 											]
 										}
 									},
+									parser.accumulate_unichar_integer {
+										in : parser.sequence {
+											of : [
+												parser.exact { word : "\\\\U" },
+												hex_digit { },
+												hex_digit { },
+												hex_digit { },
+												hex_digit { },
+
+												hex_digit { },
+												hex_digit { },
+												hex_digit { },
+												hex_digit { }
+											]
+										}
+									},
 									parser.single {
 										char : "\\\\\\\""
 										invert_match : True
