@@ -64,6 +64,10 @@ public class Escape : Computation {
         LookupChar(spec, "start", start => {
             LookupChar(spec, "end", end => {
                 LookupString(spec, "format_str", replacement => {
+                    if (ranges.ContainsKey(start)) {
+                        task_master.ReportOtherError(source_ref, String.Format("Duplicate range starting at {0}", start));
+                        return;
+                    }
                     ranges.Add(start, new Range() {
                         start = start, end = end, replacement = replacement
                     });
