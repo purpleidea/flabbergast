@@ -307,7 +307,7 @@ parser : compiler_lib.parser_tmpl {
 		parent_unicode_accumulate_char : Lookup accumulate_char In Container
 		parse_complete : Template {
 			ok : Required
-			save_char : (parent_unicode_accumulate_char { input : "System.Char.ConvertFromUtf32(" & unicode_accumulate_char & ")[0]" }).value
+			save_char : "\(indent)foreach (var \(Id)_c in System.Char.ConvertFromUtf32(" & unicode_accumulate_char & ")) { " & (parent_unicode_accumulate_char { input : GenerateId Container & "_c" }).value & "}"
 			pok : parent_parse_complete(ok : True, indent : indent)
 			perr : parent_parse_complete(ok : False, indent : indent)
 			value : If ok Then (save_char & pok) Else perr
