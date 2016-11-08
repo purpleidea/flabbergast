@@ -178,6 +178,87 @@ python : {
 				With acc : "\(python_type)(") & "\n" & python_indent & ")"
 	}
 }
+
+{{{Tools for generating URIs, URLs, and form-encoded data.}}}
+uri : {
+	{{{Escaping conventions used for “unreserved” URL strings such as parameters}}}
+	escape_form_encoded_transform_tmpl : Template {
+		first : utils_lib.str_transform.range_tmpl { start : "\x00"  end : ","  replacement : [ "%", utf8_0 ] }
+		slash : utils_lib.str_transform.char_tmpl { char : "/"  replacement : "%2F" }
+		second : utils_lib.str_transform.range_tmpl { start : ":"  end : "@"  replacement : [ "%", utf8_0 ] }
+		third : utils_lib.str_transform.range_tmpl { start : "["  end : "^"  replacement : [ "%", utf8_0 ] }
+		grace : utils_lib.str_transform.char_tmpl { char : "`"  replacement : "%60" }
+		fourth : utils_lib.str_transform.range_tmpl { start : "{"  end : "}"  replacement : [ "%", utf8_0 ] }
+		delete : utils_lib.str_transform.char_tmpl { char : "\x7F"  replacement : "%7F" }
+		twobyte : utils_lib.str_transform.range_tmpl { start : "\x80"  end : "\u07FF"  replacement : [ "%", utf8_0, "%", utf8_1 ] }
+		threebyte : utils_lib.str_transform.range_tmpl { start : "\u0800"  end : "\uFFFF"  replacement : [ "%", utf8_0, "%", utf8_1, "%", utf8_2 ] }
+		fourbyte : utils_lib.str_transform.range_tmpl { start : "\U00010000"  end : "\U0010FFFF"  replacement : [ "%", utf8_0, "%", utf8_1, "%", utf8_2, "%", utf8_3 ] }
+	}
+	{{{Escaping conventions used by URLs allowing some special characters to remain unencoded}}}
+	escape_uri_transform_tmpl : Template {
+		first : utils_lib.str_transform.range_tmpl { start : "\x00"  end : " "  replacement : [ "%", utf8_0 ] }
+		quote : utils_lib.str_transform.char_tmpl { char : "\""  replacement : "%22" }
+		percent : utils_lib.str_transform.char_tmpl { char : "%"  replacement : "%25" }
+		slash : utils_lib.str_transform.char_tmpl { char : "/"  replacement : "%2F" }
+		lt : utils_lib.str_transform.char_tmpl { char : "<"  replacement : "%3C" }
+		gt : utils_lib.str_transform.char_tmpl { char : ">"  replacement : "%3E" }
+		back : utils_lib.str_transform.char_tmpl { char : "\\"  replacement : "%5C" }
+		grace : utils_lib.str_transform.char_tmpl { char : "`"  replacement : "%60" }
+		fourth : utils_lib.str_transform.range_tmpl { start : "{"  end : "}"  replacement : [ "%", utf8_0 ] }
+		delete : utils_lib.str_transform.char_tmpl { char : "\x7F"  replacement : "%7F" }
+		twobyte : utils_lib.str_transform.range_tmpl { start : "\x80"  end : "\u07FF"  replacement : [ "%", utf8_0, "%", utf8_1 ] }
+		threebyte : utils_lib.str_transform.range_tmpl { start : "\u0800"  end : "\uFFFF"  replacement : [ "%", utf8_0, "%", utf8_1, "%", utf8_2 ] }
+		fourbyte : utils_lib.str_transform.range_tmpl { start : "\U00010000"  end : "\U0010FFFF"  replacement : [ "%", utf8_0, "%", utf8_1, "%", utf8_2, "%", utf8_3 ] }
+	}
+
+	{{{The default form escaping transformations, for use with \{utils_lib.str_escape}.}}}
+	escape_form_encoded_transform : escape_form_encoded_transform_tmpl {}
+
+	{{{The default URI escaping transfromations, for use with \{utils_lib.str_escape}.}}}
+	escape_uri_transform : escape_uri_transform_tmpl {}
+
+	{{{Convert the arguments to a form-encoded string.}}}
+	form_encode : Template utils_lib.str_escape_list {
+		{{{A frame to encode as key-value pairs.}}}
+		args : Used
+		{{{A prefix to prepend to the output if non-empty.}}}
+		prefix : ""
+		transformations : Now uri.escape_form_encoded_transform
+		value +orig:
+			For name : Name, arg : orig, pos : Ordinal
+				Reduce (If pos > 1 Then "\(acc Enforce Str)&" Else prefix) & "\(name)=\(arg)"
+				With acc : ""
+	}
+
+	{{{Create a URL from parts.}}}
+	url : Template {
+		{{{The schema as a string.}}}
+		schema : Required
+		{{{The host name, if required.}}}
+		host : Null
+		{{{A list of strings which are the unescaped components of the path.}}}
+		path : []
+		{{{The document fragment, or null if not required.}}}
+		fragment : Null
+		{{{A frame of query-string parameters.}}}
+		parameters : {}
+		{{{Should the schema be suffixed with a colon or a colon followed by a double slash (like HTTP is).}}}
+		double_slash : True
+
+		host_str :
+			If host Is Null
+				Then ""
+				Else utils_lib.str_escape(host, transformations : uri.escape_uri_transform) & "/"
+		path_str : utils_lib.str_escape(args : path, transformations : uri.escape_form_encoded_transform, delimiter : "/")
+		fragment_str :
+			If fragment Is Null
+				Then ""
+				Else utils_lib.str_escape("", fragment, transformations : uri.escape_form_encoded_transform, delimiter : "#")
+		param_str : uri.form_encode(args : parameters, prefix : "?")
+		value : schema Enforce Str & ":" & (If double_slash Then "//" Else "") & host_str Enforce Str & path_str Enforce Str & param_str Enforce Str & fragment_str Enforce Str
+	}
+}
+
 {{{Tools for generation XML documents}}}
 xml : {
 	{{{An XML attribute found in an \{element}.}}}
