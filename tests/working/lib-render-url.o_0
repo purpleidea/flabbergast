@@ -1,2 +1,8 @@
-result : (From lib:render).uri.url { schema : "foo" path : ["x", "y"] fragment : "z" host : "f" parameters : { a : "foo " } }
-value : result.value == "foo://f/x/y?a=foo%20#z"
+result : (From lib:render).uri.url {
+	schema : "foo"
+	host : "fé"
+	path : ["x", "y"]
+	parameters : { a : "foo " }
+	fragment : "z"
+}
+value : result.value == "foo://xn--f-bga/x/y?a=foo%20#z"

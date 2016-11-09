@@ -232,3 +232,8 @@ bin_gunzip_list : Template {
 		For arg : args, arg_name : Name
 		Select arg_name : XComputation flabbergast.Decompress
 }
+str_punycode_list : Template {
+	value :
+		For arg : args, arg_name : Name
+		Select arg_name : XComputation flabbergast.Punycode
+}

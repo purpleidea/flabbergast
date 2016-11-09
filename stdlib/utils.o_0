@@ -744,6 +744,20 @@ str_prefixed_list : Template ( From lib:utilsinterop ).str_prefixed_list {
 	args : Used
 }
 
+{{{Encode or decode a string as punycode/IDN.}}}
+str_punycode : str_concatifier(base : str_punycode_list, delimiter : ".")
+
+str_punycode_list : Template (From lib:utilsinterop).str_punycode_list {
+	{{{A list of strings to transform.}}}
+	args : Used
+	{{{If true, encode a Unicode-string to an ASCII-only string. Otherwise, decode a ASCII-only string to a Unicode string.}}}
+	encode : True
+	{{{Allow Unicode code points that were not assigned in the Unicode 3.2 specification.}}}
+	allow_unassigned : True
+	{{{Require ASCII output to have only characters permitted by RFC 1122 and RFC 1123. This includes only the ASCII alphabetical and numerical characters, hypen, and period.}}}
+	strict_ascii : True
+}
+
 {{{Replace occurrences of string \{str} in a string to \{with}. See
 \{str_replace_list} for details.}}}
 str_replace : firstifier(base : str_replace_list)
