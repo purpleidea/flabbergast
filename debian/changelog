@@ -1,3 +1,18 @@
+flabbergast (0.19~ppa0) xenial; urgency=medium
+
+  * Add TypeOf expression
+  * Add astral plane escape sequence
+  * Add URL and form rendering with punycode support
+  * SQL: UPPER, LOWER, ILIKE, and GROUP BY
+  * Add gzip support
+  * Add settings: URI
+  * Avoid throwing exception when there are duplicate escaping ranges
+  * Load references from external libraries in help
+  * Fix name inclusion in stack traces
+  * Only set PermGen on older JVMs
+
+ -- Andre Masella <andre@masella.name>  Wed, 09 Nov 2016 19:56:55 -0500
+
 flabbergast (0.18~ppa1) trusty; urgency=medium
 
   * Fix incorrect build paths in installed wrapper scripts

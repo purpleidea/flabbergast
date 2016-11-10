@@ -41,10 +41,12 @@ pkgdata_DATA = \
 	o_0-xref.xsl \
 	$(NULL)
 
+PERCENT = %
+
 install-data-hook:
-	@for f in $$(find stdlib -name '*.o_0' -o -name '*.?o_0' -type f); do \
-		$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/$$(dirname $${f\#std}); \
-		$(INSTALL_DATA) $(srcdir)/$$f $(DESTDIR)$(pkgdatadir)/$${f\#std}; \
+	for f in $$(find stdlib \( -name '*.o_0' -o -name '*.?o_0' \) -type f -printf "$(PERCENT)P " ); do \
+		$(mkinstalldirs) $$(dirname $(DESTDIR)$(pkgdatadir)/lib/$${f}); \
+		$(INSTALL_DATA) $(srcdir)/stdlib/$$f $(DESTDIR)$(pkgdatadir)/lib/$${f}; \
 	done	
 
 clean-local:
