@@ -16,7 +16,7 @@
   <files>
     <file src="bin/*/*.exe" target="tools" exclude="bin/*/flabbergast-test.exe"/> 
     <file src="bin/*/*.dll" target="lib/net45" /> 
-    <file src="lib/**/*.o_0" target="content/lib" /> 
-    <file src="lib/**/*.no_0" target="content/lib" /> 
+    <file src="stdlib/**/*.o_0" target="content/lib" />
+    <file src="stdlib/**/*.no_0" target="content/lib" />
   </files>
 </package>
