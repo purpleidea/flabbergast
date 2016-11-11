@@ -27,6 +27,7 @@ config.log
 config.status
 configure
 debian/*.substvars
+debian/debhelper-build-stamp
 debian/files
 debian/flabbergast-cil
 debian/flabbergast-common

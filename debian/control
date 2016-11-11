@@ -13,26 +13,26 @@ Architecture: all
 Depends: ${misc:Depends}, ${java:Depends}, flabbergast-common (= ${binary:Version})
 Recommends: ${java:Recommends}
 Provides: flabbergast
-Description: Flabbergast Configuration Langauge - JVM Edition
+Description: Flabbergast Configuration Language - JVM Edition
  Run Flabbergast programs using the Java Virtual Machine.
 
 Package: flabbergast-cil
 Architecture: all
 Depends: ${misc:Depends}, ${cli:Depends}, flabbergast-common (= ${binary:Version})
 Provides: flabbergast
-Description: Flabbergast Configuration Langauge - CLI Edition
+Description: Flabbergast Configuration Language - CLI Edition
  Run Flabbergast programs using the Common Language Infrastructure.
 
 Package: flabbergast-common
 Architecture: all
 Depends: ${misc:Depends}
 Suggests: git
-Description: Flabbergast Configuration Langauge - Common Infrastructure
+Description: Flabbergast Configuration Language - Common Infrastructure
  Core libraries and tools for Flabbergast.
 
 Package: vim-flabbergast
 Architecture: all
 Recommends: vim-addon-manager
 Depends: ${misc:Depends}
-Description: Flabbergast Configuration Langauge - Vim syntax highlighting
- This provide syntax hilighting for the Flabbergast language in Vim.
+Description: Flabbergast Configuration Language - Vim syntax highlighting
+ This provide syntax highlighting for the Flabbergast language in Vim.
