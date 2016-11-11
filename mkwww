@@ -16,7 +16,7 @@ lexgrog --whatis ${TOPDIR}/*.7 ${TOPDIR}/*.1 ${TOPDIR}/platform/*/*.1 | sed -e '
 
 ${TOPDIR}/man2web
 
-. ./platform/jvm/testingclasspath.sh
+. ${TOPDIR}/platform/jvm/testingclasspath.sh
 java flabbergast.MainDocumenter -g "https://github.com/flabbergast-config/flabbergast/blob/${HEAD_REV}/stdlib" -o ${TOPDIR}/www ${TOPDIR}/stdlib
 
 for LIB in $(find ${TOPDIR}/www -name 'doc-*.xml')
