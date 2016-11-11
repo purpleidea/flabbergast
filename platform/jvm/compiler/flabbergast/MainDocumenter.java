@@ -93,9 +93,11 @@ public class MainDocumenter {
         try {
             for (String directory : directories) {
                 File dir = new File(directory);
-                success &= discover(dir, dir.getCanonicalPath().length() + 1,
-                                    result.getOptionValue('g'), result.hasOption('v'),
-                                    result.getOptionValue('o', "."), collector);
+                if (dir.isDirectory()) {
+                    success &= discover(dir, dir.getCanonicalPath().length() + 1,
+                                        result.getOptionValue('g'), result.hasOption('v'),
+                                        result.getOptionValue('o', "."), collector);
+                }
 
             }
         } catch (Exception e) {

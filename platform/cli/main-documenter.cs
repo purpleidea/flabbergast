@@ -69,7 +69,9 @@ public class Documenter {
         var collector = new ConsoleCollector();
         var success = true;
         foreach (var dir in directories) {
-            Discover(dir, dir.Length + (dir[dir.Length - 1] == Path.DirectorySeparatorChar ? 0 : 1), github, verbose, output_root, collector);
+            if (Directory.Exists(dir)) {
+                Discover(dir, dir.Length + (dir[dir.Length - 1] == Path.DirectorySeparatorChar ? 0 : 1), github, verbose, output_root, collector);
+            }
         }
         return success ? 0 : 1;
     }
