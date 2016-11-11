@@ -776,9 +776,9 @@ internal class ApiGenerator {
         doc.AppendChild(doc.CreateProcessingInstruction("xml-stylesheet", "href=\"o_0.xsl\" type=\"text/xsl\""));
         var node = doc.CreateElement("o_0:lib", "http://flabbergast.org/api");
         node.SetAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-        node.SetAttribute("name", library_name);
+        node.SetAttribute(node.NamespaceURI, "name", library_name);
         if (github != null) {
-            node.SetAttribute("github", github + "/" + library_name + ".o_0");
+            node.SetAttribute(node.NamespaceURI, "github", github + "/" + library_name + ".o_0");
         }
         doc.AppendChild(node);
         return new ApiGenerator(doc, node, new string[0]);
@@ -829,12 +829,12 @@ internal class ApiGenerator {
     }
     public ApiGenerator CreateChild(string name, CodeRegion region, Type type, bool informative) {
         var node = Document.CreateElement("o_0:attr", Document.DocumentElement.NamespaceURI);
-        node.SetAttribute("name", name);
-        node.SetAttribute("startline", region.StartRow.ToString());
-        node.SetAttribute("startcol", region.StartColumn.ToString());
-        node.SetAttribute("endline", region.EndRow.ToString());
-        node.SetAttribute("endcol", region.EndColumn.ToString());
-        node.SetAttribute("informative", informative ? "true" : "false");
+        node.SetAttribute(node.NamespaceURI, "name", name);
+        node.SetAttribute(node.NamespaceURI, "startline", region.StartRow.ToString());
+        node.SetAttribute(node.NamespaceURI, "startcol", region.StartColumn.ToString());
+        node.SetAttribute(node.NamespaceURI, "endline", region.EndRow.ToString());
+        node.SetAttribute(node.NamespaceURI, "endcol", region.EndColumn.ToString());
+        node.SetAttribute(node.NamespaceURI, "informative", informative ? "true" : "false");
         this.node.AppendChild(node);
 
         string base_name = name;

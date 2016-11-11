@@ -8,7 +8,7 @@
     <html>
       <head>
         <meta http-equiv="content-type" content="text/xml; charset=utf-8"/>
-        <title>lib:<xsl:value-of select="o_0:lib/@name"/> – Flabbergast Documentation</title>
+        <title>lib:<xsl:value-of select="o_0:lib/@o_0:name"/> – Flabbergast Documentation</title>
         <link rel="stylesheet" type="text/css" href="o_0.css"/>
         <style type="text/css" id="termcss"/>
         <script type="text/javascript" src="o_0.js"/>
@@ -34,7 +34,7 @@
             </div>
           </div>
         </div>
-        <h1><a href=".">⌂</a> lib:<xsl:value-of select="o_0:lib/@name"/></h1>
+        <h1><a href=".">⌂</a> lib:<xsl:value-of select="o_0:lib/@o_0:name"/></h1>
         <p>
           <xsl:apply-templates select="o_0:lib/o_0:description/*|o_0:lib/o_0:description/text()"/>
         </p>
@@ -52,11 +52,11 @@
     </html>
   </xsl:template>
   <xsl:template match="o_0:attr" mode="searchpane">
-    <xsl:variable name="id">item-<xsl:for-each select="./ancestor::o_0:attr"><xsl:value-of select="@name"/>-</xsl:for-each><xsl:value-of select="@name"/></xsl:variable>
-    <a href="{concat('#', $id)}" onclick="{concat('expandAll(', $apos, $id, $apos, ')')}"><xsl:attribute name="class"><xsl:for-each select="o_0:def[../@informative != 'true']|o_0:use|o_0:description//o_0:use"><xsl:value-of select="concat(local-name(), '_', translate(text(), '.', '-'), ' ')"/></xsl:for-each><xsl:if test="not(o_0:use|o_0:description//o_0:use)"> usenone</xsl:if><xsl:if test="@informative = 'true'"> defnone</xsl:if></xsl:attribute><xsl:for-each select="./ancestor::o_0:attr"><xsl:value-of select="concat(@name, substring(' .', 1 + count(o_0:type[text() = 'Frame']), 1))"/></xsl:for-each><xsl:value-of select="@name"/> (<xsl:value-of select="concat(@startline, ':', @startcol, '-', @endline, ':', @endcol)"/>)</a>
+    <xsl:variable name="id">item-<xsl:for-each select="./ancestor::o_0:attr"><xsl:value-of select="@o_0:name"/>-</xsl:for-each><xsl:value-of select="@o_0:name"/></xsl:variable>
+    <a href="{concat('#', $id)}" onclick="{concat('expandAll(', $apos, $id, $apos, ')')}"><xsl:attribute name="class"><xsl:for-each select="o_0:def[../@o_0:informative != 'true']|o_0:use|o_0:description//o_0:use"><xsl:value-of select="concat(local-name(), '_', translate(text(), '.', '-'), ' ')"/></xsl:for-each><xsl:if test="not(o_0:use|o_0:description//o_0:use)"> usenone</xsl:if><xsl:if test="@o_0:informative = 'true'"> defnone</xsl:if></xsl:attribute><xsl:for-each select="./ancestor::o_0:attr"><xsl:value-of select="concat(@o_0:name, substring(' .', 1 + count(o_0:type[text() = 'Frame']), 1))"/></xsl:for-each><xsl:value-of select="@o_0:name"/> (<xsl:value-of select="concat(@o_0:startline, ':', @o_0:startcol, '-', @o_0:endline, ':', @o_0:endcol)"/>)</a>
   </xsl:template>
   <xsl:template match="o_0:attr">
-    <xsl:variable name="id">item-<xsl:for-each select="./ancestor::o_0:attr"><xsl:value-of select="@name"/>-</xsl:for-each><xsl:value-of select="@name"/></xsl:variable>
+    <xsl:variable name="id">item-<xsl:for-each select="./ancestor::o_0:attr"><xsl:value-of select="@o_0:name"/>-</xsl:for-each><xsl:value-of select="@o_0:name"/></xsl:variable>
     <dt id="{$id}">
       <xsl:if test="not(.//o_0:description) and ./o_0:attr">
         <xsl:attribute name="class">hidden</xsl:attribute>
@@ -73,15 +73,15 @@
         </xsl:otherwise>
       </xsl:choose>
       <xsl:choose>
-        <xsl:when test="@informative = 'true'">
-          <span class="def" onclick="{concat('showDef(', $apos, @name, $apos, ');')}" title="Find definitions">
-            <xsl:value-of select="@name"/>
+        <xsl:when test="@o_0:informative = 'true'">
+          <span class="def" onclick="{concat('showDef(', $apos, @o_0:name, $apos, ');')}" title="Find definitions">
+            <xsl:value-of select="@o_0:name"/>
           </span>
           <xsl:text> </xsl:text>
         </xsl:when>
         <xsl:otherwise>
-          <span class="use" onclick="{concat('showUse(', $apos, @name, $apos, ');')}" title="Find uses">
-            <xsl:value-of select="@name"/>
+          <span class="use" onclick="{concat('showUse(', $apos, @o_0:name, $apos, ');')}" title="Find uses">
+            <xsl:value-of select="@o_0:name"/>
           </span>
           <xsl:text> </xsl:text>
         </xsl:otherwise>
@@ -89,13 +89,13 @@
       <div class="info">
         <xsl:apply-templates select="o_0:type"/>
         <xsl:choose>
-          <xsl:when test="/o_0:lib/@github">
-            <a href="{concat(/o_0:lib/@github, '#L', @startline, '-L', @endline)}" title="View Source">
-              <xsl:value-of select="concat(/o_0:lib/@name, '.o_0:', @startline, ':', @startcol, '-', @endline, ':', @endcol)"/>
+          <xsl:when test="/o_0:lib/@o_0:github">
+            <a href="{concat(/o_0:lib/@o_0:github, '#L', @o_0:startline, '-L', @o_0:endline)}" title="View Source">
+              <xsl:value-of select="concat(/o_0:lib/@o_0:name, '.o_0:', @o_0:startline, ':', @o_0:startcol, '-', @o_0:endline, ':', @o_0:endcol)"/>
             </a>
           </xsl:when>
           <xsl:otherwise>
-            <xsl:value-of select="concat(/o_0:lib/@name, '.o_0:', @startline, ':', @startcol, '-', @endline, ':', @endcol)"/>
+            <xsl:value-of select="concat(/o_0:lib/@o_0:name, '.o_0:', @o_0:startline, ':', @o_0:startcol, '-', @o_0:endline, ':', @o_0:endcol)"/>
           </xsl:otherwise>
         </xsl:choose>
       </div>

@@ -25,9 +25,9 @@ class ApiGenerator {
         Element node = doc.createElementNS("http://flabbergast.org/api",
                                            "o_0:lib");
         node.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-        node.setAttribute("name", library_name);
+        node.setAttributeNS(node.getNamespaceURI(), "name", library_name);
         if (github != null) {
-            node.setAttribute("github", github + "/" + library_name + ".o_0");
+            node.setAttributeNS(node.getNamespaceURI(), "github", github + "/" + library_name + ".o_0");
         }
         doc.appendChild(node);
         return new ApiGenerator(doc, node, new String[0]);
@@ -67,12 +67,18 @@ class ApiGenerator {
                                     TypeSet type, boolean informative) {
         Element node = document.createElementNS(document.getDocumentElement()
                                                 .getNamespaceURI(), "o_0:attr");
-        node.setAttribute("name", name);
-        node.setAttribute("startline", Integer.toString(region.getStartRow()));
-        node.setAttribute("startcol", Integer.toString(region.getStartColumn()));
-        node.setAttribute("endline", Integer.toString(region.getEndRow()));
-        node.setAttribute("endcol", Integer.toString(region.getEndColumn()));
-        node.setAttribute("informative", informative ? "true" : "false");
+        node.setAttributeNS(document.getDocumentElement()
+                            .getNamespaceURI(), "name", name);
+        node.setAttributeNS(document.getDocumentElement()
+                            .getNamespaceURI(), "startline", Integer.toString(region.getStartRow()));
+        node.setAttributeNS(document.getDocumentElement()
+                            .getNamespaceURI(), "startcol", Integer.toString(region.getStartColumn()));
+        node.setAttributeNS(document.getDocumentElement()
+                            .getNamespaceURI(), "endline", Integer.toString(region.getEndRow()));
+        node.setAttributeNS(document.getDocumentElement()
+                            .getNamespaceURI(), "endcol", Integer.toString(region.getEndColumn()));
+        node.setAttributeNS(document.getDocumentElement()
+                            .getNamespaceURI(), "informative", informative ? "true" : "false");
         this.node.appendChild(node);
 
         String base_name = name;
