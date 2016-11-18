@@ -63,7 +63,7 @@ public class StringFromBytes : Computation {
         this.source_reference = source_ref;
         this.context = context;
     }
-    protected override bool Run() {
+    protected override void Run() {
         if (input == null) {
             Computation input_lookup = new Lookup(task_master, source_reference, new [] {"arg"}, context);
             input_lookup.Notify(input_result => {
@@ -93,15 +93,13 @@ public class StringFromBytes : Computation {
             });
 
             if (Interlocked.Decrement(ref interlock) > 0) {
-                return false;
+                return;
             }
         }
         try {
             result = new SimpleStringish(encoding.GetString(input));
-            return true;
         } catch (DecoderFallbackException e) {
             task_master.ReportOtherError(source_reference, String.Format("Cannot decode byte {0}.", e.Index));
-            return false;
         }
     }
 }
@@ -119,7 +117,7 @@ public class FromBase64 : Computation {
         this.context = context;
     }
 
-    protected override bool Run() {
+    protected override void Run() {
         if (input == null) {
             var input_lookup = new Lookup(task_master, source_reference,
                                           new String[] {"arg"}, context);
@@ -136,16 +134,13 @@ public class FromBase64 : Computation {
             });
 
             if (Interlocked.Decrement(ref interlock) > 0) {
-                return false;
             }
         }
 
         try {
             result = Convert.FromBase64String(input);
-            return true;
         } catch (Exception e) {
             task_master.ReportOtherError(source_reference, e.Message);
-            return false;
         }
     }
 }
@@ -163,7 +158,7 @@ public class Decompress : Computation {
         this.context = context;
     }
 
-    protected override bool Run() {
+    protected override void Run() {
         if (input == null) {
             var input_lookup = new Lookup(task_master, source_reference,
                                           new String[] {"arg"}, context);
@@ -180,7 +175,7 @@ public class Decompress : Computation {
             });
 
             if (Interlocked.Decrement(ref interlock) > 0) {
-                return false;
+                return;
             }
         }
 
@@ -196,11 +191,9 @@ public class Decompress : Computation {
                     memory.Write(buffer, 0, count);
                 }
                 result = memory.ToArray();
-                return true;
             }
         } catch (Exception e) {
             task_master.ReportOtherError(source_reference, e.Message);
-            return false;
         }
     }
 }

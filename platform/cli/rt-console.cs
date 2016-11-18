@@ -137,10 +137,9 @@ public class PrintResult : Computation {
         }
     }
 
-    protected override bool Run() {
+    protected override void Run() {
         source.Notify(HandleFrameResult);
         task_master.Slot(source);
-        return false;
     }
 }
 }

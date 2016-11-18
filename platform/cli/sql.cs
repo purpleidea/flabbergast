@@ -78,7 +78,7 @@ public class DbQuery : Computation {
         this.self = self;
     }
 
-    protected override bool Run() {
+    protected override void Run() {
         if (connection == null) {
             new Lookup(task_master, source_ref, new [] {"connection"},
             context).Notify(return_value =>  {
@@ -123,7 +123,7 @@ public class DbQuery : Computation {
                                                  Stringish.NameForType(return_value.GetType())));
             });
             if (Interlocked.Decrement(ref interlock) > 0) {
-                return false;
+                return;
             }
         }
         try {
@@ -145,7 +145,7 @@ public class DbQuery : Computation {
                 if (reader.GetName(col).StartsWith("$")) {
                     var attr_name = reader.GetName(col).Substring(1);
                     if (!task_master.VerifySymbol(source_ref, attr_name)) {
-                        return false;
+                        return;
                     }
                     retrievers.Add((rs, frame, _task_master) => frame.Set(attr_name, rs.IsDBNull(column) ? Precomputation.Capture(Unit.NULL) : Lookup.Do(rs.GetString(column).Split('.'))));
                     continue;
@@ -162,7 +162,7 @@ public class DbQuery : Computation {
                 }
                 if (!task_master.VerifySymbol(source_ref,
                                               reader.GetName(col))) {
-                    return false;
+                    return;
                 }
                 retrievers.Add(Bind(reader.GetName(col), col, unpacker));
             }
@@ -182,10 +182,10 @@ public class DbQuery : Computation {
             }
             list.Slot();
             result = list;
-            return true;
+            return;
         } catch (DataException e) {
             task_master.ReportOtherError(source_ref, e.Message);
-            return false;
+            return;
         }
     }
 }

@@ -616,7 +616,6 @@ internal class Environment : CodeRegion {
                 source_reference.Load(generator);
                 generator.Builder.Emit(OpCodes.Ldstr, narrow_error);
                 generator.Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new[] { typeof(SourceReference), typeof(string) }));
-                generator.Builder.Emit(OpCodes.Ldc_I4_0);
                 generator.Builder.Emit(OpCodes.Ret);
                 return;
             }
@@ -630,7 +629,6 @@ internal class Environment : CodeRegion {
             generator.DecrementInterlock(generator.Builder);
             var end_label = generator.Builder.DefineLabel();
             generator.Builder.Emit(OpCodes.Brfalse, end_label);
-            generator.Builder.Emit(OpCodes.Ldc_I4_0);
             generator.Builder.Emit(OpCodes.Ret);
             generator.Builder.MarkLabel(end_label);
             generator.JumpToState(state);

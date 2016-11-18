@@ -132,17 +132,16 @@ public class Lookup : Computation {
         return names[index];
     }
 
-    protected override bool Run() {
+    protected override void Run() {
         while (frame_index < frames.Length) {
             int index = frame_index++;
             var root_attempt = new Attempt(this, 0, index, frames[index]);
             known_attempts.AddLast(root_attempt);
             if (frames[index].GetOrSubscribe(names[0], root_attempt.Consume)) {
-                return false;
+                return;
             }
         }
         task_master.ReportLookupError(this, null);
-        return false;
     }
 }
 }

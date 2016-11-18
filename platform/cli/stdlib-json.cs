@@ -79,12 +79,12 @@ public class JsonParser : Computation {
             task_master.ReportOtherError(source_ref, String.Format("Expected type “Str” but got “{0}”.", Stringish.NameForType(result.GetType())));
         }
     }
-    protected override bool Run() {
+    protected override void Run() {
         if (input == null) {
             var input_lookup = new Lookup(task_master, source_ref, new [] {"arg"}, context);
             input_lookup.Notify(HandleArg);
             if (Interlocked.Decrement(ref interlock) > 0) {
-                return false;
+                return;
             }
         }
         try {
@@ -92,10 +92,8 @@ public class JsonParser : Computation {
             var tmpl = new Template(source_ref,  context, self);
             tmpl["json_root"] = Dispatch(Unit.NULL, json_value);
             result = tmpl;
-            return true;
         } catch (Exception e) {
             task_master.ReportOtherError(source_ref, e.Message);
-            return false;
         }
     }
 }

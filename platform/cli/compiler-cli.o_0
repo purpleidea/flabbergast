@@ -851,7 +851,6 @@ kws : compiler_lib.kws_repl_tmpl {
 					"\(sum_indent)\(message.storage_name).Load(\(generator));" &
 					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Callvirt, typeof(Stringish).GetMethod(\"ToString\"));" &
 					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Callvirt, typeof(TaskMaster).GetMethod(\"ReportOtherError\", new System.Type[] { typeof(SourceReference), typeof(string) }));" &
-					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);" &
 					"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);"
 				)
 		}
@@ -895,7 +894,6 @@ kws : compiler_lib.kws_repl_tmpl {
 				"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \"Division by zero is an undignified operation.\");" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Callvirt, typeof(TaskMaster).GetMethod(\"ReportOtherError\", new System.Type[] { typeof(SourceReference), typeof(string) }));" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);" &
 				"\(sum_indent)\(generator).Builder.MarkLabel(\(Id)_ok);" &
 				"\(sum_indent)\(builder).Emit(System.Reflection.Emit.OpCodes.Div);"
@@ -915,7 +913,6 @@ kws : compiler_lib.kws_repl_tmpl {
 				"\(sum_indent)\(parameters.source_reference.storage_name).Load(\(generator));" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldstr, \"The modulus by zero is a mathematical koan.\");" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Callvirt, typeof(TaskMaster).GetMethod(\"ReportOtherError\", new System.Type[] { typeof(SourceReference), typeof(string) }));" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);" &
 				"\(sum_indent)\(generator).Builder.MarkLabel(\(Id)_ok);" &
 				"\(sum_indent)\(builder).Emit(System.Reflection.Emit.OpCodes.Rem);"
@@ -1926,7 +1923,6 @@ codegen : compiler_lib.codegen_tmpl {
 		extra_indent : ""
 		gen_gen +: {
 			value :
-				"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4_0);" &
 				"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);"
 		}
 	}

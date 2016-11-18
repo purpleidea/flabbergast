@@ -53,10 +53,9 @@ public class CheckResult : Computation {
         private set;
     }
 
-    protected override bool Run() {
+    protected override void Run() {
         var computation = (Computation) Activator.CreateInstance(test_target, task_master);
         computation.Notify(HandleFrameResult);
-        return false;
     }
 
     private void HandleFrameResult(object result) {

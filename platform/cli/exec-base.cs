@@ -47,10 +47,10 @@ public abstract class Computation {
     * Called by the TaskMaster to start or continue computation.
     */
     internal void Compute() {
-        if (result == null && Run()) {
+        if (result == null) {
+            Run();
             if (result == null) {
-                throw new InvalidOperationException("The computation " + GetType() +
-                                                    " did not return a value. This is a bug.");
+                return;
             }
             WakeupListeners();
         }
@@ -69,7 +69,7 @@ public abstract class Computation {
         Notify(new_consumer, false);
     }
 
-    public void Notify(ConsumeResult new_consumer, bool needs_slot) {
+    private void Notify(ConsumeResult new_consumer, bool needs_slot) {
         Monitor.Enter(ex);
         if (result == null) {
             if (consumer == null) {
@@ -111,7 +111,7 @@ public abstract class Computation {
     * returns true, the computation is finished. Otherwise, it is assumed that
     * the computation needs to wait another value.
     */
-    protected abstract bool Run();
+    protected abstract void Run();
 
     public void Slot() {
         Monitor.Enter(ex);

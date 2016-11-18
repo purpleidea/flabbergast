@@ -32,7 +32,7 @@ public class Instantiation : Computation, IEnumerable<string> {
         return this.GetEnumerator();
     }
 
-    protected override bool Run() {
+    protected override void Run() {
         if (tmpl == null) {
             new Lookup(task_master, src_ref, names, context).Notify(tmpl_result => {
                 if (tmpl_result is Template) {
@@ -45,7 +45,7 @@ public class Instantiation : Computation, IEnumerable<string> {
                 }
             });
             if (Interlocked.Decrement(ref interlock) > 0) {
-                return false;
+                return;
             }
         }
         var frame = new MutableFrame(task_master, new JunctionReference("instantiation", "<native>", 0, 0, 0, 0, src_ref, tmpl.SourceReference), Context.Append(context, tmpl.Context), container);
@@ -58,7 +58,6 @@ public class Instantiation : Computation, IEnumerable<string> {
             }
         }
         result = frame;
-        return true;
     }
 }
 }

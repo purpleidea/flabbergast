@@ -19,7 +19,7 @@ public class ParseDouble : Computation {
         this.context = context;
     }
 
-    protected override bool Run() {
+    protected override void Run() {
         if (input == null) {
             var input_lookup = new Lookup(task_master, source_reference,
                                           new String[] {"arg"}, context);
@@ -36,16 +36,14 @@ public class ParseDouble : Computation {
             });
 
             if (Interlocked.Decrement(ref interlock) > 0) {
-                return false;
+                return;
             }
         }
 
         try {
             result = Convert.ToDouble(input);
-            return true;
         } catch (Exception e) {
             task_master.ReportOtherError(source_reference, e.Message);
-            return false;
         }
     }
 }
@@ -65,7 +63,7 @@ public class ParseInt : Computation {
         this.context = context;
     }
 
-    protected override bool Run() {
+    protected override void Run() {
         if (input == null) {
             var input_lookup = new Lookup(task_master, source_reference,
                                           new String[] {"arg"}, context);
@@ -96,16 +94,14 @@ public class ParseInt : Computation {
             });
 
             if (Interlocked.Decrement(ref interlock) > 0) {
-                return false;
+                return;
             }
         }
 
         try {
             result = Convert.ToInt64(input, radix);
-            return true;
         } catch (Exception e) {
             task_master.ReportOtherError(source_reference, e.Message);
-            return false;
         }
     }
 }

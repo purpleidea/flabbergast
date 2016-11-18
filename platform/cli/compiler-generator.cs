@@ -370,7 +370,6 @@ internal abstract class Generator {
             source_reference.Load(Builder);
             Builder.Emit(OpCodes.Ldstr, String.Format("Unexpected type {0} instead of {1}.", Stringish.NameForType(original.BackingType), all_type_names));
             Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
-            Builder.Emit(OpCodes.Ldc_I4_0);
             Builder.Emit(OpCodes.Ret);
             return;
         }
@@ -393,7 +392,7 @@ internal abstract class Generator {
      */
     public int DefineState() {
         var id = entry_points.Count;
-        entry_points.Add(TypeBuilder.DefineMethod("Run_" + id, MethodAttributes.Private | MethodAttributes.HideBySig, typeof(bool), new System.Type[0]));
+        entry_points.Add(TypeBuilder.DefineMethod("Run_" + id, MethodAttributes.Private | MethodAttributes.HideBySig, typeof(void), new System.Type[0]));
         return id;
     }
     public void EmitTypeError(LoadableValue source_reference, string message, params LoadableValue[] data) {
@@ -419,7 +418,6 @@ internal abstract class Generator {
         }
         Builder.Emit(OpCodes.Call, typeof(String).GetMethod("Format", signature));
         Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new [] { typeof(SourceReference), typeof(string) }));
-        Builder.Emit(OpCodes.Ldc_I4_0);
         Builder.Emit(OpCodes.Ret);
     }
     /**
@@ -494,7 +492,7 @@ internal abstract class Generator {
             JumpToState(1);
         }
 
-        var run_builder = TypeBuilder.DefineMethod("Run", MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig, typeof(bool), new System.Type[0]).GetILGenerator();
+        var run_builder = TypeBuilder.DefineMethod("Run", MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig, typeof(void), new System.Type[0]).GetILGenerator();
         var call_labels = new Label[entry_points.Count];
         for (var it = 0; it < entry_points.Count; it++) {
             call_labels[it] = run_builder.DefineLabel();
@@ -561,7 +559,6 @@ internal abstract class Generator {
             source_reference.Load(Builder);
             Builder.Emit(OpCodes.Ldstr, String.Format("Cannot find overloaded matching method for {0}.{1}({2}).", methods[0].Name, methods[0].ReflectedType.Name, String.Join(",", arguments.Select(a => Stringish.NameForType(a.BackingType)))));
             Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
-            Builder.Emit(OpCodes.Ldc_I4_0);
             Builder.Emit(OpCodes.Ret);
             return null;
         }
@@ -749,7 +746,6 @@ internal abstract class Generator {
         DecrementInterlock(Builder);
         var label = Builder.DefineLabel();
         Builder.Emit(OpCodes.Brfalse, label);
-        Builder.Emit(OpCodes.Ldc_I4_0);
         Builder.Emit(OpCodes.Ret);
         Builder.MarkLabel(label);
         JumpToState(state);
@@ -766,7 +762,6 @@ internal abstract class Generator {
     public void Return(LoadableValue result) {
         SlotIfFrame(result);
         CopyField(result, typeof(Computation).GetField("result", BindingFlags.NonPublic | BindingFlags.Instance));
-        Builder.Emit(OpCodes.Ldc_I4_1);
         Builder.Emit(OpCodes.Ret);
     }
     public void SlotIfFrame(LoadableValue result) {
@@ -936,7 +931,6 @@ internal class FunctionGenerator : Generator {
             Builder.Emit(OpCodes.Ldfld, original_computation);
             GenerateConsumeResult(InitialOriginal, false);
             Builder.Emit(OpCodes.Callvirt, typeof(Computation).GetMethod("Notify", new[] { typeof(ConsumeResult) }));
-            Builder.Emit(OpCodes.Ldc_I4_0);
             Builder.Emit(OpCodes.Ret);
             MarkState(state);
         }

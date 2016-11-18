@@ -148,7 +148,7 @@ public class Escape : Computation {
         });
     }
 
-    protected override bool Run() {
+    protected override void Run() {
         if (!state) {
             var input_lookup = new Lookup(task_master, source_ref, new [] {"args"}, context);
             input_lookup.Notify(HandleArgs);
@@ -156,7 +156,7 @@ public class Escape : Computation {
             transformation_lookup.Notify(HandleTransformations);
             state = true;
             if (Interlocked.Decrement(ref interlock) > 0) {
-                return false;
+                return ;
             }
         }
         var output_frame = new MutableFrame(task_master, source_ref, context, self);
@@ -189,7 +189,6 @@ public class Escape : Computation {
             output_frame.Set(entry.Key, new SimpleStringish(buffer.ToString()));
         }
         result = output_frame;
-        return true;
     }
 }
 }

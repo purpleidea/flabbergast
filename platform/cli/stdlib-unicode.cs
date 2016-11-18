@@ -54,7 +54,7 @@ public class CharacterCategory : Computation {
         this.context = context;
         this.container = self;
     }
-    protected override bool Run() {
+    protected override void Run() {
         if (mappings.Count == 0) {
             interlock = categories.Count + 2;
             Computation input_lookup = new Lookup(task_master, source_reference, new [] {"arg"}, context);
@@ -80,7 +80,7 @@ public class CharacterCategory : Computation {
             }
 
             if (Interlocked.Decrement(ref interlock) > 0) {
-                return false;
+                return;
             }
         }
         var frame = new MutableFrame(task_master, source_reference, context, container);
@@ -88,7 +88,6 @@ public class CharacterCategory : Computation {
             frame.Set(it + 1, mappings[Char.GetUnicodeCategory(input[it])]);
         }
         result = frame;
-        return true;
     }
 }
 public class StringToCodepoints : Computation {
@@ -105,7 +104,7 @@ public class StringToCodepoints : Computation {
         this.context = context;
         this.container = self;
     }
-    protected override bool Run() {
+    protected override void Run() {
         if (input == null) {
             Computation input_lookup = new Lookup(task_master, source_reference, new [] {"arg"}, context);
             input_lookup.Notify(input_result => {
@@ -120,7 +119,7 @@ public class StringToCodepoints : Computation {
             });
 
             if (Interlocked.Decrement(ref interlock) > 0) {
-                return false;
+                return;
             }
         }
         var frame = new MutableFrame(task_master, source_reference, context, container);
@@ -128,7 +127,6 @@ public class StringToCodepoints : Computation {
             frame.Set(it + 1, (long) Char.ConvertToUtf32(input, it));
         }
         result = frame;
-        return true;
     }
 }
 public class Punycode : Computation {
@@ -140,15 +138,13 @@ public class Punycode : Computation {
 
     private SourceReference source_reference;
     private Context context;
-    private Frame container;
 
     public Punycode(TaskMaster task_master, SourceReference source_ref,
                     Context context, Frame self, Frame container) : base(task_master) {
         this.source_reference = source_ref;
         this.context = context;
-        this.container = self;
     }
-    protected override bool Run() {
+    protected override void Run() {
         if (input == null) {
             interlock = 5;
             new Lookup(task_master, source_reference, new [] {"arg"}, context).Notify(input_result => {
@@ -192,15 +188,13 @@ public class Punycode : Computation {
                 }
             });
             if (Interlocked.Decrement(ref interlock) > 0) {
-                return false;
+                return;
             }
         }
         try {
             result = new SimpleStringish(encode ? mapping.GetAscii(input) : mapping.GetUnicode(input));
-            return true;
         } catch (ArgumentException e) {
             task_master.ReportOtherError(source_reference, "Invalid punycode: " + e.Message);
-            return false;
         }
     }
 }

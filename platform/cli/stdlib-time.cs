@@ -157,29 +157,27 @@ class Compare : BaseTime {
     private bool first = true;
 
     public Compare(TaskMaster task_master, SourceReference source_ref, Context context, Frame self, Frame container) : base(task_master, source_ref, context, self, container) {}
-    protected override bool Run() {
+    protected override void Run() {
         if (first) {
             first = false;
             interlock = 3;
             GetTime(x => left = x, "arg");
             GetTime(x => right = x, "to");
             if (Interlocked.Decrement(ref interlock) > 0) {
-                return false;
+                return;
             }
         }
         result = (left - right).TotalSeconds;
-        return true;
     }
 }
 
 class FromUnix : BaseTime {
     public FromUnix(TaskMaster task_master, SourceReference source_ref, Context context, Frame self, Frame container) : base(task_master, source_ref, context, self, container) {}
-    protected override bool Run() {
+    protected override void Run() {
         GetUnixTime(d => {
             result = MakeTime(d);
             WakeupListeners();
         }, context);
-        return false;
     }
 }
 
@@ -187,7 +185,7 @@ class FromParts : BaseParts {
     private bool first = true;
     private DateTimeKind kind;
     public FromParts(TaskMaster task_master, SourceReference source_ref, Context context, Frame self, Frame container) : base(task_master, source_ref, context, self, container) {}
-    protected override bool Run() {
+    protected override void Run() {
         if (first) {
             first = false;
             interlock = 2;
@@ -203,19 +201,18 @@ class FromParts : BaseParts {
             });
             LookupParts(false);
             if (Interlocked.Decrement(ref interlock) > 0) {
-                return false;
+                return;
             }
         }
         result = MakeTime(new DateTime((int) years, (int) months, (int) days, (int) hours, (int) minutes, (int) seconds, (int) milliseconds, kind));
-        return true;
     }
 }
 
 class LocalNow : BaseTime {
     public LocalNow(TaskMaster task_master, SourceReference source_ref, Context context, Frame self, Frame container) : base(task_master, source_ref, context, self, container) {}
-    protected override bool Run() {
+    protected override void Run() {
         result = MakeTime(DateTime.Now);
-        return true;
+        return;
     }
 }
 
@@ -223,14 +220,14 @@ class Modify : BaseParts {
     private bool first = true;
     private DateTime initial;
     public Modify(TaskMaster task_master, SourceReference source_ref, Context context, Frame self, Frame container) : base(task_master, source_ref, context, self, container) {}
-    protected override bool Run() {
+    protected override void Run() {
         if (first) {
             first = false;
             interlock = 2;
             GetTime(d => initial = d, "arg");
             LookupParts(true);
             if (Interlocked.Decrement(ref interlock) > 0) {
-                return false;
+                return;
             }
         }
         result = MakeTime(initial
@@ -241,7 +238,7 @@ class Modify : BaseParts {
                           .AddDays(days)
                           .AddMonths((int) months)
                           .AddYears((int) years));
-        return true;
+        return;
     }
 }
 
@@ -250,7 +247,7 @@ class SwitchZone : BaseTime {
     private DateTime initial;
     private bool to_utc;
     public SwitchZone(TaskMaster task_master, SourceReference source_ref, Context context, Frame self, Frame container) : base(task_master, source_ref, context, self, container) {}
-    protected override bool Run() {
+    protected override void Run() {
         if (first) {
             first = false;
             interlock = 3;
@@ -266,19 +263,17 @@ class SwitchZone : BaseTime {
                 }
             });
             if (Interlocked.Decrement(ref interlock) > 0) {
-                return false;
+                return;
             }
         }
         result = MakeTime(to_utc ? initial.ToUniversalTime() : initial.ToLocalTime());
-        return true;
     }
 }
 
 class UtcNow : BaseTime {
     public UtcNow(TaskMaster task_master, SourceReference source_ref, Context context, Frame self, Frame container) : base(task_master, source_ref, context, self, container) {}
-    protected override bool Run() {
+    protected override void Run() {
         result = MakeTime(DateTime.UtcNow);
-        return true;
     }
 }
 }
