@@ -5,10 +5,8 @@ import java.io.ByteArrayInputStream;
 import java.util.zip.GZIPInputStream;
 import java.io.ByteArrayOutputStream;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 public class Decompress extends Computation {
-    private AtomicInteger interlock = new AtomicInteger();
+    private InterlockedLookup interlock;
     private byte[] input;
 
     private SourceReference source_reference;
@@ -23,31 +21,11 @@ public class Decompress extends Computation {
     }
     @Override
     protected void run() {
-        if (input == null) {
-            interlock.set(2);
-            Computation input_lookup = new Lookup(task_master,
-                                                  source_reference, new String[] {"arg"}, context);
-            input_lookup.listen(new ConsumeResult() {
-
-                @Override
-                public void consume(Object result) {
-                    if (result instanceof byte[]) {
-                        input = (byte[])result;
-                        if (interlock.decrementAndGet() == 0) {
-                            task_master.slot(Decompress.this);
-                        }
-                    } else {
-                        task_master.reportOtherError(source_reference,
-                                                     "Input argument must be a Bin.");
-                    }
-                }
-            }
-
-                               );
-            if (interlock.decrementAndGet() > 0) {
-                return;
-            }
+        if (interlock == null) {
+            interlock = new InterlockedLookup(this, task_master, source_reference, context);
+            interlock.lookup(byte[].class, x->input = x, "arg");
         }
+        if (!interlock.away()) return;
         try {
             GZIPInputStream gunzip = new GZIPInputStream(new ByteArrayInputStream(input));
             ByteArrayOutputStream output = new ByteArrayOutputStream();

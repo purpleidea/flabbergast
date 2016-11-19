@@ -51,7 +51,7 @@ public class StringFromBytes : Computation {
         new System.Text.UTF8Encoding(false, true)
     };
 
-    private int interlock = 3;
+    private InterlockedLookup interlock;
     private byte[] input;
     private System.Text.Encoding encoding;
 
@@ -64,37 +64,19 @@ public class StringFromBytes : Computation {
         this.context = context;
     }
     protected override void Run() {
-        if (input == null) {
-            Computation input_lookup = new Lookup(task_master, source_reference, new [] {"arg"}, context);
-            input_lookup.Notify(input_result => {
-                if (input_result is byte[]) {
-                    input = (byte[]) input_result;
-                    if (Interlocked.Decrement(ref interlock) == 0) {
-                        task_master.Slot(this);
-                    }
-                } else {
-                    task_master.ReportOtherError(source_reference, "Input argument must be a Bin.");
+        if (interlock == null) {
+            interlock = new InterlockedLookup(this, task_master, source_reference, context);
+            interlock.Lookup<byte[]>(x => this.input = x, "arg");
+            interlock.Lookup<long>(index => {
+                if (index >= 0 && index < encodings.Length) {
+                    encoding = encodings[index];
                 }
-            });
-
-            Computation encoding_lookup = new Lookup(task_master, source_reference, new [] {"encoding"}, context);
-            encoding_lookup.Notify(encoding_result => {
-                if (encoding_result is long) {
-                    var index = (long) encoding_result;
-                    if (index >= 0 && index < encodings.Length) {
-                        encoding = encodings[index];
-                        if (Interlocked.Decrement(ref interlock) == 0) {
-                            task_master.Slot(this);
-                            return;
-                        }
-                    }
-                }
-                task_master.ReportOtherError(source_reference, "Invalid encoding.");
-            });
-
-            if (Interlocked.Decrement(ref interlock) > 0) {
-                return;
-            }
+            }, "encoding");
+        }
+        if (!interlock.Away()) return;
+        if (encoding == null) {
+            task_master.ReportOtherError(source_reference, "Invalid encoding.");
+            return;
         }
         try {
             result = new SimpleStringish(encoding.GetString(input));
@@ -105,7 +87,7 @@ public class StringFromBytes : Computation {
 }
 public class FromBase64 : Computation {
 
-    private int interlock = 2;
+    private InterlockedLookup interlock;
     private String input;
 
     private SourceReference source_reference;
@@ -118,24 +100,11 @@ public class FromBase64 : Computation {
     }
 
     protected override void Run() {
-        if (input == null) {
-            var input_lookup = new Lookup(task_master, source_reference,
-                                          new String[] {"arg"}, context);
-            input_lookup.Notify(input_result => {
-                if (input_result is Stringish) {
-                    input = input_result.ToString();
-                    if (Interlocked.Decrement(ref interlock) == 0) {
-                        task_master.Slot(this);
-                    }
-                } else {
-                    task_master.ReportOtherError(source_reference,
-                                                 "Input argument must be a string.");
-                }
-            });
-
-            if (Interlocked.Decrement(ref interlock) > 0) {
-            }
+        if (interlock == null) {
+            interlock = new InterlockedLookup(this, task_master, source_reference, context);
+            interlock.LookupStr(x => input = x, "arg");
         }
+        if (!interlock.Away()) return;
 
         try {
             result = Convert.FromBase64String(input);
@@ -146,7 +115,7 @@ public class FromBase64 : Computation {
 }
 public class Decompress : Computation {
 
-    private int interlock = 2;
+    private InterlockedLookup interlock;
     private byte[] input;
 
     private SourceReference source_reference;
@@ -159,25 +128,11 @@ public class Decompress : Computation {
     }
 
     protected override void Run() {
-        if (input == null) {
-            var input_lookup = new Lookup(task_master, source_reference,
-                                          new String[] {"arg"}, context);
-            input_lookup.Notify(input_result => {
-                if (input_result is byte[]) {
-                    input = (byte[])input_result;
-                    if (Interlocked.Decrement(ref interlock) == 0) {
-                        task_master.Slot(this);
-                    }
-                } else {
-                    task_master.ReportOtherError(source_reference,
-                                                 "Input argument must be a Bin.");
-                }
-            });
-
-            if (Interlocked.Decrement(ref interlock) > 0) {
-                return;
-            }
+        if (interlock == null) {
+            interlock = new InterlockedLookup(this, task_master, source_reference, context);
+            interlock.Lookup<byte[]>(x => input = x, "arg");
         }
+        if (!interlock.Away()) return;
 
         try {
 

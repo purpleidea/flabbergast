@@ -7,7 +7,7 @@ using System.Threading;
 namespace Flabbergast {
 public class ParseDouble : Computation {
 
-    private int interlock = 2;
+    private InterlockedLookup interlock;
     private String input;
 
     private SourceReference source_reference;
@@ -20,25 +20,11 @@ public class ParseDouble : Computation {
     }
 
     protected override void Run() {
-        if (input == null) {
-            var input_lookup = new Lookup(task_master, source_reference,
-                                          new String[] {"arg"}, context);
-            input_lookup.Notify(input_result => {
-                if (input_result is Stringish) {
-                    input = input_result.ToString();
-                    if (Interlocked.Decrement(ref interlock) == 0) {
-                        task_master.Slot(this);
-                    }
-                } else {
-                    task_master.ReportOtherError(source_reference,
-                                                 "Input argument must be a string.");
-                }
-            });
-
-            if (Interlocked.Decrement(ref interlock) > 0) {
-                return;
-            }
+        if (interlock == null) {
+            interlock = new InterlockedLookup(this, task_master, source_reference, context);
+            interlock.LookupStr(x => input = x, "arg");
         }
+        if (!interlock.Away()) return;
 
         try {
             result = Convert.ToDouble(input);
@@ -50,7 +36,7 @@ public class ParseDouble : Computation {
 
 public class ParseInt : Computation {
 
-    private int interlock = 3;
+    private InterlockedLookup interlock;
     private String input;
     private int radix;
 
@@ -64,39 +50,12 @@ public class ParseInt : Computation {
     }
 
     protected override void Run() {
-        if (input == null) {
-            var input_lookup = new Lookup(task_master, source_reference,
-                                          new String[] {"arg"}, context);
-            input_lookup.Notify(input_result => {
-                if (input_result is Stringish) {
-                    input = input_result.ToString();
-                    if (Interlocked.Decrement(ref interlock) == 0) {
-                        task_master.Slot(this);
-                    }
-                } else {
-                    task_master.ReportOtherError(source_reference,
-                                                 "Input argument must be a string.");
-                }
-            });
-
-            var radix_lookup = new Lookup(task_master, source_reference,
-                                          new String[] {"radix"}, context);
-            radix_lookup.Notify(radix_result => {
-                if (radix_result is Int64) {
-                    radix = (int)(long)radix_result;
-                    if (Interlocked.Decrement(ref interlock) == 0) {
-                        task_master.Slot(this);
-                    }
-                } else {
-                    task_master.ReportOtherError(source_reference,
-                                                 "Input argument must be a string.");
-                }
-            });
-
-            if (Interlocked.Decrement(ref interlock) > 0) {
-                return;
-            }
+        if (interlock == null) {
+            interlock = new InterlockedLookup(this, task_master, source_reference, context);
+            interlock.LookupStr(x => input = x, "arg");
+            interlock.Lookup<long>(x => radix = (int) x, "radix");
         }
+        if (!interlock.Away()) return;
 
         try {
             result = Convert.ToInt64(input, radix);

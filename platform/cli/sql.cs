@@ -66,7 +66,7 @@ public class DbQuery : Computation {
     private readonly SourceReference source_ref;
     private readonly Context context;
     private readonly Frame self;
-    private int interlock = 4;
+    private InterlockedLookup interlock;
     private DbConnection connection = null;
     private string query = null;
     private Template row_tmpl;
@@ -79,52 +79,11 @@ public class DbQuery : Computation {
     }
 
     protected override void Run() {
-        if (connection == null) {
-            new Lookup(task_master, source_ref, new [] {"connection"},
-            context).Notify(return_value =>  {
-                if (return_value is ReflectedFrame) {
-                    Object backing = ((ReflectedFrame) return_value).Backing;
-                    if (backing is DbConnection) {
-                        connection = (DbConnection) backing;
-                        if (Interlocked.Decrement(ref interlock) == 0) {
-                            task_master.Slot(this);
-                        }
-                        return;
-                    }
-                }
-                task_master
-                .ReportOtherError(source_ref,
-                                  "Expected “connection” to come from “sql:” import.");
-            });
-            new Lookup(task_master, source_ref, new [] {"sql_query"},
-            context).Notify(return_value => {
-                if (return_value is Stringish) {
-                    query = return_value.ToString();
-                    if (Interlocked.Decrement(ref interlock) == 0) {
-                        task_master.Slot(this);
-                    }
-                    return;
-                }
-                task_master.ReportOtherError(source_ref, string.Format(
-                                                 "Expected type Str for “sql_query”, but got {0}.",
-                                                 Stringish.NameForType(return_value.GetType())));
-            });
-            new Lookup(task_master, source_ref, new [] {"sql_row_tmpl"},
-            context).Notify(return_value => {
-                if (return_value is Template) {
-                    row_tmpl = (Template) return_value;
-                    if (Interlocked.Decrement(ref interlock) == 0) {
-                        task_master.Slot(this);
-                    }
-                    return;
-                }
-                task_master.ReportOtherError(source_ref, string.Format(
-                                                 "Expected type Template for “sql_row_tmpl”, but got {0}.",
-                                                 Stringish.NameForType(return_value.GetType())));
-            });
-            if (Interlocked.Decrement(ref interlock) > 0) {
-                return;
-            }
+        if (interlock == null) {
+            interlock = new InterlockedLookup(this, task_master, source_ref, context);
+            interlock.LookupMarshalled<DbConnection>(x => connection = x, "Expected “{0}” to come from “sql:” import.",  "connection");
+            interlock.LookupStr(x => query = x, "sql_query");
+            interlock.Lookup<Template>(x => row_tmpl = x, "sql_row_tmpl");
         }
         try {
             var command = connection.CreateCommand();

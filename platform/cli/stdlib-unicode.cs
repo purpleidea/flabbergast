@@ -41,7 +41,7 @@ public class CharacterCategory : Computation {
 
     private Dictionary<UnicodeCategory, object> mappings = new Dictionary<UnicodeCategory, object>();
 
-    private int interlock;
+    private InterlockedLookup interlock;
     private String input;
 
     private SourceReference source_reference;
@@ -55,34 +55,15 @@ public class CharacterCategory : Computation {
         this.container = self;
     }
     protected override void Run() {
-        if (mappings.Count == 0) {
-            interlock = categories.Count + 2;
-            Computation input_lookup = new Lookup(task_master, source_reference, new [] {"arg"}, context);
-            input_lookup.Notify(input_result => {
-                if (input_result is Stringish) {
-                    input = input_result.ToString();
-                    if (Interlocked.Decrement(ref interlock) == 0) {
-                        task_master.Slot(this);
-                    }
-                } else {
-                    task_master.ReportOtherError(source_reference, "Input argument must be a string.");
-                }
-            });
-
+        if (interlock == null) {
+            interlock = new InterlockedLookup(this, task_master, source_reference, context);
+            interlock.LookupStr(x => this.input = x, "arg");
             foreach (var entry in categories) {
-                var lookup = new Lookup(task_master, source_reference, new [] { entry.Value }, context);
-                lookup.Notify(cat_result => {
-                    mappings[entry.Key] = cat_result;
-                    if (Interlocked.Decrement(ref interlock) == 0) {
-                        task_master.Slot(this);
-                    }
-                });
-            }
-
-            if (Interlocked.Decrement(ref interlock) > 0) {
-                return;
+                var key = entry.Key;
+                interlock.Lookup<object>(x => mappings[key] = x, entry.Value);
             }
         }
+        if (!interlock.Away()) return;
         var frame = new MutableFrame(task_master, source_reference, context, container);
         for (int it = 0; it < input.Length; it++) {
             frame.Set(it + 1, mappings[Char.GetUnicodeCategory(input[it])]);
@@ -91,7 +72,7 @@ public class CharacterCategory : Computation {
     }
 }
 public class StringToCodepoints : Computation {
-    private int interlock = 2;
+    private InterlockedLookup interlock;
     private String input;
 
     private SourceReference source_reference;
@@ -105,23 +86,11 @@ public class StringToCodepoints : Computation {
         this.container = self;
     }
     protected override void Run() {
-        if (input == null) {
-            Computation input_lookup = new Lookup(task_master, source_reference, new [] {"arg"}, context);
-            input_lookup.Notify(input_result => {
-                if (input_result is Stringish) {
-                    input = input_result.ToString();
-                    if (Interlocked.Decrement(ref interlock) == 0) {
-                        task_master.Slot(this);
-                    }
-                } else {
-                    task_master.ReportOtherError(source_reference, "Input argument must be a string.");
-                }
-            });
-
-            if (Interlocked.Decrement(ref interlock) > 0) {
-                return;
-            }
+        if (interlock == null) {
+            interlock = new InterlockedLookup(this, task_master, source_reference, context);
+            interlock.LookupStr(x => this.input = x, "arg");
         }
+        if (!interlock.Away()) return;
         var frame = new MutableFrame(task_master, source_reference, context, container);
         for (int it = 0; it < input.Length; it++) {
             frame.Set(it + 1, (long) Char.ConvertToUtf32(input, it));
@@ -130,7 +99,7 @@ public class StringToCodepoints : Computation {
     }
 }
 public class Punycode : Computation {
-    private int interlock;
+    private InterlockedLookup interlock;
 
     private String input;
     private System.Globalization.IdnMapping mapping = new System.Globalization.IdnMapping();
@@ -145,52 +114,14 @@ public class Punycode : Computation {
         this.context = context;
     }
     protected override void Run() {
-        if (input == null) {
-            interlock = 5;
-            new Lookup(task_master, source_reference, new [] {"arg"}, context).Notify(input_result => {
-                if (input_result is Stringish) {
-                    input = input_result.ToString();
-                    if (Interlocked.Decrement(ref interlock) == 0) {
-                        task_master.Slot(this);
-                    }
-                } else {
-                    task_master.ReportOtherError(source_reference, "Input argument must be a string.");
-                }
-            });
-            new Lookup(task_master, source_reference, new [] {"encode"}, context).Notify(input_result => {
-                if (input_result is bool) {
-                    encode = (bool) input_result;
-                    if (Interlocked.Decrement(ref interlock) == 0) {
-                        task_master.Slot(this);
-                    }
-                } else {
-                    task_master.ReportOtherError(source_reference, "“encode” argument must be a Boolean.");
-                }
-            });
-            new Lookup(task_master, source_reference, new [] {"allow_unassigned"}, context).Notify(input_result => {
-                if (input_result is bool) {
-                    mapping.AllowUnassigned = (bool) input_result;
-                    if (Interlocked.Decrement(ref interlock) == 0) {
-                        task_master.Slot(this);
-                    }
-                } else {
-                    task_master.ReportOtherError(source_reference, "“allow_unassigned” argument must be a Boolean.");
-                }
-            });
-            new Lookup(task_master, source_reference, new [] {"strict_ascii"}, context).Notify(input_result => {
-                if (input_result is bool) {
-                    mapping.UseStd3AsciiRules	= (bool) input_result;
-                    if (Interlocked.Decrement(ref interlock) == 0) {
-                        task_master.Slot(this);
-                    }
-                } else {
-                    task_master.ReportOtherError(source_reference, "“strict_ascii” argument must be a Boolean.");
-                }
-            });
-            if (Interlocked.Decrement(ref interlock) > 0) {
-                return;
-            }
+        if (interlock == null) {
+            interlock = new InterlockedLookup(this, task_master, source_reference, context);
+            interlock.LookupStr(x => input = x, "arg");
+            interlock.Lookup<bool>(x => encode = x, "encode");
+            interlock.Lookup<bool>(x => mapping.AllowUnassigned = x, "allow_unassigned");
+            interlock.Lookup<bool>(x => mapping.UseStd3AsciiRules	= x, "strict_ascii");
         }
+        if (!interlock.Away()) return;
         try {
             result = new SimpleStringish(encode ? mapping.GetAscii(input) : mapping.GetUnicode(input));
         } catch (ArgumentException e) {

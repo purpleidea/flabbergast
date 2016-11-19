@@ -3,9 +3,7 @@ package flabbergast;
 import java.util.HashMap;
 import java.util.Map;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-public class CharacterCategory extends Computation implements ConsumeResult {
+public class CharacterCategory extends Computation {
     private static final Map<Byte, String> categories;
     static {
         categories = new HashMap<Byte, String>();
@@ -44,24 +42,9 @@ public class CharacterCategory extends Computation implements ConsumeResult {
         categories.put(Character.OTHER_SYMBOL, "symbol_other");
     }
 
-    private class Category implements ConsumeResult {
-        Byte code;
-
-        public Category(Byte code) {
-            this.code = code;
-        }
-
-        @Override
-        public void consume(Object result) {
-            mappings.put(code, result);
-            if (interlock.decrementAndGet() == 0) {
-                task_master.slot(CharacterCategory.this);
-            }
-        }
-    }
     private Map<Byte, Object> mappings = new HashMap<Byte, Object>();
 
-    private AtomicInteger interlock = new AtomicInteger();
+    private InterlockedLookup interlock;
     private String input;
 
     private SourceReference source_reference;
@@ -76,35 +59,18 @@ public class CharacterCategory extends Computation implements ConsumeResult {
         this.context = context;
         this.container = self;
     }
-    @Override
-    public void consume(Object result) {
-        if (result instanceof Stringish) {
-            input = result.toString();
-            if (interlock.decrementAndGet() == 0) {
-                task_master.slot(this);
-            }
-        } else {
-            task_master.reportOtherError(source_reference,
-                                         "Input argument must be a string.");
-        }
-    }
 
     @Override
     protected void run() {
-        if (mappings.size() == 0) {
-            interlock.set(categories.size() + 2);
-            Computation input_lookup = new Lookup(task_master,
-                                                  source_reference, new String[] {"arg"}, context);
-            input_lookup.listen(this);
+        if (interlock == null) {
+            interlock = new InterlockedLookup(this, task_master, source_reference, context);
+            interlock.lookupStr(x->input = x, "arg");
             for (Map.Entry<Byte, String> entry : categories.entrySet()) {
-                Computation lookup = new Lookup(task_master, source_reference,
-                                                new String[] {entry.getValue() }, context);
-                lookup.listen(new Category(entry.getKey()));
-            }
-            if (interlock.decrementAndGet() > 0) {
-                return;
+                final Byte key = entry.getKey();
+                interlock.lookup(Object.class, x-> mappings.put(key, x), entry.getValue());
             }
         }
+        if (!interlock.away()) return;
         MutableFrame frame = new MutableFrame(task_master, source_reference,
                                               context, container);
         for (int it = 0; it < input.length(); it++) {

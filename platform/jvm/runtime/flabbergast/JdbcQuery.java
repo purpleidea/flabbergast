@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.joda.time.DateTime;
 
 public class JdbcQuery extends Computation {
@@ -110,7 +109,7 @@ public class JdbcQuery extends Computation {
     private final SourceReference source_ref;
     private final Context context;
     private final Frame self;
-    private final AtomicInteger interlock = new AtomicInteger(4);
+    private InterlockedLookup interlock;
     private Connection connection = null;
     private String query = null;
     private Template row_tmpl = null;
@@ -125,66 +124,13 @@ public class JdbcQuery extends Computation {
 
     @Override
     public void run() {
-        if (connection == null) {
-            new Lookup(task_master, source_ref, new String[] {"connection"},
-            context).listen(new ConsumeResult() {
-                @Override
-                public void consume(Object return_value) {
-                    if (return_value instanceof ReflectedFrame) {
-                        Object backing = ((ReflectedFrame) return_value)
-                                         .getBacking();
-                        if (backing instanceof Connection) {
-                            connection = (Connection) backing;
-                            if (interlock.decrementAndGet() == 0) {
-                                task_master.slot(JdbcQuery.this);
-                            }
-                            return;
-                        }
-                    }
-                    task_master
-                    .reportOtherError(source_ref,
-                                      "Expected “connection” to come from “sql:” import.");
-                }
-            });
-            new Lookup(task_master, source_ref, new String[] {"sql_query"},
-            context).listen(new ConsumeResult() {
-                @Override
-                public void consume(Object return_value) {
-                    if (return_value instanceof Stringish) {
-                        query = return_value.toString();
-                        if (interlock.decrementAndGet() == 0) {
-                            task_master.slot(JdbcQuery.this);
-                        }
-                        return;
-                    }
-                    task_master.reportOtherError(source_ref, String.format(
-                                                     "Expected type Str for “sql_query”, but got %s.",
-                                                     Stringish.nameForClass(return_value.getClass())));
-                }
-            });
-            new Lookup(task_master, source_ref, new String[] {"sql_row_tmpl"},
-            context).listen(new ConsumeResult() {
-                @Override
-                public void consume(Object return_value) {
-                    if (return_value instanceof Template) {
-                        row_tmpl = (Template) return_value;
-                        if (interlock.decrementAndGet() == 0) {
-                            task_master.slot(JdbcQuery.this);
-                        }
-                        return;
-                    }
-                    task_master.reportOtherError(
-                        source_ref,
-                        String.format(
-                            "Expected type Str for “sql_row_tmpl”, but got %s.",
-                            Stringish.nameForClass(return_value
-                                                   .getClass())));
-                }
-            });
-            if (interlock.decrementAndGet() > 0) {
-                return;
-            }
+        if (interlock == null) {
+            interlock = new InterlockedLookup(this, task_master, source_ref, context);
+            interlock.lookupMarshalled(Connection.class, x-> connection = x, "connection");
+            interlock.lookupStr(x-> query = x, "sql_query");
+            interlock.lookup(Template.class, x-> row_tmpl = x, "sql_row_tmpl");
         }
+        if (!interlock.away()) return;
         try {
             Statement stmt = connection.createStatement();
             ResultSet rs = stmt.executeQuery(query);

@@ -1,7 +1,6 @@
 package flabbergast;
 
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -110,7 +109,7 @@ public class JsonParser extends Computation {
     private SourceReference source_ref;
     private Context context;
     private Frame self;
-    private AtomicInteger interlock = new AtomicInteger(2);
+    private InterlockedLookup interlock;
 
     public JsonParser(TaskMaster task_master, SourceReference source_ref,
                       Context context, Frame self, Frame container) {
@@ -122,28 +121,10 @@ public class JsonParser extends Computation {
 
     @Override
     protected void run() {
-        if (json_text == null) {
-            Lookup input_lookup = new Lookup(task_master, source_ref,
-                                             new String[] {"arg"}, context);
-            input_lookup.listen(new ConsumeResult() {
-                @Override
-                public void consume(Object result) {
-                    if (result instanceof Stringish) {
-                        json_text = result.toString();
-                        if (interlock.decrementAndGet() == 0) {
-                            task_master.slot(JsonParser.this);
-                        }
-                    } else {
-                        task_master.reportOtherError(source_ref, String.format(
-                                                         "Expected “arg” to be a string. Got %s instead.",
-                                                         Stringish.nameForClass(result.getClass())));
-                    }
-                }
-            });
-            if (interlock.decrementAndGet() > 0) {
-                return;
-            }
+        if (interlock == null) {
+            interlock = new InterlockedLookup(this, task_master, source_ref, context);
         }
+        if (!interlock.away()) return;
         try {
             JSONTokener json_value = new JSONTokener(json_text);
             Template tmpl = new Template(source_ref, context,
