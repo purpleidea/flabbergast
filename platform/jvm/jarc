@@ -22,6 +22,6 @@ rm -rf .build
 
 # Binary JAR
 mkdir .build
-${JAVAC-javac} -source 1.5 -target 1.5 -g -encoding UTF-8 -sourcepath "$1" -d .build $(find "$1" -name '*.java')
+${JAVAC-javac} -source 1.8 -target 1.8 -g -encoding UTF-8 -sourcepath "$1" -d .build $(find "$1" -name '*.java')
 ${JAR-jar} cfm "flabbergast-${1}-${2}.jar" "${1}.manifest" -C .build .
 rm -rf .build
