@@ -16,7 +16,7 @@ ${JAR-jar} cfm "flabbergast-${1}-${2}-sources.jar" "${1}.manifest" -C "$1" .
 
 # JavaDoc JAR
 mkdir .build
-${JAVADOC-javadoc} -encoding UTF-8 -sourcepath "$1" -d .build $(find "$1" -name '*.java')
+${JAVADOC-javadoc} -quiet -encoding UTF-8 -sourcepath "$1" -d .build $(find "$1" -name '*.java')
 ${JAR-jar} cfm "flabbergast-${1}-${2}-javadoc.jar" "${1}.manifest" -C .build .
 rm -rf .build
 
