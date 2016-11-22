@@ -54,7 +54,7 @@ public class MutableFrame extends Frame {
     }
 
     public void set(long ordinal, Object value) {
-        set(TaskMaster.ordinalNameStr(ordinal), value);
+        set(SupportFunctions.ordinalNameStr(ordinal), value);
     }
     public void set(final String name, Object value) {
         if (value == null) {

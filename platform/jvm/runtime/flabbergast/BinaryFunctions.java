@@ -5,7 +5,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.zip.GZIPOutputStream;
 
-public class StaticFunctions {
+public class BinaryFunctions {
 
     public static byte[] checksum(byte[] input, String algorithm) {
         try {

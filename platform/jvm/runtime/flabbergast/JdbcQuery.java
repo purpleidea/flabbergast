@@ -20,7 +20,7 @@ public class JdbcQuery extends Computation {
         public final static NameChooser DEFAULT = new NameChooser() {
             @Override
             public String invoke(ResultSet rs, long it) throws SQLException {
-                return TaskMaster.ordinalNameStr(it);
+                return SupportFunctions.ordinalNameStr(it);
             }
         };
         public abstract String invoke(ResultSet rs, long it)

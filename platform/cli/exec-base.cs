@@ -178,15 +178,6 @@ public abstract class TaskMaster : IEnumerable<Lookup> {
         handlers.Add(new UriInstaniator(loader));
     }
 
-    private static char[] CreateOrdinalSymbols() {
-        var array = new char[26];
-        for (var it = 0; it < 26; it++) {
-            array[it] = (char)('A' + it);
-        }
-        Array.Sort(array);
-        return array;
-    }
-
     public virtual void GetExternal(string uri, ConsumeResult target) {
         if (external_cache.ContainsKey(uri)) {
             external_cache[uri].Notify(target);
@@ -228,25 +219,6 @@ public abstract class TaskMaster : IEnumerable<Lookup> {
 
     public long NextId() {
         return Interlocked.Increment(ref next_id);
-    }
-
-    public static Stringish OrdinalName(long id) {
-        return new SimpleStringish(OrdinalNameStr(id));
-    }
-
-    public static string OrdinalNameStr(long id) {
-        var id_str = new char[(int)(sizeof(long) * 8 * Math.Log(2, symbols.Length)) + 1];
-        if (id < 0) {
-            id_str[0] = 'e';
-            id = long.MaxValue + id;
-        } else {
-            id_str[0] = 'f';
-        }
-        for (var it = id_str.Length - 1; it > 0; it--) {
-            id_str[it] = symbols[id % symbols.Length];
-            id = id / symbols.Length;
-        }
-        return new string(id_str);
     }
 
     public abstract void ReportExternalError(string uri, LibraryFailure reason);
@@ -342,8 +314,6 @@ public abstract class TaskMaster : IEnumerable<Lookup> {
         }
         return true;
     }
-
-    private static readonly char[] symbols = CreateOrdinalSymbols();
 }
 
 }

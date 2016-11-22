@@ -71,7 +71,7 @@ public class InterlockedLookup {
                     task_master.Slot(owner);
                 }
             } else {
-                task_master.ReportOtherError(source_reference, String.Format("“{0}” has type {1} but expected {2}.", String.Join(",", names), Stringish.NameForType(input_result.GetType()), Stringish.NameForType(typeof(T))));
+                task_master.ReportOtherError(source_reference, String.Format("“{0}” has type {1} but expected {2}.", String.Join(",", names), SupportFunctions.NameForType(input_result.GetType()), SupportFunctions.NameForType(typeof(T))));
             }
         });
     }

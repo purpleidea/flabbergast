@@ -47,7 +47,7 @@ public abstract class Frame : DynamicObject, IAttributeNames {
         private set;
     }
 
-    public Frame(TaskMaster task_master, SourceReference source_ref, Context context, Frame container) : this(TaskMaster.OrdinalName(task_master.NextId()), source_ref, context, container) {
+    public Frame(TaskMaster task_master, SourceReference source_ref, Context context, Frame container) : this(SupportFunctions.OrdinalName(task_master.NextId()), source_ref, context, container) {
     }
     public Frame(string id, SourceReference source_ref, Context context, Frame container) : this(new SimpleStringish(id), source_ref, context, container) {
     }
@@ -98,7 +98,7 @@ public abstract class Frame : DynamicObject, IAttributeNames {
         if (end < start)
             return result;
         for (long it = 0; it <= (end - start); it++) {
-            result.Set(TaskMaster.OrdinalNameStr(it + 1), start + it);
+            result.Set(SupportFunctions.OrdinalNameStr(it + 1), start + it);
         }
         return result;
     }
@@ -155,7 +155,7 @@ public class MutableFrame : Frame {
     }
 
     public void Set(long ordinal, object value) {
-        Set(TaskMaster.OrdinalNameStr(ordinal), value);
+        Set(SupportFunctions.OrdinalNameStr(ordinal), value);
     }
     public void Set(string name, object value) {
         if (value == null) {

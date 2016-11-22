@@ -796,7 +796,7 @@ kws : compiler_lib.kws_repl_tmpl {
 				For arg : arguments
 					Reverse
 					Reduce
-						"\(sum_indent)if (!typeof(\(arg.type.real_type)).IsAssignableFrom(\(arg.value.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Expected  \(arg.type.name) but got {0} in \(opcode).\", Stringish.NameForType(\(arg.value.storage_name).BackingType)));" &
+						"\(sum_indent)if (!typeof(\(arg.type.real_type)).IsAssignableFrom(\(arg.value.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Expected  \(arg.type.name) but got {0} in \(opcode).\", SupportFunctions.NameForType(\(arg.value.storage_name).BackingType)));" &
 						"\(sum_indent)\(generator).LoadReboxed(\(arg.value.storage_name), typeof(\(arg.type.real_type)));" &
 						acc
 						With acc : ""
@@ -946,7 +946,7 @@ kws : compiler_lib.kws_repl_tmpl {
 	string_ordinal +: {
 		opcode : "Call"
 		gen_gen +: {
-			extra_emit : ", typeof(TaskMaster).GetMethod(\"OrdinalName\", new System.Type[] { typeof(long) })"
+			extra_emit : ", typeof(SupportFunctions).GetMethod(\"OrdinalName\", new System.Type[] { typeof(long) })"
 		}
 	}
 	verify_symbol +: {
@@ -1209,7 +1209,7 @@ kws : compiler_lib.kws_repl_tmpl {
 				code : with.gen_gen(
 					indent : indent & into.extra_indent & string_indent,
 					code :
-							"\(sum_indent)if (!typeof(Template).IsAssignableFrom(\(into.storage_name).BackingType) && !typeof(MutableFrame).IsAssignableFrom(\(into.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Use of non-mutable collection {0} in iteration.\", Stringish.NameForType(\(into.storage_name).BackingType)));" &
+							"\(sum_indent)if (!typeof(Template).IsAssignableFrom(\(into.storage_name).BackingType) && !typeof(MutableFrame).IsAssignableFrom(\(into.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Use of non-mutable collection {0} in iteration.\", SupportFunctions.NameForType(\(into.storage_name).BackingType)));" &
 						"\(sum_indent)\(into.storage_name).Load(\(generator));" &
 						load_name &
 						"\(sum_indent)var \(Id)_is_frame = typeof(MutableFrame).IsAssignableFrom(\(into.storage_name).BackingType);" &
@@ -1541,7 +1541,7 @@ kws : compiler_lib.kws_repl_tmpl {
 								indent : indent,
 								code :
 									"\(indent)\(item.extra_indent)\(array).Load(\(generator));" &
-									"\(indent)\(item.extra_indent)if (!typeof(IAttributeNames).IsAssignableFrom(\(item.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Use of non-collection {0} in iteration.\", Stringish.NameForType(\(item.storage_name).BackingType)));" &
+									"\(indent)\(item.extra_indent)if (!typeof(IAttributeNames).IsAssignableFrom(\(item.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Use of non-collection {0} in iteration.\", SupportFunctions.NameForType(\(item.storage_name).BackingType)));" &
 									"\(indent)\(item.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I4, \(index - 1));" &
 									"\(indent)\(item.extra_indent)\(item.storage_name).Load(\(generator));" &
 									"\(indent)\(item.extra_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Stelem, typeof(IAttributeNames));" &
@@ -1983,7 +1983,7 @@ codegen : compiler_lib.codegen_tmpl {
 				"\(indent)\t\(field)[\(Id)_index].Generate(\(argument_list)(\(Id)_result) => {" &
 				"\(indent)\t\t\(storage_name).Load(\(generator));" &
 				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldc_I8, (long) \(Id)_index + 1);" &
-				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(TaskMaster).GetMethod(\"OrdinalNameStr\", new System.Type[] { typeof(long) }));" &
+				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(SupportFunctions).GetMethod(\"OrdinalNameStr\", new System.Type[] { typeof(long) }));" &
 				"\(indent)\t\t\(generator).LoadReboxed(\(Id)_result, typeof(object));" &
 				"\(indent)\t\t\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(MutableFrame).GetMethod(\"Set\", new System.Type[] { typeof(string), typeof(object) }));" &
 				"\(indent)\t\t\(generator).JumpToState(\(Id)_label);" &

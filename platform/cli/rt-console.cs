@@ -123,7 +123,7 @@ public class PrintResult : Computation {
                 File.WriteAllText(output_filename, result.ToString(), new UTF8Encoding(false));
             }
         } else {
-            Console.Error.WriteLine("Cowardly refusing to print result of type {0}.", Stringish.NameForType(result.GetType()));
+            Console.Error.WriteLine("Cowardly refusing to print result of type {0}.", SupportFunctions.NameForType(result.GetType()));
         }
     }
 

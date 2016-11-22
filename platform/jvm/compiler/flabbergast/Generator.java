@@ -211,8 +211,8 @@ abstract class Generator {
                 || right.getBackingType() == Object.class) {
             throw new IllegalArgumentException(String.format(
                                                    "Can't compare values of type %s and %s.",
-                                                   Stringish.nameForClass(left.getBackingType()),
-                                                   Stringish.nameForClass(right.getBackingType())));
+                                                   SupportFunctions.nameForClass(left.getBackingType()),
+                                                   SupportFunctions.nameForClass(right.getBackingType())));
         }
         if (left.getBackingType() != right.getBackingType()) {
             if (isNumeric(left.getBackingType())
@@ -243,7 +243,7 @@ abstract class Generator {
                 if (boolean.class != condition.getBackingType())
                     throw new IllegalArgumentException(String.format(
                                                            "Use of non-Boolean type %s in conditional.",
-                                                           Stringish.nameForClass(condition.getBackingType())));
+                                                           SupportFunctions.nameForClass(condition.getBackingType())));
                 condition.load(Generator.this);
                 Label else_label = new Label();
                 builder.visitJumpInsn(Opcodes.IFEQ, else_label);
@@ -399,7 +399,7 @@ abstract class Generator {
             if (it > 0) {
                 error_message.append(" or ");
             }
-            error_message.append(Stringish.nameForClass(types.get(it)));
+            error_message.append(SupportFunctions.nameForClass(types.get(it)));
         }
         if (original.getBackingType() != Object.class) {
             for (Class<?> type : types) {
@@ -411,7 +411,7 @@ abstract class Generator {
             loadTaskMaster();
             source_reference.load(builder);
             builder.visitLdcInsn(String.format(error_message.toString(),
-                                               Stringish.nameForClass(original.getBackingType())));
+                                               SupportFunctions.nameForClass(original.getBackingType())));
             visitMethod(TaskMaster.class.getMethod("reportOtherError",
                                                    SourceReference.class, String.class));
             builder.visitInsn(Opcodes.ICONST_0);
@@ -449,11 +449,11 @@ abstract class Generator {
             if (data[it].getBackingType() == Object.class) {
                 data[it].load(builder);
                 visitMethod(Object.class.getMethod("getClass"));
-                visitMethod(Stringish.class.getMethod("nameForClass",
-                                                      Class.class));
+                visitMethod(SupportFunctions.class.getMethod("nameForClass",
+                            Class.class));
 
             } else {
-                builder.visitLdcInsn(Stringish.nameForClass(data[it]
+                builder.visitLdcInsn(SupportFunctions.nameForClass(data[it]
                                      .getBackingType()));
             }
             builder.visitInsn(Opcodes.AASTORE);

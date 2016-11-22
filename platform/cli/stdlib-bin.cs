@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 
 namespace Flabbergast {
-public class StaticFunctions {
+public class BinaryFunctions {
     public static byte[] ComputeMD5(byte[] input) {
         return System.Security.Cryptography.MD5.Create().ComputeHash(input);
     }

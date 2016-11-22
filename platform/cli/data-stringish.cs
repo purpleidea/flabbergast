@@ -63,18 +63,6 @@ public abstract class Stringish : IComparable<Stringish> {
         return null;
     }
 
-    public static string NameForType(Type t) {
-        if (typeof(Frame).IsAssignableFrom(t)) return "Frame";
-        if (typeof(Stringish).IsAssignableFrom(t)) return "Str";
-        if (typeof(Template) == t) return "Template";
-        if (typeof(Unit) == t) return "Null";
-        if (typeof(bool) == t) return "Bool";
-        if (typeof(double) == t) return "Float";
-        if (typeof(long) == t) return "Int";
-        if (typeof(byte[]) == t) return "Bin";
-        return t.ToString();
-    }
-
     public long OffsetByCodePoints(long offset) {
         long real_offset = 0;
         IEnumerator<string> stream = Stream();

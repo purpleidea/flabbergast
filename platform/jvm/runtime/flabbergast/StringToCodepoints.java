@@ -30,7 +30,7 @@ public class StringToCodepoints extends Computation {
         MutableFrame frame = new MutableFrame(task_master, source_reference,
                                               context, container);
         for (int it = 0; it < input.length(); it++) {
-            frame.set(TaskMaster.ordinalNameStr(it + 1),
+            frame.set(SupportFunctions.ordinalNameStr(it + 1),
                       (long) input.codePointAt(it));
         }
         result = frame;

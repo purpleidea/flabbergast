@@ -70,8 +70,8 @@ public class Escape extends Computation {
                                     source_ref,
                                     String.format(
                                         "Expected “args” to contain strings. Got %s instead.",
-                                        Stringish.nameForClass(arg
-                                                               .getClass())));
+                                        SupportFunctions.nameForClass(arg
+                                                                      .getClass())));
                             }
                         }
                     });
@@ -82,7 +82,7 @@ public class Escape extends Computation {
             } else {
                 task_master.reportOtherError(source_ref, String.format(
                                                  "Expected “args” to be a frame. Got %s instead.",
-                                                 Stringish.nameForClass(result.getClass())));
+                                                 SupportFunctions.nameForClass(result.getClass())));
             }
         }
     }
@@ -175,8 +175,8 @@ public class Escape extends Computation {
                     source_ref,
                     String.format(
                         "Expected “transformations” to be a frame. Got %s instead.",
-                        Stringish.nameForClass(result
-                                               .getClass())));
+                        SupportFunctions.nameForClass(result
+                                                      .getClass())));
             }
         }
     }
@@ -209,7 +209,7 @@ public class Escape extends Computation {
                 } else {
                     task_master.reportOtherError(source_ref, String.format(
                                                      "Expected “%s” to be a string. Got %s instead.",
-                                                     name, Stringish.nameForClass(result.getClass())));
+                                                     name, SupportFunctions.nameForClass(result.getClass())));
                 }
             }
         });

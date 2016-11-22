@@ -48,7 +48,7 @@ public class Escape : Computation {
                             task_master.Slot(this);
                         }
                     } else {
-                        task_master.ReportOtherError(source_ref, String.Format("Expected “args” to contain strings. Got {0} instead.", Stringish.NameForType(arg.GetType())));
+                        task_master.ReportOtherError(source_ref, String.Format("Expected “args” to contain strings. Got {0} instead.", SupportFunctions.NameForType(arg.GetType())));
                     }
                 });
             }
@@ -56,7 +56,7 @@ public class Escape : Computation {
                 task_master.Slot(this);
             }
         } else {
-            task_master.ReportOtherError(source_ref, String.Format("Expected “args” to be a frame. Got {0} instead.", Stringish.NameForType(result.GetType())));
+            task_master.ReportOtherError(source_ref, String.Format("Expected “args” to be a frame. Got {0} instead.", SupportFunctions.NameForType(result.GetType())));
         }
     }
 
@@ -122,7 +122,7 @@ public class Escape : Computation {
                 task_master.Slot(this);
             }
         } else {
-            task_master.ReportOtherError(source_ref, String.Format("Expected “transformations” to be a frame. Got {0} instead.", Stringish.NameForType(result.GetType())));
+            task_master.ReportOtherError(source_ref, String.Format("Expected “transformations” to be a frame. Got {0} instead.", SupportFunctions.NameForType(result.GetType())));
         }
     }
 
@@ -143,7 +143,7 @@ public class Escape : Computation {
                 var str = result.ToString();
                 consume(str);
             } else {
-                task_master.ReportOtherError(source_ref, String.Format("Expected “{0}” to be a string. Got {1} instead.", name, Stringish.NameForType(result.GetType())));
+                task_master.ReportOtherError(source_ref, String.Format("Expected “{0}” to be a string. Got {1} instead.", name, SupportFunctions.NameForType(result.GetType())));
             }
         });
     }

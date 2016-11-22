@@ -827,7 +827,7 @@ kws : compiler_lib.kws_repl_tmpl {
 				For arg : arguments
 					Reverse
 					Reduce
-						"\(sum_indent)if (!\(arg.type.real_type).class.isAssignableFrom(\(arg.value.storage_name).getBackingType()) && (Class<?>) Object.class != (Class<?>) \(arg.type.real_type).class) throw new java.lang.IllegalStateException(java.lang.String.format(\"Expected \(arg.type.name) but got %s in \(rule_name).\", Stringish.nameForClass(\(arg.value.storage_name).getBackingType())));" &
+						"\(sum_indent)if (!\(arg.type.real_type).class.isAssignableFrom(\(arg.value.storage_name).getBackingType()) && (Class<?>) Object.class != (Class<?>) \(arg.type.real_type).class) throw new java.lang.IllegalStateException(java.lang.String.format(\"Expected \(arg.type.name) but got %s in \(rule_name).\", SupportFunctions.nameForClass(\(arg.value.storage_name).getBackingType())));" &
 						"\(sum_indent)\(generator).loadReboxed(\(arg.value.storage_name), \(arg.type.real_type).class);" &
 						acc
 						With acc : ""
@@ -1058,7 +1058,7 @@ kws : compiler_lib.kws_repl_tmpl {
 		}
 	}
 	string_ordinal +: {
-		opcode :  "TaskMaster.class.getMethod(\"ordinalName\", long.class)"
+		opcode :  "SupportFunctions.class.getMethod(\"ordinalName\", long.class)"
 		emit_method : Null
 	}
 	verify_symbol +: {
@@ -1314,7 +1314,7 @@ kws : compiler_lib.kws_repl_tmpl {
 						"\(sum_indent)\(into.storage_name).load(\(generator));" &
 						load_name &
 						"\(sum_indent)boolean \(Id)_is_frame = Frame.class.isAssignableFrom(\(into.storage_name).getBackingType());" &
-						"\(sum_indent)if (!\(Id)_is_frame && !flabbergast.Template.class.isAssignableFrom(\(into.storage_name).getBackingType())) throw new java.lang.IllegalStateException(java.lang.String.format(\"Use of non-mutable collection %s in modification.\", Stringish.nameForClass(\(into.storage_name).getBackingType())));" &
+						"\(sum_indent)if (!\(Id)_is_frame && !flabbergast.Template.class.isAssignableFrom(\(into.storage_name).getBackingType())) throw new java.lang.IllegalStateException(java.lang.String.format(\"Use of non-mutable collection %s in modification.\", SupportFunctions.nameForClass(\(into.storage_name).getBackingType())));" &
 						"\(sum_indent)Class<?> \(Id)_boxed_type = \(Id)_is_frame ? Object.class : ComputeValue.class;" &
 						"\(sum_indent)\(generator).loadReboxed(\(with.storage_name), \(Id)_boxed_type);" &
 						"\(sum_indent)\(generator).visitMethod(\(into.storage_name).getBackingType().getMethod(\"set\", String.class, \(Id)_boxed_type));" &
@@ -1636,7 +1636,7 @@ kws : compiler_lib.kws_repl_tmpl {
 								indent : indent,
 								code :
 									"\(indent)\(item.extra_indent)\(array).load(\(generator));" &
-									"\(indent)\(item.extra_indent)if (!java.lang.Iterable.class.isAssignableFrom(\(item.storage_name).getBackingType())) throw new java.lang.IllegalStateException(java.lang.String.format(\"Use of non-collection %s in iteration.\", Stringish.nameForClass(\(item.storage_name).getBackingType())));" &
+									"\(indent)\(item.extra_indent)if (!java.lang.Iterable.class.isAssignableFrom(\(item.storage_name).getBackingType())) throw new java.lang.IllegalStateException(java.lang.String.format(\"Use of non-collection %s in iteration.\", SupportFunctions.nameForClass(\(item.storage_name).getBackingType())));" &
 									"\(indent)\(item.extra_indent)\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(index - 1));" &
 									"\(indent)\(item.extra_indent)\(item.storage_name).load(\(generator));" &
 									"\(indent)\(item.extra_indent)\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.AASTORE);" &
@@ -2091,7 +2091,7 @@ codegen : compiler_lib.codegen_tmpl {
 				"\(indent)\t\t\(storage_name).load(\(generator));" &
 				"\(indent)\t\t\(generator).getBuilder().visitIntInsn(org.objectweb.asm.Opcodes.SIPUSH, \(Id)_index_final + 1);" &
 				"\(indent)\t\t\(generator).getBuilder().visitInsn(org.objectweb.asm.Opcodes.I2L);" &
-				"\(indent)\t\t\(generator).visitMethod(TaskMaster.class.getMethod(\"ordinalNameStr\", long.class));" &
+				"\(indent)\t\t\(generator).visitMethod(SupportFunctions.class.getMethod(\"ordinalNameStr\", long.class));" &
 				"\(indent)\t\t\(generator).loadReboxed(\(Id)_result, Object.class);" &
 				"\(indent)\t\t\(generator).visitMethod(MutableFrame.class.getMethod(\"set\", String.class, Object.class));" &
 				"\(indent)\t\t\(generator).jumpToState(\(Id)_next);" &

@@ -268,7 +268,7 @@ internal abstract class Generator {
     }
     public LoadableValue Compare(LoadableValue left, LoadableValue right, LoadableValue source_reference) {
         if (left.BackingType == typeof(object) || right.BackingType == typeof(object)) {
-            throw new InvalidOperationException(String.Format("Can't compare values of type {0} and {1}.", Stringish.NameForType(left.BackingType), Stringish.NameForType(right.BackingType)));
+            throw new InvalidOperationException(String.Format("Can't compare values of type {0} and {1}.", SupportFunctions.NameForType(left.BackingType), SupportFunctions.NameForType(right.BackingType)));
         }
         if (left.BackingType != right.BackingType) {
             if (IsNumeric(left.BackingType) && IsNumeric(right.BackingType)) {
@@ -285,7 +285,7 @@ internal abstract class Generator {
         var else_state = DefineState();
         conditional_part(condition => {
             if (!typeof(bool).IsAssignableFrom(condition.BackingType))
-                throw new InvalidOperationException(String.Format("Use of non-Boolean type {0} in conditional.", Stringish.NameForType(condition.BackingType)));
+                throw new InvalidOperationException(String.Format("Use of non-Boolean type {0} in conditional.", SupportFunctions.NameForType(condition.BackingType)));
             condition.Load(this);
             var else_label = Builder.DefineLabel();
             Builder.Emit(OpCodes.Brfalse, else_label);
@@ -358,7 +358,7 @@ internal abstract class Generator {
             block(original);
             return;
         }
-        var all_type_names = string.Join(" or ", from t in types select Stringish.NameForType(t));
+        var all_type_names = string.Join(" or ", from t in types select SupportFunctions.NameForType(t));
         if (original.BackingType != typeof(object)) {
             foreach (var type in types) {
                 if (original.BackingType == type) {
@@ -368,7 +368,7 @@ internal abstract class Generator {
             }
             LoadTaskMaster();
             source_reference.Load(Builder);
-            Builder.Emit(OpCodes.Ldstr, String.Format("Unexpected type {0} instead of {1}.", Stringish.NameForType(original.BackingType), all_type_names));
+            Builder.Emit(OpCodes.Ldstr, String.Format("Unexpected type {0} instead of {1}.", SupportFunctions.NameForType(original.BackingType), all_type_names));
             Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
             Builder.Emit(OpCodes.Ret);
             return;
@@ -406,9 +406,9 @@ internal abstract class Generator {
             if (item.BackingType == typeof(object)) {
                 item.Load(Builder);
                 Builder.Emit(OpCodes.Call, typeof(object).GetMethod("GetType"));
-                Builder.Emit(OpCodes.Call, typeof(Stringish).GetMethod("NameForType", new[] { typeof(System.Type) }));
+                Builder.Emit(OpCodes.Call, typeof(SupportFunctions).GetMethod("NameForType", new[] { typeof(System.Type) }));
             } else {
-                Builder.Emit(OpCodes.Ldstr, Stringish.NameForType(item.BackingType));
+                Builder.Emit(OpCodes.Ldstr, SupportFunctions.NameForType(item.BackingType));
             }
         }
         var signature = new System.Type[data.Length + 1];
@@ -557,7 +557,7 @@ internal abstract class Generator {
         if (best_method == null) {
             LoadTaskMaster();
             source_reference.Load(Builder);
-            Builder.Emit(OpCodes.Ldstr, String.Format("Cannot find overloaded matching method for {0}.{1}({2}).", methods[0].Name, methods[0].ReflectedType.Name, String.Join(",", arguments.Select(a => Stringish.NameForType(a.BackingType)))));
+            Builder.Emit(OpCodes.Ldstr, String.Format("Cannot find overloaded matching method for {0}.{1}({2}).", methods[0].Name, methods[0].ReflectedType.Name, String.Join(",", arguments.Select(a => SupportFunctions.NameForType(a.BackingType)))));
             Builder.Emit(OpCodes.Callvirt, typeof(TaskMaster).GetMethod("ReportOtherError", new System.Type[] { typeof(SourceReference), typeof(string) }));
             Builder.Emit(OpCodes.Ret);
             return null;
@@ -788,7 +788,7 @@ internal abstract class Generator {
         } else if (source.BackingType == typeof(Stringish)) {
             return source;
         } else {
-            throw new InvalidOperationException(String.Format("Cannot convert {0} to Str.", Stringish.NameForType(source.BackingType)));
+            throw new InvalidOperationException(String.Format("Cannot convert {0} to Str.", SupportFunctions.NameForType(source.BackingType)));
         }
     }
     public LoadableValue ToStringish(LoadableValue source, LoadableValue source_reference) {

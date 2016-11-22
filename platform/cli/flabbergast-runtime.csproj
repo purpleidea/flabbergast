@@ -50,6 +50,7 @@
 		<Compile Include="exec-lookup.cs"/>
 		<Compile Include="rt-console.cs"/>
 		<Compile Include="rt-iterator.cs"/>
+		<Compile Include="rt-misc.cs"/>
 		<Compile Include="sql.cs"/>
 		<Compile Include="stdlib-bin.cs"/>
 		<Compile Include="stdlib-escape.cs"/>

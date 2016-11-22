@@ -33,7 +33,7 @@ public class InterlockedLookup {
                     task_master.slot(owner);
                 }
             } else {
-                task_master.reportOtherError(source_reference, String.format("“%s” has type %s but expected %s.", String.join(".", names), Stringish.nameForClass(input_result.getClass()), Stringish.nameForClass(clazz)));
+                task_master.reportOtherError(source_reference, String.format("“%s” has type %s but expected %s.", String.join(".", names), SupportFunctions.nameForClass(input_result.getClass()), SupportFunctions.nameForClass(clazz)));
             }
         });
     }

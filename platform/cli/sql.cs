@@ -93,7 +93,7 @@ public class DbQuery : Computation {
             if (debug) {
                 Console.WriteLine("SQL Query to {0}: {1}", connection, query);
             }
-            NameChooser name_chooser = (rs, it) => TaskMaster.OrdinalNameStr(it);
+            NameChooser name_chooser = (rs, it) => SupportFunctions.OrdinalNameStr(it);
             var retrievers = new List<Retriever>();
             for (int col = 0; col < reader.FieldCount; col++) {
                 var column = col;

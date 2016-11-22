@@ -9,7 +9,7 @@ int_to_char_list : Template {
 int_to_ordinal_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.TaskMaster ordinalName (arg Enforce Int)
+		Select arg_name : XInvoke flabbergast.SupportFunctions ordinalName (arg Enforce Int)
 }
 int_to_str_list : Template {
 	value :
@@ -205,27 +205,27 @@ bin_to_str_base64_list : Template {
 bin_hash_list_md5 : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.StaticFunctions checksum (arg, "MD5")
+		Select arg_name : XInvoke flabbergast.BinaryFunctions checksum (arg, "MD5")
 }
 bin_hash_list_sha1 : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.StaticFunctions checksum (arg, "SHA-1")
+		Select arg_name : XInvoke flabbergast.BinaryFunctions checksum (arg, "SHA-1")
 }
 bin_hash_list_sha256 : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.StaticFunctions checksum (arg, "SHA-256")
+		Select arg_name : XInvoke flabbergast.BinaryFunctions checksum (arg, "SHA-256")
 }
 bin_to_hex_str_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.StaticFunctions bytesToHex (arg, delimiter, uppercase)
+		Select arg_name : XInvoke flabbergast.BinaryFunctions bytesToHex (arg, delimiter, uppercase)
 }
 bin_gzip_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.StaticFunctions compress (arg)
+		Select arg_name : XInvoke flabbergast.BinaryFunctions compress (arg)
 }
 bin_gunzip_list : Template {
 	value :

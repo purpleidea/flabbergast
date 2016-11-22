@@ -18,7 +18,7 @@ public abstract class Frame implements Iterable<String> {
             return result;
         }
         for (long it = 0; it <= (end - start); it++) {
-            result.set(TaskMaster.ordinalNameStr(it + 1), start + it);
+            result.set(SupportFunctions.ordinalNameStr(it + 1), start + it);
         }
         return result;
     }
@@ -30,7 +30,7 @@ public abstract class Frame implements Iterable<String> {
 
     public Frame(TaskMaster task_master, SourceReference source_ref,
                  Context context, Frame container) {
-        this(TaskMaster.ordinalName(task_master.nextId()), source_ref, context,
+        this(SupportFunctions.ordinalName(task_master.nextId()), source_ref, context,
              container);
     }
 
