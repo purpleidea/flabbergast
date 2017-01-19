@@ -81,10 +81,11 @@ public class DbQuery : Computation {
     protected override void Run() {
         if (interlock == null) {
             interlock = new InterlockedLookup(this, task_master, source_ref, context);
-            interlock.LookupMarshalled<DbConnection>(x => connection = x, "Expected “{0}” to come from “sql:” import.",  "connection");
+            interlock.LookupMarshalled<DbConnection>("Expected “{0}” to come from “sql:” import.", x => connection = x,  "connection");
             interlock.LookupStr(x => query = x, "sql_query");
             interlock.Lookup<Template>(x => row_tmpl = x, "sql_row_tmpl");
         }
+        if (!interlock.Away()) return;
         try {
             var command = connection.CreateCommand();
             command.CommandType = System.Data.CommandType.Text;
@@ -143,6 +144,8 @@ public class DbQuery : Computation {
             result = list;
             return;
         } catch (DataException e) {
+            task_master.ReportOtherError(source_ref, e.Message);
+        } catch (DbException e) {
             task_master.ReportOtherError(source_ref, e.Message);
             return;
         }

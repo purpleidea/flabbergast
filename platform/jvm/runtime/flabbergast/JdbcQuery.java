@@ -126,7 +126,7 @@ public class JdbcQuery extends Computation {
     public void run() {
         if (interlock == null) {
             interlock = new InterlockedLookup(this, task_master, source_ref, context);
-            interlock.lookupMarshalled(Connection.class, x-> connection = x, "connection");
+            interlock.lookupMarshalled(Connection.class, "Not a database connection created by “From sql:”.", x-> connection = x, "connection");
             interlock.lookupStr(x-> query = x, "sql_query");
             interlock.lookup(Template.class, x-> row_tmpl = x, "sql_row_tmpl");
         }

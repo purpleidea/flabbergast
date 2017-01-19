@@ -85,7 +85,7 @@ public class InterlockedLookup {
     public void LookupStr(Action<String> writer, params string[] names) {
         Lookup<Stringish>(sish => writer(sish.ToString()), names);
     }
-    public void LookupMarshalled<T>(Action<T> writer, String error, params string[] names) {
+    public void LookupMarshalled<T>(String error, Action<T> writer, params string[] names) {
         Lookup<Frame>(return_value => {
             if (return_value is ReflectedFrame) {
                 Object backing = ((ReflectedFrame) return_value).Backing;

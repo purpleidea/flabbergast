@@ -47,7 +47,7 @@ public class InterlockedLookup {
     public void lookupStr(Consumer<String> writer, String... names) {
         lookup(Stringish.class, sish -> writer.accept(sish.toString()), names);
     }
-    public <T> void lookupMarshalled(Class<T> clazz, Consumer<T> writer, String error, String... names) {
+    public <T> void lookupMarshalled(Class<T> clazz, String error, Consumer<T> writer, String... names) {
         lookupHelper(Frame.class, return_value -> {
             if (return_value instanceof ReflectedFrame) {
                 Object backing = ((ReflectedFrame) return_value).getBacking();
