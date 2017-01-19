@@ -76,6 +76,14 @@ driver_config_tmpl : Template {
 			ado_net_name : "System.Data.SqlClient"
 			jdbc_db_param : "databaseName"
 			params : {}
+			fixed_params : [
+				fixed_param_tmpl {
+					jdbc_param : "applicationIntent"
+					jdbc_value : "\"ReadOnly\""
+					ado_net_param : Null
+					ado_net_value : Null
+				}
+			]
 		}
 		mysql : Template host_driver {
 			friendly_name : "mySQL"
@@ -121,6 +129,14 @@ driver_config_tmpl : Template {
 					help : "Requires SSL encryption with server."
 				}
 			}
+			fixed_params : [
+				fixed_param_tmpl {
+					jdbc_param : "readOnly"
+					jdbc_value : "\"true\""
+					ado_net_param : ""
+					ado_net_value : "\"\""
+				}
+			]
 		}
 		sqlite : Template file_driver {
 			friendly_name : "SQLite"
@@ -128,6 +144,7 @@ driver_config_tmpl : Template {
 			ado_net_name : "System.Data.SQLite"
 			ado_net_file_param : "Data Source"
 			params : {}
+			fixed_params : sqlite_fixed_params
 		}
 
 		sqlite_res : Template resource_driver {
@@ -137,8 +154,18 @@ driver_config_tmpl : Template {
 			ado_net_file_param : "Data Source"
 			params : {}
 			extensions : [ ".sqlite", ".sqlite3", ".db", ".db3", ".s3db" ]
+			fixed_params : sqlite_fixed_params
 		}
 	}
+
+	sqlite_fixed_params : [
+		fixed_param_tmpl {
+			jdbc_param : "open_mode"
+			jdbc_value : "\"1\""
+			ado_net_param : "Read Only"
+			ado_net_value : "\"True\""
+		}
+	]
 
 	value :
 		For driver : drivers {}, provider : Name

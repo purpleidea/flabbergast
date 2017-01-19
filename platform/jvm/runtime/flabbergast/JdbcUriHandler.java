@@ -234,6 +234,8 @@ public class JdbcUriHandler implements UriHandler {
             }
             Connection connection = DriverManager.getConnection(jdbc_uri,
                                     properties);
+            connection.setAutoCommit(false);
+            connection.setReadOnly(true);
             if (connection == null) {
                 reason.set(LibraryFailure.CORRUPT);
                 return null;

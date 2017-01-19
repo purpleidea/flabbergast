@@ -14,7 +14,7 @@ driver_config : db_lib.driver_config_tmpl {
 					(If param.validate Is Null Then "" Else "\tif (!Pattern.matches(\"\(param.validate Enforce Str)\", in_properties.getProperty(\"\(param_name)\"))) { err.set(\"The value for “\(param_name)” is not allowed.\"); return null; }\n") &
 					"\t\tout_properties.setProperty(\"\(param.jdbc_param)\", in_properties.getProperty(\"\(param_name)\"));\n\t}\n"
 				With acc : "") &
-			(For fixed_param : fixed_params Reduce acc & "\tout_properties.setProperty(\"\(fixed_param.jdbc_param)\", \(fixed_param.jdbc_value));\n" With acc : "") &
+			(For fixed_param : fixed_params Where !(fixed_param.jdbc_param Is Null) Reduce acc & "\tout_properties.setProperty(\"\(fixed_param.jdbc_param)\", \(fixed_param.jdbc_value));\n" With acc : "") &
 			"\treturn \"jdbc:\(jdbc_name Enforce Str)\"\(tail Enforce Str);\n}\n"
 
 	}
