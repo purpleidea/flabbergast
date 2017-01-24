@@ -162,6 +162,10 @@ public abstract class TaskMaster : IEnumerable<Lookup> {
         }
     }
 
+    protected void ClearInFlight() {
+        inflight.Clear();
+    }
+
     public IEnumerator<Lookup> GetEnumerator() {
         return inflight.Keys.GetEnumerator();
     }

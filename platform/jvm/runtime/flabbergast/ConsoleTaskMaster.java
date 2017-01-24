@@ -16,7 +16,10 @@ public class ConsoleTaskMaster extends TaskMaster {
     }
 
     public void reportCircularEvaluation() throws IOException {
-        if (!hasInflightLookups() || dirty) {
+        boolean exit = !hasInflightLookups() || dirty;
+        dirty = false;
+        if (exit) {
+            clearInFlight();
             return;
         }
         PrintWriter output = new PrintWriter(System.err);
@@ -32,6 +35,7 @@ public class ConsoleTaskMaster extends TaskMaster {
             .write(output, "  ", seen);
         }
         output.flush();
+        clearInFlight();
     }
 
     @Override

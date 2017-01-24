@@ -24,7 +24,10 @@ public class ConsoleTaskMaster : TaskMaster {
         }
     }
     public void ReportCircularEvaluation() {
-        if (!HasInflightLookups || Dirty) {
+        var exit = !HasInflightLookups || Dirty;
+        Dirty = false;
+        if (exit) {
+            ClearInFlight();
             return;
         }
         var seen = new Dictionary<SourceReference, bool>();
@@ -35,6 +38,7 @@ public class ConsoleTaskMaster : TaskMaster {
             Console.Error.WriteLine(" is waiting for “{0}” in frame defined at:", lookup.LastName);
             lookup.LastFrame.SourceReference.Write(Console.Error, "  ", seen);
         }
+        ClearInFlight();
     }
 
     public override void ReportLookupError(Lookup lookup, Type fail_type) {

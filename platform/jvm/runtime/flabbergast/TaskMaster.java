@@ -42,6 +42,10 @@ public abstract class TaskMaster implements Iterable<Lookup> {
         handlers.add(new UriInstantiator(handler));
     }
 
+    protected void clearInFlight() {
+        inflight.clear();
+    }
+
     public void getExternal(String uri, ConsumeResult target) {
         if (external_cache.containsKey(uri)) {
             external_cache.get(uri).listen(target);
