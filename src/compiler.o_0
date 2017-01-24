@@ -2429,7 +2429,6 @@ language_tmpl : Template {
 					apply_environment_to : [
 						environment.modified_environment {
 							apply_to : [ environment.other_elements { fields : [ $expression ] } ]
-							special_names : [ forbidden_name_from_field { field : $name } ]
 							force_back : True
 							name : $inner_environment
 						}
