@@ -8,6 +8,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.fusesource.jansi.Ansi;
+
 public class ConsoleTaskMaster extends TaskMaster {
     boolean dirty = false;
 
@@ -24,13 +26,19 @@ public class ConsoleTaskMaster extends TaskMaster {
         }
         PrintWriter output = new PrintWriter(System.err);
         Set<SourceReference> seen = new HashSet<SourceReference>();
+        output.print(Ansi.ansi().a(Ansi.Attribute.RESET).fg(Ansi.Color.RED).toString());
         output.println("Circular evaluation detected.");
+        output.print(Ansi.ansi().a(Ansi.Attribute.RESET).toString());
         for (Lookup lookup : this) {
+            output.print(Ansi.ansi().a(Ansi.Attribute.RESET).fg(Ansi.Color.BLUE).toString());
             output.printf("Lookup for “%s” blocked. Lookup initiated at:\n",
                           lookup.getName());
+            output.print(Ansi.ansi().a(Ansi.Attribute.RESET).toString());
             lookup.getSourceReference().write(output, "  ", seen);
+            output.print(Ansi.ansi().a(Ansi.Attribute.RESET).fg(Ansi.Color.YELLOW).toString());
             output.printf(" is waiting for “%s” in frame defined at:\n",
                           lookup.getLastName());
+            output.print(Ansi.ansi().a(Ansi.Attribute.RESET).toString());
             lookup.getLastFrame().getSourceReference()
             .write(output, "  ", seen);
         }
@@ -41,6 +49,7 @@ public class ConsoleTaskMaster extends TaskMaster {
     @Override
     public void reportExternalError(String uri, LibraryFailure reason) {
         dirty = true;
+        System.err.print(Ansi.ansi().a(Ansi.Attribute.RESET).fg(Ansi.Color.RED).toString());
         switch (reason) {
         case BAD_NAME :
             System.err.printf("The URI “%s” is not a valid name.\n", uri);
@@ -54,6 +63,7 @@ public class ConsoleTaskMaster extends TaskMaster {
         default :
             break;
         }
+        System.err.print(Ansi.ansi().a(Ansi.Attribute.RESET).toString());
     }
 
     @Override
@@ -61,6 +71,7 @@ public class ConsoleTaskMaster extends TaskMaster {
         dirty = true;
         try {
             PrintWriter output = new PrintWriter(System.err);
+            output.print(Ansi.ansi().a(Ansi.Attribute.RESET).fg(Ansi.Color.RED).toString());
             if (fail_type == null) {
                 output.printf("Undefined name “%s”. Lookup was as follows:\n",
                               lookup.getName());
@@ -69,6 +80,7 @@ public class ConsoleTaskMaster extends TaskMaster {
                     "Non-frame type %s while resolving name “%s”. Lookup was as follows:\n",
                     fail_type, lookup.getName());
             }
+            output.print(Ansi.ansi().a(Ansi.Attribute.RESET).toString());
             int col_width = Math.max(
                                 (int) Math.log10(lookup.getFrameCount()) + 1, 3);
             for (int name_it = 0; name_it < lookup.getNameCount(); name_it++) {
@@ -108,10 +120,14 @@ public class ConsoleTaskMaster extends TaskMaster {
                 output.println("│");
             }
             Set<SourceReference> seen = new HashSet<SourceReference>();
+            output.print(Ansi.ansi().a(Ansi.Attribute.RESET).fg(Ansi.Color.BLUE).toString());
             output.println("Lookup happened here:");
+            output.print(Ansi.ansi().a(Ansi.Attribute.RESET).toString());
             lookup.getSourceReference().write(output, "  ", seen);
             for (int it = 0; it < frame_list.size(); it++) {
+                output.print(Ansi.ansi().a(Ansi.Attribute.RESET).fg(Ansi.Color.YELLOW).toString());
                 output.printf("Frame %s defined:\n", it + 1);
+                output.print(Ansi.ansi().a(Ansi.Attribute.RESET).toString());
                 frame_list.get(it).getSourceReference()
                 .write(output, "  ", seen);
             }
@@ -123,7 +139,9 @@ public class ConsoleTaskMaster extends TaskMaster {
     @Override
     public void reportOtherError(SourceReference reference, String message) {
         dirty = true;
+        System.err.print(Ansi.ansi().a(Ansi.Attribute.RESET).fg(Ansi.Color.BLUE).toString());
         System.err.println(message);
+        System.err.print(Ansi.ansi().a(Ansi.Attribute.RESET).toString());
         try {
             PrintWriter output = new PrintWriter(System.err);
             reference.write(output, "  ");

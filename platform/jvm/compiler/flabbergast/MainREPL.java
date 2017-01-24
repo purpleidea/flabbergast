@@ -14,6 +14,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import org.fusesource.jansi.Ansi;
+
 public class MainREPL {
 
     public static class PrintToConsole extends ElaboratePrinter {
@@ -130,6 +132,11 @@ public class MainREPL {
             System.err.println("Only one Flabbergast script may be given.");
             System.exit(1);
         }
+        System.out.print(Ansi.ansi().a(Ansi.Attribute.RESET).fg(Ansi.Color.BLUE).toString());
+        System.out.print("o_0 ");
+        System.out.print(Ansi.ansi().a(Ansi.Attribute.RESET).fg(Ansi.Color.WHITE).toString());
+        System.out.println("Flabbergast " + Configuration.VERSION);
+        System.out.print(Ansi.ansi().a(Ansi.Attribute.RESET).toString());
 
         ResourcePathFinder resource_finder = new ResourcePathFinder();
         try {

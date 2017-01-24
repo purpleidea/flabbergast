@@ -66,7 +66,11 @@ public class REPL {
             Console.Error.WriteLine("No more than one Flabbergast script may be given.");
             return 1;
         }
-
+        Console.ForegroundColor = ConsoleColor.Blue;
+        Console.Write("o_0 ");
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine("Flabbergast " + typeof(Frame).Assembly.GetName().Version.ToString());
+        Console.ResetColor();
         Frame original = null;
 
         var assembly_builder = AppDomain.CurrentDomain.DefineDynamicAssembly(new AssemblyName("Repl"), AssemblyBuilderAccess.Run);
@@ -130,7 +134,7 @@ public class REPL {
             var run_type = parser.ParseRepl(collector, unit, "REPL" + id++);
             if (run_type != null) {
                 object result = null;
-                var computation = (Computation) Activator.CreateInstance(run_type, new object[] { task_master, original, current, update_current, (ConsumeResult)(output => result = output), (ConsumeResult) Console.WriteLine });
+                var computation = (Computation) Activator.CreateInstance(run_type, new object[] { task_master, original, current, update_current, (ConsumeResult)(output => result = output), (ConsumeResult) Console.WriteLine});
                 computation.Notify(r => run = (r as bool?) ?? true);
                 task_master.Run();
                 if (result != null) {

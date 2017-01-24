@@ -8,6 +8,7 @@ public class ConsoleTaskMaster : TaskMaster {
     private bool Dirty = false;
     public override void ReportExternalError(string uri, LibraryFailure reason) {
         Dirty = true;
+        Console.ForegroundColor = ConsoleColor.Red;
         switch (reason) {
         case LibraryFailure.BadName:
             Console.Error.WriteLine("The URI “{0}” is not a valid name.", uri);
@@ -22,6 +23,7 @@ public class ConsoleTaskMaster : TaskMaster {
             Console.Error.WriteLine("The URI “{0}” could not be resolved.", uri);
             break;
         }
+        Console.ResetColor();
     }
     public void ReportCircularEvaluation() {
         var exit = !HasInflightLookups || Dirty;
@@ -31,24 +33,32 @@ public class ConsoleTaskMaster : TaskMaster {
             return;
         }
         var seen = new Dictionary<SourceReference, bool>();
+        Console.ForegroundColor = ConsoleColor.Red;
         Console.Error.WriteLine("Circular evaluation detected.");
         foreach (var lookup in this) {
+            Console.ForegroundColor = ConsoleColor.Blue;
             Console.Error.WriteLine("Lookup for “{0}” blocked. Lookup initiated at:", lookup.Name);
+            Console.ResetColor();
             lookup.SourceReference.Write(Console.Error, "  ", seen);
+            Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Error.WriteLine(" is waiting for “{0}” in frame defined at:", lookup.LastName);
+            Console.ResetColor();
             lookup.LastFrame.SourceReference.Write(Console.Error, "  ", seen);
         }
+        Console.ResetColor();
         ClearInFlight();
     }
 
     public override void ReportLookupError(Lookup lookup, Type fail_type) {
         Dirty = true;
+        Console.ForegroundColor = ConsoleColor.Red;
         if (fail_type == null) {
             Console.Error.WriteLine("Undefined name “{0}”. Lookup was as follows:", lookup.Name);
         } else {
             Console.Error.WriteLine("Non-frame type {1} while resolving name “{0}”. Lookup was as follows:",
                                     lookup.Name, fail_type);
         }
+        Console.ResetColor();
         var col_width = Math.Max((int) Math.Log(lookup.FrameCount, 10) + 1, 3);
         for (var name_it = 0; name_it < lookup.NameCount; name_it++) {
             col_width = Math.Max(col_width, lookup.GetName(name_it).Length);
@@ -84,17 +94,23 @@ public class ConsoleTaskMaster : TaskMaster {
             }
             Console.Error.WriteLine("│");
         }
+        Console.ForegroundColor = ConsoleColor.Blue;
         Console.Error.WriteLine("Lookup happened here:");
+        Console.ResetColor();
         lookup.SourceReference.Write(Console.Error, "  ", seen);
         for (var it = 0; it < frame_list.Count; it++) {
+            Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Error.WriteLine("Frame {0} defined:", it + 1);
+            Console.ResetColor();
             frame_list[it].SourceReference.Write(Console.Error, "  ", seen);
         }
     }
 
     public override void ReportOtherError(SourceReference reference, string message) {
         Dirty = true;
+        Console.ForegroundColor = ConsoleColor.Red;
         Console.Error.WriteLine(message);
+        Console.ResetColor();
         var seen = new Dictionary<SourceReference, bool>();
         reference.Write(Console.Error, "  ", seen);
     }

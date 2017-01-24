@@ -15,6 +15,8 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])], )
 AC_PROG_LN_S
 
 # JVM
+JANSI_JAR="$JAR_PATH/jansi.jar"
+AC_SUBST([JANSI_JAR])
 JLINE_JAR="$JAR_PATH/jline2.jar"
 AC_SUBST([JLINE_JAR])
 ASM_JAR="$JAR_PATH/asm4.jar"
