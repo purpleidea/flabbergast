@@ -4505,7 +4505,12 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
-					ensure_type_is : ensure_type.intrinsic { needs_unbox : False }
+					ensure_type_is : ensure_type.multiple {
+						actions : [
+							ensure_type.intrinsic { needs_unbox : False },
+							ensure_type.filter { types : [ known_types.null ] }
+						]
+					}
 					type_demand : ensure_type.filter {
 						types : [ known_types.frame, known_types.null ]
 						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
