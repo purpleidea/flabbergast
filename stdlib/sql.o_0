@@ -28,6 +28,8 @@ queryifier : Template {
 	value : Template base {
 		{{{A frame of expressions or columns to be included in the resulting table.}}}
 		columns : Required
+		{{{A frame of expressions or columns containing strings that will be looked up and the results included in the resulting table.}}}
+		lookup_columns : {}
 		{{{A collection of expressions (or columns) that must be true to include a
 		row in the results.}}}
 		where : Template {}
@@ -55,11 +57,11 @@ queryifier : Template {
 		{{{Expand the group by template.}}}
 		exp_group : ({ value : group_by {}  sql_aggregate_context : "GROUP BY" }).value
 
-		{{{A list of tables, inferred from \{columns}, to be included in this
+		{{{A list of tables, inferred from \{columns} and \{lookup_columns}, to be included in this
 		query.}}}
 		tables :
-			For column : columns
-				Reduce For col_table : column.sql_tables, acc_table : acc, name : Name Select name : col_table ?? acc_table
+			For column : columns, lookup_column : lookup_columns
+				Reduce For col_table : (column ?? lookup_column).sql_tables, acc_table : acc, name : Name Select name : col_table ?? acc_table
 				With acc :
 					(For clause : exp_where
 					Reduce For where_table : clause.sql_tables, acc_table : acc, name : Name Select name : where_table ?? acc_table
@@ -71,8 +73,8 @@ queryifier : Template {
 				With acc : Null
 		{{{Generate the columns in the \Mono{SELECT}.}}}
 		column_clause :
-			For col : columns, name : Name, pos : Ordinal
-				Reduce (If pos > 1 Then acc & ", " Else "") & col.sql_expr & " AS "  & provider.symbol_start Enforce Str & name & provider.symbol_end Enforce Str
+			For col : columns, lcol : lookup_columns, name : Name, pos : Ordinal
+				Reduce (If pos > 1 Then acc & ", " Else "") & (col ?? lcol).sql_expr & " AS " & provider.symbol_start Enforce Str & (If col Is Null Then "$" Else If lcol Is Null Then "" Else Error name & " is both a column and a lookup column.") & name & provider.symbol_end Enforce Str
 				With acc : Null
 		{{{Generate the \Mono{WHERE} clause, if any.}}}
 		where_clause :
@@ -81,7 +83,7 @@ queryifier : Template {
 				With acc : ""
 		sql_aggregate_context : Null
 		sql_non_aggregate_result_cols :
-			For x : columns Append exp_where
+			For x : columns Append lookup_columns Append exp_where
 				Reduce For acc_cols : acc, x_cols : x.sql_non_aggregate_columns, name : Name Select name : acc_cols ?? x_cols
 				With acc : {}
 		sql_group_cols :
@@ -89,7 +91,7 @@ queryifier : Template {
 				Reduce For acc_cols : acc, x_cols : x.sql_non_aggregate_columns, name : Name Select name : acc_cols ?? x_cols
 				With acc : {}
 		sql_results_contain_aggregate :
-			For x : columns Append exp_where
+			For x : columns Append lookup_columns Append exp_where
 				Reduce acc || x.sql_contains_aggregate
 				With acc : False
 
