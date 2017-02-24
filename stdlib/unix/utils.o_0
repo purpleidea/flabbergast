@@ -1,0 +1,97 @@
+Introduction{{{Utilities for UNIX platforms}}}
+
+utils_lib : From lib:utils
+
+{{{Convert a string into a string containing a decimal value of the codepoint.}}}
+decimal_codepoint : Template utils_lib.str_escape {
+	transformations : Now [ utils_lib.str_transform.range_tmpl {
+		start : "\x00"
+		end : "\U0010FFFF"
+		replacement : [ utf32 ]
+		mode : mode_decimal
+	} ]
+}
+
+{{{Transformations to escape strings as UTF-32 hex values.}}}
+utf32_be_transform : {
+	all : utils_lib.str_transform.range_tmpl {
+		start : "\x00"
+		end : "\U0010FFFF"
+		replacement : [ utf32 ]
+		mode : mode_hex_lower
+	}
+}
+
+{{{Transformations that can be done on a string to escape it.}}}
+str_transform : {
+	{{{Transform a single character into an arbitrary escaped form.}}}
+	char_tmpl : Template {
+		{{{A single-character string to use as input.}}}
+		char : Required
+		{{{The string to use in the escaped result.}}}
+		replacement : Required
+
+		codepoint : decimal_codepoint(char)
+		replacement_bytes : utils_lib.str_escape(replacement, transformations : utf32_be_transform)
+
+		char_case : "if (c == \(codepoint)) { print \"\(replacement_bytes)\"; } else "
+		range_case : ""
+	}
+	{{{Transform a range of characters into a numeric escape sequence.}}}
+	range_tmpl : Template {
+		{{{The inclusive lower bound of the range of characters to escape as a
+		single-character string.}}}
+		start : Required
+		{{{The inclusive upper bound of the range of characters to escape as a
+		single-character string.}}}
+		end : Required
+		{{{A list of strings and encoded numbers to output in the escaped string.}}}
+		replacement : Required
+		{{{The mode for encoded numbers to appear in the output.}}}
+		mode : mode_hex_upper
+
+		{{{Encode numbers as padded upper-case hexadecimal.}}}
+		mode_hex_upper : Now "hu"
+		{{{Encode numbers as padded lower-case hexadecimal.}}}
+		mode_hex_lower : Now "hl"
+		{{{Encode numbers as unpadded decimal.}}}
+		mode_decimal : "d"
+
+		{{{A single 32-bit number representing the entire Unicode codepoint.}}}
+		utf32 : Now { value : "p(m[M 0], c);" }
+		{{{A 16-bit number with the first half of a UTF-16 pair.}}}
+		utf16_0 : Now { value : "p(m[M 1], ((c < 65536) ? c : ((c - 65536) % 1024 + 56320) % 65536));" }
+		{{{A 16-bit number with the second half of a UTF-16 pair.}}}
+		utf16_1 : Now { value : "p(m[M 1], ((c < 65536) ? 0 : ((c - 65536) * 1024 + 55296) % 65536));" }
+		{{{A 8-bit number with the first quarter of a UTF-8 quartet.}}}
+		utf8_0 : Now { value : "p(m[M 2], ((c < 127) ? c : ((c < 2047) ? (c * 64 + 192) : ((c < 65535) ? (c * 4096 + 224) : (c * 262144 + 240)))) % 256);" }
+		{{{A 8-bit number with the second quarter of a UTF-8 quartet.}}}
+		utf8_1 : Now { value : "p(m[M 2], ((c < 127) ? 0 : ((c < 2047) ? (c % 64 + 128) : ((c < 65535) ? ((c % 4096) * 64 + 128) : ((c % 262144) * 4096 + 128)))) % 256);" }
+		{{{A 8-bit number with the third quarter of a UTF-8 quartet.}}}
+		utf8_2 : Now { value : "p(m[M 2], ((c < 2047) ? 0 : ((c < 65535) ? (c % 64 + 128) : ((c % 4096) 64 + 128)))) % 256);" }
+		{{{A 8-bit number with the fourth quarter of a UTF-8 quartet.}}}
+		utf8_3 : Now { value : "p(m[M 2], ((c < 65535) ? 0 : (c % 64 + 128)) % 256);" }
+
+		start_codepoint : decimal_codepoint(start)
+		end_codepoint : decimal_codepoint(end)
+		replacement_bytes : For x : replacement
+			Reduce acc & (If x Is Str Then "print \"" & utils_lib.str_escape(x, transformations : utf32_be_transform) & "\";" Else x.value)
+			With acc : ""
+
+		char_case : ""
+		range_case : "if (c >= \(start_codepoint Enforce Str) && c <= \(end_codepoint Enforce Str)) { M = \"\(mode)\"; \(replacement_bytes Enforce Str) } else "
+	}
+}
+
+{{{Escape strings based on the provided transformation. This will convert the rules from \{str_transform} into a shell script that uses \Mono{iconv}, \Mono{xxd}, and \Mono{gawk} to escape the input provided via standard input.}}}
+make_shell_escaper : Template {
+	{{{A list of transformations to be done on the string, from \{str_transform}.}}}
+	transformations : Required
+
+  program :
+	 For t : transformations Reduce t.char_case & acc
+	  With acc : (For t : transformations Reduce t.range_case & acc
+		  With acc : "")
+
+  value : "iconv --to utf32be | xxd -c 4 -p | gawk -l ordchr 'function p(f, c) { s = sprintf(f, c); for(i = 1; i <= length(s); i++) { printf(\"%08x\", ord(substr(s, i, 1)));} } BEGIN { m[\"hu0\"] = \"%08X\"; m[\"hu1\"] = \"%04X\"; m[\"hu2\"] = \"%02X\"; m[\"hl0\"] = \"%08x\"; m[\"hl1\"] = \"%04x\"; m[\"hl2\"] = \"%02x\"; m[\"d0\"] = \"%d\"; m[\"d1\"] = \"%d\"; m[\"d2\"] = \"%d\"; } { c = strtonum(\"0x\"$0); \(program Enforce Str) { print $0; } }' | xxd -r -p | iconv --from utf32be"
+}
