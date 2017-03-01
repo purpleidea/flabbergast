@@ -2,7 +2,7 @@ sql_lib : From lib:sql
 utils_lib : From lib:utils
 
 test_query : Template sql_lib.offline_query {
-	table : { t : sql_lib.offline_table_tmpl { table_schema : "Z"  table_name : "XXX" columns +: { x : column_tmpl { column_name : $x } } } }
+	user_defined_tables +: { t : Template sql_lib.offline_table_tmpl { table_schema : "Z"  table_name : "XXX" columns +: { x : column_tmpl { column_name : $x } } } }
 	columns : {
 		a : expr.add {
 			left : 3

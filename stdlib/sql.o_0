@@ -57,14 +57,22 @@ queryifier : Template {
 		{{{Expand the group by template.}}}
 		exp_group : ({ value : group_by {}  sql_aggregate_context : "GROUP BY" }).value
 
+		{{{A template of templates to generate special tables to be embedded in the query. These can be literal tables (see \{sql_literal_table_tmpl}) or aliases of real tables (see \{alias_table_tmpl}).}}}
+		user_defined_tables : Template {}
+
+		{{{A collection of tables provided by the database.}}}
+		table :
+			For table_tmpl : user_defined_tables {}, name : Name
+				Select name : table_tmpl {}
+
 		{{{A list of tables, inferred from \{columns} and \{lookup_columns}, to be included in this
 		query.}}}
 		tables :
 			For column : columns, lookup_column : lookup_columns
-				Reduce For col_table : (column ?? lookup_column).sql_tables, acc_table : acc, name : Name Select name : col_table ?? acc_table
+				Reduce For col_table : (column ?? lookup_column).sql_tables, acc_table : acc, name : Name Select name : (col_table ?? acc_table) Enforce Str
 				With acc :
 					(For clause : exp_where
-					Reduce For where_table : clause.sql_tables, acc_table : acc, name : Name Select name : where_table ?? acc_table
+					Reduce For where_table : clause.sql_tables, acc_table : acc, name : Name Select name : (where_table ?? acc_table) Enforce Str
 					With acc : {})
 		{{{Generate the \Mono{FROM} clause.}}}
 		from_clause :
@@ -117,12 +125,13 @@ queryifier : Template {
 
 {{{Query an SQL database for the delicious records within.}}}
 query : Template queryifier(base : retrieve) {
-		{{{A template of templates to generate tables to be embedded in the query. See \{sql_literal_table_tmpl}.}}}
-		literal_tables : Template {}
 		{{{A collection of tables provided by the database.}}}
-		table :
-			For real : provider.table_discovery(connection : connection), literal : literal_tables {}, name : Name
-				Select name : real ?? (literal {})
+		table +orig:
+			For discovered : provider.table_discovery(connection : connection), defined : orig, name : Name
+				Select name :
+					If !(discovered Is Null) && !(defined Is Null)
+						Then Error "Table \(name Enforce Str) is present in the database but also manually defined."
+						Else (discovered ?? defined) Enforce Frame
 		{{{The default set of columns to retreive is all known columns from the selected tables.}}}
 		columns :
 			For col : column
@@ -155,6 +164,7 @@ offline_table_tmpl : Template {
 		sql_type : sql_types.str
 
 		sql_tables : Now utils_lib.frame(sql_from, name : Id)
+		sql_column : column_name
 
 		sql_expr : sql_from Enforce Str & "." & provider.symbol_start Enforce Str & column_name Enforce Str & provider.symbol_end Enforce Str
 		sql_non_aggregate_columns : utils_lib.frame(sql_expr, name : Id)
@@ -162,8 +172,26 @@ offline_table_tmpl : Template {
 	}
 
 	known_columns : columns {}
+	aliasable_table : True
 	sql_from : (If table_schema Is Null Then "" Else provider.symbol_start Enforce Str & table_schema Enforce Str & provider.symbol_end Enforce Str & ".") & provider.symbol_start Enforce Str & table_name Enforce Str & provider.symbol_end Enforce Str
 }
+{{{A new set of names for existing tables. This allows duplicating tables for self-joins and the like. Set the value to be a table from \{table}.}}}
+alias_table_tmpl : Template {
+	{{{The real table from which this table is aliased.}}}
+	backing : Required
+	aliasable_table : False
+	sql_from : If backing.aliasable_table Then backing.sql_from Enforce Str & " AS " & name Else Error "Cannot create alias \(name). The backing table is not aliasable."
+	known_columns : Let this_table : utils_lib.frame(sql_from, name : Id) In
+		For backing_column : backing.known_columns, col_name : Name Select col_name : provider.expr.base_expr_tmpl {
+				sql_expr : name & "." & sql_column
+				sql_column : backing_column.sql_column
+				sql_type : backing_column.sql_type
+				sql_tables : this_table
+				sql_non_aggregate_columns : utils_lib.frame(sql_expr, name : Id)
+				sql_contains_aggregate : False
+		}
+}
+
 
 {{{Convert a value into a SQL expression if possible.}}}
 sql_marshall : utils_lib.str_concatifier(base : sql_marshall_list, delimiter : "")
@@ -260,6 +288,7 @@ sql_literal_table_tmpl : Template {
 		sql_non_aggregate_columns : utils_lib.frame(sql_expr, name : Id)
 		sql_contains_aggregate : False
 	}
+	aliasable_table : False
 	sql_from : (provider.generate_literal_from {}).value
 }
 
@@ -403,6 +432,8 @@ sql_provider : Template {
 	\Mono{FROM} clause. Other implementation-specific attributes are permitted.}}}
 	table_discovery : Template retrieve {
 		sql_row_tmpl : Template {
+			sql_from : Required
+			aliasable_table : True
 			known_columns : column_discovery(connection : connection, table : This)
 		}
 	}
@@ -411,8 +442,10 @@ sql_provider : Template {
 	implementation-specific attributes are permitted.}}}
 	column_discovery : Template retrieve {
 		table : Required
-		sql_row_tmpl +: {
+		sql_row_tmpl : Template expr.base_expr_tmpl {
 			sql_tables : Now utils_lib.frame(table.sql_from, name : GenerateId table)
+			sql_non_aggregate_columns : utils_lib.frame(sql_expr, name : Id)
+			sql_contains_aggregate : False
 		}
 	}
 	{{{List of arithmetic rules this database supports.}}}
@@ -421,7 +454,7 @@ sql_provider : Template {
 	generate_literal_from : Template {
 		column_list :
 			(For name : Name, type : column_types, pos : Ordinal
-				Reduce acc & (If pos > 1 Then "," Else "") & symbol_start Enforce Str & name & symbol_end Enforce Str
+				Reduce acc Enforce Str & (If pos > 1 Then "," Else "") & symbol_start Enforce Str & name & symbol_end Enforce Str
 				With acc : symbol_start Enforce Str & table_name Enforce Str & symbol_end Enforce Str & "(") & ")"
 		value_list :
 			For row : marshalled_rows, pos : Ordinal
@@ -854,7 +887,7 @@ sql_provider : Template {
 				Else If specials.s.sql_type.coerce B& sql_types.int.id == 0 Then Error "Start of string slice is not an integer."
 				Else If specials.l.sql_type.coerce B& sql_types.int.id == 0 Then Error "Length of string slice is not an integer."
 				Else sql_substr_syntax
-			sql_tables : For input_table : specials.i.sql_tables, start_table : specials.s.sql_tables, length_table : specials.l.sql_tables, name : Name Select name : (input_table ?? start_table) ?? right_table
+			sql_tables : For input_table : specials.i.sql_tables, start_table : specials.s.sql_tables, length_table : specials.l.sql_tables, name : Name Select name : ((input_table ?? start_table) ?? right_table) Enforce Frame
 			sql_non_aggregate_columns : For s : specials
 				Reduce For acc_cols : acc, special_cols : s.sql_non_aggregate_columns, name : Name Select name : acc_cols ?? special_cols
 				With acc : {}
@@ -899,7 +932,7 @@ sql_providers : {
 			sql_query : "SELECT QUOTENAME(table_schema) + '.' + QUOTENAME(table_name) AS sql_from, QUOTENAME(table_schema, '''') as table_schema, QUOTENAME(table_name, '''') AS table_name, LOWER(LEFT(table_schema, 1)) + RIGHT(table_schema, LEN(table_schema) - 1) + '_' + table_name AS [ATTRNAME] FROM information_schema.tables WHERE UPPER(table_schema) NOT IN ('SYS', 'INFORMATION_SCHEMA') AND PATINDEX('%[^a-zA-Z0-9_]%', table_schema) = 0 AND PATINDEX('%[^a-zA-Z0-9_]%', table_name) = 0;"
 		}
 		column_discovery +: {
-			sql_query : "SELECT QUOTENAME(table_schema) + '.' + QUOTENAME(table_name) + '.' + QUOTENAME(column_name) AS sql_expr, LOWER(LEFT(column_name, 1)) + RIGHT(column_name, LEN(column_name) - 1) AS [ATTRNAME], data_type, 'sql_types.' + data_xlate.lookup AS [$sql_type] FROM information_schema.columns, (VALUES ('bigint', 'int'), ('decimal', 'int'), ('int', 'int'), ('money', 'int'), ('numeric', 'int'), ('smallint', 'int'), ('smallmoney', 'int'), ('tinyint', 'int'), ('bit', 'bool'), ('float', 'float'), ('real', 'float'), ('%char%', 'str'), ('%text%', 'str'), ('%binary%', 'str'), ('%datetime%', 'timestamp'), ('time%', 'timestamp'), ('date', 'timestamp'), ('%binary', 'blob')) AS data_xlate (name, lookup) WHERE table_schema = \(table.table_schema) AND table_name = \(table.table_name) AND data_type LIKE data_xlate.name AND PATINDEX('%[^a-zA-Z0-9_]%', column_name) = 0;"
+			sql_query : "SELECT QUOTENAME(table_schema) + '.' + QUOTENAME(table_name) + '.' + QUOTENAME(column_name) AS sql_expr, QUOTENAME(column_name) AS sql_column, LOWER(LEFT(column_name, 1)) + RIGHT(column_name, LEN(column_name) - 1) AS [ATTRNAME], data_type, 'sql_types.' + data_xlate.lookup AS [$sql_type] FROM information_schema.columns, (VALUES ('bigint', 'int'), ('decimal', 'int'), ('int', 'int'), ('money', 'int'), ('numeric', 'int'), ('smallint', 'int'), ('smallmoney', 'int'), ('tinyint', 'int'), ('bit', 'bool'), ('float', 'float'), ('real', 'float'), ('%char%', 'str'), ('%text%', 'str'), ('%binary%', 'str'), ('%datetime%', 'timestamp'), ('time%', 'timestamp'), ('date', 'timestamp'), ('%binary', 'blob')) AS data_xlate (name, lookup) WHERE table_schema = \(table.table_schema) AND table_name = \(table.table_name) AND data_type LIKE data_xlate.name AND PATINDEX('%[^a-zA-Z0-9_]%', column_name) = 0;"
 		}
 		quote_start : "('"
 		quote_end : "')"
@@ -1004,7 +1037,7 @@ sql_providers : {
 			sql_query : "SELECT '\"' || table_name || '\"' AS \"sql_from\", table_name AS \"table_name\", REGEXP_REPLACE(REGEXP_REPLACE(LOWER(table_name), '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 't\\1') AS \"ATTRNAME\" FROM user_tables"
 		}
 		column_discovery +: {
-			sql_query : "SELECT '\"' || table_name || '\".\"' || column_name || '\"' AS \"sql_expr\", REGEXP_REPLACE(REGEXP_REPLACE(LOWER(column_name), '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 'c\\1') AS \"ATTRNAME\", data_type, 'sql_types.' || data_xlate.lookup AS \"\" FROM USER_TAB_COLUMNS , (SELECT objectschema name, objectname lookup FROM TABLE(sys.ODCIObjectList(sys.odciobject('NUMBER%', 'float'), sys.odciobject('%CHAR%', 'str'), sys.odciobject('BINARY_FLOAT', 'float'), sys.odciobject('BINARY_DOUBLE', 'float'), sys.odciobject('DATE%', 'timestamp'), sys.odciobject('TIMESTAMP%', 'timestamp'), sys.odciobject('INTERVAL%', 'interval'), sys.odciobject('%LOB', 'blob'), sys.odciobject('BFILE', 'blob')))) data_xlate WHERE table_name = '\(table_name)'  AND data_type LIKE data_xlate.name"
+			sql_query : "SELECT '\"' || table_name || '\".\"' || column_name || '\"' AS \"sql_expr\", '\"' || column_name || '\"' AS \"sql_column\", REGEXP_REPLACE(REGEXP_REPLACE(LOWER(column_name), '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 'c\\1') AS \"ATTRNAME\", data_type, 'sql_types.' || data_xlate.lookup AS \"\" FROM USER_TAB_COLUMNS , (SELECT objectschema name, objectname lookup FROM TABLE(sys.ODCIObjectList(sys.odciobject('NUMBER%', 'float'), sys.odciobject('%CHAR%', 'str'), sys.odciobject('BINARY_FLOAT', 'float'), sys.odciobject('BINARY_DOUBLE', 'float'), sys.odciobject('DATE%', 'timestamp'), sys.odciobject('TIMESTAMP%', 'timestamp'), sys.odciobject('INTERVAL%', 'interval'), sys.odciobject('%LOB', 'blob'), sys.odciobject('BFILE', 'blob')))) data_xlate WHERE table_name = '\(table_name)'  AND data_type LIKE data_xlate.name"
 		}
 		transformations : {
 			quote : utils_lib.str_transform.char_tmpl { char : "'"  replacement : "''" }
@@ -1034,7 +1067,7 @@ sql_providers : {
 			sql_query : "SELECT QUOTE_IDENT(table_schema) || '.' || QUOTE_IDENT(table_name) AS sql_from, QUOTE_LITERAL(table_schema) AS table_schema, QUOTE_LITERAL(table_name) AS table_name, regexp_replace(regexp_replace(table_schema || '_' || table_name, '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 't\\1') AS \"ATTRNAME\" FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema');"
 		}
 		column_discovery +: {
-			sql_query : "SELECT QUOTE_IDENT(table_schema) || '.' || QUOTE_IDENT(table_name) || '.' || QUOTE_IDENT(column_name) AS sql_expr, regexp_replace(regexp_replace(column_name, '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 'c\\1') AS \"ATTRNAME\", data_type, 'sql_types.' || data_xlate.lookup AS \"$sql_type\" FROM information_schema.columns, (VALUES ('bigint', 'int'), ('bigserial', 'int'), ('integer', 'int'), ('interval%', 'int'), ('serial', 'int'), ('smallint', 'int'), ('boolean', 'bool'), ('numeric%', 'float'), ('double precision', 'float'), ('real', 'float'), ('bytea', 'str'), ('character%', 'bool'), ('text', 'str'), ('date', 'timestamp'), ('time%', 'timestamp'), ('interval%', 'interval'), ('bytea', 'blob') AS data_xlate (name, lookup) WHERE table_schema = \(table.table_schema) AND table_name = \(table.table_name) AND data_type LIKE data_xlate.name"
+			sql_query : "SELECT QUOTE_IDENT(table_schema) || '.' || QUOTE_IDENT(table_name) || '.' || QUOTE_IDENT(column_name) AS sql_expr, QUOTE_IDENT(column_name) AS sql_column, regexp_replace(regexp_replace(column_name, '[^a-zA-Z0-9_]', '_'), '^([^a-z])', 'c\\1') AS \"ATTRNAME\", data_type, 'sql_types.' || data_xlate.lookup AS \"$sql_type\" FROM information_schema.columns, (VALUES ('bigint', 'int'), ('bigserial', 'int'), ('integer', 'int'), ('interval%', 'int'), ('serial', 'int'), ('smallint', 'int'), ('boolean', 'bool'), ('numeric%', 'float'), ('double precision', 'float'), ('real', 'float'), ('bytea', 'str'), ('character%', 'bool'), ('text', 'str'), ('date', 'timestamp'), ('time%', 'timestamp'), ('interval%', 'interval'), ('bytea', 'blob') AS data_xlate (name, lookup) WHERE table_schema = \(table.table_schema) AND table_name = \(table.table_name) AND data_type LIKE data_xlate.name"
 		}
 		quote_start : "E'"
 		blob_start : "E'\\x"
@@ -1067,37 +1100,42 @@ sql_providers : {
 		table_discovery +: {
 			sql_query : "SELECT name AS \"ATTRNAME\", tbl_name AS sql_from FROM sqlite_master WHERE type = 'table'"
 		}
-		column_discovery +: {
+		column_discovery : Template retrieve {
 			sql_query : "PRAGMA table_info(\"\(table.sql_from)\")"
 			# SQLite doesn't give us the power to control the format of the data we
 			# get back, so we get to do it locally. Fun.
 			value +orig:
 				For col : orig
-					Select col.name : sql_row_tmpl {
-						sql_expr : "\(table.sql_from).\(col.name)"
-						sql_type :
-							If col.type Is Null Then sql_types.str
-							Else If
-								col.type == "BOOLEAN" Then sql_types.bool
-							Else If
-								col.type == "INT" ||
-								col.type == "INTEGER" ||
-								col.type == "TINYINT" ||
-								col.type == "SMALLINT" ||
-								col.type == "MEDIUMINT" ||
-								col.type == "BIGINT" ||
-								col.type == "UNSIGNED BIG INT" ||
-								col.type == "INT2" ||
-								col.type == "INT8" Then sql_types.int
-							Else If
-								col.type == "REAL" ||
-								col.type == "DOUBLE" ||
-								col.type == "DOUBLE PRECISION" ||
-								col.type == "FLOAT" Then sql_types.float
-							Else If
-								col.type == "BLOB" Then sql_types.blob
-							Else sql_types.str
-					}
+					Select col.name : sqlite_col { }
+			sqlite_col : Template expr.base_expr_tmpl {
+				sql_tables : Now utils_lib.frame(table.sql_from, name : GenerateId table)
+				sql_non_aggregate_columns : utils_lib.frame(sql_expr, name : Id)
+				sql_contains_aggregate : False
+				sql_expr : "\"\(table.sql_from)\".\"\(col.name)\""
+				sql_column : "\"\(col.name)\""
+				sql_type :
+					If col.type Is Null Then sql_types.str
+					Else If
+						col.type == "BOOLEAN" Then sql_types.bool
+					Else If
+						col.type == "INT" ||
+						col.type == "INTEGER" ||
+						col.type == "TINYINT" ||
+						col.type == "SMALLINT" ||
+						col.type == "MEDIUMINT" ||
+						col.type == "BIGINT" ||
+						col.type == "UNSIGNED BIG INT" ||
+						col.type == "INT2" ||
+						col.type == "INT8" Then sql_types.int
+					Else If
+						col.type == "REAL" ||
+						col.type == "DOUBLE" ||
+						col.type == "DOUBLE PRECISION" ||
+						col.type == "FLOAT" Then sql_types.float
+					Else If
+						col.type == "BLOB" Then sql_types.blob
+					Else sql_types.str
+			}
 		}
 		transformations : {
 			# This is kind of scary, but what's actually listed in the SQL92 spec and

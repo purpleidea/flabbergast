@@ -2,7 +2,6 @@ sql_lib : From lib:sql
 utils_lib : From lib:utils
 
 test_query : Template sql_lib.offline_query {
-	table : [ { sql_from : "XXX"  known_columns : [] } ]
 	columns : {
 		a : expr.extract {
 			field : year

@@ -6,12 +6,12 @@ test_query : Template sql_lib.offline_query {
 		x : column.foo.a
 		y : expr.mul { left : column.blah.a  right : column.foo.z }
 	}
-	table : {
-		blah : sql_literal_table_tmpl {
+	user_defined_tables +: {
+		blah : Template sql_literal_table_tmpl {
 			rows : [ { a : 5 }, { a : 3  b : "x" } ]
 			table_name : "lit"
 		}
-		foo : offline_table_tmpl {
+		foo : Template offline_table_tmpl {
 			table_name : "hi"
 			table_schema : "ho"
 			columns +: {

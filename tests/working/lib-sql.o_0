@@ -2,8 +2,8 @@ sql_lib : From lib:sql
 utils_lib : From lib:utils
 
 test_query : Template sql_lib.offline_query {
-	table : {
-		xxx : offline_table_tmpl {
+	user_defined_tables +: {
+		xxx : Template offline_table_tmpl {
 			table_schema : "BLAH"
 			table_name : "XXX"
 			columns +: {
@@ -11,7 +11,7 @@ test_query : Template sql_lib.offline_query {
 				bbb : column_tmpl { column_name : "BBB" }
 			}
 		}
-		yyy : offline_table_tmpl {
+		yyy : Template offline_table_tmpl {
 			table_name : "YYY"
 			table_schema : "BLAH"
 			columns +: {
