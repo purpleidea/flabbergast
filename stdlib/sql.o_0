@@ -1132,40 +1132,37 @@ sql_providers : {
 		table_discovery +: {
 			sql_query : "SELECT name AS \"ATTRNAME\", tbl_name AS sql_from FROM sqlite_master WHERE type = 'table'"
 		}
-		column_discovery : Template retrieve {
+		column_discovery +: {
 			sql_query : "PRAGMA table_info(\"\(table.sql_from)\")"
 			# SQLite doesn't give us the power to control the format of the data we
 			# get back, so we get to do it locally. Fun.
 			value +orig:
 				For col : orig
-					Select col.name : sqlite_col { }
-			sqlite_col : Template expr.base_expr_tmpl {
-				sql_tables : Now utils_lib.frame(table.sql_from, name : GenerateId table)
-				sql_non_aggregate_columns : utils_lib.frame(sql_expr, name : Id)
-				sql_contains_aggregate : False
-				sql_expr : "\"\(table.sql_from)\".\"\(col.name)\""
-				sql_column : "\"\(col.name)\""
+					Select col.name : col
+			sql_row_tmpl +: {
+				sql_expr : "\"\(table.sql_from)\".\"\(name)\""
+				sql_column : "\"\(name)\""
 				sql_type :
-					If col.type Is Null Then sql_types.str
+					If type Is Null Then sql_types.str
 					Else If
-						col.type == "BOOLEAN" Then sql_types.bool
+						type == "BOOLEAN" Then sql_types.bool
 					Else If
-						col.type == "INT" ||
-						col.type == "INTEGER" ||
-						col.type == "TINYINT" ||
-						col.type == "SMALLINT" ||
-						col.type == "MEDIUMINT" ||
-						col.type == "BIGINT" ||
-						col.type == "UNSIGNED BIG INT" ||
-						col.type == "INT2" ||
-						col.type == "INT8" Then sql_types.int
+						type == "INT" ||
+						type == "INTEGER" ||
+						type == "TINYINT" ||
+						type == "SMALLINT" ||
+						type == "MEDIUMINT" ||
+						type == "BIGINT" ||
+						type == "UNSIGNED BIG INT" ||
+						type == "INT2" ||
+						type == "INT8" Then sql_types.int
 					Else If
-						col.type == "REAL" ||
-						col.type == "DOUBLE" ||
-						col.type == "DOUBLE PRECISION" ||
-						col.type == "FLOAT" Then sql_types.float
+						type == "REAL" ||
+						type == "DOUBLE" ||
+						type == "DOUBLE PRECISION" ||
+						type == "FLOAT" Then sql_types.float
 					Else If
-						col.type == "BLOB" Then sql_types.blob
+						type == "BLOB" Then sql_types.blob
 					Else sql_types.str
 			}
 		}
