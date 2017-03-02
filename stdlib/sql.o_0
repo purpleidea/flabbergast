@@ -749,6 +749,38 @@ sql_provider : Template {
 				Then Error "Cannot perform cast with provided types."
 				Else "(CAST(\(arg.sql_expr Enforce Str) AS \(If sql_type.id Enforce Int == sql_types.blob.id Then provider.blob_type Enforce Str Else sql_type.name Enforce Str)))"
 		}
+		contains : Template base_expr_tmpl {
+			{{{An expression or literal to search for.}}}
+			needle : Required
+			{{{A list of expressions or literals to search through.}}}
+			haystack : Required
+
+			specials : sql_marshall_list(args : { n : needle }, provider : provider)
+			haystack_marshalled : sql_marshall_list(args : haystack, provider : provider)
+
+			sql_type : If (For h : haystack_marshalled Reduce h.sql_type.coerce B& acc With acc : specials.n.sql_type.coerce) == 0
+				Then Error "No common type for needle and all haystack items."
+				Else sql_types.bool
+
+			haystack_expr :
+				For h : haystack_marshalled, pos : Ordinal
+					Reduce
+						(If pos > 1 Then acc Enforce Str & "," Else "") &
+						h.sql_expr Enforce Str
+					With acc : Null
+			sql_expr :
+				If haystack_expr Is Null
+					Then "FALSE"
+					Else "(\(specials.n.sql_expr Enforce Str) IN (\(haystack_expr Enforce Str)))"
+			sql_tables : For h : haystack_marshalled
+				Reduce For table : h.sql_tables, acc_table : acc, name : Name Select name : table ?? acc_table
+				With acc : specials.n.sql_tables
+			sql_non_aggregate_columns :
+				For h : haystack_marshalled
+					Reduce For acc_cols : acc, arg_cols : h.sql_non_aggregate_columns, name : Name Select name : acc_cols ?? arg_cols
+					With acc : specials.n.sql_non_aggregate_columns
+			sql_contains_aggregate : For h : haystack_marshalled Reduce acc || h.sql_contains_aggregate With acc : specials.n.sql_contains_aggregate
+		}
 		count : Template base_aggregate_func_tmpl {
 			sql_func : "COUNT"
 			sql_allowed_arg_type_mask : sql_types.any
