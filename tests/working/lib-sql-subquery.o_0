@@ -1,0 +1,78 @@
+sql_lib : From lib:sql
+utils_lib : From lib:utils
+
+test_query : Template sql_lib.offline_query {
+	user_defined_tables +: {
+		xxx : Template offline_table_tmpl {
+			table_schema : "BLAH"
+			table_name : "XXX"
+			columns +: {
+				aaa : column_tmpl { column_name : "AAA" }
+				bbb : column_tmpl { column_name : "BBB"  sql_type : sql_types.int }
+			}
+		}
+		yyy : Template offline_table_tmpl {
+			table_name : "YYY"
+			table_schema : "BLAH"
+			columns +: {
+				ccc : column_tmpl { column_name : "CCC"  sql_type : sql_types.int }
+				ddd : column_tmpl { column_name : "DDD"  sql_type : sql_types.float }
+			}
+		}
+		zzz : Template offline_table_tmpl {
+			table_name : "ZZZ"
+			table_schema : "BLAH"
+			columns +: {
+				eee : column_tmpl { column_name : "EEE"  sql_type : sql_types.int }
+				fff : column_tmpl { column_name : "FFF"  sql_type : sql_types.float }
+			}
+		}
+	}
+	columns : {
+		b : expr.avg {
+			arg : column.yyy.ddd
+		}
+		c : expr.contains_subquery {
+			needle : 5
+			result : column.zzz.fff
+			where +: {
+				a : expr.gt {
+					left : expr.max {
+						arg : column.xxx.bbb
+					}
+					right : column.zzz.eee
+				}
+			}
+			group_by +: {
+				a : column.xxx.aaa
+			}
+			shared_tables +: {
+				zzz : table.zzz
+			}
+		}
+	}
+
+	where +: {
+		y : expr.lt {
+			left : column.zzz.fff
+			right : 3
+		}
+	}
+	group_by +: {
+		e : column.zzz.eee
+		f : column.zzz.fff
+	}
+}
+
+sql_stmts : {
+	mssql : "SELECT AVG([BLAH].[YYY].[DDD]) AS [b], (5 IN (SELECT [BLAH].[ZZZ].[FFF] FROM [BLAH].[XXX] WHERE (MAX([BLAH].[XXX].[BBB]) > [BLAH].[ZZZ].[EEE]) GROUP BY [BLAH].[XXX].[AAA]) AS [c] FROM [BLAH].[YYY], [BLAH].[ZZZ] WHERE ([BLAH].[ZZZ].[FFF] < 3) GROUP BY [BLAH].[ZZZ].[EEE], [BLAH].[ZZZ].[FFF]"
+	mysql : "SELECT AVG(`BLAH`.`YYY`.`DDD`) AS `b`, (5 IN (SELECT `BLAH`.`ZZZ`.`FFF` FROM `BLAH`.`XXX` WHERE (MAX(`BLAH`.`XXX`.`BBB`) > `BLAH`.`ZZZ`.`EEE`) GROUP BY `BLAH`.`XXX`.`AAA`) AS `c` FROM `BLAH`.`YYY`, `BLAH`.`ZZZ` WHERE (`BLAH`.`ZZZ`.`FFF` < 3) GROUP BY `BLAH`.`ZZZ`.`EEE`, `BLAH`.`ZZZ`.`FFF`"
+	oracle : "SELECT AVG(\"BLAH\".\"YYY\".\"DDD\") AS \"b\", (5 IN (SELECT \"BLAH\".\"ZZZ\".\"FFF\" FROM \"BLAH\".\"XXX\" WHERE (MAX(\"BLAH\".\"XXX\".\"BBB\") > \"BLAH\".\"ZZZ\".\"EEE\") GROUP BY \"BLAH\".\"XXX\".\"AAA\") AS \"c\" FROM \"BLAH\".\"YYY\", \"BLAH\".\"ZZZ\" WHERE (\"BLAH\".\"ZZZ\".\"FFF\" < 3) GROUP BY \"BLAH\".\"ZZZ\".\"EEE\", \"BLAH\".\"ZZZ\".\"FFF\""
+	postgresql : "SELECT AVG(\"BLAH\".\"YYY\".\"DDD\") AS \"b\", (5 IN (SELECT \"BLAH\".\"ZZZ\".\"FFF\" FROM \"BLAH\".\"XXX\" WHERE (MAX(\"BLAH\".\"XXX\".\"BBB\") > \"BLAH\".\"ZZZ\".\"EEE\") GROUP BY \"BLAH\".\"XXX\".\"AAA\") AS \"c\" FROM \"BLAH\".\"YYY\", \"BLAH\".\"ZZZ\" WHERE (\"BLAH\".\"ZZZ\".\"FFF\" < 3) GROUP BY \"BLAH\".\"ZZZ\".\"EEE\", \"BLAH\".\"ZZZ\".\"FFF\""
+	sqlite : "SELECT AVG(\"BLAH\".\"YYY\".\"DDD\") AS \"b\", (5 IN (SELECT \"BLAH\".\"ZZZ\".\"FFF\" FROM \"BLAH\".\"XXX\" WHERE (MAX(\"BLAH\".\"XXX\".\"BBB\") > \"BLAH\".\"ZZZ\".\"EEE\") GROUP BY \"BLAH\".\"XXX\".\"AAA\") AS \"c\" FROM \"BLAH\".\"YYY\", \"BLAH\".\"ZZZ\" WHERE (\"BLAH\".\"ZZZ\".\"FFF\" < 3) GROUP BY \"BLAH\".\"ZZZ\".\"EEE\", \"BLAH\".\"ZZZ\".\"FFF\""
+}
+
+results : For provider : sql_lib.sql_providers, stmt : sql_stmts, name : Name
+	Select name : stmt Is Null || test_query(provider : provider {}) == stmt
+
+value : utils_lib.all(args : results)
