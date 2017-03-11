@@ -488,12 +488,18 @@ multiply : Template {
 }
 
 {{{Selects all non-null values in a frame.}}}
-non_null : Template {
-	args : Used
-	value :
-		For arg : args, arg_name : Name
-			Where !(arg Is Null)
-			Select arg_name : arg
+non_null : non_nullifier(base : identity)
+
+{{{Convert a function-like template from on that returns a list of values to
+one that returns a list without nulls.}}}
+non_nullifier : Template {
+	base : Required
+	value : Template base {
+		value +orig:
+			For item : orig, name : Name
+				Where !(item Is Null)
+				Select name : item
+	}
 }
 
 {{{Select all the non-null values in a frame, discarding their attribute names.}}}
