@@ -975,6 +975,18 @@ sumifier : Template {
 	}
 }
 
+{{{Do type directed-lookup on the arguments.}}}
+typeof : typeofifier(base : identity)
+
+{{{Convert a function-like template from one that returns a list to one that is
+the result of a type-directed lookup of those items.}}}
+typeofifier : Template {
+	base : Required
+	value : Template base {
+		value +original: For item : original, name : Name Select name : TypeOf item
+	}
+}
+
 {{{Checks if the values in a frame are not equal to a constant.}}}
 unequal : Template {
 	args : Used
