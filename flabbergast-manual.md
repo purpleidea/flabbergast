@@ -599,7 +599,7 @@ The pattern `If x Is Null Then Null Else (x).y` tends to show up frequently. The
 
 ### Fricassée Expressions
 
-Although frames are immutable, it is possible to create new values from existing frames using fricassée expressions. These expressions take a collection of input frames an iterate over the attributes they share. The concept was based on XQuery's FLOWR expressions, which are based on SQL queries. It should be familiar to users of Haskell and LISP's `map` and `fold` functions, C#'s LINQ expressions, Python's `map` and `reduce` operators, or Perl's `map` construct. Conceptually, the expression has three parts: a source, an optional filter, and a sink. The source extracts data from frames and produces a context in which each subsequent expression will be evaluated. The filter can discard any contexts that do not meet certain requirements. The sink produces a value from the contexts: either a new frame, or a single value for a reduction. Some sinks respect the ordering of the contexts, so there are common ordering tools.
+Although frames are immutable, it is possible to create new values from existing frames using fricassée expressions. These expressions take a collection of input frames an iterate over the attributes they share. The concept was based on [XQuery's FLOWR](https://en.wikipedia.org/wiki/XQuery) expressions, which are based on SQL queries. It should be familiar to users of Haskell and LISP's `map` and `fold` functions, [C#'s LINQ](https://msdn.microsoft.com/en-us/library/mt693024.aspx) expressions, [Python's list and dict comprehensions](https://docs.python.org/3/reference/expressions.html#displays-for-lists-sets-and-dictionaries), or Perl's [`map`](http://perldoc.perl.org/functions/map.html) and [`grep`](http://perldoc.perl.org/functions/grep.html) constructs. Conceptually, the expression has three parts: a source, optional manipulations, and a sink. The source extracts data from frames and produces a context in which each subsequent expression will be evaluated. The manipulations can filter can discard any contexts that do not meet certain requirements, reorder the data, or compute intermediate values. The sink produces a value from the contexts: either a new frame, or a single value for a reduction.
 
 There are two sources provided: the combined attributes of frames, and, prepared context frames. In all cases, the select is done over a collection of input frames and all the attributes of the input frames. The following example shows the first part of a fricassée expression for different sources over the same input frames. In the first three cases, the source will iterate over the union of all the attributes in the frames `x`, `y`, and `z` and each context will have `a`, `b`, and `c` bound to the values in the corresponding frames, or `Null` if there is no corresponding value. For the values only source, `i`, this is all the context will contain. In the case of `j`, the attribute name itself will be bound as `n` in a string, using the special `Name` value. In the case of `k`, the position will be provided using the special `Ordinal` value; indexing starts from 1.
 
@@ -722,10 +722,10 @@ is almost rewritten as:
       a : 3
       b : 2
       c : 1
-      z : f {
+      z : (f {
         args : Now [ a,  b ]
         c : Now c
-      }.value
+      }).value
     }
 
 In this example, `c` would be circular evaluation when using normal evaluation semantics, but because the evaluation of the parameters happens in the containing context, this is fine. There is a subtle different too: the resulting frame's container will not be the one where it is instantiated, but the one where it is defined.
