@@ -143,7 +143,7 @@ function searchChange() {
         searchbox.className = null;
         termcss.innerHTML = "";
         updateRefs(null);
-    } else if (searchbox.value.match(validLookup)) {
+    } else if (validLookup.test(searchbox.value)) {
         var searchterm = searchbox.value.replace(".", "-");
         updateRefs(searchterm);
         searchbox.className = null;
