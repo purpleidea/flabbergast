@@ -164,6 +164,42 @@ bin_to_str_list : {
 	}
 }
 
+{{{Compute the bitwise and of the arguments.}}}
+bitand : bitandifier(base : identity)
+
+{{{Convert a function-like template from one that returns a list of integers
+into one that returns the bitwise and of their values.}}}
+bitandifier : Template {
+	base : Required
+	value : Template base {
+		value +original: For item : original Reduce item B& acc With acc : -1
+	}
+}
+
+{{{Compute the bitwise or of the arguments.}}}
+bitor : bitorifier(base : identity)
+
+{{{Convert a function-like template from one that returns a list of integers
+into one that returns the bitwise or of their values.}}}
+bitorifier : Template {
+	base : Required
+	value : Template base {
+		value +original: For item : original Reduce item B| acc With acc : 0
+	}
+}
+
+{{{Compute the bitwise exclusive or of the arguments.}}}
+bitxor : bitxorifier(base : identity)
+
+{{{Convert a function-like template from one that returns a list of integers
+into one that returns the bitwise exclusive or of their values.}}}
+bitxorifier : Template {
+	base : Required
+	value : Template base {
+		value +original: For item : original Reduce item B^ acc With acc : 0
+	}
+}
+
 {{{Limits the range of a list of values. For details, see \{clampifier}.}}}
 clamp_list : clampifier(base : identity)
 
