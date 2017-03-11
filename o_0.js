@@ -43,7 +43,7 @@ function pageLoad() {
             searchChange();
         } else if (term.startsWith("#item-")) {
             expandAll(term.substring(1));
-            // Bug: https://bugzilla.mozilla.org/show_bug.cgi?id=645075A
+            // Bug: https://bugzilla.mozilla.org/show_bug.cgi?id=645075
             if (navigator.userAgent.indexOf("Firefox") > -1) {
                 location.href += '';
             }
@@ -88,7 +88,8 @@ function pageLoad() {
         request.addEventListener("error", unref);
         request.addEventListener("load", function() {
             info.links = termsForExternal.transformToFragment(request.responseXML, document);
-            var newLibraries = request.responseXML.evaluate("//o_0:ref/text()[not(contains(., 'interop'))]", request.responseXML.documentElement, request.responseXML.createNSResolver(request.responseXML.documentElement), XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null);
+            var nsResolver = request.responseXML.createNSResolver(request.responseXML.documentElement);
+            var newLibraries = request.responseXML.evaluate("//o_0:ref/text()[not(contains(., 'interop'))]", request.responseXML.documentElement, nsResolver, XPathResult.UNORDERED_NODE_ITERATOR_TYPE, null);
             for (var newNameNode = newLibraries.iterateNext(); newNameNode; newNameNode = newLibraries.iterateNext()) {
                 var newName = newNameNode.textContent.replace("/", "-");
                 if (libraries.every(function(existing) {
@@ -106,17 +107,22 @@ function pageLoad() {
         request.send();
     };
     var xsltRequest = new XMLHttpRequest();
-    xsltRequest.addEventListener("error", unref);
+    xsltRequest.addEventListener("error", showTerm);
     xsltRequest.addEventListener("load", function() {
         try {
             termsForExternal.importStylesheet(xsltRequest.responseXML);
-
-            for (var i = 0; i < libraries.length; i++) {
-                downloadLibrary(libraries[i]);
-            }
         } catch(e) {
             console.log(e);
-            unref();
+            showTerm();
+            return;
+        }
+        for (var i = 0; i < libraries.length; i++) {
+            try {
+                downloadLibrary(libraries[i]);
+            } catch(e) {
+                console.log(e);
+                unref();
+            }
         }
     });
     xsltRequest.open("GET", "o_0-xref.xsl", true);
