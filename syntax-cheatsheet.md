@@ -178,6 +178,8 @@ ASCII hex escape: `\xFF`
 
 Unicode hex escape: `\uFFFF`
 
+Astral Unicode hex escape: `\U0001F525`
+
 Embedded expression: `\(expr)`
 
 
