@@ -1,7 +1,7 @@
 var validLookup = /^([a-z][a-zA-Z0-9_]*(\.[a-z][a-zA-Z0-9_]*)*)?$/;
 
 function checkNoMatches() {
-    var searchlist = document.getElementById('terms').getElementsByTagName('div')[0].getElementsByTagName('a');
+    var searchlist = document.getElementById('terms').getElementsByTagName('a');
     var any_visible = false;
     for (var it = 0; it < searchlist.length; it++) {
         if (window.getComputedStyle(searchlist[it]).getPropertyValue('display') != 'none') {
