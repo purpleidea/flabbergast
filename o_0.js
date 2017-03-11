@@ -25,7 +25,6 @@ function expandAll(id) {
     for (var target = document.getElementById(id); target != null && target.nodeName == 'DT'; target = target.parentElement.parentElement.previousElementSibling) {
         if (target.className == 'hidden') {
             target.className = null;
-            target.getElementsByClassName('roll')[0].textContent = "▼";
         }
     }
     return true;
@@ -245,7 +244,6 @@ function showTerm(term, prefix) {
 
 function showHide(roller) {
     var is_hidden = roller.parentNode.className == "hidden";
-    roller.textContent = is_hidden ? "▼" : "▶";
     roller.parentNode.className = is_hidden ? "" : "hidden";
 }
 

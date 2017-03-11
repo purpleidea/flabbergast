@@ -64,13 +64,10 @@
       </xsl:if>
       <xsl:choose>
         <xsl:when test="not(./o_0:attr)">
-          <span class="roll">■</span>
-        </xsl:when>
-        <xsl:when test="./o_0:description">
-          <span class="roll" onclick="showHide(this);">▼</span>
+          <span class="terminal">■</span>
         </xsl:when>
         <xsl:otherwise>
-          <span class="roll" onclick="showHide(this);">▶</span>
+          <span class="roll" onclick="showHide(this);"><span></span></span>
         </xsl:otherwise>
       </xsl:choose>
       <xsl:choose>

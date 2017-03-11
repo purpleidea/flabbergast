@@ -35,9 +35,17 @@ dt span.def {
 font-style:italic;
 }
 
-dt span.roll {
+dt > span.terminal,dt > span.roll {
 color:#ddd;
 padding-right:.5em;
+}
+
+dt.hidden > span.roll > span:after {
+content:'▶';
+}
+
+dt > span.roll > span:after {
+content:'▼';
 }
 
 dd {
