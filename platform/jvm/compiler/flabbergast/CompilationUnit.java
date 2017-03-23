@@ -15,7 +15,7 @@ public abstract class CompilationUnit<T> {
     /**
      * A call back that will populate a function with generated code.
      */
-    public interface FunctionBlock {
+    public interface DefinitionBlock {
         void invoke(Generator generator, LoadableValue source_reference,
                     LoadableValue context, LoadableValue self,
                     LoadableValue container) throws Exception;
@@ -24,7 +24,7 @@ public abstract class CompilationUnit<T> {
     /**
      * A call back that will populate a function with generated code.
      */
-    public interface FunctionOverrideBlock {
+    public interface OverrideDefinitionBlock {
         void invoke(Generator generator, LoadableValue source_reference,
                     LoadableValue context, LoadableValue self,
                     LoadableValue container, LoadableValue original)
@@ -34,7 +34,7 @@ public abstract class CompilationUnit<T> {
     Set<String> externals = new HashSet<String>();
 
     /**
-     * Functions and functions we have generated before.
+     * Definitions and override definitions we have generated before.
      *
      * Since the surrounding syntax cannot affect a function, we cache the
      * functions to avoid regenerating them.
@@ -51,15 +51,15 @@ public abstract class CompilationUnit<T> {
      *
      * @throws Exception
      */
-    DelegateValue createFunction(AstNode node, String syntax_id,
-                                 FunctionBlock block, String root_prefix, Set<String> owner_externals)
+    DelegateValue createDefinition(AstNode node, String syntax_id,
+                                 DefinitionBlock block, String root_prefix, Set<String> owner_externals)
     throws Exception {
         generateId(node);
-        String name = root_prefix + "$Function" + id_gen.get(node) + syntax_id;
+        String name = root_prefix + "$Definition" + id_gen.get(node) + syntax_id;
         if (functions.containsKey(name)) {
             return functions.get(name);
         }
-        FunctionGenerator generator = createFunctionGenerator(node, name,
+        DefinitionGenerator generator = createDefinitionGenerator(node, name,
                                       false, root_prefix, owner_externals);
         block.invoke(generator, generator.getInitialContainerFrame(),
                      generator.getInitialContext(), generator.getInitialSelfFrame(),
@@ -71,26 +71,26 @@ public abstract class CompilationUnit<T> {
         return initialiser;
     }
 
-    private FunctionGenerator createFunctionGenerator(AstNode node,
+    private DefinitionGenerator createDefinitionGenerator(AstNode node,
             String name, boolean has_original, String root_prefix,
             Set<String> owner_externals) throws NoSuchMethodException,
         NoSuchFieldException, SecurityException {
         ClassVisitor type_builder = defineClass(Opcodes.ACC_FINAL, name,
-                                                Computation.class);
+                                                Future.class);
         type_builder.visitSource(node.getFileName(), null);
-        return new FunctionGenerator(node, this, type_builder, has_original,
+        return new DefinitionGenerator(node, this, type_builder, has_original,
                                      name, root_prefix, owner_externals);
     }
 
-    DelegateValue createFunctionOverride(AstNode node, String syntax_id,
-                                         FunctionOverrideBlock block, String root_prefix,
+    DelegateValue createOverrideDefinition(AstNode node, String syntax_id,
+                                         OverrideDefinitionBlock block, String root_prefix,
                                          Set<String> owner_externals) throws Exception {
         generateId(node);
         String name = root_prefix + "$Override" + id_gen.get(node) + syntax_id;
         if (functions.containsKey(name)) {
             return functions.get(name);
         }
-        FunctionGenerator generator = createFunctionGenerator(node, name, true,
+        DefinitionGenerator generator = createDefinitionGenerator(node, name, true,
                                       root_prefix, owner_externals);
         block.invoke(generator, generator.getInitialContainerFrame(),
                      generator.getInitialContext(), generator.getInitialOriginal(),
@@ -106,7 +106,7 @@ public abstract class CompilationUnit<T> {
     T createReplGenerator(AstNode node, String name, ReplGenerator.Block block)
     throws Exception {
         ClassVisitor type_builder = defineClass(Opcodes.ACC_FINAL
-                                                | Opcodes.ACC_PUBLIC, name, Computation.class);
+                                                | Opcodes.ACC_PUBLIC, name, Future.class);
         type_builder.visitSource(node.getFileName(), null);
         ReplGenerator generator = new ReplGenerator(node, this, type_builder,
                 name);
@@ -120,7 +120,7 @@ public abstract class CompilationUnit<T> {
     T createRootGenerator(AstNode node, String name, Generator.Block block)
     throws Exception {
         ClassVisitor type_builder = defineClass(Opcodes.ACC_FINAL
-                                                | Opcodes.ACC_PUBLIC, name, Computation.class);
+                                                | Opcodes.ACC_PUBLIC, name, Future.class);
         type_builder.visitSource(node.getFileName(), null);
         RootGenerator generator = new RootGenerator(node, this, type_builder,
                 name);

@@ -19,7 +19,7 @@ public class SettingsHandler : UriHandler {
     private SettingsHandler() {
     }
 
-    public Computation ResolveUri(TaskMaster master, string uri, out LibraryFailure reason) {
+    public Future ResolveUri(TaskMaster master, string uri, out LibraryFailure reason) {
         if (!uri.StartsWith("settings:")) {
             reason = LibraryFailure.Missing;
             return null;

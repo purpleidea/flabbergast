@@ -41,7 +41,7 @@ public class DirtyCollector : ErrorCollector {
     }
 }
 
-public class CheckResult : Computation {
+public class CheckResult : Future {
     private readonly System.Type test_target;
 
     public CheckResult(TaskMaster task_master, System.Type test_target) : base(task_master) {
@@ -54,7 +54,7 @@ public class CheckResult : Computation {
     }
 
     protected override void Run() {
-        var computation = (Computation) Activator.CreateInstance(test_target, task_master);
+        var computation = (Future) Activator.CreateInstance(test_target, task_master);
         computation.Notify(HandleFrameResult);
     }
 

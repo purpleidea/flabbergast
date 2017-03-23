@@ -49,7 +49,7 @@ class ReplGenerator extends Generator {
         ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
         ctor_builder.visitVarInsn(Opcodes.ALOAD, 1);
         ctor_builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
-                                     getInternalName(Computation.class), "<init>",
+                                     getInternalName(Future.class), "<init>",
                                      makeSignature(null, TaskMaster.class));
         for (int it = 0; it < initial_information.length; it++) {
             ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);

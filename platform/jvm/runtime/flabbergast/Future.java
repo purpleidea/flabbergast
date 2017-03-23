@@ -7,7 +7,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * A generic computation to be worked on by the TaskMaster.
  */
-public abstract class Computation {
+public abstract class Future {
 
     /**
      * Apply an override to a normal computation resulting in another normal
@@ -20,14 +20,14 @@ public abstract class Computation {
         return new ComputeValue() {
 
             @Override
-            public Computation invoke(TaskMaster task_master,
+            public Future invoke(TaskMaster task_master,
                                       SourceReference reference, Context context, Frame self,
                                       Frame container) {
                 SourceReference inner_reference = new BasicSourceReference(
                     "used by override", filename, start_line, start_column,
                     end_line, end_column, reference);
                 if (original == null) {
-                    return new FailureComputation(task_master, inner_reference,
+                    return new FailureFuture(task_master, inner_reference,
                                                   "override of non-existant attribute");
                 }
 
@@ -56,7 +56,7 @@ public abstract class Computation {
 
     private final Lock ex = new ReentrantLock();
 
-    public Computation(TaskMaster task_master) {
+    public Future(TaskMaster task_master) {
         this.task_master = task_master;
     }
 

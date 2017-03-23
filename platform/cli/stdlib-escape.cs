@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 
 namespace Flabbergast {
-public class Escape : Computation {
+public class Escape : Future {
     private delegate void ConsumeChar(int c);
     private delegate void ConsumeString(string str);
 

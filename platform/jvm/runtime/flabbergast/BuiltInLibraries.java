@@ -19,7 +19,7 @@ public class BuiltInLibraries implements UriLoader {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Class<? extends Computation> resolveUri(String uri,
+    public Class<? extends Future> resolveUri(String uri,
             Ptr<LibraryFailure> failure) {
         if (!uri.startsWith("lib:")) {
             return null;
@@ -27,7 +27,7 @@ public class BuiltInLibraries implements UriLoader {
         String type_name = "flabbergast.library."
                            + uri.substring(4).replace('/', '.');
         try {
-            return (Class<? extends Computation>) Class.forName(type_name);
+            return (Class<? extends Future>) Class.forName(type_name);
         } catch (ClassNotFoundException e) {
             failure.set(LibraryFailure.MISSING);
             return null;

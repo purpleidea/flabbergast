@@ -90,7 +90,7 @@ public class REPL {
             var parser = Parser.Open(files[0]);
             var root_type = parser.ParseFile(collector, unit, "REPLRoot");
             if (root_type != null) {
-                var computation = (Computation) Activator.CreateInstance(root_type, task_master);
+                var computation = (Future) Activator.CreateInstance(root_type, task_master);
                 computation.Notify(r => original = r as Frame);
                 task_master.Run();
                 task_master.ReportCircularEvaluation();
@@ -117,7 +117,7 @@ public class REPL {
             var run_type = parser.ParseRepl(collector, unit, "REPL" + id++);
             if (run_type != null) {
                 object result = null;
-                var computation = (Computation) Activator.CreateInstance(run_type, new object[] { task_master, original, current, update_current, (ConsumeResult)(output => result = output), (ConsumeResult) Console.WriteLine});
+                var computation = (Future) Activator.CreateInstance(run_type, new object[] { task_master, original, current, update_current, (ConsumeResult)(output => result = output), (ConsumeResult) Console.WriteLine});
                 computation.Notify(r => run = (r as bool?) ?? true);
                 task_master.Run();
                 if (result != null) {
@@ -159,7 +159,7 @@ public class REPL {
             }
             Console.WriteLine();
             t.SourceReference.Write(Console.Out, prefix, seen_srcref);
-        } else if (result is Computation) {
+        } else if (result is Future) {
             Console.WriteLine("<unfinished>");
         } else if (result is Stringish) {
             var provider = CodeDomProvider.CreateProvider("CSharp");

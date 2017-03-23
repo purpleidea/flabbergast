@@ -10,11 +10,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class InterlockedLookup {
     private AtomicInteger interlock = new AtomicInteger(1);
     private boolean isAway;
-    private final Computation owner;
+    private final Future owner;
     private final TaskMaster task_master;
     private final SourceReference source_reference;
     private final Context context;
-    public InterlockedLookup(Computation owner, TaskMaster task_master, SourceReference source_reference, Context context) {
+    public InterlockedLookup(Future owner, TaskMaster task_master, SourceReference source_reference, Context context) {
         this.task_master = task_master;
         this.owner = owner;
         this.source_reference = source_reference;
@@ -26,7 +26,7 @@ public class InterlockedLookup {
             throw new UnsupportedOperationException("Cannot lookup after finish.");
         }
         interlock.incrementAndGet();
-        Computation input_lookup = new Lookup(task_master, source_reference, names, context);
+        Future input_lookup = new Lookup(task_master, source_reference, names, context);
         input_lookup.listen(input_result -> {
             if (clazz.isAssignableFrom(input_result.getClass())) {
                 if (writer.test((T) input_result) && interlock.decrementAndGet() == 0) {

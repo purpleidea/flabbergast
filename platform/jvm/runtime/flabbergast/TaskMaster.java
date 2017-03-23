@@ -23,9 +23,9 @@ public abstract class TaskMaster implements Iterable<Lookup> {
 
     private static ServiceLoader<UriService> URI_SERVICES = ServiceLoader.load(UriService.class);
 
-    private Queue<Computation> computations = new LinkedList<Computation>();
+    private Queue<Future> computations = new LinkedList<Future>();
 
-    private Map<String, Computation> external_cache = new HashMap<String, Computation>();
+    private Map<String, Future> external_cache = new HashMap<String, Future>();
 
     private ArrayList<UriHandler> handlers = new ArrayList<UriHandler>();
 
@@ -86,14 +86,14 @@ public abstract class TaskMaster implements Iterable<Lookup> {
         if (uri.startsWith("lib:")) {
             if (uri.length() < 5) {
                 reportExternalError(uri, LibraryFailure.BAD_NAME);
-                external_cache.put(uri, BlackholeComputation.INSTANCE);
+                external_cache.put(uri, BlackholeFuture.INSTANCE);
                 return;
             }
             for (int it = 5; it < uri.length(); it++) {
                 if (uri.charAt(it) != '/'
                         && !Character.isLetterOrDigit(uri.charAt(it))) {
                     reportExternalError(uri, LibraryFailure.BAD_NAME);
-                    external_cache.put(uri, BlackholeComputation.INSTANCE);
+                    external_cache.put(uri, BlackholeFuture.INSTANCE);
                     return;
                 }
             }
@@ -101,10 +101,10 @@ public abstract class TaskMaster implements Iterable<Lookup> {
 
         for (UriHandler handler : handlers) {
             Ptr<LibraryFailure> reason = new Ptr<LibraryFailure>();
-            Computation computation = handler.resolveUri(this, uri, reason);
+            Future computation = handler.resolveUri(this, uri, reason);
             if (reason.get() != null && reason.get() != LibraryFailure.MISSING) {
                 reportExternalError(uri, reason.get());
-                external_cache.put(uri, BlackholeComputation.INSTANCE);
+                external_cache.put(uri, BlackholeFuture.INSTANCE);
                 return;
             }
             if (computation != null) {
@@ -114,7 +114,7 @@ public abstract class TaskMaster implements Iterable<Lookup> {
             }
         }
         reportExternalError(uri, LibraryFailure.MISSING);
-        external_cache.put(uri, BlackholeComputation.INSTANCE);
+        external_cache.put(uri, BlackholeFuture.INSTANCE);
     }
 
     public boolean hasInflightLookups() {
@@ -162,7 +162,7 @@ public abstract class TaskMaster implements Iterable<Lookup> {
     public void run() {
         Collections.sort(handlers, (a, b) -> a.getPriority() - b.getPriority());
         while (!computations.isEmpty()) {
-            Computation task = computations.poll();
+            Future task = computations.poll();
             task.compute();
         }
     }
@@ -170,7 +170,7 @@ public abstract class TaskMaster implements Iterable<Lookup> {
     /**
      * Add a computation to be executed.
      */
-    public void slot(final Computation computation) {
+    public void slot(final Future computation) {
         if (computation instanceof Lookup && !inflight.contains(computation)) {
             inflight.add((Lookup) computation);
             computation.listenDelayed(new ConsumeResult() {

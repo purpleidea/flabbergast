@@ -2,7 +2,7 @@ package flabbergast;
 
 import javax.xml.bind.DatatypeConverter;
 
-public class FromBase64 extends Computation {
+public class FromBase64 extends Future {
 
     private InterlockedLookup interlock;
     private String input;

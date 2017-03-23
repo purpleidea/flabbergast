@@ -69,7 +69,7 @@ public class TestHarness {
                 Parser parser = Parser.open(file.getAbsolutePath());
                 int test_id = id.get();
                 id.set(test_id + 1);
-                Class<? extends Computation> test_type = parser.parseFile(
+                Class<? extends Future> test_type = parser.parseFile(
                             collector, compiler.getCompilationUnit(), "Test"
                             + test_id);
                 success = collector.isAnalyseDirty();
@@ -95,7 +95,7 @@ public class TestHarness {
                 Parser parser = Parser.open(file.getAbsolutePath());
                 int test_id = id.get();
                 id.set(test_id + 1);
-                Class<? extends Computation> test_type = parser.parseFile(
+                Class<? extends Future> test_type = parser.parseFile(
                             collector, compiler.getCompilationUnit(), "Test"
                             + test_id);
                 success = !collector.isAnalyseDirty()

@@ -18,15 +18,15 @@ public class UriInstantiator implements UriHandler {
         return loader.getPriority();
     }
 
-    public Computation resolveUri(TaskMaster task_master, String uri,
+    public Future resolveUri(TaskMaster task_master, String uri,
                                   Ptr<LibraryFailure> reason) {
-        Class<? extends Computation> t = loader.resolveUri(uri, reason);
+        Class<? extends Future> t = loader.resolveUri(uri, reason);
         if (t == null) {
             return null;
         }
 
         try {
-            Computation computation;
+            Future computation;
             computation = t.getDeclaredConstructor(TaskMaster.class)
                           .newInstance(task_master);
             return computation;

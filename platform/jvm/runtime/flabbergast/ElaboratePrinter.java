@@ -55,7 +55,7 @@ public abstract class ElaboratePrinter implements ConsumeResult {
                 write(name);
             }
             write("\n");
-        } else if (result instanceof Computation) {
+        } else if (result instanceof Future) {
             write("<unfinished>");
             write("\n");
         } else if (result instanceof Stringish) {

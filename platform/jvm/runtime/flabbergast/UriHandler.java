@@ -7,6 +7,6 @@ public interface UriHandler {
 
     int getPriority();
 
-    Computation resolveUri(TaskMaster task_master, String uri,
+    Future resolveUri(TaskMaster task_master, String uri,
                            Ptr<LibraryFailure> reason);
 }

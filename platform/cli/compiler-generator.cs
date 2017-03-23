@@ -13,11 +13,11 @@ public class CompilationUnit {
     /**
      * A call back that will populate a function with generated code.
      */
-    internal delegate void FunctionBlock(Generator generator, LoadableValue source_reference, LoadableValue context, LoadableValue self, LoadableValue container);
+    internal delegate void DefinitionBlock(Generator generator, LoadableValue source_reference, LoadableValue context, LoadableValue self, LoadableValue container);
     /**
      * A call back that will populate a function with generated code.
      */
-    internal delegate void FunctionOverrideBlock(Generator generator, LoadableValue source_reference, LoadableValue context, LoadableValue self, LoadableValue container, LoadableValue original);
+    internal delegate void OverrideDefinitionBlock(Generator generator, LoadableValue source_reference, LoadableValue context, LoadableValue self, LoadableValue container, LoadableValue original);
     /**
      * A call back that will populate a REPL element.
      */
@@ -48,7 +48,7 @@ public class CompilationUnit {
      */
     private readonly System.Runtime.Serialization.ObjectIDGenerator id_gen = new System.Runtime.Serialization.ObjectIDGenerator();
     /**
-     * Functions and override functions we have generated before.
+     * Definitions and override definitions we have generated before.
      *
      * Since the surrounding syntax cannot affect a function, we cache the
      * functions to avoid regenerating them.
@@ -72,13 +72,13 @@ public class CompilationUnit {
     /**
      * Create a new function, and use the provided block to fill it with code.
      */
-    internal MethodInfo CreateFunction(AstNode node, string syntax_id, FunctionBlock block, string root_prefix, Dictionary<string, bool> owner_externals) {
+    internal MethodInfo CreateDefinition(AstNode node, string syntax_id, DefinitionBlock block, string root_prefix, Dictionary<string, bool> owner_externals) {
         bool used;
-        var name = String.Concat(root_prefix, "Function", id_gen.GetId(node, out used), syntax_id);
+        var name = String.Concat(root_prefix, "Defition", id_gen.GetId(node, out used), syntax_id);
         if (functions.ContainsKey(name)) {
             return functions[name];
         }
-        var generator = CreateFunctionGenerator(node, name, false, root_prefix, owner_externals);
+        var generator = CreateDefinitionGenerator(node, name, false, root_prefix, owner_externals);
         block(generator, generator.InitialContainerFrame, generator.InitialContext, generator.InitialSelfFrame, generator.InitialSourceReference);
         generator.GenerateSwitchBlock();
         functions[name] = generator.Initialiser;
@@ -89,13 +89,13 @@ public class CompilationUnit {
     /**
      * Create a new override function, and use the provided block to fill it with code.
      */
-    internal MethodInfo CreateFunctionOverride(AstNode node, string syntax_id, FunctionOverrideBlock block, string root_prefix, Dictionary<string, bool> owner_externals) {
+    internal MethodInfo CreateOverrideDefinition(AstNode node, string syntax_id, OverrideDefinitionBlock block, string root_prefix, Dictionary<string, bool> owner_externals) {
         bool used;
         var name = String.Concat(root_prefix, "Override", id_gen.GetId(node, out used), syntax_id);
         if (functions.ContainsKey(name)) {
             return functions[name];
         }
-        var generator = CreateFunctionGenerator(node, name, true, root_prefix, owner_externals);
+        var generator = CreateDefinitionGenerator(node, name, true, root_prefix, owner_externals);
         block(generator, generator.InitialContainerFrame, generator.InitialContext, generator.InitialOriginal, generator.InitialSelfFrame, generator.InitialSourceReference);
         generator.GenerateSwitchBlock();
         functions[name] = generator.Initialiser;
@@ -104,13 +104,13 @@ public class CompilationUnit {
         return generator.Initialiser;
     }
 
-    private FunctionGenerator CreateFunctionGenerator(AstNode node, string name, bool has_original, string root_prefix, Dictionary<string, bool> owner_externals) {
-        var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.NotPublic | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
-        return new FunctionGenerator(node, this, type_builder, has_original, root_prefix, owner_externals);
+    private DefinitionGenerator CreateDefinitionGenerator(AstNode node, string name, bool has_original, string root_prefix, Dictionary<string, bool> owner_externals) {
+        var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.NotPublic | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Future));
+        return new DefinitionGenerator(node, this, type_builder, has_original, root_prefix, owner_externals);
     }
 
     internal System.Type CreateRootGenerator(AstNode node, string name, Generator.Block block) {
-        var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
+        var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Future));
         var generator = new RootGenerator(node, this, type_builder, name);
         block(generator);
         generator.GenerateSwitchBlock(true);
@@ -118,7 +118,7 @@ public class CompilationUnit {
     }
 
     internal System.Type CreateReplGenerator(AstNode node, string name, ReplBlock block) {
-        var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Computation));
+        var type_builder = ModuleBuilder.DefineType(name, TypeAttributes.AutoLayout | TypeAttributes.Class | TypeAttributes.Public | TypeAttributes.Sealed | TypeAttributes.UnicodeClass, typeof(Future));
         var generator = new ReplGenerator(node, this, type_builder, name);
         block(generator, generator.RootFrame, generator.CurrentFrame, generator.UpdateCurrent, generator.EscapeValue, generator.PrintValue);
         generator.GenerateSwitchBlock(true);
@@ -240,7 +240,7 @@ internal abstract class Generator {
         this.owner_externals = owner_externals;
         StateField = TypeBuilder.DefineField("state", typeof(int), FieldAttributes.Private);
         interlock_field = TypeBuilder.DefineField("interlock", typeof(int), FieldAttributes.Private);
-        task_master = typeof(Computation).GetField("task_master", BindingFlags.NonPublic | BindingFlags.Instance);
+        task_master = typeof(Future).GetField("task_master", BindingFlags.NonPublic | BindingFlags.Instance);
         // Label for load externals
         DefineState();
         // Label for main body
@@ -328,11 +328,11 @@ internal abstract class Generator {
         LoadReboxed(source, target.FieldType);
         Builder.Emit(OpCodes.Stfld, target);
     }
-    internal MethodInfo CreateFunctionOverride(AstNode instance, string syntax_id, CompilationUnit.FunctionOverrideBlock block) {
-        return Owner.CreateFunctionOverride(instance, syntax_id, block, root_prefix, owner_externals);
+    internal MethodInfo CreateOverrideDefinition(AstNode instance, string syntax_id, CompilationUnit.OverrideDefinitionBlock block) {
+        return Owner.CreateOverrideDefinition(instance, syntax_id, block, root_prefix, owner_externals);
     }
-    internal MethodInfo CreateFunction(AstNode instance, string syntax_id, CompilationUnit.FunctionBlock block) {
-        return Owner.CreateFunction(instance, syntax_id, block, root_prefix, owner_externals);
+    internal MethodInfo CreateDefinition(AstNode instance, string syntax_id, CompilationUnit.DefinitionBlock block) {
+        return Owner.CreateDefinition(instance, syntax_id, block, root_prefix, owner_externals);
     }
     /**
      * Insert debugging information based on an AST node.
@@ -451,7 +451,7 @@ internal abstract class Generator {
         }
         LoadTaskMaster(consume_builder);
         consume_builder.Emit(OpCodes.Ldarg_0);
-        consume_builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new[] { typeof(Computation) }));
+        consume_builder.Emit(OpCodes.Call, typeof(TaskMaster).GetMethod("Slot", new[] { typeof(Future) }));
         consume_builder.MarkLabel(return_label);
         consume_builder.Emit(OpCodes.Ret);
 
@@ -761,7 +761,7 @@ internal abstract class Generator {
      */
     public void Return(LoadableValue result) {
         SlotIfFrame(result);
-        CopyField(result, typeof(Computation).GetField("result", BindingFlags.NonPublic | BindingFlags.Instance));
+        CopyField(result, typeof(Future).GetField("result", BindingFlags.NonPublic | BindingFlags.Instance));
         Builder.Emit(OpCodes.Ret);
     }
     public void SlotIfFrame(LoadableValue result) {
@@ -811,7 +811,7 @@ internal abstract class Generator {
         return result;
     }
 }
-internal class FunctionGenerator : Generator {
+internal class DefinitionGenerator : Generator {
     /**
      * A static method capable of creating a new instance of the class.
      */
@@ -855,7 +855,7 @@ internal class FunctionGenerator : Generator {
         private set;
     }
 
-    internal FunctionGenerator(AstNode node, CompilationUnit owner, TypeBuilder type_builder, bool has_original, string root_prefix, Dictionary<string, bool> owner_externals) : base(node, owner, type_builder, root_prefix, owner_externals) {
+    internal DefinitionGenerator(AstNode node, CompilationUnit owner, TypeBuilder type_builder, bool has_original, string root_prefix, Dictionary<string, bool> owner_externals) : base(node, owner, type_builder, root_prefix, owner_externals) {
         // Create fields for all information provided by the caller.
         InitialSourceReference = new FieldValue(TypeBuilder.DefineField("source_reference", typeof(SourceReference), FieldAttributes.Private));
         InitialContext = new FieldValue(TypeBuilder.DefineField("context", typeof(Context), FieldAttributes.Private));
@@ -870,7 +870,7 @@ internal class FunctionGenerator : Generator {
         var ctor_builder = ctor.GetILGenerator();
         ctor_builder.Emit(OpCodes.Ldarg_0);
         ctor_builder.Emit(OpCodes.Ldarg_1);
-        ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
+        ctor_builder.Emit(OpCodes.Call, typeof(Future).GetConstructors()[0]);
         for (var it = 0; it < initial_information.Length; it++) {
             ctor_builder.Emit(OpCodes.Ldarg_0);
             ctor_builder.Emit(OpCodes.Ldarg, it + 2);
@@ -887,12 +887,12 @@ internal class FunctionGenerator : Generator {
             for (var it = 0; it < construct_params.Length; it++) {
                 init_params[it] = construct_params[it];
             }
-            init_params[init_params.Length - 1] = typeof(Computation);
+            init_params[init_params.Length - 1] = typeof(Future);
         } else {
             init_params = construct_params;
         }
         // Create a static method that wraps the constructor. This is needed to create a delegate.
-        Initialiser = type_builder.DefineMethod("Init", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, typeof(Computation), init_params);
+        Initialiser = type_builder.DefineMethod("Init", MethodAttributes.Public | MethodAttributes.Static | MethodAttributes.HideBySig, typeof(Future), init_params);
         var init_builder = Initialiser.GetILGenerator();
         if (has_original) {
             // If the thing we are overriding is null, create an error and give up.
@@ -916,7 +916,7 @@ internal class FunctionGenerator : Generator {
         FieldInfo original_computation = null;
         if (has_original) {
             InitialOriginal = new FieldValue(TypeBuilder.DefineField("original", typeof(object), FieldAttributes.Private));
-            original_computation = TypeBuilder.DefineField("original_computation", typeof(Computation), FieldAttributes.Private);
+            original_computation = TypeBuilder.DefineField("original_computation", typeof(Future), FieldAttributes.Private);
             init_builder.Emit(OpCodes.Dup);
             init_builder.Emit(OpCodes.Ldarg, init_params.Length - 1);
             init_builder.Emit(OpCodes.Stfld, original_computation);
@@ -930,7 +930,7 @@ internal class FunctionGenerator : Generator {
             Builder.Emit(OpCodes.Ldarg_0);
             Builder.Emit(OpCodes.Ldfld, original_computation);
             GenerateConsumeResult(InitialOriginal, false);
-            Builder.Emit(OpCodes.Callvirt, typeof(Computation).GetMethod("Notify", new[] { typeof(ConsumeResult) }));
+            Builder.Emit(OpCodes.Callvirt, typeof(Future).GetMethod("Notify", new[] { typeof(ConsumeResult) }));
             Builder.Emit(OpCodes.Ret);
             MarkState(state);
         }
@@ -972,7 +972,7 @@ class ReplGenerator : Generator {
         var ctor_builder = ctor.GetILGenerator();
         ctor_builder.Emit(OpCodes.Ldarg_0);
         ctor_builder.Emit(OpCodes.Ldarg_1);
-        ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
+        ctor_builder.Emit(OpCodes.Call, typeof(Future).GetConstructors()[0]);
         for (var it = 0; it < initial_information.Length; it++) {
             ctor_builder.Emit(OpCodes.Ldarg_0);
             ctor_builder.Emit(OpCodes.Ldarg, it + 2);
@@ -990,7 +990,7 @@ internal class RootGenerator : Generator {
         var ctor_builder = ctor.GetILGenerator();
         ctor_builder.Emit(OpCodes.Ldarg_0);
         ctor_builder.Emit(OpCodes.Ldarg_1);
-        ctor_builder.Emit(OpCodes.Call, typeof(Computation).GetConstructors()[0]);
+        ctor_builder.Emit(OpCodes.Call, typeof(Future).GetConstructors()[0]);
         ctor_builder.Emit(OpCodes.Ldarg_0);
         ctor_builder.Emit(OpCodes.Ldc_I4_0);
         ctor_builder.Emit(OpCodes.Stfld, StateField);

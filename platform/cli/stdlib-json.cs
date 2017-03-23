@@ -3,7 +3,7 @@ using System.Json;
 using System.Threading;
 
 namespace Flabbergast {
-public class JsonParser : Computation {
+public class JsonParser : Future {
     private InterlockedLookup interlock;
     private string input;
     private SourceReference source_reference;
@@ -65,7 +65,7 @@ public class JsonParser : Computation {
                     { "json_name", name }, { "arg", new SimpleStringish((string) node) }
                 };
             default:
-                return new FailureComputation(task_master, source_reference, "Unknown JSON entry.");
+                return new FailureFuture(task_master, source_reference, "Unknown JSON entry.");
             }
         };
     }

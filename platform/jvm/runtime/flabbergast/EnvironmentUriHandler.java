@@ -13,7 +13,7 @@ public class EnvironmentUriHandler implements UriHandler {
     public int getPriority() {
         return 0;
     }
-    public Computation resolveUri(TaskMaster task_master, String uri,
+    public Future resolveUri(TaskMaster task_master, String uri,
                                   Ptr<LibraryFailure> reason) {
         if (!uri.startsWith("env:")) {
             reason.set(LibraryFailure.MISSING);

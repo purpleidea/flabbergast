@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 
 namespace Flabbergast {
-public class CharacterCategory : Computation {
+public class CharacterCategory : Future {
     private static readonly Dictionary<UnicodeCategory, string> categories = new Dictionary<UnicodeCategory, string> {
         { UnicodeCategory.LowercaseLetter, "letter_lower" },
         { UnicodeCategory.ModifierLetter, "letter_modifier" },
@@ -71,7 +71,7 @@ public class CharacterCategory : Computation {
         result = frame;
     }
 }
-public class StringToCodepoints : Computation {
+public class StringToCodepoints : Future {
     private InterlockedLookup interlock;
     private String input;
 
@@ -98,7 +98,7 @@ public class StringToCodepoints : Computation {
         result = frame;
     }
 }
-public class Punycode : Computation {
+public class Punycode : Future {
     private InterlockedLookup interlock;
 
     private String input;

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Flabbergast {
 public class CurrentInformation : UriHandler {
-    private Dictionary<String, Computation> information = new Dictionary<String, Computation>();
+    private Dictionary<String, Future> information = new Dictionary<String, Future>();
 
     public string UriName {
         get {
@@ -26,7 +26,7 @@ public class CurrentInformation : UriHandler {
         information["vm/version"] = new Precomputation(new SimpleStringish(Environment.Version.ToString()));
     }
 
-    public Computation ResolveUri(TaskMaster master, string uri, out LibraryFailure reason) {
+    public Future ResolveUri(TaskMaster master, string uri, out LibraryFailure reason) {
         reason = LibraryFailure.Missing;
         if (!uri.StartsWith("current:"))
             return null;

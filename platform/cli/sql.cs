@@ -5,7 +5,7 @@ using System.Data.Common;
 using System.Threading;
 
 namespace Flabbergast {
-public class DbQuery : Computation {
+public class DbQuery : Future {
     private delegate string NameChooser(DbDataReader rs, long it);
     private delegate void Retriever(DbDataReader rs, MutableFrame frame, TaskMaster task_master);
     private delegate object Unpacker(DbDataReader rs, int position, TaskMaster task_master);
@@ -274,7 +274,7 @@ public class DbUriHandler : UriHandler {
         }
     }
 
-    public Computation ResolveUri(TaskMaster task_master, string uri, out LibraryFailure reason) {
+    public Future ResolveUri(TaskMaster task_master, string uri, out LibraryFailure reason) {
         if (!uri.StartsWith("sql:")) {
             reason = LibraryFailure.Missing;
             return null;
@@ -286,7 +286,7 @@ public class DbUriHandler : UriHandler {
             int first_colon = 5;
             while (first_colon < uri.Length && uri[first_colon] != ':') first_colon++;
             if (first_colon >= uri.Length) {
-                return new FailureComputation(task_master, new ClrSourceReference(), "Bad provider in URI “" + uri + "”.");
+                return new FailureFuture(task_master, new ClrSourceReference(), "Bad provider in URI “" + uri + "”.");
             }
             var provider = uri.Substring(4, first_colon - 4);
             int question_mark = first_colon;
@@ -298,7 +298,7 @@ public class DbUriHandler : UriHandler {
                         continue;
                     var parts = param_str.Split(new [] {'='}, 2);
                     if (parts.Length != 2) {
-                        return new FailureComputation(task_master, new ClrSourceReference(), "Bad parameter “" + param_str + "”.");
+                        return new FailureFuture(task_master, new ClrSourceReference(), "Bad parameter “" + param_str + "”.");
                     }
                     param[parts[0]] = parts[1];
                 }
@@ -307,7 +307,7 @@ public class DbUriHandler : UriHandler {
             string error;
             var connection = DbParser.Parse(provider, uri_fragment, param, Finder, out error);
             if (connection == null) {
-                return new FailureComputation(task_master, new ClrSourceReference(), error ?? "Bad URI.");
+                return new FailureFuture(task_master, new ClrSourceReference(), error ?? "Bad URI.");
             }
 
             connection.Open();
@@ -317,7 +317,7 @@ public class DbUriHandler : UriHandler {
             connection_proxy.Set("provider", new SimpleStringish(plus_position == -1 ? provider : provider.Substring(0, plus_position)));
             return new Precomputation(connection_proxy);
         } catch (Exception e) {
-            return new FailureComputation(task_master, new ClrSourceReference(e), e.Message);
+            return new FailureFuture(task_master, new ClrSourceReference(e), e.Message);
         }
     }
 }

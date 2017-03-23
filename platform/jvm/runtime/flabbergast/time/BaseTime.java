@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-public abstract class BaseTime extends Computation {
+public abstract class BaseTime extends Future {
     private static final DateFormatSymbols symbols = new DateFormatSymbols();
     public static final Frame[] DAYS = makeFrames(
                                            new String[] {"sunday", "monday", "tuesday", "wednesday",
@@ -178,7 +178,7 @@ public abstract class BaseTime extends Computation {
         });
     }
     protected void getTime(final ConsumeDateTime target, final String name) {
-        Computation lookup = new Lookup(task_master, source_reference,
+        Future lookup = new Lookup(task_master, source_reference,
                                         new String[] {name}, context);
         lookup.listen(new ConsumeResult() {
             @Override

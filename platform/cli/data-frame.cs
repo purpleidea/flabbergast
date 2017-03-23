@@ -75,8 +75,8 @@ public abstract class Frame : DynamicObject, IAttributeNames {
             return false;
         }
 
-        if (result is Computation) {
-            ((Computation) result).Notify(consumer);
+        if (result is Future) {
+            ((Future) result).Notify(consumer);
         } else {
             consumer(result);
         }
@@ -131,7 +131,7 @@ public class MutableFrame : Frame {
         }
     }
     private readonly IDictionary<string, Object> attributes = new SortedDictionary<string, Object>();
-    private List<Computation> unslotted = new List<Computation>();
+    private List<Future> unslotted = new List<Future>();
     protected readonly TaskMaster task_master;
 
     public override object this[string name] {

@@ -186,7 +186,7 @@ public class JdbcUriHandler implements UriHandler {
         }
         return new SimpleStringish(s);
     }
-    public Computation resolveUri(TaskMaster task_master, String uri,
+    public Future resolveUri(TaskMaster task_master, String uri,
                                   Ptr<LibraryFailure> reason) {
         if (!uri.startsWith("sql:")) {
             reason.set(LibraryFailure.MISSING);
@@ -200,7 +200,7 @@ public class JdbcUriHandler implements UriHandler {
                 first_colon++;
             }
             if (first_colon == uri.length()) {
-                return new FailureComputation(task_master,
+                return new FailureFuture(task_master,
                                               new JavaSourceReference(), "Bad provider in URI “"
                                               + uri + "”.");
             }
@@ -219,7 +219,7 @@ public class JdbcUriHandler implements UriHandler {
                     }
                     String[] parts = param_str.split("=", 2);
                     if (parts.length != 2) {
-                        return new FailureComputation(task_master,
+                        return new FailureFuture(task_master,
                                                       new JavaSourceReference(), "Bad parameter “"
                                                       + param_str + "”.");
                     }
@@ -232,7 +232,7 @@ public class JdbcUriHandler implements UriHandler {
             String jdbc_uri = JdbcParser.parse(provider, uri_fragment, params,
                                                properties, finder, err);
             if (jdbc_uri == null) {
-                return new FailureComputation(task_master,
+                return new FailureFuture(task_master,
                                               new JavaSourceReference(), err.get());
             }
             Connection connection = DriverManager.getConnection(jdbc_uri,
@@ -252,7 +252,7 @@ public class JdbcUriHandler implements UriHandler {
             if (src_ref == null) {
                 src_ref = new JavaSourceReference();
             }
-            return new FailureComputation(task_master, src_ref, e.getMessage());
+            return new FailureFuture(task_master, src_ref, e.getMessage());
         }
     }
     public void setFinder(ResourcePathFinder finder) {

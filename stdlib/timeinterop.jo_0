@@ -1,24 +1,24 @@
-now_utc : XComputation flabbergast.time.UtcNow
-now_local : XComputation flabbergast.time.LocalNow
+now_utc : XFuture flabbergast.time.UtcNow
+now_local : XFuture flabbergast.time.LocalNow
 
 compare_list : Template {
-	value : For arg : args, arg_name : Name Select arg_name : XComputation flabbergast.time.Compare
+	value : For arg : args, arg_name : Name Select arg_name : XFuture flabbergast.time.Compare
 }
 
 modify_list : Template {
-	value : For arg : args, arg_name : Name Select arg_name : XComputation flabbergast.time.Modify
+	value : For arg : args, arg_name : Name Select arg_name : XFuture flabbergast.time.Modify
 }
 
 switch_zone_list : Template {
-	value : For arg : args, arg_name : Name Select arg_name : XComputation flabbergast.time.SwitchZone
+	value : For arg : args, arg_name : Name Select arg_name : XFuture flabbergast.time.SwitchZone
 }
 
 from_unix : Template {
-	value : XComputation flabbergast.time.FromUnix
+	value : XFuture flabbergast.time.FromUnix
 }
 
 from_parts : Template {
-	value : XComputation flabbergast.time.FromParts
+	value : XFuture flabbergast.time.FromParts
 }
 
 days : XInvoke flabbergast.time.BaseTime getDays ()

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 
 namespace Flabbergast {
-public class ParseDouble : Computation {
+public class ParseDouble : Future {
 
     private InterlockedLookup interlock;
     private String input;
@@ -34,7 +34,7 @@ public class ParseDouble : Computation {
     }
 }
 
-public class ParseInt : Computation {
+public class ParseInt : Future {
 
     private InterlockedLookup interlock;
     private String input;

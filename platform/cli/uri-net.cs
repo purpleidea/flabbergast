@@ -19,7 +19,7 @@ public class FtpHandler : UriHandler {
     private FtpHandler() {
     }
 
-    public Computation ResolveUri(TaskMaster master, string uri, out LibraryFailure reason) {
+    public Future ResolveUri(TaskMaster master, string uri, out LibraryFailure reason) {
         if (!uri.StartsWith("ftp:") && !uri.StartsWith("ftps:")) {
             reason = LibraryFailure.Missing;
             return null;
@@ -28,7 +28,7 @@ public class FtpHandler : UriHandler {
         try {
             return new Precomputation(new WebClient().DownloadData(uri));
         } catch (Exception e) {
-            return new FailureComputation(master, new NativeSourceReference(uri), e.Message);
+            return new FailureFuture(master, new NativeSourceReference(uri), e.Message);
 
         }
     }
@@ -51,7 +51,7 @@ public class HttpHandler : UriHandler {
     private HttpHandler() {
     }
 
-    public Computation ResolveUri(TaskMaster master, string uri, out LibraryFailure reason) {
+    public Future ResolveUri(TaskMaster master, string uri, out LibraryFailure reason) {
         if (!uri.StartsWith("http:") && !uri.StartsWith("https:")) {
             reason = LibraryFailure.Missing;
             return null;
@@ -69,7 +69,7 @@ public class HttpHandler : UriHandler {
             frame.Add("content_type", response.ContentType);
             return new Precomputation(frame);
         } catch (Exception e) {
-            return new FailureComputation(master, src_ref, e.Message);
+            return new FailureFuture(master, src_ref, e.Message);
 
         }
     }

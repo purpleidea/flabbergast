@@ -7,7 +7,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-public class JsonParser extends Computation {
+public class JsonParser extends Future {
     private static class Dispatch implements ComputeValue {
         Object name;
         Object node;
@@ -16,7 +16,7 @@ public class JsonParser extends Computation {
             this.node = node;
         }
         @Override
-        public Computation invoke(TaskMaster task_master,
+        public Future invoke(TaskMaster task_master,
                                   SourceReference src_ref, Context context, Frame self,
                                   Frame container) {
             Instantiation computation;
@@ -32,7 +32,7 @@ public class JsonParser extends Computation {
                 computation.add("children", new ComputeValue() {
 
                     @Override
-                    public Computation invoke(TaskMaster a_task_master,
+                    public Future invoke(TaskMaster a_task_master,
                                               SourceReference a_reference, Context a_context,
                                               Frame a_self, Frame a_container) {
                         MutableFrame a_arg_frame = new MutableFrame(
@@ -44,7 +44,7 @@ public class JsonParser extends Computation {
                                                     Unit.NULL, array.get(index)));
                             } catch (JSONException e) {
                                 a_arg_frame.set(index + 1,
-                                                new FailureComputation(a_task_master,
+                                                new FailureFuture(a_task_master,
                                                                        a_reference, e.getMessage()));
                             }
                         }
@@ -69,7 +69,7 @@ public class JsonParser extends Computation {
                 computation.add("json_name", name);
                 computation.add("children", new ComputeValue() {
                     @Override
-                    public Computation invoke(TaskMaster o_task_master,
+                    public Future invoke(TaskMaster o_task_master,
                                               SourceReference o_reference, Context o_context,
                                               Frame o_self, Frame o_container) {
                         MutableFrame o_arg_frame = new MutableFrame(
@@ -85,7 +85,7 @@ public class JsonParser extends Computation {
                                                              obj.get(name)));
                             } catch (JSONException e) {
                                 o_arg_frame.set(index,
-                                                new FailureComputation(o_task_master,
+                                                new FailureFuture(o_task_master,
                                                                        o_reference, e.getMessage()));
                             }
                             index++;
@@ -99,7 +99,7 @@ public class JsonParser extends Computation {
                 computation.add("json_name", name);
                 computation.add("arg", new SimpleStringish((String) node));
             } else {
-                return new FailureComputation(task_master, src_ref,
+                return new FailureFuture(task_master, src_ref,
                                               "Unknown JSON entry.");
             }
             return computation;

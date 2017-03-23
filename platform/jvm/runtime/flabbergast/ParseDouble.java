@@ -1,6 +1,6 @@
 package flabbergast;
 
-public class ParseDouble extends Computation {
+public class ParseDouble extends Future {
 
     private InterlockedLookup interlock;
     private String input;

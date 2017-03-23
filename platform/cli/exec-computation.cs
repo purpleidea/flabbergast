@@ -6,18 +6,18 @@ namespace Flabbergast {
 /**
  * A computation that never completes.
  */
-public class BlackholeComputation : Computation {
-    public readonly static Computation INSTANCE = new BlackholeComputation();
-    private BlackholeComputation() : base(null) {
+public class BlackholeFuture : Future {
+    public readonly static Future INSTANCE = new BlackholeFuture();
+    private BlackholeFuture() : base(null) {
     }
     protected override void Run() {
     }
 }
 
-public class FailureComputation : Computation {
+public class FailureFuture : Future {
     private string message;
     private SourceReference source_reference;
-    public FailureComputation(TaskMaster task_master, SourceReference reference, string message) : base(task_master) {
+    public FailureFuture(TaskMaster task_master, SourceReference reference, string message) : base(task_master) {
         this.source_reference = reference;
         this.message = message;
     }
@@ -30,14 +30,14 @@ public class FailureComputation : Computation {
 /**
  * Holds a value for inclusion of a pre-computed value in a template.
  */
-public class Precomputation : Computation {
+public class Precomputation : Future {
     public static ComputeValue Capture(object result) {
         return new Precomputation(result).ComputeValue;
     }
     public Precomputation(object result) : base(null) {
         this.result = result;
     }
-    public Computation ComputeValue(
+    public Future ComputeValue(
         TaskMaster task_master, SourceReference reference, Context context, Frame self, Frame container) {
         return this;
     }
@@ -48,11 +48,11 @@ public class Precomputation : Computation {
 public class InterlockedLookup {
     private int interlock = 1;
     private bool away;
-    private readonly Computation owner;
+    private readonly Future owner;
     private readonly TaskMaster task_master;
     private readonly SourceReference source_reference;
     private readonly Context context;
-    public InterlockedLookup(Computation owner, TaskMaster task_master, SourceReference source_reference, Context context) {
+    public InterlockedLookup(Future owner, TaskMaster task_master, SourceReference source_reference, Context context) {
         this.owner = owner;
         this.task_master = task_master;
         this.source_reference = source_reference;
@@ -64,7 +64,7 @@ public class InterlockedLookup {
             throw new InvalidOperationException("Cannot lookup after finish.");
         }
         Interlocked.Increment(ref interlock);
-        Computation input_lookup = new Lookup(task_master, source_reference, names, context);
+        Future input_lookup = new Lookup(task_master, source_reference, names, context);
         input_lookup.Notify(input_result => {
             if (input_result is T) {
                 if (writer((T) input_result) && Interlocked.Decrement(ref interlock) == 0) {

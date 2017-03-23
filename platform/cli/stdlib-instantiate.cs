@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 
 namespace Flabbergast {
-public class Instantiation : Computation, IEnumerable<string> {
+public class Instantiation : Future, IEnumerable<string> {
     private string[] names;
     private Dictionary<string, object> overrides = new Dictionary<string, object>();
     private Context context;

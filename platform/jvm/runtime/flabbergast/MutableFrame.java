@@ -11,7 +11,7 @@ public class MutableFrame extends Frame {
 
     private TreeMap<String, Object> attributes = new TreeMap<String, Object>();
 
-    private ArrayList<Computation> unslotted = new ArrayList<Computation>();
+    private ArrayList<Future> unslotted = new ArrayList<Future>();
 
     protected final TaskMaster task_master;
 
@@ -65,7 +65,7 @@ public class MutableFrame extends Frame {
                                             + ".");
         }
         if (value instanceof ComputeValue) {
-            Computation computation = ((ComputeValue) value).invoke(
+            Future computation = ((ComputeValue) value).invoke(
                                           task_master, getSourceReference(), getContext(), this,
                                           getContainer());
             attributes.put(name, computation);
@@ -114,7 +114,7 @@ public class MutableFrame extends Frame {
      * computation.
      */
     public void slot() {
-        for (Computation computation : unslotted) {
+        for (Future computation : unslotted) {
             computation.slot();
         }
         unslotted.clear();

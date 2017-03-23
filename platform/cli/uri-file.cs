@@ -19,7 +19,7 @@ public class FileHandler : UriHandler {
     private FileHandler() {
     }
 
-    public Computation ResolveUri(TaskMaster master, string uri, out LibraryFailure reason) {
+    public Future ResolveUri(TaskMaster master, string uri, out LibraryFailure reason) {
         if (!uri.StartsWith("file:")) {
             reason = LibraryFailure.Missing;
             return null;
@@ -28,7 +28,7 @@ public class FileHandler : UriHandler {
         try {
             return new Precomputation(File.ReadAllBytes(new Uri(uri).LocalPath));
         } catch (Exception e) {
-            return new FailureComputation(master, new NativeSourceReference(uri), e.Message);
+            return new FailureFuture(master, new NativeSourceReference(uri), e.Message);
         }
     }
 }

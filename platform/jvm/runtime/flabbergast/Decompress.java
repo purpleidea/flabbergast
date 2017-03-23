@@ -5,7 +5,7 @@ import java.io.ByteArrayInputStream;
 import java.util.zip.GZIPInputStream;
 import java.io.ByteArrayOutputStream;
 
-public class Decompress extends Computation {
+public class Decompress extends Future {
     private InterlockedLookup interlock;
     private byte[] input;
 

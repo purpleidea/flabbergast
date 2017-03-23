@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Threading;
 
 namespace Flabbergast.Time {
-public abstract class BaseTime : Computation {
+public abstract class BaseTime : Future {
     public static readonly Frame[] Days = MakeFrames(new [] {"sunday", "monday", "tuesday", "wednesday", "thrusday", "friday", "saturday"}, CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedDayNames, CultureInfo.CurrentCulture.DateTimeFormat.DayNames);
     public static readonly Frame[] Months = MakeFrames(new [] {"january", "februrary", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"}, CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedMonthNames, CultureInfo.CurrentCulture.DateTimeFormat.MonthNames);
 
@@ -82,7 +82,7 @@ public abstract class BaseTime : Computation {
         });
     }
     protected void GetTime(Action<DateTime> target, params string[] names) {
-        Computation lookup = new Lookup(task_master, source_reference, names, context);
+        Future lookup = new Lookup(task_master, source_reference, names, context);
         lookup.Notify(result => {
             if (result is ReflectedFrame && ((ReflectedFrame) result).Backing is DateTime) {
                 target((DateTime)((ReflectedFrame) result).Backing);

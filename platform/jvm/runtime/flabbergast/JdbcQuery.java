@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.ArrayList;
 import org.joda.time.DateTime;
 
-public class JdbcQuery extends Computation {
+public class JdbcQuery extends Future {
     private static abstract class NameChooser {
         public final static NameChooser DEFAULT = new NameChooser() {
             @Override

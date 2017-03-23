@@ -626,8 +626,8 @@ kws_tmpl : Template {
 		]
 		return_type : known_types.str
 	}
-	list_null : Template codegen.gen_tmpl {}
-	list_prepend : Template base_tmpl {
+	ctxt_null : Template codegen.gen_tmpl {}
+	ctxt_prepend : Template base_tmpl {
 		frame : Required
 		tail : Required
 		arguments : [
@@ -636,7 +636,7 @@ kws_tmpl : Template {
 		]
 		return_type : known_vm_types.list
 	}
-	list_append : Template base_tmpl {
+	ctxt_append : Template base_tmpl {
 		head : Required
 		tail : Required
 		arguments : [
@@ -1751,8 +1751,8 @@ language_tmpl : Template {
 		code_value : codegen.return_intrinsic_dispatch {
 			of : kws.lookup_literal {
 				name : [ $value ]
-				source : kws.list_prepend {
-					tail : kws.list_null {}
+				source : kws.ctxt_prepend {
+					tail : kws.ctxt_null {}
 					frame : codegen.type_dispatch {
 						of : codegen.other_code { field : $func_expr }
 						choices : [
@@ -1838,7 +1838,7 @@ language_tmpl : Template {
 						accumulator_type : Drop
 						initial : new_item {
 							source : converted_result
-							context : kws.list_append {
+							context : kws.ctxt_append {
 								head : parameters.context
 								tail : kws.tmpl_context { source : converted_result }
 							}
@@ -1894,15 +1894,15 @@ language_tmpl : Template {
 				define : {
 					current_itr_frame : kws.lookup_dynamic {
 						name : current_name
-						source : kws.list_prepend {
+						source : kws.ctxt_prepend {
 							frame : parameters.input_frame
-							tail : kws.list_null {}
+							tail : kws.ctxt_null {}
 						}
 					}
 				}
 				in : Template codegen.bind {
 					define : {
-						context : kws.list_prepend {
+						context : kws.ctxt_prepend {
 							frame : kws.dynamic_type_dispatch {
 								allow_types : [ known_types.frame ]
 								of : parameters.current_itr_frame
@@ -1984,7 +1984,7 @@ language_tmpl : Template {
 								initial : kws.frame_new {
 									creation_method : "file-level definition"
 									container : kws.frame_null {}
-									context : kws.list_null {}
+									context : kws.ctxt_null {}
 								}
 							}
 						}
@@ -2554,14 +2554,14 @@ language_tmpl : Template {
 							}
 							build_action : codegen.bind {
 								define : {
-									context : kws.list_prepend {
+									context : kws.ctxt_prepend {
 										frame : kws.dynamic_type_dispatch {
 											allow_types : [ known_types.frame ]
 											of : kws.lookup_dynamic {
 												name : current_name
-												source : kws.list_prepend {
+												source : kws.ctxt_prepend {
 													frame : parameters.input_frame
-													tail : kws.list_null {}
+													tail : kws.ctxt_null {}
 												}
 											}
 										}
@@ -2582,9 +2582,9 @@ language_tmpl : Template {
 								into : current_accumulator
 								with : kws.lookup_dynamic {
 									name : current_name
-									source : kws.list_prepend {
+									source : kws.ctxt_prepend {
 										frame : parameters.input_frame
-										tail : kws.list_null {}
+										tail : kws.ctxt_null {}
 									}
 								}
 							}
@@ -2743,7 +2743,7 @@ language_tmpl : Template {
 										of : parameters.current_itr_frame
 										allow_types : [ known_types.frame ]
 									}
-									context : kws.list_prepend {
+									context : kws.ctxt_prepend {
 										frame : kws.dynamic_type_dispatch {
 											of : parameters.current_itr_frame
 											allow_types : [ known_types.frame ]
@@ -2768,9 +2768,9 @@ language_tmpl : Template {
 											into : current_accumulator
 											with : kws.lookup_dynamic {
 												name : current_name
-												source : kws.list_prepend {
+												source : kws.ctxt_prepend {
 													frame : parameters.current_itr_frame
-													tail : kws.list_null {}
+													tail : kws.ctxt_null {}
 												}
 											}
 										}
@@ -2874,7 +2874,7 @@ language_tmpl : Template {
 											context : parameters.context
 										}
 									}
-									context : kws.list_prepend {
+									context : kws.ctxt_prepend {
 										frame : kws.dynamic_type_dispatch {
 											of : parameters.current_itr_frame
 											allow_types : [ known_types.frame ]
@@ -2896,9 +2896,9 @@ language_tmpl : Template {
 											into : parameters.new_inner_frame
 											with : kws.lookup_dynamic {
 												name : current_name
-												source : kws.list_prepend {
+												source : kws.ctxt_prepend {
 													frame : parameters.current_itr_frame
-													tail : kws.list_null {}
+													tail : kws.ctxt_null {}
 												}
 											}
 										}
@@ -3039,9 +3039,9 @@ language_tmpl : Template {
 							}
 							true_action : kws.lookup_dynamic {
 								name : prepare_operations.name
-								source : kws.list_prepend {
+								source : kws.ctxt_prepend {
 									frame : prepare_operations.matched_frame
-									tail : kws.list_null {}
+									tail : kws.ctxt_null {}
 								}
 							}
 							false_action : kws.null_constant {}
@@ -3752,9 +3752,9 @@ language_tmpl : Template {
 										into : parameters.output_frame
 										with : kws.lookup_dynamic {
 											name : current_name
-											source : kws.list_prepend {
+											source : kws.ctxt_prepend {
 												frame : parameters.left_input
-												tail : kws.list_null {}
+												tail : kws.ctxt_null {}
 											}
 										}
 									}
@@ -3775,9 +3775,9 @@ language_tmpl : Template {
 									into : parameters.output_frame
 									with : kws.lookup_dynamic {
 										name : current_name
-										source : kws.list_prepend {
+										source : kws.ctxt_prepend {
 											frame : parameters.right_input
-											tail : kws.list_null {}
+											tail : kws.ctxt_null {}
 										}
 									}
 								}
@@ -4973,9 +4973,9 @@ language_tmpl : Template {
 					code_value : codegen.return_intrinsic_dispatch {
 						of : kws.lookup_field {
 							field : $names
-							source : kws.list_prepend {
+							source : kws.ctxt_prepend {
 								frame : codegen.other_code { field : $expr }
-								tail : kws.list_null {}
+								tail : kws.ctxt_null {}
 							}
 						}
 					}

@@ -60,7 +60,7 @@ public class Printer {
         parser.Trace = trace;
         var run_type = parser.ParseFile(collector, unit, "Printer");
         if (run_type != null) {
-            var computation = (Computation) Activator.CreateInstance(run_type, task_master);
+            var computation = (Future) Activator.CreateInstance(run_type, task_master);
             var filewriter = new PrintResult(task_master, computation, output_filename);
             filewriter.Slot();
             task_master.Run();

@@ -3,13 +3,13 @@ package flabbergast;
 import java.io.FileWriter;
 import java.io.IOException;
 
-public class PrintResult extends Computation {
+public class PrintResult extends Future {
     private final String output_filename;
 
-    private final Computation source;
+    private final Future source;
     private boolean success;
 
-    public PrintResult(TaskMaster task_master, Computation source,
+    public PrintResult(TaskMaster task_master, Future source,
                        String output_filename) {
         super(task_master);
         this.source = source;

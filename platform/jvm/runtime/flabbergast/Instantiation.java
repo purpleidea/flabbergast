@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public class Instantiation extends Computation {
+public class Instantiation extends Future {
     private String[] names;
     private Map<String, Object> overrides = new HashMap<String, Object>();
     private Context context;

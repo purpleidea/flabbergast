@@ -33,9 +33,9 @@ The VM uses static single assignment with the note that variable resolution and 
  - a frame (`Frame`), where keys are strings and values are any type.
  - the null type (`Unit`). This is distinct from the empty list.
  - a boxed value containing any of the above types (`Any`). It cannot contain any of the following types.
- - a linked-list of frames (`List`).
- - a function closure (`Function`). The arguments are: the context (`List`), the self frame (`Frame`), and the containing frame (`Frame`) and it returns a boxed result (`Any`)
- - an override function closure (`FunctionOverride`). The arguments are: the original value (`Any`), the context (`List`), the self frame (`Frame`), and the containing frame (`Frame`) and it returns a boxed result (`Any`)
+ - a linked-list of frames (`Context`).
+ - the body of an attribute (`Definition`). This is a function closure with the arguments are: the context (`Context`), the self frame (`Frame`), and the containing frame (`Frame`) and it returns a boxed result (`Any`)
+ - an body of an overriding attribute (`OverrideDefinition`). This is a function closure with the arguments are: the original value (`Any`), the context (`Context`), the self frame (`Frame`), and the containing frame (`Frame`) and it returns a boxed result (`Any`)
 
 Most operations do not mutate values, unless explicitly specified. Each operation is described as follows:
 
@@ -53,9 +53,9 @@ The VM uses single static assignment. Unlike most SSA, there are no phi nodes ar
 
 The self-hosting Flabbergast compiler generates a compiler in a language that then emits instructions in the target VM format. The self-hosting compiler requires some other facilities beyond what is described here in order to generate the target compiler. These are described in the self-hosting compiler and include, principally, the parser.
 
-## Functions and Flow Control
+## Definitions and Flow Control
 
-The VM has a scheduler capable of executing functions. Functions always terminate and provide the exit scenarios: return or fail. Every function has one or more listeners, that is, other functions which rely on the result of this function are _notified_ of the result.
+The VM has a scheduler capable of executing futures. Futures always terminate and provide the exit scenarios: return or fail. Every future has one or more listeners, that is, other futures which rely on the result of this future are _notified_ of the result.
 
 Real implementation need to manage the state of the language in particular, deciding when to schedule individual computations. A program is invalid if it creates mutations that are visible to other scheduled units. For example, it is possible to add items to a frame. A computation should make all the modifications to a frame and then make it visible to other computations via a return. None of the receivers can modify the frame (though the implementation is not required to prevent this from happening).
 
@@ -276,7 +276,7 @@ Checks if the provided string is the name of an entry in the frame.
 #### Frame Context
 Extract the context embedded in a frame. This is the context provided during creation prepended with the frame itself.
 
-    r : List  = frame_context(frame : Frame)
+    r : Context  = frame_context(frame : Frame)
 
 #### Frame Identifier
 Extract a unique identifier from a frame. This string must be a valid identifier.
@@ -286,26 +286,26 @@ Extract a unique identifier from a frame. This string must be a valid identifier
 #### Create Frame
 Create an empty frame.
 
-    r : Frame = frame_new(context : List, container : Frame)
+    r : Frame = frame_new(context : Context, container : Frame)
 
 #### Create Frame (Numeric)
 Create a frame containing integral numbers, over the range specified, assigned to keys from 1 to the number of items, translated through `string_ordinal`.
 
-    r : Frame = frame_new_through(context : List, container : Frame, start : Int, end : Int)
+    r : Frame = frame_new_through(context : Context, container : Frame, start : Int, end : Int)
 
 #### Set Item in Frame (Any)
 Add an attribute in a frame. If the name is already present in the frame, an error occurs.
 
     frame_set(frame : Frame, name : Str, value : Any)
 
-#### Set Item in Frame (Function)
+#### Set Item in Frame (Definition)
 Add an attribute in a frame. If the name is already present in the frame, an error occurs.
 
-    frame_set(frame : Frame, name : Str, value : Function)
+    frame_set(frame : Frame, name : Str, value : Definition)
 
-Result of the function will be added to the frame, not the frame itself. The VM is must not schedule the function until the frame becomes visible by being returned or used in a lookup or iteration operation.
+Result of the definition will be added to the frame, not the frame itself. The VM is must not schedule the future for the definition until the frame becomes visible by being returned or used in a lookup or iteration operation.
 
-When executed, the function will receive, as arguments, a context containing `frame` prepended to the context provided during the frame's creation, `frame` as the self frame, and the container frame provided during the frame's creation.
+When executed, the definition will receive, as arguments, a context containing `frame` prepended to the context provided during the frame's creation, `frame` as the self frame, and the container frame provided during the frame's creation.
 
 ### Template Operations
 For all operations, the names provided must be valid Flabbergast identifiers.
@@ -313,7 +313,7 @@ For all operations, the names provided must be valid Flabbergast identifiers.
 #### Create Template
 Creates an empty template.
 
-    r : Template = template_new(context : List, container : Frame)
+    r : Template = template_new(context : Context, container : Frame)
 
 #### Template Container
 Extract the container embedded in a template. This is the context provided during creation.
@@ -323,17 +323,17 @@ Extract the container embedded in a template. This is the context provided durin
 #### Template Context
 Extract the context embedded in a template. This is the context provided during creation.
 
-    r : List = tmpl_context(tmpl : Template)
+    r : Context = tmpl_context(tmpl : Template)
 
 #### Set Item in Template
-Add item to a template. If the requested name is already present, an error occurs. If the “null function” is added, the operation is ignored.
+Add item to a template. If the requested name is already present, an error occurs. If the “null definition” is added, the operation is ignored.
 
-    tmpl_set(tmpl : Template, name : Str, value : Function)
+    tmpl_set(tmpl : Template, name : Str, value : Definition)
 
 #### Get Item in Template
-Get item from a template. If the requested name is not in the template, a “null function” is returned.
+Get item from a template. If the requested name is not in the template, a “null definition” is returned.
 
-    r : Function = template_get(tmpl : Template, name : Str)
+    r : Definition = template_get(tmpl : Template, name : Str)
 
 ### Bin Operations
 
@@ -369,22 +369,22 @@ Create a string from an integer such that ordering of integers is preserved when
 
     r : Str = string_ordinal(value : Int)
 
-### List Operations
+### Context Operations
 
-#### List Append
+#### Context Append
 Create a new list where all the items of `first` precede all the items of `second`.
 
-    r : List = list_append(first : List, second : List)
+    r : Context = ctxt_append(first : List, second : List)
 
-#### List Prepend
+#### Context Prepend
 Create a new list containing the provided frame.
 
-    r : List = list_prepend(head : Frame, tail : List)
+    r : Context = ctxt_prepend(head : Frame, tail : List)
 
-#### Create Empty List
+#### Create Empty Context
 Create an empty list.
 
-    r : List = list_null()
+    r : Context = ctxt_null()
 
 ### Access Library
 Load external data. Since the URL is fixed, this can be thought of as information to the dynamic loader rather than part of the execution.
@@ -392,9 +392,9 @@ Load external data. Since the URL is fixed, this can be thought of as informatio
     r : Any = external<url : Str>()
 
 ### Apply Override
-Create a new function by applying an existing function to an override. The new function will first evaluate the `original` function, then pass the result to the `override` function and return the result of that function. The other parameters are passed directly.
+Create a new definition by applying an existing definition to an override definition. The new definition will first evaluate the `original` definition, then pass the result to the `override` definition and return the result of that future.
 
-     r : Function = apply_override(original : Function, override : FunctionOverride)
+     r : Definition = apply_override(original : Definition, override : OverrideDefinition)
 
 ### Box
 Put a value in a box (i.e., convert a value of another type to the `Any` type).
@@ -407,9 +407,9 @@ Put a value in a box (i.e., convert a value of another type to the `Any` type).
      r : Any = box(value : Unit)
 
 ### Capture
-Create a function that will return a provided value.
+Create a definition that will return a provided value.
 
-     r : Function = capture(value : Any)
+     r : Definition = capture(value : Any)
 
 ### Conditional
 Perform the block specified if the condition is true.
@@ -419,7 +419,7 @@ Perform the block specified if the condition is true.
 ### Contextual Lookup
 Perform contextual lookup over a list of frames.
 
-    r : Any = lookup(context : List, name1 : Str, name2 : Str, ...)
+    r : Any = lookup(context : Context, name1 : Str, name2 : Str, ...)
 
 If no matching item is found, an error occurs.
 

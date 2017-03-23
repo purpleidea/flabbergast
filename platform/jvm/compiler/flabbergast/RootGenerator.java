@@ -24,7 +24,7 @@ class RootGenerator extends Generator {
         ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
         ctor_builder.visitVarInsn(Opcodes.ALOAD, 1);
         ctor_builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
-                                     getInternalName(Computation.class), "<init>",
+                                     getInternalName(Future.class), "<init>",
                                      makeSignature(null, TaskMaster.class));
         ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
         ctor_builder.visitInsn(Opcodes.ICONST_0);

@@ -1,9 +1,9 @@
 package flabbergast;
 
-public class FailureComputation extends Computation {
+public class FailureFuture extends Future {
     private String message;
     private SourceReference source_reference;
-    public FailureComputation(TaskMaster task_master,
+    public FailureFuture(TaskMaster task_master,
                               SourceReference reference, String message) {
         super(task_master);
         this.source_reference = reference;

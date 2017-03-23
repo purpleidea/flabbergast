@@ -3,7 +3,7 @@ package flabbergast;
 import java.util.HashMap;
 import java.util.Map;
 
-public class StringToCodepoints extends Computation {
+public class StringToCodepoints extends Future {
     private InterlockedLookup interlock;
     private String input;
 

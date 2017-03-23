@@ -9,12 +9,12 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace Flabbergast {
-public delegate Computation ComputeValue(
+public delegate Future ComputeValue(
     TaskMaster task_master, SourceReference reference, Context context, Frame self, Frame container);
 
-public delegate Computation ComputeOverride(
+public delegate Future ComputeOverride(
     TaskMaster task_master, SourceReference reference, Context context, Frame self, Frame container,
-    Computation original);
+    Future original);
 
 /**
  * Delegate for the callback from a computation.
@@ -26,7 +26,7 @@ public delegate void ConsumeResult(Object result);
  * A generic computation to be worked on by the TaskMaster.
  */
 
-public abstract class Computation {
+public abstract class Future {
     /**
     * The delegate(s) to be invoked when the computation is complete.
     */
@@ -43,7 +43,7 @@ public abstract class Computation {
     private Object ex = new Object();
     private bool virgin = true;
 
-    public Computation(TaskMaster task_master) {
+    public Future(TaskMaster task_master) {
         this.task_master = task_master;
     }
     /**
@@ -98,7 +98,7 @@ public abstract class Computation {
             int end_column, ComputeOverride wrapper, ComputeValue original) {
         if (original == null) {
             return (task_master, reference, context, self, container) =>
-                   new FailureComputation(task_master, new BasicSourceReference("used by override", filename,
+                   new FailureFuture(task_master, new BasicSourceReference("used by override", filename,
                                           start_line, start_column, end_line, end_column, reference), "override of non-existant attribute");
         }
         return
@@ -150,8 +150,8 @@ public abstract class Computation {
  */
 
 public abstract class TaskMaster : IEnumerable<Lookup> {
-    private readonly Queue<Computation> computations = new Queue<Computation>();
-    private readonly Dictionary<string, Computation> external_cache = new Dictionary<string, Computation>();
+    private readonly Queue<Future> computations = new Queue<Future>();
+    private readonly Dictionary<string, Future> external_cache = new Dictionary<string, Future>();
     private readonly List<UriHandler> handlers = new List<UriHandler>();
     /**
     * These are computations that have not completed.
@@ -215,13 +215,13 @@ public abstract class TaskMaster : IEnumerable<Lookup> {
         }
         if (uri.StartsWith("lib:")) {
             if (uri.Length < 5) {
-                external_cache[uri] = BlackholeComputation.INSTANCE;
+                external_cache[uri] = BlackholeFuture.INSTANCE;
                 ReportExternalError(uri, LibraryFailure.BadName);
                 return;
             }
             for (var it = 5; it < uri.Length; it++) {
                 if (uri[it] != '/' && !char.IsLetterOrDigit(uri[it])) {
-                    external_cache[uri] = BlackholeComputation.INSTANCE;
+                    external_cache[uri] = BlackholeFuture.INSTANCE;
                     ReportExternalError(uri, LibraryFailure.BadName);
                     return;
                 }
@@ -235,7 +235,7 @@ public abstract class TaskMaster : IEnumerable<Lookup> {
                 continue;
             }
             if (reason != LibraryFailure.None || computation == null) {
-                external_cache[uri] = BlackholeComputation.INSTANCE;
+                external_cache[uri] = BlackholeFuture.INSTANCE;
                 ReportExternalError(uri, reason);
                 return;
             }
@@ -243,7 +243,7 @@ public abstract class TaskMaster : IEnumerable<Lookup> {
             computation.Notify(target);
             return;
         }
-        external_cache[uri] = BlackholeComputation.INSTANCE;
+        external_cache[uri] = BlackholeFuture.INSTANCE;
         ReportExternalError(uri, LibraryFailure.Missing);
     }
 
@@ -287,7 +287,7 @@ public abstract class TaskMaster : IEnumerable<Lookup> {
     * Add a computation to be executed.
     */
 
-    public void Slot(Computation computation) {
+    public void Slot(Future computation) {
         if (computation is Lookup) {
             var lookup = (Lookup) computation;
             inflight[lookup] = true;

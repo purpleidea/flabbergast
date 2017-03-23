@@ -163,10 +163,10 @@ public class MainREPL {
         try {
             if (files.length == 1) {
                 Parser parser = Parser.open(files[0]);
-                Class<? extends Computation> run_type = parser.parseFile(
+                Class<? extends Future> run_type = parser.parseFile(
                         collector, compiler.getCompilationUnit(), "Printer");
                 if (run_type != null) {
-                    Computation computation = run_type.getConstructor(
+                    Future computation = run_type.getConstructor(
                                                   TaskMaster.class).newInstance(task_master);
                     computation.listen(new ConsumeResult() {
 
@@ -217,11 +217,11 @@ public class MainREPL {
                 Parser parser = new Parser("<console>", line);
                 PrintToConsole printer = new PrintToConsole(reader);
                 RawPrint raw_printer = new RawPrint(reader);
-                Class<? extends Computation> run_type = parser.parseRepl(
+                Class<? extends Future> run_type = parser.parseRepl(
                         collector, compiler.getCompilationUnit(),
                         "flabbergast/interactive/Line" + (id++));
                 if (run_type != null) {
-                    Computation computation = run_type.getConstructor(
+                    Future computation = run_type.getConstructor(
                                                   TaskMaster.class, Frame.class, Frame.class,
                                                   ConsumeResult.class, ConsumeResult.class,
                                                   ConsumeResult.class).newInstance(task_master,

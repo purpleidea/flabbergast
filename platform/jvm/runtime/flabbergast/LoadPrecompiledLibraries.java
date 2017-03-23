@@ -22,7 +22,7 @@ public class LoadPrecompiledLibraries extends LoadLibraries {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Class<? extends Computation> resolveUri(String uri,
+    public Class<? extends Future> resolveUri(String uri,
             Ptr<LibraryFailure> reason) {
         if (class_loader == null) {
             URL[] urls = new URL[getFinder().size()];
@@ -38,7 +38,7 @@ public class LoadPrecompiledLibraries extends LoadLibraries {
         String base_name = uri.substring(4).replace('/', '.');
         String type_name = "flabbergast.library." + base_name;
         try {
-            return (Class<? extends Computation>) class_loader
+            return (Class<? extends Future>) class_loader
                    .loadClass(type_name);
         } catch (ClassNotFoundException e) {
             reason.set(LibraryFailure.MISSING);

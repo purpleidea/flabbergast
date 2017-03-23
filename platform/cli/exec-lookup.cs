@@ -7,15 +7,15 @@ namespace Flabbergast {
 /**
  * Do lookup by creating a grid of contexts where the value might reside and all the needed names.
  */
-public class Lookup : Computation {
+public class Lookup : Future {
     public static ComputeValue Do(params string[] names) {
         return (task_master, reference, context, self, container) => {
             if (names.Length == 0) {
-                return new FailureComputation(task_master, reference, "Missing names in lookup.");
+                return new FailureFuture(task_master, reference, "Missing names in lookup.");
             }
             foreach (var name in names) {
                 if (!task_master.VerifySymbol(reference, name)) {
-                    return BlackholeComputation.INSTANCE;
+                    return BlackholeFuture.INSTANCE;
                 }
             }
             return new Lookup(task_master, reference, names, context);

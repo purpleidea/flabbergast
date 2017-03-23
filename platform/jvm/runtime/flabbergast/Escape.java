@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Escape extends Computation {
+public class Escape extends Future {
     private interface ConsumeChar {
         void invoke(int c);
     }

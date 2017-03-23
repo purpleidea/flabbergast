@@ -11,14 +11,14 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-class FunctionGenerator extends Generator {
+class DefinitionGenerator extends Generator {
     private final FieldValue initial_container;
     private final FieldValue initial_context;
     private final FieldValue initial_original;
     private final FieldValue initial_self;
     private final FieldValue initial_source_reference;
 
-    FunctionGenerator(AstNode node, CompilationUnit<?> owner,
+    DefinitionGenerator(AstNode node, CompilationUnit<?> owner,
                       ClassVisitor type_builder, boolean has_original, String class_name,
                       String root_prefix, Set<String> owner_externals)
     throws NoSuchMethodException, NoSuchFieldException,
@@ -32,11 +32,11 @@ class FunctionGenerator extends Generator {
         initial_self = makeField("self", Frame.class);
         initial_container = makeField("container", Frame.class);
         FieldValue original = has_original ? makeField("original",
-                              Computation.class) : null;
+                              Future.class) : null;
 
         Class<?>[] construct_params = new Class<?>[] {TaskMaster.class,
                 SourceReference.class, Context.class, Frame.class, Frame.class,
-                has_original ? Computation.class : null
+                has_original ? Future.class : null
                                                      };
         FieldValue[] initial_information = new FieldValue[] {
             initial_source_reference, initial_context, initial_self,
@@ -53,8 +53,8 @@ class FunctionGenerator extends Generator {
         ctor_builder.visitVarInsn(Opcodes.ALOAD, 0);
         ctor_builder.visitVarInsn(Opcodes.ALOAD, 1);
         ctor_builder.visitMethodInsn(Opcodes.INVOKESPECIAL,
-                                     getInternalName(Computation.class), "<init>", Type
-                                     .getConstructorDescriptor(Computation.class
+                                     getInternalName(Future.class), "<init>", Type
+                                     .getConstructorDescriptor(Future.class
                                              .getConstructors() [0]));
         for (int it = 0; it < initial_information.length; it++) {
             if (initial_information[it] == null) {
@@ -93,7 +93,7 @@ class FunctionGenerator extends Generator {
         // Create a static method that wraps the constructor. This is needed to
         // create a delegate.
         MethodVisitor init_builder = init_class.visitMethod(Opcodes.ACC_PUBLIC,
-                                     "invoke", makeSignature(Computation.class, construct_params),
+                                     "invoke", makeSignature(Future.class, construct_params),
                                      null, null);
         init_builder.visitCode();
         if (has_original) {
@@ -136,7 +136,7 @@ class FunctionGenerator extends Generator {
             original.load(builder);
             initial_original = makeField("initial_original", Object.class);
             generateConsumeResult(initial_original);
-            visitMethod(Computation.class.getMethod("listen",
+            visitMethod(Future.class.getMethod("listen",
                                                     ConsumeResult.class));
             stopInterlock();
         } else {

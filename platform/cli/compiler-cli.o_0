@@ -646,8 +646,8 @@ known_vm_types : compiler_lib.known_vm_types_tmpl {
 	any : { real_type : "object"  union_type : "Flabbergast.NameInfo.AnyType"  name : "Any" }
 	mutable_frame : { real_type : "Flabbergast.MutableFrame"  name : "Frame" }
 	list : { real_type : "Flabbergast.Context"  name : "List" }
-	function : { real_type : "Flabbergast.ComputeValue"  name : "Function" }
-	override_function : { real_type : "Flabbergast.ComputeOverride"  name : "Override" }
+	function : { real_type : "Flabbergast.ComputeValue"  name : "Definition" }
+	override_function : { real_type : "Flabbergast.ComputeOverride"  name : "OverrideDefinition" }
 }
 # The mechanism code to do type checking in the compiler. Each syntax element
 # is told what types it may return and it propagates this type information to
@@ -1040,18 +1040,18 @@ kws : compiler_lib.kws_repl_tmpl {
 			extra_emit : ", typeof(Frame).GetMethod(\"RenderTrace\", new System.Type[] { typeof(Stringish) })"
 		}
 	}
-	list_null +: {
+	ctxt_null +: {
 		extra_indent : ""
 		storage_name : "LoadableValue.NULL_LIST"
 	}
-	list_prepend +: {
+	ctxt_prepend +: {
 		cached : True
 		opcode : "Call"
 		gen_gen +: {
 			extra_emit : ", typeof(Context).GetMethod(\"Prepend\", new System.Type[] { typeof(Frame), typeof(Context) })"
 		}
 	}
-	list_append +: {
+	ctxt_append +: {
 		cached : True
 		opcode : "Call"
 		gen_gen +: {
@@ -1152,7 +1152,7 @@ kws : compiler_lib.kws_repl_tmpl {
 				"\(sum_indent)\(builder).Emit(System.Reflection.Emit.OpCodes.Ldc_I4, StartColumn);" &
 				"\(sum_indent)\(builder).Emit(System.Reflection.Emit.OpCodes.Ldc_I4, EndRow);" &
 				"\(sum_indent)\(builder).Emit(System.Reflection.Emit.OpCodes.Ldc_I4, EndColumn);"
-			extra_emit : ", typeof(Computation).GetMethod(\"PerformOverride\", new System.Type[] { typeof(string), typeof(int), typeof(int), typeof(int), typeof(int), typeof(ComputeOverride), typeof(ComputeValue) })"
+			extra_emit : ", typeof(Future).GetMethod(\"PerformOverride\", new System.Type[] { typeof(string), typeof(int), typeof(int), typeof(int), typeof(int), typeof(ComputeOverride), typeof(ComputeValue) })"
 		}
 	}
 	create_function_tmpl +: {
@@ -1188,12 +1188,12 @@ kws : compiler_lib.kws_repl_tmpl {
 		}
 	}
 	create_function +: {
-		method : "CreateFunction"
+		method : "CreateDefinition"
 		parameter_names : [ $source_reference, $context, $self_frame, $container_frame ]
 		delegate_type : "ComputeValue"
 	}
 	create_override_function +: {
-		method : "CreateFunctionOverride"
+		method : "CreateOverrideDefinition"
 		parameter_names : [ $source_reference, $context, $self_frame, $container_frame, $original_value ]
 		delegate_type : "ComputeOverride"
 	}
@@ -1655,7 +1655,7 @@ kws : compiler_lib.kws_repl_tmpl {
 					Else "") &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ldarg_0);" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Tailcall);" &
-				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Callvirt, typeof(Computation).GetMethod(\"Run\", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));" &
+				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Callvirt, typeof(Future).GetMethod(\"Run\", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance));" &
 				"\(sum_indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Ret);"
 
 			dispatch_code : default_case.gen_gen(
@@ -2637,12 +2637,12 @@ compiler : compiler_lib.language_with_repl_tmpl {
 			rules +: {
 					xcomputation : Template expression_tmpl {
 					level : 19
-					pretty_name : "invoke CLI Flabbergast.Computation class"
+					pretty_name : "invoke CLI Flabbergast.Future class"
 					class_extra : "\t\tSystem.Reflection.ConstructorInfo constructor;"
 					pattern : parser.sequence {
 						of : [
 							parser.allow_extensions {},
-							parser.exact { word : "XComputation" },
+							parser.exact { word : "XFuture" },
 							space { mandatory : True },
 							parser.accumulate_string {
 								field : "type_name"
@@ -2668,9 +2668,9 @@ compiler : compiler_lib.language_with_repl_tmpl {
 									"\(indent)\t_collector.ReportRawError(this, \"No such type \" + type_name + \".\");" &
 									"\(indent)} else {" &
 									"\(indent)\tconstructor = type.GetConstructor(new[] { typeof(TaskMaster), typeof(SourceReference), typeof(Context), typeof(Frame), typeof(Frame) });" &
-									"\(indent)\tif (!typeof(Computation).IsAssignableFrom(type)) {" &
+									"\(indent)\tif (!typeof(Future).IsAssignableFrom(type)) {" &
 									"\(indent)\t\t_success = false;" &
-									"\(indent)\t\t_collector.ReportRawError(this, \"Type \" + type_name + \" does not extend Flabbergast.Computation.\");" &
+									"\(indent)\t\t_collector.ReportRawError(this, \"Type \" + type_name + \" does not extend Flabbergast.Future.\");" &
 									"\(indent)\t}" &
 									"\(indent)\tif (constructor == null) {" &
 									"\(indent)\t\t_success = false;" &
@@ -2695,7 +2695,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 										"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, constructor);" &
 										"\(indent)var \(storage_name) = \(generator).MakeField(\"xcomputation\", typeof(object));" &
 										"\(indent)\(generator).GenerateConsumeResult(\(storage_name), true);" &
-										"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Computation).GetMethod(\"Notify\", new[] { typeof(ConsumeResult) }));" &
+										"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Future).GetMethod(\"Notify\", new[] { typeof(ConsumeResult) }));" &
 										"\(indent)\(generator).StopInterlock();" &
 										code
 							}

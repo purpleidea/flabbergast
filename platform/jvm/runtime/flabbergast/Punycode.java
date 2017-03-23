@@ -2,7 +2,7 @@ package flabbergast;
 
 import java.net.IDN;
 
-public class Punycode extends Computation {
+public class Punycode extends Future {
     private InterlockedLookup interlock;
     private String input;
     private boolean encode;

@@ -20,7 +20,7 @@ public class ResourceHandler : UriHandler {
         }
     }
 
-    public Computation ResolveUri(TaskMaster master, string uri, out LibraryFailure reason) {
+    public Future ResolveUri(TaskMaster master, string uri, out LibraryFailure reason) {
         if (!uri.StartsWith("res:")) {
             reason = LibraryFailure.Missing;
             return null;
@@ -35,7 +35,7 @@ public class ResourceHandler : UriHandler {
             return null;
         } catch (Exception e) {
             reason = LibraryFailure.None;
-            return new FailureComputation(master, new NativeSourceReference(uri), e.Message);
+            return new FailureFuture(master, new NativeSourceReference(uri), e.Message);
         }
     }
 }

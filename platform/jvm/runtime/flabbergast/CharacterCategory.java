@@ -3,7 +3,7 @@ package flabbergast;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CharacterCategory extends Computation {
+public class CharacterCategory extends Future {
     private static final Map<Byte, String> categories;
     static {
         categories = new HashMap<Byte, String>();

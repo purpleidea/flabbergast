@@ -1,6 +1,6 @@
 package flabbergast;
 
-public class ParseInt extends Computation {
+public class ParseInt extends Future {
 
     private InterlockedLookup interlock;
     private String input;

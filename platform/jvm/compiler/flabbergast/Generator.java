@@ -165,7 +165,7 @@ abstract class Generator {
         type_builder.visitField(0, "interlock",
                                 getDescriptor(AtomicInteger.class), null, null).visitEnd();
         task_master = new FieldValue(
-            Computation.class.getDeclaredField("task_master"));
+            Future.class.getDeclaredField("task_master"));
 
         // Label for load externals
         defineState();
@@ -305,15 +305,15 @@ abstract class Generator {
                                getDescriptor(type));
     }
 
-    DelegateValue createFunction(AstNode instance, String syntax_id,
-                                 CompilationUnit.FunctionBlock block) throws Exception {
-        return owner.createFunction(instance, syntax_id, block, root_prefix,
+    DelegateValue createDefinition(AstNode instance, String syntax_id,
+                                 CompilationUnit.DefinitionBlock block) throws Exception {
+        return owner.createDefinition(instance, syntax_id, block, root_prefix,
                                     owner_externals);
     }
 
-    DelegateValue createFunctionOverride(AstNode instance, String syntax_id,
-                                         CompilationUnit.FunctionOverrideBlock block) throws Exception {
-        return owner.createFunctionOverride(instance, syntax_id, block,
+    DelegateValue createOverrideDefinition(AstNode instance, String syntax_id,
+                                         CompilationUnit.OverrideDefinitionBlock block) throws Exception {
+        return owner.createOverrideDefinition(instance, syntax_id, block,
                                             root_prefix, owner_externals);
     }
 
@@ -556,7 +556,7 @@ abstract class Generator {
                                        "instance", "L" + class_name + ";");
         consume_builder.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
                                         getInternalName(TaskMaster.class), "slot",
-                                        makeSignature(null, Computation.class));
+                                        makeSignature(null, Future.class));
         consume_builder.visitLabel(return_label);
         consume_builder.visitInsn(Opcodes.RETURN);
         consume_builder.visitMaxs(0, 0);

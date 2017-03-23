@@ -84,8 +84,8 @@ public abstract class Frame implements Iterable<String> {
         if (result == null) {
             return false;
         }
-        if (result instanceof Computation) {
-            ((Computation) result).listen(consumer);
+        if (result instanceof Future) {
+            ((Future) result).listen(consumer);
         } else {
             consumer.consume(result);
         }

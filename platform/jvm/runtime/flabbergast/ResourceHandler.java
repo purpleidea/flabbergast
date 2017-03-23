@@ -22,7 +22,7 @@ public class ResourceHandler implements UriHandler {
         return finder;
     }
 
-    public final Computation resolveUri(TaskMaster task_master, String uri,
+    public final Future resolveUri(TaskMaster task_master, String uri,
                                         Ptr<LibraryFailure> reason) {
 
         if (!uri.startsWith("res:")) {
@@ -40,7 +40,7 @@ public class ResourceHandler implements UriHandler {
                 return new Precomputation(data);
             }
         } catch (Exception e) {
-            return new FailureComputation(task_master, new NativeSourceReference(uri), e.getMessage());
+            return new FailureFuture(task_master, new NativeSourceReference(uri), e.getMessage());
         }
         reason.set(LibraryFailure.MISSING);
         return null;

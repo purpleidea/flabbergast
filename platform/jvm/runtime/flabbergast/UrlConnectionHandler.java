@@ -9,7 +9,7 @@ import flabbergast.TaskMaster.LibraryFailure;
 
 public abstract class UrlConnectionHandler implements UriHandler {
     protected abstract URL convert(String uri)throws Exception;
-    public final Computation resolveUri(TaskMaster task_master, String uri,
+    public final Future resolveUri(TaskMaster task_master, String uri,
                                         Ptr<LibraryFailure> reason) {
 
         try {
@@ -26,7 +26,7 @@ public abstract class UrlConnectionHandler implements UriHandler {
             inputStream.close();
             return new Precomputation(data);
         } catch (Exception e) {
-            return new FailureComputation(task_master, new NativeSourceReference(uri), e.getMessage());
+            return new FailureFuture(task_master, new NativeSourceReference(uri), e.getMessage());
         }
     }
 }

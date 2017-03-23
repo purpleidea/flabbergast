@@ -42,7 +42,7 @@ public class BinaryFunctions {
     }
 }
 
-public class StringFromBytes : Computation {
+public class StringFromBytes : Future {
     private System.Text.Encoding[] encodings = new System.Text.Encoding[] {
         new System.Text.UTF32Encoding(true, false, true),
         new System.Text.UTF32Encoding(false, false, true),
@@ -85,7 +85,7 @@ public class StringFromBytes : Computation {
         }
     }
 }
-public class FromBase64 : Computation {
+public class FromBase64 : Future {
 
     private InterlockedLookup interlock;
     private String input;
@@ -113,7 +113,7 @@ public class FromBase64 : Computation {
         }
     }
 }
-public class Decompress : Computation {
+public class Decompress : Future {
 
     private InterlockedLookup interlock;
     private byte[] input;

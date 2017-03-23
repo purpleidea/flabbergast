@@ -17,7 +17,7 @@ public class HttpHandler implements UriHandler {
     public int getPriority() {
         return 0;
     }
-    public final Computation resolveUri(TaskMaster task_master, String uri,
+    public final Future resolveUri(TaskMaster task_master, String uri,
                                         Ptr<LibraryFailure> reason) {
 
         if (!uri.startsWith("http:") && !uri.startsWith("https:")) {
@@ -40,7 +40,7 @@ public class HttpHandler implements UriHandler {
             frame.add("content_type", conn.getContentType());
             return new Precomputation(frame);
         } catch (Exception e) {
-            return new FailureComputation(task_master, new NativeSourceReference(uri), e.getMessage());
+            return new FailureFuture(task_master, new NativeSourceReference(uri), e.getMessage());
         }
     }
 }

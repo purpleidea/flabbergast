@@ -15,7 +15,7 @@ public class EnvironmentUriHandler : UriHandler {
             return 0;
         }
     }
-    public Computation ResolveUri(TaskMaster task_master, string uri, out LibraryFailure reason) {
+    public Future ResolveUri(TaskMaster task_master, string uri, out LibraryFailure reason) {
         if (!uri.StartsWith("env:")) {
             reason = LibraryFailure.Missing;
             return null;

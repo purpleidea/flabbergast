@@ -9,7 +9,7 @@ import flabbergast.TaskMaster.LibraryFailure;
 
 public class CurrentInformation implements UriHandler {
 
-    private Map<String, Computation> information = new HashMap<String, Computation>();
+    private Map<String, Future> information = new HashMap<String, Future>();
 
     public CurrentInformation(boolean interactive) {
         String currentDirectory = ".";
@@ -33,7 +33,7 @@ public class CurrentInformation implements UriHandler {
         return 0;
     }
 
-    public Computation resolveUri(TaskMaster task_master, String uri,
+    public Future resolveUri(TaskMaster task_master, String uri,
                                   Ptr<LibraryFailure> reason) {
 
         if (!uri.startsWith("current:"))

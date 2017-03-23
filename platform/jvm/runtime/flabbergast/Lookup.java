@@ -7,22 +7,22 @@ import java.util.List;
  * Do lookup by creating a grid of contexts where the value might reside and all
  * the needed names.
  */
-public class Lookup extends Computation {
+public class Lookup extends Future {
     public static class DoLookup implements ComputeValue {
         private final String[] names;
         public DoLookup(String... names) {
             this.names = names;
         }
 
-        public Computation invoke(TaskMaster task_master,
+        public Future invoke(TaskMaster task_master,
                                   SourceReference source_reference, Context context, Frame self,
                                   Frame container) {
             if (names.length == 0) {
-                return new FailureComputation(task_master, source_reference, "Missing names in lookup.");
+                return new FailureFuture(task_master, source_reference, "Missing names in lookup.");
             }
             for (String name : names) {
                 if (!task_master.verifySymbol(source_reference, name)) {
-                    return BlackholeComputation.INSTANCE;
+                    return BlackholeFuture.INSTANCE;
                 }
             }
             return new Lookup(task_master, source_reference, names, context);

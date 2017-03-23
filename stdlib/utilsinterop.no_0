@@ -37,22 +37,22 @@ float_to_str_list : Template {
 parse_float_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XComputation Flabbergast.ParseDouble,Flabbergast.Runtime
+		Select arg_name : XFuture Flabbergast.ParseDouble,Flabbergast.Runtime
 }
 parse_int_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XComputation Flabbergast.ParseInt,Flabbergast.Runtime
+		Select arg_name : XFuture Flabbergast.ParseInt,Flabbergast.Runtime
 }
 str_categories_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XComputation Flabbergast.CharacterCategory,Flabbergast.Runtime
+		Select arg_name : XFuture Flabbergast.CharacterCategory,Flabbergast.Runtime
 }
 str_codepoints_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XComputation Flabbergast.StringToCodepoints,Flabbergast.Runtime
+		Select arg_name : XFuture Flabbergast.StringToCodepoints,Flabbergast.Runtime
 }
 str_is_identifier_list : Template {
 	value :
@@ -65,7 +65,7 @@ str_lower_case_list : Template {
 		Select arg_name : XInvoke System.String ToLower (arg To Str)
 }
 str_escape_list : Template {
-	value : XComputation Flabbergast.Escape,Flabbergast.Runtime
+	value : XFuture Flabbergast.Escape,Flabbergast.Runtime
 }
 str_transform : {
 	char_tmpl : Template {
@@ -170,7 +170,7 @@ str_utf32be_list : Template {
 str_base64_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XComputation Flabbergast.FromBase64,Flabbergast.Runtime
+		Select arg_name : XFuture Flabbergast.FromBase64,Flabbergast.Runtime
 }
 str_utf8_length_list : Template {
 	value :
@@ -190,7 +190,7 @@ str_upper_case_list : Template {
 bin_to_str_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XComputation Flabbergast.StringFromBytes,Flabbergast.Runtime
+		Select arg_name : XFuture Flabbergast.StringFromBytes,Flabbergast.Runtime
 }
 bin_to_str_utf8_list : Template bin_to_str_list { encoding : 4 }
 bin_to_str_utf16le_list : Template bin_to_str_list { encoding : 3 }
@@ -230,10 +230,10 @@ bin_gzip_list : Template {
 bin_gunzip_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XComputation Flabbergast.Decompress,Flabbergast.Runtime
+		Select arg_name : XFuture Flabbergast.Decompress,Flabbergast.Runtime
 }
 str_punycode_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XComputation Flabbergast.Punycode,Flabbergast.Runtime
+		Select arg_name : XFuture Flabbergast.Punycode,Flabbergast.Runtime
 }

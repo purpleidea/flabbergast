@@ -32,22 +32,22 @@ float_to_str_list : Template {
 parse_float_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XComputation flabbergast.ParseDouble
+		Select arg_name : XFuture flabbergast.ParseDouble
 }
 parse_int_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XComputation flabbergast.ParseInt
+		Select arg_name : XFuture flabbergast.ParseInt
 }
 str_categories_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XComputation flabbergast.CharacterCategory
+		Select arg_name : XFuture flabbergast.CharacterCategory
 }
 str_codepoints_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XComputation flabbergast.StringToCodepoints
+		Select arg_name : XFuture flabbergast.StringToCodepoints
 }
 str_is_identifier_list : Template {
 	value :
@@ -60,7 +60,7 @@ str_lower_case_list : Template {
 		Select arg_name : XInvoke java.lang.String toLowerCase (arg To Str)
 }
 str_escape_list : Template {
-	value : XComputation flabbergast.Escape
+	value : XFuture flabbergast.Escape
 }
 str_transform : {
 	char_tmpl : Template {
@@ -169,7 +169,7 @@ str_utf32le_list : Template {
 str_base64_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XComputation flabbergast.FromBase64
+		Select arg_name : XFuture flabbergast.FromBase64
 }
 str_utf8_length_list : Template {
 	value :
@@ -190,7 +190,7 @@ str_upper_case_list : Template {
 bin_to_str_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XComputation flabbergast.StringFromBytes
+		Select arg_name : XFuture flabbergast.StringFromBytes
 }
 bin_to_str_utf8_list : Template bin_to_str_list { encoding : 4 }
 bin_to_str_utf16le_list : Template bin_to_str_list { encoding : 3 }
@@ -230,10 +230,10 @@ bin_gzip_list : Template {
 bin_gunzip_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XComputation flabbergast.Decompress
+		Select arg_name : XFuture flabbergast.Decompress
 }
 str_punycode_list : Template {
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : XComputation flabbergast.Punycode
+		Select arg_name : XFuture flabbergast.Punycode
 }

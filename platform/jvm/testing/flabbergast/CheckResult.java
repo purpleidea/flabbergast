@@ -1,12 +1,12 @@
 package flabbergast;
 
-public class CheckResult extends Computation {
+public class CheckResult extends Future {
     private boolean success;
 
-    private Class<? extends Computation> test_target;
+    private Class<? extends Future> test_target;
 
     public CheckResult(TaskMaster task_master,
-                       Class<? extends Computation> test_target) {
+                       Class<? extends Future> test_target) {
         super(task_master);
         this.test_target = test_target;
     }
@@ -18,7 +18,7 @@ public class CheckResult extends Computation {
     @Override
     protected void run() {
         try {
-            Computation computation = test_target.getConstructor(
+            Future computation = test_target.getConstructor(
                                           TaskMaster.class).newInstance(task_master);
             computation.listen(new ConsumeResult() {
 

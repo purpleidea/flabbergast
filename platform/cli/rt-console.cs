@@ -116,15 +116,15 @@ public class ConsoleTaskMaster : TaskMaster {
     }
 }
 
-public class PrintResult : Computation {
+public class PrintResult : Future {
     public bool Success {
         get;
         private set;
     }
     private readonly string output_filename;
-    private readonly Computation source;
+    private readonly Future source;
 
-    public PrintResult(TaskMaster task_master, Computation source, string output_filename) : base(task_master) {
+    public PrintResult(TaskMaster task_master, Future source, string output_filename) : base(task_master) {
         this.source = source;
         this.output_filename = output_filename;
     }

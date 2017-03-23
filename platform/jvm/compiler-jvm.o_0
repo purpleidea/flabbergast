@@ -671,8 +671,8 @@ known_vm_types : compiler_lib.known_vm_types_tmpl {
 	any : { real_type : "Object"  union_type : "flabbergast.TypeSet.ALL"  name : "Any" }
 	mutable_frame : { real_type : "flabbergast.MutableFrame"  name : "Frame" }
 	list : { real_type : "flabbergast.Context"  name : "List" }
-	function : { real_type : "flabbergast.ComputeValue"  name : "Function" }
-	override_function : { real_type : "flabbergast.ComputeOverride"  name : "Override"}
+	function : { real_type : "flabbergast.ComputeValue"  name : "Definition" }
+	override_function : { real_type : "flabbergast.ComputeOverride"  name : "OverrideDefinition"}
 }
 # The mechanism code to do type checking in the compiler. Each syntax element
 # is told what types it may return and it propagates this type information to
@@ -1144,16 +1144,16 @@ kws : compiler_lib.kws_repl_tmpl {
 		opcode : "Frame.class.getMethod(\"renderTrace\", Stringish.class)"
 		emit_method : Null
 	}
-	list_null +: {
+	ctxt_null +: {
 		extra_indent : ""
 		storage_name : "LoadableValue.NULL_LIST"
 	}
-	list_prepend +: {
+	ctxt_prepend +: {
 		cached : True
 		opcode : "Context.class.getMethod(\"prepend\", Frame.class, Context.class)"
 		emit_method : Null
 	}
-	list_append +: {
+	ctxt_append +: {
 		cached : True
 		opcode : "Context.class.getMethod(\"append\", Context.class, Context.class)"
 		emit_method : Null
@@ -1246,7 +1246,7 @@ kws : compiler_lib.kws_repl_tmpl {
 		}
 	}
 	apply_override +: {
-		opcode : "Computation.class.getMethod(\"performOverride\", String.class, int.class, int.class, int.class, int.class, ComputeOverride.class, ComputeValue.class)"
+		opcode : "Future.class.getMethod(\"performOverride\", String.class, int.class, int.class, int.class, int.class, ComputeOverride.class, ComputeValue.class)"
 		emit_method : Null
 		gen_gen +: {
 			extra_load :
@@ -1290,13 +1290,13 @@ kws : compiler_lib.kws_repl_tmpl {
 		}
 	}
 	create_function +: {
-		method : "createFunction"
-		block_type : "FunctionBlock"
+		method : "createDefinition"
+		block_type : "DefinitionBlock"
 		parameter_names : [ $source_reference, $context, $self_frame, $container_frame ]
 	}
 	create_override_function +: {
-		method : "createFunctionOverride"
-		block_type : "FunctionOverrideBlock"
+		method : "createOverrideDefinition"
+		block_type : "OverrideDefinitionBlock"
 		parameter_names : [ $source_reference, $context, $self_frame, $container_frame, $original_value ]
 	}
 	set_frame_or_tmpl_tmpl +: {
@@ -2761,12 +2761,12 @@ compiler : compiler_lib.language_with_repl_tmpl {
 			rules +: {
 				xcomputation : Template expression_tmpl {
 					level : 19
-					pretty_name : "invoke Java flabbergast.Computation class"
+					pretty_name : "invoke Java flabbergast.Future class"
 					class_extra : "\t\tjava.lang.reflect.Constructor constructor;"
 					pattern : parser.sequence {
 						of : [
 							parser.allow_extensions {},
-							parser.exact { word : "XComputation" },
+							parser.exact { word : "XFuture" },
 							space { mandatory : True },
 							parser.accumulate_string {
 								field : "type_name"
@@ -2789,9 +2789,9 @@ compiler : compiler_lib.language_with_repl_tmpl {
 									"\(indent)try {" &
 									"\(indent)\tClass<?> clazz = Class.forName(RevCons.toString(type_name));" &
 									"\(indent)\tconstructor = clazz.getConstructor(TaskMaster.class, SourceReference.class, Context.class, Frame.class, Frame.class);" &
-									"\(indent)\tif (!Computation.class.isAssignableFrom(clazz)) {" &
+									"\(indent)\tif (!Future.class.isAssignableFrom(clazz)) {" &
 									"\(indent)\t\t_success.set(false);" &
-									"\(indent)\t\t_collector.reportRawError(\(class_name).this, \"Type \" + type_name + \" does not extend flabbergast.Computation.\");" &
+									"\(indent)\t\t_collector.reportRawError(\(class_name).this, \"Type \" + type_name + \" does not extend flabbergast.Future.\");" &
 									"\(indent)\t}" &
 									"\(indent)} catch (NoSuchMethodException e) {" &
 									"\(indent)\t_success.set(false);" &
@@ -2820,7 +2820,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 										"\(indent)\(generator).visitMethod(constructor);" &
 										"\(indent)final FieldValue \(storage_name) = \(generator).makeField(\"xcomputation\", Object.class);" &
 										"\(indent)\(generator).generateConsumeResult(\(storage_name));" &
-										"\(indent)\(generator).visitMethod(Computation.class.getMethod(\"listen\", ConsumeResult.class));" &
+										"\(indent)\(generator).visitMethod(Future.class.getMethod(\"listen\", ConsumeResult.class));" &
 										"\(indent)\(generator).stopInterlock();" &
 										code
 							}

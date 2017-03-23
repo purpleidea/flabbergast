@@ -49,8 +49,8 @@ public class DynamicCompiler extends LoadLibraries {
             }
             try {
                 Class<?> loaded = class_loader.hotload(class_name, x);
-                if (Computation.class.isAssignableFrom(loaded)) {
-                    cache.put(class_name, (Class<? extends Computation>) loaded);
+                if (Future.class.isAssignableFrom(loaded)) {
+                    cache.put(class_name, (Class<? extends Future>) loaded);
                 } else {
                     other_cache.put(class_name, loaded);
                 }
@@ -73,14 +73,14 @@ public class DynamicCompiler extends LoadLibraries {
         }
     }
 
-    private Map<String, Class<? extends Computation>> cache = new HashMap<String, Class<? extends Computation>>();
+    private Map<String, Class<? extends Future>> cache = new HashMap<String, Class<? extends Future>>();
     private final ClassLoader class_loader = new ClassLoader();
 
     private final ErrorCollector collector;
 
     private Map<String, Class<?>> other_cache = new HashMap<String, Class<?>>();
 
-    private CompilationUnit<Class<? extends Computation>> unit = new CompilationUnit<Class<? extends Computation>>() {
+    private CompilationUnit<Class<? extends Future>> unit = new CompilationUnit<Class<? extends Future>>() {
 
         @Override
         public ClassVisitor defineClass(int access, String class_name,
@@ -97,7 +97,7 @@ public class DynamicCompiler extends LoadLibraries {
         }
 
         @Override
-        protected Class<? extends Computation> doMagic(String name) {
+        protected Class<? extends Future> doMagic(String name) {
             return cache.get(name);
         }
     };
@@ -106,7 +106,7 @@ public class DynamicCompiler extends LoadLibraries {
         this.collector = collector;
     }
 
-    public CompilationUnit<Class<? extends Computation>> getCompilationUnit() {
+    public CompilationUnit<Class<? extends Future>> getCompilationUnit() {
         return unit;
     };
 
@@ -121,7 +121,7 @@ public class DynamicCompiler extends LoadLibraries {
     }
 
     @Override
-    public Class<? extends Computation> resolveUri(String uri,
+    public Class<? extends Future> resolveUri(String uri,
             Ptr<LibraryFailure> reason) {
         if (cache.containsKey(uri)) {
             return cache.get(uri);
@@ -133,13 +133,13 @@ public class DynamicCompiler extends LoadLibraries {
         for (File f : getFinder().findAll(uri.substring(4), ".jo_0", ".o_0")) {
             try {
                 Parser parser = Parser.open(f.getAbsolutePath());
-                Class<? extends Computation> result = parser.parseFile(
+                Class<? extends Future> result = parser.parseFile(
                         collector, unit, type_name);
                 reason.set(result == null ? LibraryFailure.CORRUPT : null);
                 cache.put(uri, result);
                 parser = null;
                 System.gc();
-                return (Class<? extends Computation>) result;
+                return (Class<? extends Future>) result;
             } catch (Exception e) {
                 System.err.println(e.getMessage());
                 reason.set(LibraryFailure.CORRUPT);

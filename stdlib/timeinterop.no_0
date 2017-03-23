@@ -1,24 +1,24 @@
-now_utc : XComputation Flabbergast.Time.UtcNow,Flabbergast.Runtime
-now_local : XComputation Flabbergast.Time.LocalNow,Flabbergast.Runtime
+now_utc : XFuture Flabbergast.Time.UtcNow,Flabbergast.Runtime
+now_local : XFuture Flabbergast.Time.LocalNow,Flabbergast.Runtime
 
 compare_list : Template {
-	value : For arg : args, arg_name : Name Select arg_name : XComputation Flabbergast.Time.Compare,Flabbergast.Runtime
+	value : For arg : args, arg_name : Name Select arg_name : XFuture Flabbergast.Time.Compare,Flabbergast.Runtime
 }
 
 modify_list : Template {
-	value : For arg : args, arg_name : Name Select arg_name : XComputation Flabbergast.Time.Modify,Flabbergast.Runtime
+	value : For arg : args, arg_name : Name Select arg_name : XFuture Flabbergast.Time.Modify,Flabbergast.Runtime
 }
 
 switch_zone_list : Template {
-	value : For arg : args, arg_name : Name Select arg_name : XComputation Flabbergast.Time.SwitchZone,Flabbergast.Runtime
+	value : For arg : args, arg_name : Name Select arg_name : XFuture Flabbergast.Time.SwitchZone,Flabbergast.Runtime
 }
 
 from_unix : Template {
-	value : XComputation Flabbergast.Time.FromUnix,Flabbergast.Runtime
+	value : XFuture Flabbergast.Time.FromUnix,Flabbergast.Runtime
 }
 
 from_parts : Template {
-	value : XComputation Flabbergast.Time.FromParts,Flabbergast.Runtime
+	value : XFuture Flabbergast.Time.FromParts,Flabbergast.Runtime
 }
 
 days : XInvoke Flabbergast.Time.BaseTime,Flabbergast.Runtime GetDays ()

@@ -36,7 +36,7 @@ When searching for libraries, files names ending in both \fB.o_0\fR and \fB.jo_0
 This version of Flabbergast has special syntax for interoperating with other programs.
 
 .TP
-\fBXComputation\fR \fItype\fR
+\fBXFuture\fR \fItype\fR
 Calls a class, deriving from \fBFlabbergast.Computation\fR and consume the value. The \fBXInvoke\fR expression is somewhat limited: it cannot block or wait. A computation, can perform any of these tasks, and initiate arbitrary lookups. The class must have a constructor that takes a \fBTaskMaster\fR, \fBSourceReference\fR, \fBContext\fR, and two \fBFrame\fRs, self, and container.
 
 .TP

@@ -19,7 +19,7 @@ public interface UriHandler {
     int Priority {
         get;
     }
-    Computation ResolveUri(TaskMaster task_master, string uri, out LibraryFailure reason);
+    Future ResolveUri(TaskMaster task_master, string uri, out LibraryFailure reason);
 }
 
 public interface UriLoader {
@@ -47,16 +47,16 @@ public class UriInstaniator : UriHandler {
             return loader.Priority;
         }
     }
-    public Computation ResolveUri(TaskMaster task_master, string uri, out LibraryFailure reason) {
+    public Future ResolveUri(TaskMaster task_master, string uri, out LibraryFailure reason) {
         var type = loader.ResolveUri(uri, out reason);
         if (reason != LibraryFailure.None || type == null) {
             return null;
         }
-        if (!typeof(Computation).IsAssignableFrom(type)) {
+        if (!typeof(Future).IsAssignableFrom(type)) {
             throw new InvalidCastException(String.Format(
                                                "Class {0} for URI {1} from {2} is not a computation.", type, uri, UriName));
         }
-        return (Computation) Activator.CreateInstance(type, task_master);
+        return (Future) Activator.CreateInstance(type, task_master);
     }
 }
 
