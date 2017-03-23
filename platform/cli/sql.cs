@@ -268,6 +268,12 @@ public class DbUriHandler : UriHandler {
             return "ADO.NET gateway";
         }
     }
+    public int Priority {
+        get {
+            return 0;
+        }
+    }
+
     public Computation ResolveUri(TaskMaster task_master, string uri, out LibraryFailure reason) {
         if (!uri.StartsWith("sql:")) {
             reason = LibraryFailure.Missing;

@@ -15,6 +15,11 @@ public class BuiltInLibraries : UriLoader {
             return "built-in libraries";
         }
     }
+    public int Priority {
+        get {
+            return -100;
+        }
+    }
 
     public Type ResolveUri(string uri, out LibraryFailure reason) {
         reason = LibraryFailure.Missing;
@@ -87,6 +92,9 @@ public abstract class LoadLibraries : UriLoader {
     public abstract string UriName {
         get;
     }
+    public abstract int Priority {
+        get;
+    }
     public abstract Type ResolveUri(string uri, out LibraryFailure reason);
 }
 
@@ -94,6 +102,11 @@ public class LoadPrecompiledLibraries : LoadLibraries {
     public override string UriName {
         get {
             return "pre-compiled libraries";
+        }
+    }
+    public override int Priority {
+        get {
+            return 0;
         }
     }
 

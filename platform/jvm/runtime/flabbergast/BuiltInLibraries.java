@@ -13,6 +13,10 @@ public class BuiltInLibraries implements UriLoader {
         return "built-in libraries";
     }
 
+    public int getPriority() {
+        return -100;
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public Class<? extends Computation> resolveUri(String uri,

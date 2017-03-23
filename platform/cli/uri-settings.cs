@@ -10,6 +10,11 @@ public class SettingsHandler : UriHandler {
             return "VM-specific settings";
         }
     }
+    public int Priority {
+        get {
+            return 0;
+        }
+    }
 
     private SettingsHandler() {
     }

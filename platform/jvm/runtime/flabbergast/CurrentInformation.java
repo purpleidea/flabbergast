@@ -29,6 +29,10 @@ public class CurrentInformation implements UriHandler {
         return "current information";
     }
 
+    public int getPriority() {
+        return 0;
+    }
+
     public Computation resolveUri(TaskMaster task_master, String uri,
                                   Ptr<LibraryFailure> reason) {
 

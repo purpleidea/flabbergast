@@ -14,6 +14,9 @@ public class HttpHandler implements UriHandler {
     public String getUriName() {
         return "HTTP files";
     }
+    public int getPriority() {
+        return 0;
+    }
     public final Computation resolveUri(TaskMaster task_master, String uri,
                                         Ptr<LibraryFailure> reason) {
 

@@ -10,6 +10,11 @@ public class CurrentInformation : UriHandler {
             return "current information";
         }
     }
+    public int Priority {
+        get {
+            return 0;
+        }
+    }
 
     public CurrentInformation(bool interactive) {
         information["interactive"] = new Precomputation(interactive);

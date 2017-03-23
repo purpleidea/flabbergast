@@ -16,6 +16,10 @@ public class LoadPrecompiledLibraries extends LoadLibraries {
         return "pre-compiled libraries";
     }
 
+    public int getPriority() {
+        return 0;
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public Class<? extends Computation> resolveUri(String uri,

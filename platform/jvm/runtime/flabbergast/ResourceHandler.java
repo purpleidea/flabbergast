@@ -15,6 +15,9 @@ public class ResourceHandler implements UriHandler {
     public String getUriName() {
         return "resource files";
     }
+    public int getPriority() {
+        return 0;
+    }
     public ResourcePathFinder getFinder() {
         return finder;
     }

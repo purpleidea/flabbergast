@@ -14,6 +14,9 @@ public class FileHandler extends UrlConnectionHandler {
     public String getUriName() {
         return "local files";
     }
+    public int getPriority() {
+        return 0;
+    }
     @Override
     protected URL convert(String uri) throws Exception {
 

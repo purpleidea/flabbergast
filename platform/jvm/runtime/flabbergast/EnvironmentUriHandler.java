@@ -10,6 +10,9 @@ public class EnvironmentUriHandler implements UriHandler {
     public String getUriName() {
         return "Environment variables";
     }
+    public int getPriority() {
+        return 0;
+    }
     public Computation resolveUri(TaskMaster task_master, String uri,
                                   Ptr<LibraryFailure> reason) {
         if (!uri.startsWith("env:")) {

@@ -10,6 +10,11 @@ public class FtpHandler : UriHandler {
             return "FTP files";
         }
     }
+    public int Priority {
+        get {
+            return 0;
+        }
+    }
 
     private FtpHandler() {
     }
@@ -36,6 +41,12 @@ public class HttpHandler : UriHandler {
             return "HTTP files";
         }
     }
+    public int Priority {
+        get {
+            return 0;
+        }
+    }
+
 
     private HttpHandler() {
     }

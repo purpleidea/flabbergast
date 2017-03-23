@@ -14,6 +14,11 @@ public class ResourceHandler : UriHandler {
             return "resource files";
         }
     }
+    public int Priority {
+        get {
+            return 0;
+        }
+    }
 
     public Computation ResolveUri(TaskMaster master, string uri, out LibraryFailure reason) {
         if (!uri.StartsWith("res:")) {

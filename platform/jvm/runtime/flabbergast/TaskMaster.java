@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Collections;
 
 /**
  * Scheduler for computations.
@@ -128,6 +129,7 @@ public abstract class TaskMaster implements Iterable<Lookup> {
      * deadlocked.
      */
     public void run() {
+        Collections.sort(handlers, (a, b) -> a.getPriority() - b.getPriority());
         while (!computations.isEmpty()) {
             Computation task = computations.poll();
             task.compute();

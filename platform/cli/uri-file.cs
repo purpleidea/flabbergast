@@ -10,6 +10,11 @@ public class FileHandler : UriHandler {
             return "local files";
         }
     }
+    public int Priority {
+        get {
+            return 0;
+        }
+    }
 
     private FileHandler() {
     }

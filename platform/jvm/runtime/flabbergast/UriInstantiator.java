@@ -14,6 +14,10 @@ public class UriInstantiator implements UriHandler {
         return loader.getUriName();
     }
 
+    public int getPriority() {
+        return loader.getPriority();
+    }
+
     public Computation resolveUri(TaskMaster task_master, String uri,
                                   Ptr<LibraryFailure> reason) {
         Class<? extends Computation> t = loader.resolveUri(uri, reason);

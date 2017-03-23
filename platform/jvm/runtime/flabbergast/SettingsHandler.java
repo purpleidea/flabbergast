@@ -12,6 +12,9 @@ public class SettingsHandler implements UriHandler {
     public String getUriName() {
         return "VM-specific settings";
     }
+    public int getPriority() {
+        return 0;
+    }
 
     public Computation resolveUri(TaskMaster task_master, String uri,
                                   Ptr<LibraryFailure> reason) {

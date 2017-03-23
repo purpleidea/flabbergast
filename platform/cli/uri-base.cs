@@ -16,11 +16,17 @@ public interface UriHandler {
     string UriName {
         get;
     }
+    int Priority {
+        get;
+    }
     Computation ResolveUri(TaskMaster task_master, string uri, out LibraryFailure reason);
 }
 
 public interface UriLoader {
     string UriName {
+        get;
+    }
+    int Priority {
         get;
     }
     Type ResolveUri(string uri, out LibraryFailure reason);
@@ -34,6 +40,11 @@ public class UriInstaniator : UriHandler {
     public string UriName {
         get {
             return loader.UriName;
+        }
+    }
+    public int Priority {
+        get {
+            return loader.Priority;
         }
     }
     public Computation ResolveUri(TaskMaster task_master, string uri, out LibraryFailure reason) {

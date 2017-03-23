@@ -177,6 +177,9 @@ public class JdbcUriHandler implements UriHandler {
     public String getUriName() {
         return "JDBC gateway";
     }
+    public int getPriority() {
+        return 0;
+    }
     private Object marshall(String s) {
         if (s == null || s.length() == 0) {
             return Unit.NULL;

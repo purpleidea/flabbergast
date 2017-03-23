@@ -250,6 +250,7 @@ public abstract class TaskMaster : IEnumerable<Lookup> {
     */
 
     public void Run() {
+        handlers.Sort((a, b) => a.Priority - b.Priority);
         while (computations.Count > 0) {
             var task = computations.Dequeue();
             task.Compute();

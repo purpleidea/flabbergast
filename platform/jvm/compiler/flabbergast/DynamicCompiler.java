@@ -116,6 +116,11 @@ public class DynamicCompiler extends LoadLibraries {
     }
 
     @Override
+    public int getPriority() {
+        return -50;
+    }
+
+    @Override
     public Class<? extends Computation> resolveUri(String uri,
             Ptr<LibraryFailure> reason) {
         if (cache.containsKey(uri)) {

@@ -9,6 +9,9 @@ public class FtpHandler extends UrlConnectionHandler {
     public String getUriName() {
         return "FTP files";
     }
+    public int getPriority() {
+        return 0;
+    }
     @Override
     protected URL convert(String uri) throws Exception {
 
