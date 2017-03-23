@@ -21,6 +21,7 @@ cli_DATA = \
 	bin/Debug/flabbergast-documenter.exe \
 	bin/Debug/flabbergast-repl.exe \
 	bin/Debug/flabbergast.exe \
+	runtime.urlhandler \
 	$(NULL)
 
 compilerdir = $(pkgdatadir)/compiler
@@ -38,6 +39,7 @@ EXE_LOG_COMPILER = cli
 
 $(cli_DATA) $(TEST): $(wildcard *.cs *.sln *.csproj)
 	$(XBUILD) /verbosity:quiet flabbergast.sln
+	cp runtime.urlhandler bin/Debug
 
 flabbergast-runtime-cli.pc: Makefile
 	@echo Libraries=$(clidir)/Flabbergast.Runtime.dll > $@

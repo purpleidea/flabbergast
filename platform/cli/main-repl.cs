@@ -78,27 +78,10 @@ public class REPL {
         var unit = new CompilationUnit(module_builder, false);
         var collector = new ConsoleCollector();
         var task_master = new ConsoleTaskMaster();
-        task_master.AddUriHandler(new CurrentInformation(true));
-        task_master.AddUriHandler(BuiltInLibraries.INSTANCE);
-        task_master.AddUriHandler(SettingsHandler.INSTANCE);
-        task_master.AddUriHandler(EnvironmentUriHandler.INSTANCE);
-        task_master.AddUriHandler(HttpHandler.INSTANCE);
-        task_master.AddUriHandler(FtpHandler.INSTANCE);
-        task_master.AddUriHandler(FileHandler.INSTANCE);
         var resource_finder = new ResourcePathFinder();
         resource_finder.PrependPath(Path.Combine(files.Count == 1 ? Path.GetDirectoryName(Path.GetFullPath(files[0])) : Environment.CurrentDirectory, "lib"));
         resource_finder.AddDefault();
-        var db_handler = new DbUriHandler();
-        db_handler.Finder = resource_finder;
-        task_master.AddUriHandler(db_handler);
-        var resource_handler = new ResourceHandler();
-        resource_handler.Finder = resource_finder;
-        task_master.AddUriHandler(resource_handler);
-        if (use_precompiled) {
-            var precomp = new LoadPrecompiledLibraries();
-            precomp.Finder = resource_finder;
-            task_master.AddUriHandler(precomp);
-        }
+        task_master.AddAllUriHandlers(resource_finder, LoadRule.Interactive | (use_precompiled ? LoadRule.Precompiled : 0));
         var dyncomp = new DynamicallyCompiledLibraries(collector);
         dyncomp.Finder = resource_finder;
         task_master.AddUriHandler(dyncomp);

@@ -321,4 +321,15 @@ public class DbUriHandler : UriHandler {
         }
     }
 }
+public class DbUriService : UriService {
+    public UriHandler Create(ResourcePathFinder finder, LoadRule rules) {
+        if (rules.HasFlag(LoadRule.Sandboxed)) {
+            return null;
+        }
+        var db_handler = new DbUriHandler();
+        db_handler.Finder = finder;
+        return db_handler;
+
+    }
+}
 }

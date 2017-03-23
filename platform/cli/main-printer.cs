@@ -52,24 +52,7 @@ public class Printer {
         var resource_finder = new ResourcePathFinder();
         resource_finder.PrependPath(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(files[0])), "lib"));
         resource_finder.AddDefault();
-        task_master.AddUriHandler(new CurrentInformation(false));
-        task_master.AddUriHandler(BuiltInLibraries.INSTANCE);
-        task_master.AddUriHandler(SettingsHandler.INSTANCE);
-        var db_handler = new DbUriHandler();
-        db_handler.Finder = resource_finder;
-        task_master.AddUriHandler(db_handler);
-        task_master.AddUriHandler(EnvironmentUriHandler.INSTANCE);
-        task_master.AddUriHandler(HttpHandler.INSTANCE);
-        task_master.AddUriHandler(FtpHandler.INSTANCE);
-        task_master.AddUriHandler(FileHandler.INSTANCE);
-        var resource_handler = new ResourceHandler();
-        resource_handler.Finder = resource_finder;
-        task_master.AddUriHandler(resource_handler);
-        if (use_precompiled) {
-            var precomp = new LoadPrecompiledLibraries();
-            precomp.Finder = resource_finder;
-            task_master.AddUriHandler(precomp);
-        }
+        task_master.AddAllUriHandlers(resource_finder, use_precompiled ? LoadRule.Precompiled : 0);
         var dyncomp = new DynamicallyCompiledLibraries(collector);
         dyncomp.Finder = resource_finder;
         task_master.AddUriHandler(dyncomp);

@@ -1,7 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Globalization;
+using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -173,7 +176,30 @@ public abstract class TaskMaster : IEnumerable<Lookup> {
     IEnumerator IEnumerable.GetEnumerator() {
         return GetEnumerator();
     }
+    public void AddAllUriHandlers(ResourcePathFinder finder, LoadRule rules) {
+        var uri = new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase);
+        var directory = Path.GetDirectoryName(uri.LocalPath);
+        handlers.AddRange(Directory.GetFiles(directory).Where(file => file.EndsWith(".urlhandler")).SelectMany(file => File.ReadLines(file)).Where(line => !line.StartsWith("#")).Select(line => ((UriService) Activator.CreateInstance(Type.GetType(line))).Create(finder, rules)).Where(u => u != null));
 
+        AddUriHandler(new CurrentInformation(rules.HasFlag(LoadRule.Interactive)));
+        AddUriHandler(BuiltInLibraries.INSTANCE);
+        if (!rules.HasFlag(LoadRule.Sandboxed)) {
+            AddUriHandler(SettingsHandler.INSTANCE);
+            AddUriHandler(EnvironmentUriHandler.INSTANCE);
+            AddUriHandler(HttpHandler.INSTANCE);
+            AddUriHandler(FtpHandler.INSTANCE);
+            AddUriHandler(FileHandler.INSTANCE);
+            var resource_handler = new ResourceHandler();
+            resource_handler.Finder = finder;
+            AddUriHandler(resource_handler);
+        }
+        if (rules.HasFlag(LoadRule.Precompiled)) {
+            var precomp = new LoadPrecompiledLibraries();
+            precomp.Finder = finder;
+            AddUriHandler(precomp);
+        }
+
+    }
     public void AddUriHandler(UriHandler handler) {
         handlers.Add(handler);
     }

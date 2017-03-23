@@ -59,4 +59,14 @@ public class UriInstaniator : UriHandler {
         return (Computation) Activator.CreateInstance(type, task_master);
     }
 }
+
+[Flags]
+public enum LoadRule {
+    Sandboxed = 1,
+    Interactive = 2,
+    Precompiled = 4
+}
+public interface UriService {
+    UriHandler Create(ResourcePathFinder finder, LoadRule rules);
+}
 }
