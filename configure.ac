@@ -15,6 +15,8 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])], )
 AC_PROG_LN_S
 
 # JVM
+METAINF_JAR="$JAR_PATH/metainf-services.jar"
+AC_SUBST([METAINF_JAR])
 JANSI_JAR="$JAR_PATH/jansi.jar"
 AC_SUBST([JANSI_JAR])
 JLINE_JAR="$JAR_PATH/jline2.jar"
@@ -35,7 +37,7 @@ if test "$enable_jvm" != no; then
 	if test "$JAVA" = undefined -o "$JAVAC" = undefined -o "$JAR" = undefined; then
 		target_java=no
 	else
-		AC_CHECK_FILES([${ASM_JAR} ${COMMONS_CLI_JAR} ${JLINE_JAR} ${JODA_TIME_JAR} ${JSON_JAR}], [ target_java=yes ], [ target_java=no ])
+		AC_CHECK_FILES([${ASM_JAR} ${COMMONS_CLI_JAR} ${JLINE_JAR} ${JODA_TIME_JAR} ${JSON_JAR} ${METAINF_JAR}], [ target_java=yes ], [ target_java=no ])
 	fi
 else
 	target_java=no

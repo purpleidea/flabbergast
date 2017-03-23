@@ -67,16 +67,15 @@ flabbergast-$(VERSION).jar: $(RUNTIME_INPUTS) $(COMPILER_INPUTS)
 	rm -rf .build
 	mkdir .build
 	cd .build && for each in $(sort $(JAVA_RUNTIME_DEPS) $(JAVA_COMPILER_DEPS)); do $(JAR) xf $$each; done
-	$(JAVAC) -g -encoding UTF-8 -cp .build -sourcepath runtime -d .build $(RUNTIME_INPUTS)
-	$(JAVAC) -g -encoding UTF-8 -cp .build -sourcepath compiler -d .build $(COMPILER_INPUTS)
+	CLASSPATH=$(METAINF_JAR) $(JAVAC) -g -encoding UTF-8 -cp .build -sourcepath runtime:compiler  -d .build $(RUNTIME_INPUTS) $(COMPILER_INPUTS)
 	$(JAR) cf "flabbergast-${VERSION}.jar" -C .build .
 	rm -rf .build
 else
 flabbergast-runtime-$(VERSION).jar flabbergast-runtime-$(VERSION)-sources.jar flabbergast-runtime-$(VERSION)-javadoc.jar: runtime.manifest $(RUNTIME_INPUTS)
-	CLASSPATH=$(subst $(SPACE),:,$(JAVA_RUNTIME_DEPS)) ./jarc runtime $(VERSION)
+	CLASSPATH=$(subst $(SPACE),:,$(METAINF_JAR) $(JAVA_RUNTIME_DEPS)) ./jarc runtime $(VERSION)
 
 flabbergast-compiler-$(VERSION).jar flabbergast-compiler-$(VERSION)-sources.jar flabbergast-compiler-$(VERSION)-javadoc.jar: compiler.manifest $(COMPILER_INPUTS) flabbergast-runtime-$(VERSION).jar
-	CLASSPATH=$(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) flabbergast-runtime-$(VERSION).jar) ./jarc compiler $(VERSION)
+	CLASSPATH=$(subst $(SPACE),:,$(METAINF_JAR) $(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) flabbergast-runtime-$(VERSION).jar) ./jarc compiler $(VERSION)
 endif
 
 flabbergast-stdlib-$(VERSION).jar flabbergast-stdlib-$(VERSION)-sources.jar flabbergast-stdlib-$(VERSION)-javadoc.jar: stdlib.manifest $(STDLIB_INPUTS) $(COMPILER_JAR)

@@ -10,6 +10,8 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Collections;
+import java.util.EnumSet;
+import java.util.ServiceLoader;
 
 /**
  * Scheduler for computations.
@@ -18,6 +20,8 @@ public abstract class TaskMaster implements Iterable<Lookup> {
     public enum LibraryFailure {
         BAD_NAME, CORRUPT, MISSING
     }
+
+    private static ServiceLoader<UriService> URI_SERVICES = ServiceLoader.load(UriService.class);
 
     private Queue<Computation> computations = new LinkedList<Computation>();
 
@@ -35,6 +39,33 @@ public abstract class TaskMaster implements Iterable<Lookup> {
     public TaskMaster() {
     }
 
+
+    void addAllUriHandlers(ResourcePathFinder finder, EnumSet<LoadRule> flags) {
+        for (UriService service : URI_SERVICES) {
+            UriHandler handler = service.create(finder, flags);
+            if (handler != null) {
+                addUriHandler(handler);
+            }
+        }
+        if (!flags.contains(LoadRule.SANDBOXED)) {
+            addUriHandler(SettingsHandler.INSTANCE);
+            addUriHandler(EnvironmentUriHandler.INSTANCE);
+            addUriHandler(FtpHandler.INSTANCE);
+            addUriHandler(HttpHandler.INSTANCE);
+            addUriHandler(FileHandler.INSTANCE);
+            ResourceHandler resource_handler = new ResourceHandler();
+            resource_handler.setFinder(finder);
+            addUriHandler(resource_handler);
+        }
+
+        addUriHandler(BuiltInLibraries.INSTANCE);
+        addUriHandler(new CurrentInformation(flags.contains(LoadRule.PRECOMPILED)));
+        if (flags.contains(LoadRule.PRECOMPILED)) {
+            LoadPrecompiledLibraries precomp = new LoadPrecompiledLibraries();
+            addUriHandler(precomp);
+            precomp.setFinder(finder);
+        }
+    }
     public void addUriHandler(UriHandler handler) {
         handlers.add(handler);
     }

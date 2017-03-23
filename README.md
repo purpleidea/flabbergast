@@ -57,7 +57,7 @@ To build Flabbergast, you will need to have an existing copy of Flabbergast or o
 
 To install all these packages on Ubuntu/Debian, do:
 
-    sudo apt-get install java7-jdk autotools-dev libasm4-java libjline-java libcommons-cli-java libjoda-time-java libandroid-json-org-java mono-xbuild mono-mcs rsync
+    sudo apt-get install java8-jdk autotools-dev libasm4-java libjline-java libcommons-cli-java libjoda-time-java libandroid-json-org-java libmetainf-services-java mono-xbuild mono-mcs rsync
 
 To build the compiler, if Flabbergast is installed, run the bootstrap step:
 

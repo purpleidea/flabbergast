@@ -3,6 +3,8 @@ package flabbergast;
 import java.io.File;
 import java.io.IOException;
 
+import java.util.EnumSet;
+
 import jline.console.ConsoleReader;
 import jline.console.completer.StringsCompleter;
 import jline.console.history.FileHistory;
@@ -148,28 +150,15 @@ public class MainREPL {
         }
         resource_finder.addDefaults();
         ErrorCollector collector = new ConsoleCollector();
-        DynamicCompiler compiler = new DynamicCompiler(collector);
-        compiler.setFinder(resource_finder);
         ConsoleTaskMaster task_master = new ConsoleTaskMaster();
-        task_master.addUriHandler(new CurrentInformation(true));
-        task_master.addUriHandler(BuiltInLibraries.INSTANCE);
-        JdbcUriHandler jdbc_handler = new JdbcUriHandler();
-        jdbc_handler.setFinder(resource_finder);
-        task_master.addUriHandler(jdbc_handler);
-        task_master.addUriHandler(SettingsHandler.INSTANCE);
-        task_master.addUriHandler(EnvironmentUriHandler.INSTANCE);
-        task_master.addUriHandler(FtpHandler.INSTANCE);
-        task_master.addUriHandler(HttpHandler.INSTANCE);
-        task_master.addUriHandler(FileHandler.INSTANCE);
-        ResourceHandler resource_handler = new ResourceHandler();
-        resource_handler.setFinder(resource_finder);
-        task_master.addUriHandler(resource_handler);
-        if (!result.hasOption('p')) {
-            LoadPrecompiledLibraries precomp = new LoadPrecompiledLibraries();
-            task_master.addUriHandler(precomp);
-            precomp.setFinder(resource_finder);
-        }
+        DynamicCompiler compiler =  new DynamicCompiler(collector);
+        compiler.setFinder(resource_finder);
         task_master.addUriHandler(compiler);
+        EnumSet<LoadRule> rules = EnumSet.of(LoadRule.INTERACTIVE);
+        if (result.hasOption('p')) {
+            rules.add(LoadRule.PRECOMPILED);
+        }
+        task_master.addAllUriHandlers(resource_finder, rules);
         final Ptr<Frame> root = new Ptr<Frame>();
         try {
             if (files.length == 1) {
