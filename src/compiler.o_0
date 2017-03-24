@@ -121,7 +121,7 @@ parser_tmpl : Template {
 	accumulate_list : Template {
 		accumulate : False
 		field : Required
-		type : Required
+		item_type : Required
 		in : Required
 		# Remove duplicates using the field name provided. It must be common to
 		# all the children.
@@ -136,7 +136,7 @@ parser_tmpl : Template {
 	# Parses another rule
 	other : Template {
 		# This it the name (and therefore type) of the desired rule to parse.
-		type : Required
+		item_type : Required
 		# Some rules have many possible AST nodes that they can generate. In some
 		# instances, it is desirable to parse only subsets of those possible AST
 		# nodes. Rules may then define groups of AST nodes as “alternate” versions
@@ -265,41 +265,23 @@ environment_tmpl : Template {
 		desired : Required
 	}
 }
-# The definitions for all the types in the Flabbergast language.
-known_types_tmpl : Template {
-	bin : Required
-	bool : Required
-	float : Required
-	frame : Required
-	int : Required
-	null : Required
-	str : Required
-	template : Required
-}
-known_vm_types_tmpl : Template {
-	any : Required
-	mutable_frame : Required
-	list : Required
-	function : Required
-	override_function : Required
-}
 # The actions that can be performed to check that the required return type is
 # correct.
 ensure_type_tmpl : Template {
 	any : Template filter {
-		types : known_types
+		types : For t : type Where t.visible Select t
 	}
 	bool : Template filter {
-		types : [ known_types.bool ]
+		types : [ type.bool ]
 	}
 	frame : Template filter {
-		types : [ known_types.frame ]
+		types : [ type.frame ]
 	}
 	int : Template filter {
-		types : [ known_types.int ]
+		types : [ type.int ]
 	}
 	number : Template filter {
-		types : [ known_types.float, known_types.int ]
+		types : [ type.float, type.int ]
 	}
 	# If true, the value must be unboxed. Otherwise, it will be passed boxed to the generating code.
 	needs_unbox : True
@@ -371,7 +353,7 @@ common_fields_tmpl : Template {
 	str : Template { field_name : Used }
 	int : Template { field_name : Used }
 	float : Template { field_name : Used }
-	other : Template { field_name : Used  type : Required }
+	other : Template { field_name : Used  item_type : Required }
 }
 # Code generation for all the elements in the KWS VM. See that documentation for details.
 kws_tmpl : Template {
@@ -382,103 +364,103 @@ kws_tmpl : Template {
 	}
 	binary_length : Template base_tmpl {
 		source : Required
-		arguments : [ { value : source  type : known_types.bin } ]
-		return_type : known_types.int
+		arguments : [ { value : source  item_type : type.bin } ]
+		return_type : type.int
 	}
 	bool_negate : Template base_tmpl {
 		source : Required
-		arguments : [ { value : source  type : known_types.bool } ]
-		return_type : known_types.bool
+		arguments : [ { value : source  item_type : type.bool } ]
+		return_type : type.bool
 	}
 	error : Template codegen.gen_tmpl {
 		message : Required
 	}
 	capture : Template base_tmpl {
 		source : Required
-		arguments : [ { value : source  type : known_vm_types.any } ]
-		return_type : known_vm_types.function
+		arguments : [ { value : source  item_type : type.any } ]
+		return_type : type.definition
 	}
 	int_add : Template base_tmpl {
 		left : Required
 		right : Required
 		arguments : [
-			{ value : left  type : known_types.int },
-			{ value : right  type : known_types.int }
+			{ value : left  item_type : type.int },
+			{ value : right  item_type : type.int }
 		]
-		return_type : known_types.int
+		return_type : type.int
 	}
 	int_and : Template base_tmpl {
 		left : Required
 		right : Required
 		arguments : [
-			{ value : left  type : known_types.int },
-			{ value : right  type : known_types.int }
+			{ value : left  item_type : type.int },
+			{ value : right  item_type : type.int }
 		]
-		return_type : known_types.int
+		return_type : type.int
 	}
 	int_complement : Template base_tmpl {
 		source : Required
-		arguments : [ { value : source  type : known_types.int } ]
-		return_type : known_types.int
+		arguments : [ { value : source  item_type : type.int } ]
+		return_type : type.int
 	}
 	int_divide : Template base_tmpl {
 		left : Required
 		right : Required
 		arguments : [
-			{ value : left  type : known_types.int },
-			{ value : right  type : known_types.int }
+			{ value : left  item_type : type.int },
+			{ value : right  item_type : type.int }
 		]
-		return_type : known_types.int
+		return_type : type.int
 	}
 	int_modulus : Template base_tmpl {
 		left : Required
 		right : Required
 		arguments : [
-			{ value : left  type : known_types.int },
-			{ value : right  type : known_types.int }
+			{ value : left  item_type : type.int },
+			{ value : right  item_type : type.int }
 		]
-		return_type : known_types.int
+		return_type : type.int
 	}
 	int_multiply : Template base_tmpl {
 		left : Required
 		right : Required
 		arguments : [
-			{ value : left  type : known_types.int },
-			{ value : right  type : known_types.int }
+			{ value : left  item_type : type.int },
+			{ value : right  item_type : type.int }
 		]
-		return_type : known_types.int
+		return_type : type.int
 	}
 	int_negate : Template base_tmpl {
 		source : Required
-		arguments : [ { value : source  type : known_types.int } ]
-		return_type : known_types.int
+		arguments : [ { value : source  item_type : type.int } ]
+		return_type : type.int
 	}
 	int_or : Template base_tmpl {
 		left : Required
 		right : Required
 		arguments : [
-			{ value : left  type : known_types.int },
-			{ value : right  type : known_types.int }
+			{ value : left  item_type : type.int },
+			{ value : right  item_type : type.int }
 		]
-		return_type : known_types.int
+		return_type : type.int
 	}
 	int_subtract : Template base_tmpl {
 		left : Required
 		right : Required
 		arguments : [
-			{ value : left  type : known_types.int },
-			{ value : right  type : known_types.int }
+			{ value : left  item_type : type.int },
+			{ value : right  item_type : type.int }
 		]
-		return_type : known_types.int
+		return_type : type.int
 	}
 	int_xor : Template base_tmpl {
 		left : Required
 		right : Required
 		arguments : [
-			{ value : left  type : known_types.int },
-			{ value : right  type : known_types.int }
+			{ value : left  item_type : type.int },
+			{ value : right  item_type : type.int }
 		]
-		return_type : known_types.int
+		return_type : type.int
 	}
 	# Convert an integer to a Boolean by comparing it to a single value.
 	int_to_bool : Template base_tmpl {
@@ -488,97 +470,97 @@ kws_tmpl : Template {
 		number : Required
 		# Whether to invert the result (i.e., not equal rather than equal)
 		invert : False
-		arguments : [{ value : source  type : known_types.int }]
-		return_type : known_types.bool
+		arguments : [{ value : source  item_type : type.int }]
+		return_type : type.bool
 	}
 	int_to_float : Template base_tmpl {
 		expr : Required
-		arguments : [{ value : expr  type : known_types.int }]
-		return_type : known_types.float
+		arguments : [{ value : expr  item_type : type.int }]
+		return_type : type.float
 	}
 	float_add : Template base_tmpl {
 		left : Required
 		right : Required
 		arguments : [
-			{ value : left  type : known_types.float },
-			{ value : right  type : known_types.float }
+			{ value : left  item_type : type.float },
+			{ value : right  item_type : type.float }
 		]
-		return_type : known_types.float
+		return_type : type.float
 	}
 	float_divide : Template base_tmpl {
 		left : Required
 		right : Required
 		arguments : [
-			{ value : left  type : known_types.float },
-			{ value : right  type : known_types.float }
+			{ value : left  item_type : type.float },
+			{ value : right  item_type : type.float }
 		]
-		return_type : known_types.float
+		return_type : type.float
 	}
 	float_is_finite : Template base_tmpl {
 		source : Required
-		arguments : [ { value : source  type : known_types.float } ]
-		return_type : known_types.bool
+		arguments : [ { value : source  item_type : type.float } ]
+		return_type : type.bool
 	}
 	float_is_nan : Template base_tmpl {
 		source : Required
-		arguments : [ { value : source  type : known_types.float } ]
-		return_type : known_types.bool
+		arguments : [ { value : source  item_type : type.float } ]
+		return_type : type.bool
 	}
 	float_modulus : Template base_tmpl {
 		left : Required
 		right : Required
 		arguments : [
-			{ value : left  type : known_types.float },
-			{ value : right  type : known_types.float }
+			{ value : left  item_type : type.float },
+			{ value : right  item_type : type.float }
 		]
-		return_type : known_types.float
+		return_type : type.float
 	}
 	float_multiply : Template base_tmpl {
 		left : Required
 		right : Required
 		arguments : [
-			{ value : left  type : known_types.float },
-			{ value : right  type : known_types.float }
+			{ value : left  item_type : type.float },
+			{ value : right  item_type : type.float }
 		]
-		return_type : known_types.float
+		return_type : type.float
 	}
 	float_negate : Template base_tmpl {
 		source : Required
-		arguments : [ { value : source  type : known_types.float } ]
-		return_type : known_types.float
+		arguments : [ { value : source  item_type : type.float } ]
+		return_type : type.float
 	}
 	float_subtract : Template base_tmpl {
 		left : Required
 		right : Required
 		arguments : [
-			{ value : left  type : known_types.float },
-			{ value : right  type : known_types.float }
+			{ value : left  item_type : type.float },
+			{ value : right  item_type : type.float }
 		]
-		return_type : known_types.float
+		return_type : type.float
 	}
 	float_to_int : Template base_tmpl {
 		expr : Required
-		arguments : [{ value : expr  type : known_types.float }]
-		return_type : known_types.int
+		arguments : [{ value : expr  item_type : type.float }]
+		return_type : type.int
 	}
 	string_concatenate : Template base_tmpl {
 		first : Required
 		second : Required
 		arguments : [
-			{ value : first  type : known_types.str },
-			{ value : second  type : known_types.str }
+			{ value : first  item_type : type.str },
+			{ value : second  item_type : type.str }
 		]
-		return_type : known_types.str
+		return_type : type.str
 	}
 	string_ordinal : Template base_tmpl {
 		source : Required
-		arguments : [ { value : source  type : known_types.int } ]
-		return_type : known_types.str
+		arguments : [ { value : source  item_type : type.int } ]
+		return_type : type.str
 	}
 	verify_symbol : Template base_tmpl {
 		source : Required
-		arguments : [ { value : source  type : known_types.str } ]
-		return_type : known_types.bool
+		arguments : [ { value : source  item_type : type.str } ]
+		return_type : type.bool
 	}
 	frame_new : Template codegen.gen_tmpl {
 		creation_method : "defined"
@@ -595,55 +577,55 @@ kws_tmpl : Template {
 	frame_null : Template codegen.gen_tmpl {}
 	frame_id : Template base_tmpl {
 		source : Required
-		arguments : [ { value : source  type : known_types.frame } ]
-		return_type : known_types.str
+		arguments : [ { value : source  item_type : type.frame } ]
+		return_type : type.str
 	}
 	frame_context : Template base_tmpl {
 		source : Required
-		arguments : [ { value : source  type : known_types.frame } ]
-		return_type : known_vm_types.list
+		arguments : [ { value : source  item_type : type.frame } ]
+		return_type : type.context
 	}
 	frame_container : Template base_tmpl {
 		source : Required
-		arguments : [ { value : source  type : known_types.frame } ]
-		return_type : known_vm_types.list
+		arguments : [ { value : source  item_type : type.frame } ]
+		return_type : type.context
 	}
 	frame_has : Template base_tmpl {
 		source : Required
 		name : Required
 		arguments : [
-			{ value : source  type : known_types.frame },
-			{ value : name  type : known_types.str }
+			{ value : source  item_type : type.frame },
+			{ value : name  item_type : type.str }
 		]
-		return_type : known_types.bool
+		return_type : type.bool
 	}
 	frame_trace : Template base_tmpl {
 		source : Required
 		prefix : Required
 		arguments : [
-			{ value : source  type : known_types.frame },
-			{ value : prefix  type : known_types.str }
+			{ value : source  item_type : type.frame },
+			{ value : prefix  item_type : type.str }
 		]
-		return_type : known_types.str
+		return_type : type.str
 	}
 	ctxt_null : Template codegen.gen_tmpl {}
 	ctxt_prepend : Template base_tmpl {
 		frame : Required
 		tail : Required
 		arguments : [
-			{ value : frame  type : known_types.frame },
-			{ value : tail  type : known_vm_types.list }
+			{ value : frame  item_type : type.frame },
+			{ value : tail  item_type : type.context }
 		]
-		return_type : known_vm_types.list
+		return_type : type.context
 	}
 	ctxt_append : Template base_tmpl {
 		head : Required
 		tail : Required
 		arguments : [
-			{ value : head  type : known_vm_types.list },
-			{ value : tail  type : known_vm_types.list }
+			{ value : head  item_type : type.context },
+			{ value : tail  item_type : type.context }
 		]
-		return_type : known_vm_types.list
+		return_type : type.context
 	}
 	lookup_tmpl : Template codegen.gen_tmpl {
 		source : Required
@@ -665,10 +647,10 @@ kws_tmpl : Template {
 		override : Required
 		original : Required
 		arguments : [
-			{ value : override  type : known_vm_types.override_function },
-			{ value : original  type : known_vm_types.function }
+			{ value : override  item_type : type.override_definition },
+			{ value : original  item_type : type.definition }
 		]
-		return_type : known_vm_types.function
+		return_type : type.definition
 	}
 	create_function_tmpl : Template codegen.gen_tmpl {
 		returns : Required
@@ -693,26 +675,26 @@ kws_tmpl : Template {
 		name : Required
 		source : Required
 		arguments : [
-			{ value : source  type : known_types.template },
-			{ value : name  type : known_types.str }
+			{ value : source  item_type : type.template },
+			{ value : name  item_type : type.str }
 		]
-		return_type : known_vm_types.function
+		return_type : type.definition
 	}
 	tmpl_container : Template base_tmpl {
 		source : Required
-		arguments : [ { value : source  type : known_types.template } ]
-		return_type : known_types.frame
+		arguments : [ { value : source  item_type : type.template } ]
+		return_type : type.frame
 	}
 	tmpl_context : Template base_tmpl {
 		source : Required
-		arguments : [ { value : source  type : known_types.template } ]
-		return_type : known_vm_types.list
+		arguments : [ { value : source  item_type : type.template } ]
+		return_type : type.context
 	}
 	tmpl_get_from_field : Template base_tmpl {
 		source : Required
 		field : Required
-		arguments : [ { value : source  type : known_types.template } ]
-		return_type : known_vm_types.function
+		arguments : [ { value : source  item_type : type.template } ]
+		return_type : type.definition
 	}
 	tmpl_new : Template codegen.gen_tmpl {
 		source : Null
@@ -732,13 +714,13 @@ kws_tmpl : Template {
 	}
 	string_length : Template base_tmpl {
 		source : Required
-		arguments : [ { value : source  type : known_types.str } ]
-		return_type : known_types.int
+		arguments : [ { value : source  item_type : type.str } ]
+		return_type : type.int
 	}
 	# An integral, floating point, or Boolean constant.
 	numeric_constant : Template codegen.gen_tmpl {
 		# The type of the value
-		type : Required
+		item_type : Required
 		# Either the numeric value, `max`, or `min`.
 		number : Required
 		# The maximum value this type can take.
@@ -803,7 +785,7 @@ kws_tmpl : Template {
 		source : Required
 	}
 	dynamic_type_check : Template dynamic_type_check_tmpl {
-		type : Required
+		item_type : Required
 	}
 	dynamic_type_check_parsed : Template dynamic_type_check_tmpl {
 		field : Required
@@ -867,7 +849,7 @@ kws_tmpl : Template {
 			field : Required
 			# The field in the element of interest containing the name.
 			name_field : Required
-			type : Required
+			item_type : Required
 			# A name, which may be used in a `other_code` to access the element in the
 			# list in `action`.
 			current_element : Required
@@ -905,7 +887,7 @@ codegen_tmpl : Template {
 	collapse_others : Template gen_tmpl {
 		# The field containing the list.
 		field : Required
-		type : Required
+		item_type : Required
 		# The code generator containing the initial value to put in the fold.
 		initial : Required
 
@@ -1006,7 +988,7 @@ codegen_tmpl : Template {
 		# A possible path to choose based on the type.
 		choice_tmpl : Template {
 			# The type to match.
-			type : Required
+			item_type : Required
 			# The code to be generated.
 			action : Required
 		}
@@ -1195,12 +1177,12 @@ language_tmpl : Template {
 					word : start_word & "{{{"
 				},
 				parser.accumulate_list {
-					type : $documentation
+					item_type : $documentation
 					field : $intro
 					in : parser.many {
 						of : parser.other {
 							accumulate : True
-							type : $documentation
+							item_type : $documentation
 							field : Null
 						}
 					}
@@ -1286,19 +1268,19 @@ language_tmpl : Template {
 		top_expression : Template parser.other {
 			accumulate : True
 			alternate : $expression0
-			type : $expression
+			item_type : $expression
 		}
 		# A parser for an expression one level more nested.
 		child_expression : Template parser.other {
 			accumulate : True
 			alternate : "expression" & (level + 1)
-			type : $expression
+			item_type : $expression
 		}
 		# A parser for an expression of the same level.
 		sibling_expression : Template parser.other {
 			accumulate : True
 			alternate : "expression" & level
-			type : $expression
+			item_type : $expression
 		}
 	}
 	# An expression with two operands separated by a token
@@ -1321,9 +1303,9 @@ language_tmpl : Template {
 	}
 	# A binary operator that compare results
 	compare_operator : Template binary_operator {
-		ensure_type_is : ensure_type.filter { types : [ known_types.bool ] }
+		ensure_type_is : ensure_type.filter { types : [ type.bool ] }
 		type_demand : ensure_type.filter {
-			types : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
+			types : [ type.bool, type.float, type.int, type.str ]
 			ensure_type_of : ensure_type.shared_fate {
 				ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
 			}
@@ -1341,7 +1323,7 @@ language_tmpl : Template {
 	type_operator : Template binary_operator {
 		apply_environment_to : [ environment.other_elements { fields : [ $left ] } ]
 		right_operand : Template parser.other {
-			type : $type_name
+			item_type : $type_name
 		}
 	}
 	# An "Is" operator.
@@ -1382,9 +1364,9 @@ language_tmpl : Template {
 		pattern : int_with_unit_tmpl {}
 		pretty_name : "integral value with unit \(symbol)"
 		apply_environment_to : [ ]
-		ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+		ensure_type_is : ensure_type.filter { types : [ type.int ] }
 		code_value : kws.numeric_constant_units {
-			type : known_types.int
+			item_type : type.int
 			field : $count
 		}
 	}
@@ -1397,11 +1379,11 @@ language_tmpl : Template {
 				child_expression { field : $start_expr },
 				parser.accumulate_list {
 					field : $terms
-					type : term_type
+					item_type : term_type
 					in : parser.many {
 						nonempty : True
 						of : parser.other {
-							type : term_type
+							item_type : term_type
 							accumulate : True
 							field : Null
 						}
@@ -1418,11 +1400,11 @@ language_tmpl : Template {
 				actions : [
 					ensure_type.propagate {
 						fields : [ $start_expr ]
-						extra_types : [ known_types.int ]
+						extra_types : [ type.int ]
 					},
 					ensure_type.propagate_all {
 						field : $terms
-						extra_types : [ known_types.int ]
+						extra_types : [ type.int ]
 					}
 				]
 			}
@@ -1452,7 +1434,7 @@ language_tmpl : Template {
 		ensure_type_is : ensure_type.number {
 			ensure_type_of : propagate {
 				fields : [ $expression ]
-				extra_types : [ known_types.int ]
+				extra_types : [ type.int ]
 			}
 		}
 		pattern : parser.sequence {
@@ -1462,7 +1444,7 @@ language_tmpl : Template {
 				space { preferred : True },
 				parser.other {
 					accumulate : True
-					type : $expression
+					item_type : $expression
 					alternate : "expression" & (level + 1)
 					field : $expression
 				}
@@ -1477,7 +1459,7 @@ language_tmpl : Template {
 				[
 					# Left is integer
 					choice_tmpl {
-						type : known_types.int
+						item_type : type.int
 						action : codegen.type_dispatch {
 							of : codegen.other_code { field : $expression }
 							right_operation : converted_result
@@ -1486,7 +1468,7 @@ language_tmpl : Template {
 								[
 									# Left is integer, right is integer
 									choice_tmpl {
-										type : known_types.int
+										item_type : type.int
 										action : integer_operation {
 											left : left_operation
 											right : right_operation
@@ -1494,7 +1476,7 @@ language_tmpl : Template {
 									},
 									# Left is integer, right is float
 									choice_tmpl {
-										type : known_types.float
+										item_type : type.float
 										action : float_operation {
 											left : kws.int_to_float {
 												expr : left_operation
@@ -1507,7 +1489,7 @@ language_tmpl : Template {
 					},
 					# Left is float
 					choice_tmpl {
-						type : known_types.float
+						item_type : type.float
 						action : codegen.type_dispatch {
 							of : codegen.other_code { field : $expression }
 							right_operation : converted_result
@@ -1516,7 +1498,7 @@ language_tmpl : Template {
 								[
 									# Left is float, right is integer
 									choice_tmpl {
-										type : known_types.int
+										item_type : type.int
 										action : float_operation {
 											left : left_operation
 											right : kws.int_to_float {
@@ -1526,7 +1508,7 @@ language_tmpl : Template {
 									},
 									# Left is float, right is float
 									choice_tmpl {
-										type : known_types.float
+										item_type : type.float
 										action : float_operation {
 											left : left_operation
 											right : right_operation
@@ -1565,7 +1547,7 @@ language_tmpl : Template {
 				from : "0"  to : "9"
 			},
 			parser.range {
-				offset: 87
+				offset : 87
 				accumulate : True
 				from : "a"  to : "f"
 			},
@@ -1591,7 +1573,7 @@ language_tmpl : Template {
 	attribute_pattern : Template parser.sequence {
 		allow_description : False
 		value_pattern : Template parser.other {
-			type : $expression
+			item_type : $expression
 			alternate : $expression0
 			field : $expression
 		}
@@ -1667,7 +1649,7 @@ language_tmpl : Template {
 		has_named_args : Required
 		parse_anonymous : Template parser.accumulate_list {
 			field : $anon_args
-			type : $expression
+			item_type : $expression
 			in : parser.many_word {
 				of : parser.sequence {
 					of : [
@@ -1682,7 +1664,7 @@ language_tmpl : Template {
 		}
 		parse_named : Template parser.accumulate_list {
 			field : $named_args
-			type : $named_definition
+			item_type : $named_definition
 			deduplicate : expanded_groups.named_definition.expanded_common.name
 			forbid :
 				If has_anon_args
@@ -1693,7 +1675,7 @@ language_tmpl : Template {
 				of : parser.sequence {
 					of : [
 						parser.other {
-							type : $named_definition
+							item_type : $named_definition
 							field : Null
 						},
 						space { }
@@ -1726,7 +1708,7 @@ language_tmpl : Template {
 		type_demand : ensure_type.multiple {
 			actions : [
 				ensure_type.filter {
-					types : [ known_types.template ]
+					types : [ type.template ]
 					ensure_type_of : ensure_type.propagate { fields : [ $func_expr ] }
 				},
 				If has_anon_args
@@ -1757,9 +1739,9 @@ language_tmpl : Template {
 						of : codegen.other_code { field : $func_expr }
 						choices : [
 							choice_tmpl {
-								type : known_types.template
+								item_type : type.template
 								action : kws.iterator {
-									accumulator_type : known_vm_types.mutable_frame
+									accumulator_type : type.mutable_frame
 									input : input_list {
 										items : [ converted_result ]
 									}
@@ -1788,7 +1770,7 @@ language_tmpl : Template {
 											Then list_case {
 												field : $named_args
 												name_field : $name
-												type : $named_definition
+												item_type : $named_definition
 												action : kws.set_frame_or_tmpl {
 													name : current_name
 													returns : into
@@ -1822,7 +1804,7 @@ language_tmpl : Template {
 		child_selector : Template parser.other {
 			accumulate : True
 			alternate : group_name & (level + 1)
-			type : group_name
+			item_type : group_name
 		}
 	}
 	perform_overrides : Template codegen.push_source_reference {
@@ -1833,7 +1815,7 @@ language_tmpl : Template {
 			of : source_template
 			choices : [
 				choice_tmpl {
-					type : known_types.template
+					item_type : type.template
 					action : kws.iterator {
 						accumulator_type : Drop
 						initial : new_item {
@@ -1849,7 +1831,7 @@ language_tmpl : Template {
 						cases : [ list_case {
 							field : $overrides
 							name_field : $name
-							type : $attribute
+							item_type : $attribute
 							action : codegen.other_code {
 								parameters : {
 									source_template : converted_result
@@ -1874,7 +1856,7 @@ language_tmpl : Template {
 		}
 	}
 	fricassee_iterator : Template codegen.bind {
-		accumulator_type : known_vm_types.mutable_frame
+		accumulator_type : type.mutable_frame
 		start : Required
 		step : Required
 
@@ -1904,7 +1886,7 @@ language_tmpl : Template {
 					define : {
 						context : kws.ctxt_prepend {
 							frame : kws.dynamic_type_dispatch {
-								allow_types : [ known_types.frame ]
+								allow_types : [ type.frame ]
 								of : parameters.current_itr_frame
 							}
 							tail : parameters.context
@@ -1919,6 +1901,67 @@ language_tmpl : Template {
 		}
 	}
 
+# The definitions for all the types in the Flabbergast language.
+	type_definition_tmpl : Template {
+		name : Required
+		visible : False
+		castable_from : []
+	}
+	type_definitions : Template {
+		bin : Template type_definition_tmpl {
+			name : "Bin"
+			visible : True
+		}
+		bool : Template type_definition_tmpl {
+			name : "Bool"
+			visible : True
+		}
+		float : Template type_definition_tmpl {
+			name : "Float"
+			visible : True
+			castable_from : [ type.int ]
+		}
+		frame : Template type_definition_tmpl {
+			name : "Frame"
+			visible : True
+		}
+		int : Template type_definition_tmpl {
+			name : "Int"
+			visible : True
+			castable_from : [ type.float ]
+		}
+		null : Template type_definition_tmpl {
+			name : "Null"
+			visible : True
+		}
+		str : Template type_definition_tmpl {
+			name : "Str"
+			visible : True
+			castable_from : [ type.bool, type.float, type.int ]
+		}
+		template : Template type_definition_tmpl {
+			name : "Template"
+			visible : True
+		}
+		any : Template type_definition_tmpl {
+			name : "Any"
+		}
+		mutable_frame : Template type_definition_tmpl {
+			name : "Frame"
+		}
+		context : Template type_definition_tmpl {
+			name : "Context"
+		}
+		definition : Template type_definition_tmpl {
+			name : "Definition"
+		}
+		override_definition : Template type_definition_tmpl {
+			name : "OverrideDefinition"
+		}
+	}
+	type : For t : type_definitions {}, short_name : Name
+		Accumulate m * 2 With m : 1
+		Select short_name : t { mask : m }
 
 	# All the groups in the language. For details, see the specification.
 	rule_groups : Template {
@@ -1939,14 +1982,14 @@ language_tmpl : Template {
 							},
 							parser.accumulate_list {
 								field : $attributes
-								type : $attribute
+								item_type : $attribute
 								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
 									of : parser.sequence {
 										of : [
 												pure_space {},
 												parser.other {
-												type : $attribute
+												item_type : $attribute
 												alternate : $plain_attribute
 												field : Null
 											}
@@ -1978,7 +2021,7 @@ language_tmpl : Template {
 								source_template : emptiness
 							}
 							in : codegen.collapse_others {
-								type : known_vm_types.mutable_frame
+								item_type : type.mutable_frame
 								target_flavour : codegen.flavour_attribute_accumulate
 								field : $attributes
 								initial : kws.frame_new {
@@ -2056,11 +2099,11 @@ language_tmpl : Template {
 						of : [
 							parser.exact { word : "\\\\{" },
 							parser.accumulate_list {
-								type : $identifier
+								item_type : $identifier
 								field : $names
 								in : parser.many_word {
 									of : parser.other {
-										type : $identifier
+										item_type : $identifier
 										field : Null
 									}
 									separator_word : "."
@@ -2204,7 +2247,7 @@ language_tmpl : Template {
 							parser.exact { word : ":" },
 							space { preferred : True },
 							parser.other {
-								type : $expression
+								item_type : $expression
 								alternate : $expression0
 								field : $expression
 							}
@@ -2278,13 +2321,13 @@ language_tmpl : Template {
 							parser.exact { word : "{" },
 							parser.accumulate_list {
 								field : $overrides
-								type : $attribute
+								item_type : $attribute
 								in : parser.many {
 									of : parser.sequence {
 										of : [
 											pure_space {},
 											parser.other {
-												type : $attribute
+												item_type : $attribute
 												alternate : $extend_tmpl_attributes
 												field : Null
 											}
@@ -2306,7 +2349,7 @@ language_tmpl : Template {
 					}
 					apply_environment_to : [ environment.list_independent { field : $overrides } ]
 					ensure_type_is : ensure_type.filter {
-						types : [ known_types.template ]
+						types : [ type.template ]
 					}
 					code_value : kws.set_frame_or_tmpl_from_field {
 						name_field : $name
@@ -2315,10 +2358,10 @@ language_tmpl : Template {
 						with : kws.apply_override {
 							override : kws.create_override_function {
 								returns : perform_overrides {
-									accumulator_type : known_types.template
+									accumulator_type : type.template
 									new_item : kws.tmpl_new
 									source_template : kws.dynamic_type_dispatch {
-										allow_types : [ known_types.template ]
+										allow_types : [ type.template ]
 										of : parameters.original_value
 									}
 								}
@@ -2420,7 +2463,7 @@ language_tmpl : Template {
 							parser.exact { word : "Now" },
 							space { mandatory : True },
 							parser.other {
-								type : $expression
+								item_type : $expression
 								alternate : $expression0
 								field : $expression
 							}
@@ -2506,8 +2549,8 @@ language_tmpl : Template {
 							parser.exact { word : "By" },
 							space { mandatory : True },
 							parser.other {
-								type: $expression
-								alternate: $expression0
+								item_type : $expression
+								alternate : $expression0
 								field : $expression
 							},
 							space { preferred : True }
@@ -2528,7 +2571,7 @@ language_tmpl : Template {
 							actions : [
 								ensure_type.single {
 									ensure_type_of : ensure_type.filter {
-										types : [ known_types.int, known_types.float, known_types.str ]
+										types : [ type.int, type.float, type.str ]
 										ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
 									}
 								},
@@ -2542,7 +2585,7 @@ language_tmpl : Template {
 							input_frame : codegen.other_code { field : $selector }
 						}
 						in : Template kws.ordered_iterator {
-							accumulator_type : known_vm_types.mutable_frame
+							accumulator_type : type.mutable_frame
 
 							modify_source_reference : True
 							input : input_list {
@@ -2556,7 +2599,7 @@ language_tmpl : Template {
 								define : {
 									context : kws.ctxt_prepend {
 										frame : kws.dynamic_type_dispatch {
-											allow_types : [ known_types.frame ]
+											allow_types : [ type.frame ]
 											of : kws.lookup_dynamic {
 												name : current_name
 												source : kws.ctxt_prepend {
@@ -2638,8 +2681,8 @@ language_tmpl : Template {
 							parser.exact { word : "Where" },
 							space { mandatory : True },
 							parser.other {
-								type: $expression
-								alternate: $expression0
+								item_type : $expression
+								alternate : $expression0
 								field : $expression
 							},
 							space { preferred : True }
@@ -2689,11 +2732,11 @@ language_tmpl : Template {
 							parser.exact { word : "Let" },
 							space { mandatory : True },
 							parser.accumulate_list {
-								type : $named_definition
+								item_type : $named_definition
 								field : $definitions
 								deduplicate : expanded_groups.named_definition.expanded_common.name
 								in : parser.many_word {
-									of : parser.other { type : $named_definition  field : Null }
+									of : parser.other { item_type : $named_definition  field : Null }
 									separator_word : ","
 									nonempty : True
 								}
@@ -2726,7 +2769,7 @@ language_tmpl : Template {
 						]
 					}
 					code_value : fricassee_iterator {
-						accumulator_type : known_vm_types.mutable_frame
+						accumulator_type : type.mutable_frame
 						start : Template kws.frame_new {
 							creation_method : pretty_name
 							container : parameters.self_frame
@@ -2741,19 +2784,19 @@ language_tmpl : Template {
 								define : {
 									current_itr_frame : kws.dynamic_type_dispatch {
 										of : parameters.current_itr_frame
-										allow_types : [ known_types.frame ]
+										allow_types : [ type.frame ]
 									}
 									context : kws.ctxt_prepend {
 										frame : kws.dynamic_type_dispatch {
 											of : parameters.current_itr_frame
-											allow_types : [ known_types.frame ]
+											allow_types : [ type.frame ]
 										}
 										tail : parameters.context
 									}
 								}
 								in : Template codegen.push_source_reference {
 									in : kws.iterator {
-										accumulator_type : known_vm_types.mutable_frame
+										accumulator_type : type.mutable_frame
 										input : input_list {
 											items : [ parameters.current_itr_frame ]
 										}
@@ -2778,7 +2821,7 @@ language_tmpl : Template {
 											list_case {
 												field : $definitions
 												name_field : $name
-												type : $named_definition
+												item_type : $named_definition
 												action : kws.set_frame_or_tmpl {
 													returns : into
 													name : current_name
@@ -2804,7 +2847,7 @@ language_tmpl : Template {
 							child_selector { field : $selector },
 							parser.exact { word : "Accumulate" },
 							space { mandatory : True },
-							parser.other { type: $expression  alternate : $expression0  field : $reduce_expr },
+							parser.other { item_type : $expression  alternate : $expression0  field : $reduce_expr },
 							space { mandatory : True },
 							parser.exact { word : "With" },
 							space { mandatory : True },
@@ -2812,7 +2855,7 @@ language_tmpl : Template {
 							space { preferred : True },
 							parser.exact { word : ":" },
 							space { preferred : True },
-							parser.other { type: $expression  alternate : $expression0  field : $initial_expr },
+							parser.other { item_type : $expression  alternate : $expression0  field : $initial_expr },
 							space { preferred : True }
 						]
 					}
@@ -2854,7 +2897,7 @@ language_tmpl : Template {
 						}
 						returns : new_parameters.new_outer_frame
 						in : Template fricassee_iterator {
-							accumulator_type : known_vm_types.any
+							accumulator_type : type.any
 							start : Template codegen.other_code {
 								field : $initial_expr
 							}
@@ -2862,7 +2905,7 @@ language_tmpl : Template {
 								define : {
 									current_itr_frame : kws.dynamic_type_dispatch {
 										of : parameters.current_itr_frame
-										allow_types : [ known_types.frame ]
+										allow_types : [ type.frame ]
 									}
 									new_inner_frame : kws.set_frame_or_tmpl {
 										returns : with
@@ -2877,7 +2920,7 @@ language_tmpl : Template {
 									context : kws.ctxt_prepend {
 										frame : kws.dynamic_type_dispatch {
 											of : parameters.current_itr_frame
-											allow_types : [ known_types.frame ]
+											allow_types : [ type.frame ]
 										}
 										tail : parameters.context
 									}
@@ -2885,7 +2928,7 @@ language_tmpl : Template {
 								}
 								in : Template codegen.push_source_reference {
 									in : kws.iterator {
-										accumulator_type : known_vm_types.any
+										accumulator_type : type.any
 										input : input_list {
 											items : [ parameters.current_itr_frame ]
 										}
@@ -2938,7 +2981,7 @@ language_tmpl : Template {
 							space { mandatory : True },
 							parser.exact { word : "Each" },
 							space { preferred : True },
-							parser.other { type: $expression  alternate : $expression0 field : $each_expr },
+							parser.other { item_type : $expression  alternate : $expression0 field : $each_expr },
 							space { preferred : True }
 						]
 					}
@@ -2963,11 +3006,11 @@ language_tmpl : Template {
 							space { mandatory : True },
 							parser.accumulate_list {
 								field : $inputs
-								type : $fricassee_merge_input
+								item_type : $fricassee_merge_input
 								in : parser.many_word {
 									nonempty : True
 									of : parser.other {
-										type : $fricassee_merge_input
+										item_type : $fricassee_merge_input
 										field : Null
 									}
 									separator_word : ","
@@ -2986,7 +3029,7 @@ language_tmpl : Template {
 					]
 					api_value : apigen.other_list { field : $inputs }
 					code_value : kws.iterator {
-						accumulator_type : known_vm_types.mutable_frame
+						accumulator_type : type.mutable_frame
 						input : input_merge { field : $inputs }
 						cases : []
 						initial : kws.frame_new {
@@ -3054,7 +3097,7 @@ language_tmpl : Template {
 						value_pattern : Template parser.exact { word : "Name" }
 					}
 					apply_environment_to : [ ]
-					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
+					ensure_type_is : ensure_type.filter { types : [ type.str ] }
 					api_value : apigen.nop {}
 					code_value : codegen.not_implemented {}
 					prepare_value : kws.set_frame_or_tmpl {
@@ -3069,7 +3112,7 @@ language_tmpl : Template {
 						value_pattern : Template parser.exact { word : "Ordinal" }
 					}
 					apply_environment_to : [ ]
-					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					ensure_type_is : ensure_type.filter { types : [ type.int ] }
 					api_value : apigen.nop {}
 					code_value : codegen.not_implemented {}
 					prepare_value : kws.set_frame_or_tmpl {
@@ -3083,50 +3126,14 @@ language_tmpl : Template {
 
 		type_name : Template syntax_group {
 			type_element : Template syntax_element {
-				friendly_name : Required
-				castable_from : Required
-				type : Required
-				pattern : parser.exact { word : friendly_name }
-				pretty_name : friendly_name & " type"
+				pattern : parser.exact { word : type_def.name }
+				pretty_name : type_def.name & " type"
 				api_value : apigen.nop {}
 			}
-			rules +: {
-				bin : Template type_element {
-					friendly_name : "Bin"
-					type : known_types.bin
-					castable_from : [ ]
-				}
-				bool : Template type_element {
-					friendly_name : "Bool"
-					type : known_types.bool
-					castable_from : [ ]
-				}
-				float : Template type_element {
-					friendly_name : "Float"
-					type : known_types.float
-					castable_from : [ known_types.int ]
-				}
-				frame : Template type_element {
-					friendly_name : "Frame"
-					type : known_types.frame
-					castable_from : [ ]
-				}
-				int : Template type_element {
-					friendly_name : "Int"
-					type : known_types.int
-					castable_from : [ known_types.float ]
-				}
-				str : Template type_element {
-					friendly_name : "Str"
-					type : known_types.str
-					castable_from : [ known_types.bool, known_types.float, known_types.int ]
-				}
-				tmpl : Template type_element {
-					friendly_name : "Template"
-					type : known_types.template
-					castable_from : [ ]
-				}
-			}
+			static_rules :
+				For type_def : type, rule_name : Name
+					Where type_def.visible
+					Select rule_name : type_element {}
 		}
 
 		time : Template syntax_group {
@@ -3139,7 +3146,7 @@ language_tmpl : Template {
 				code_value : kws.int_add {
 					left : parameters.accumulator
 					right : kws.numeric_constant_units {
-						type : known_types.int
+						item_type : type.int
 						field : $count
 					}
 				}
@@ -3267,7 +3274,7 @@ language_tmpl : Template {
 							parser.exact { word : "\\\\(" },
 							space { },
 							parser.other {
-								type : $expression
+								item_type : $expression
 								alternate : $expression0
 								field : $expression
 							},
@@ -3278,7 +3285,7 @@ language_tmpl : Template {
 					apply_environment_to : [ environment.other_elements { fields : [ $expression ] } ]
 					type_demand : ensure_type.filter {
 						needs_unbox : False
-						types : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
+						types : [ type.bool, type.float, type.int, type.str ]
 						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
 					}
 					api_value : apigen.other { fields : [ $expression ] }
@@ -3384,11 +3391,11 @@ language_tmpl : Template {
 							parser.exact { word : "Let" },
 							space { mandatory : True },
 							parser.accumulate_list {
-								type : $named_definition
+								item_type : $named_definition
 								field : $definitions
 								deduplicate : expanded_groups.named_definition.expanded_common.name
 								in : parser.many_word {
-									of : parser.other { type : $named_definition  field : Null }
+									of : parser.other { item_type : $named_definition  field : Null }
 									separator_word : ","
 									nonempty : True
 								}
@@ -3434,10 +3441,10 @@ language_tmpl : Template {
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "For" },
-							parser.other { type: $selector  alternate : $selector0  field : $selector },
+							parser.other { item_type : $selector  alternate : $selector0  field : $selector },
 							parser.exact { word : "Select" },
 							space { preferred : True },
-							parser.other { type: $expression  alternate : $expression2  field : $expression },
+							parser.other { item_type : $expression  alternate : $expression2  field : $expression },
 							space { },
 							parser.except { char : ":" }
 						]
@@ -3483,14 +3490,14 @@ language_tmpl : Template {
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "For" },
-							parser.other { type: $selector  alternate : $selector1  field : $selector },
+							parser.other { item_type : $selector  alternate : $selector1  field : $selector },
 							parser.exact { word : "Select" },
 							space { preferred : True },
-							parser.other { type: $expression  alternate : $expression0 field : $name_expr },
+							parser.other { item_type : $expression  alternate : $expression0 field : $name_expr },
 							space { preferred : True },
 							parser.exact { word : ":" },
 							space { preferred : True },
-							parser.other { type: $expression  alternate : $expression2 field : $value_expr }
+							parser.other { item_type : $expression  alternate : $expression2 field : $value_expr }
 						]
 					}
 					apply_environment_to : [
@@ -3506,7 +3513,7 @@ language_tmpl : Template {
 					type_demand : ensure_type.multiple {
 						actions : [
 							ensure_type.filter {
-								types : [ known_types.int, known_types.str ]
+								types : [ type.int, type.str ]
 								ensure_type_of : ensure_type.propagate {
 									fields : [ $name_expr ]
 								}
@@ -3536,13 +3543,13 @@ language_tmpl : Template {
 										}
 										choices : [
 											choice_tmpl {
-												type : known_types.int
+												item_type : type.int
 												action : kws.string_ordinal {
 													source : converted_result
 												}
 											},
 											choice_tmpl {
-												type : known_types.str
+												item_type : type.str
 												action : kws.conditional {
 													condition : kws.verify_symbol {
 														source : converted_result
@@ -3582,10 +3589,10 @@ language_tmpl : Template {
 					pattern : parser.sequence {
 						of : [
 							parser.exact { word : "For" },
-							parser.other { type: $selector  alternate : $selector0  field : $selector },
+							parser.other { item_type : $selector  alternate : $selector0  field : $selector },
 							parser.exact { word : "Reduce" },
 							space { mandatory : True },
-							parser.other { type: $expression  alternate : $expression0  field : $reduce_expr },
+							parser.other { item_type : $expression  alternate : $expression0  field : $reduce_expr },
 							space { mandatory : True },
 							parser.exact { word : "With" },
 							space { mandatory : True },
@@ -3593,7 +3600,7 @@ language_tmpl : Template {
 							space { preferred : True },
 							parser.exact { word : ":" },
 							space { preferred : True },
-							parser.other { type: $expression  alternate : $expression2  field : $initial_expr }
+							parser.other { item_type : $expression  alternate : $expression2  field : $initial_expr }
 						]
 					}
 					apply_environment_to : [
@@ -3631,7 +3638,7 @@ language_tmpl : Template {
 					code_value : kws.dynamic_type_dispatch_from_stored_mask {
 						type_storage : $bottleneck_type
 						of : fricassee_iterator {
-							accumulator_type : known_vm_types.any
+							accumulator_type : type.any
 							start : Template codegen.other_code { field : $initial_expr }
 							step : Template codegen.prepare_lookup_cache {
 								name : $reduce_env
@@ -3701,9 +3708,9 @@ language_tmpl : Template {
 					level : 3
 					operator : "&"
 					right_operand : Template sibling_expression {}
-					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
+					ensure_type_is : ensure_type.filter { types : [ type.str ] }
 					type_demand : ensure_type.filter {
-						types : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
+						types : [ type.bool, type.float, type.int, type.str ]
 						needs_unbox : False
 						ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
 					}
@@ -3722,7 +3729,7 @@ language_tmpl : Template {
 					operator : "Append"
 					right_operand : Template sibling_expression {}
 					ensure_type_is : ensure_type.filter {
-						types : [ known_types.frame ]
+						types : [ type.frame ]
 						ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
 					}
 					code_value : codegen.bind {
@@ -3738,10 +3745,10 @@ language_tmpl : Template {
 						in : Template codegen.bind {
 							define : {
 								offset : kws.iterator {
-									accumulator_type : known_types.int
+									accumulator_type : type.int
 									input : input_list { items : [ parameters.left_input ] }
 									initial : kws.numeric_constant {
-										type : known_types.int
+										item_type : type.int
 										number : 0
 									}
 									default_case : kws.set_frame_or_tmpl {
@@ -3762,7 +3769,7 @@ language_tmpl : Template {
 								}
 							}
 							in : Template kws.iterator {
-								accumulator_type : known_vm_types.mutable_frame
+								accumulator_type : type.mutable_frame
 								input : input_list { items : [ parameters.right_input ] }
 								initial : parameters.output_frame
 								default_case : kws.set_frame_or_tmpl {
@@ -3806,7 +3813,7 @@ language_tmpl : Template {
 					code_value : kws.conditional {
 						condition : codegen.other_code { field : $left }
 						true_action : kws.numeric_constant {
-							type : known_types.bool
+							item_type : type.bool
 							number : max
 						}
 						false_action : codegen.prepare_lookup_cache {
@@ -3839,7 +3846,7 @@ language_tmpl : Template {
 							name : $optional_environment
 						}
 						false_action : kws.numeric_constant {
-							type : known_types.bool
+							item_type : type.bool
 							number : min
 						}
 					}
@@ -3893,12 +3900,12 @@ language_tmpl : Template {
 					level : 7
 					operator : "<=>"
 					type_demand : ensure_type.filter {
-						types : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
+						types : [ type.bool, type.float, type.int, type.str ]
 						ensure_type_of : ensure_type.shared_fate {
 							ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
 						}
 					}
-					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					ensure_type_is : ensure_type.filter { types : [ type.int ] }
 					code_value : kws.compare {
 						left : codegen.other_code { field : $left }
 						right : codegen.other_code { field : $right }
@@ -3974,7 +3981,7 @@ language_tmpl : Template {
 					operator : "Through"
 					ensure_type_is : ensure_type.frame { }
 					type_demand : ensure_type.filter {
-						types : [ known_types.int ]
+						types : [ type.int ]
 						ensure_type_of : ensure_type.propagate { fields : [ $left, $right ] }
 					}
 					code_value : codegen.push_source_reference {
@@ -4005,25 +4012,25 @@ language_tmpl : Template {
 						choices : [
 							# Int → *
 							choice_tmpl {
-								type : known_types.int
+								item_type : type.int
 								action : codegen.type_dispatch_parsed {
 									field : $right
 									choices : [
 										# Int → Int
 										choice_tmpl {
-											type : known_types.int
+											item_type : type.int
 											action : left_result
 										},
 										# Int → Float
 										choice_tmpl {
-											type : known_types.float
+											item_type : type.float
 											action : kws.int_to_float {
 												expr : left_result
 											}
 										},
 										# Int → Str
 										choice_tmpl {
-											type : known_types.str
+											item_type : type.str
 											action : kws.cast_to_string {
 												source : left_result
 											}
@@ -4033,25 +4040,25 @@ language_tmpl : Template {
 							},
 							# Float → *
 							choice_tmpl {
-								type : known_types.float
+								item_type : type.float
 								action : codegen.type_dispatch_parsed {
 									field : $right
 									choices : [
 										# Float → Float
 										choice_tmpl {
-											type : known_types.float
+											item_type : type.float
 											action : left_result
 										},
 										# Float → Int
 										choice_tmpl {
-											type : known_types.int
+											item_type : type.int
 											action : kws.float_to_int {
 												expr : left_result
 											}
 										},
 										# Float → Str
 										choice_tmpl {
-											type : known_types.str
+											item_type : type.str
 											action : kws.cast_to_string {
 												source : left_result
 											}
@@ -4061,18 +4068,18 @@ language_tmpl : Template {
 							},
 							# Bool → *
 							choice_tmpl {
-								type : known_types.bool
+								item_type : type.bool
 								action : codegen.type_dispatch_parsed {
 									field : $right
 									choices : [
 										# Bool → Bool
 										choice_tmpl {
-											type : known_types.bool
+											item_type : type.bool
 											action : left_result
 										},
 										# Bool → Str
 										choice_tmpl {
-											type : known_types.str
+											item_type : type.str
 											action : kws.cast_to_string {
 												source : left_result
 											}
@@ -4082,12 +4089,12 @@ language_tmpl : Template {
 							},
 							# Frame → *
 							choice_tmpl {
-								type : known_types.frame
+								item_type : type.frame
 								action : codegen.type_dispatch_parsed {
 									field : $right
 									choices : [
 										choice_tmpl {
-											type : known_types.frame
+											item_type : type.frame
 											action : left_result
 										}
 									]
@@ -4095,12 +4102,12 @@ language_tmpl : Template {
 							},
 							# Null → *
 							choice_tmpl {
-								type : known_types.null
+								item_type : type.null
 								action : codegen.type_dispatch_parsed {
 									field : $right
 									choices : [
 										choice_tmpl {
-											type : known_types.null
+											item_type : type.null
 											action : left_result
 										}
 									]
@@ -4108,12 +4115,12 @@ language_tmpl : Template {
 							},
 							# Template → *
 							choice_tmpl {
-								type : known_types.template
+								item_type : type.template
 								action : codegen.type_dispatch_parsed {
 									field : $right
 									choices : [
 										choice_tmpl {
-											type : known_types.template
+											item_type : type.template
 											action : left_result
 										}
 									]
@@ -4121,12 +4128,12 @@ language_tmpl : Template {
 							},
 							# Str → *
 							choice_tmpl {
-								type : known_types.str
+								item_type : type.str
 								action : codegen.type_dispatch_parsed {
 									field : $right
 									choices : [
 										choice_tmpl {
-											type : known_types.str
+											item_type : type.str
 											action : left_result
 										}
 									]
@@ -4134,12 +4141,12 @@ language_tmpl : Template {
 							},
 							# Any → *
 							choice_tmpl {
-								type : known_vm_types.any
+								item_type : type.any
 								action : codegen.type_dispatch_parsed {
 									field : $right
 									choices : [
 										choice_tmpl {
-											type : known_types.str
+											item_type : type.str
 											action : kws.cast_to_string {
 												source : left_result
 											}
@@ -4169,13 +4176,13 @@ language_tmpl : Template {
 						field : $right
 						choices : [
 							choice_tmpl {
-								type : known_types.float
+								item_type : type.float
 								action : codegen.type_dispatch {
 									of : codegen.other_code { field : $left }
-									allow_types : [ known_types.float, known_types.int ]
+									allow_types : [ type.float, type.int ]
 									choices : [
 										choice_tmpl {
-											type : known_types.int
+											item_type : type.int
 											action : kws.int_to_float {
 												expr : converted_result
 											}
@@ -4201,21 +4208,22 @@ language_tmpl : Template {
 						field : $right
 
 						choices :
-							For t : known_types
+							For t : type
+								Where t.visible
 								Select choice_tmpl {
-									type : t
+									item_type : t
 									action : codegen.type_dispatch {
 										of : codegen.other_code { field : $left }
-										default_action : kws.numeric_constant { type : known_types.bool  number : min }
+										default_action : kws.numeric_constant { item_type : type.bool  number : min }
 										choices : [
 											choice_tmpl {
-												type : t
-												action : kws.numeric_constant { type : known_types.bool  number : max }
+												item_type : t
+												action : kws.numeric_constant { item_type : type.bool  number : max }
 											},
 											choice_tmpl {
-												type : known_vm_types.any
+												item_type : type.any
 												action : kws.dynamic_type_check {
-													type : t
+													item_type : t
 													source : converted_result
 												}
 											}
@@ -4237,14 +4245,14 @@ language_tmpl : Template {
 						left_result : converted_result
 						choices : [
 							choice_tmpl {
-								type : known_types.int
+								item_type : type.int
 								action : kws.numeric_constant {
-									type : known_types.bool
+									item_type : type.bool
 									number : max
 								}
 							},
 							choice_tmpl {
-								type : known_types.float
+								item_type : type.float
 								action : kws.float_is_finite {
 									source : left_result
 								}
@@ -4265,14 +4273,14 @@ language_tmpl : Template {
 						left_result : converted_result
 						choices : [
 							choice_tmpl {
-								type : known_types.int
+								item_type : type.int
 								action : kws.numeric_constant {
-									type : known_types.bool
+									item_type : type.bool
 									number : min
 								}
 							},
 							choice_tmpl {
-								type : known_types.float
+								item_type : type.float
 								action : kws.float_is_nan {
 									source : left_result
 								}
@@ -4291,14 +4299,14 @@ language_tmpl : Template {
 					code_value : codegen.type_dispatch {
 						of : codegen.other_code { field : $left }
 						default_action : kws.numeric_constant {
-							type : known_types.bool
+							item_type : type.bool
 							number : min
 						}
 						choices : [
 							choice_tmpl {
-								type : known_types.null
+								item_type : type.null
 								action : kws.numeric_constant {
-									type : known_types.bool
+									item_type : type.bool
 									number : max
 								}
 							}
@@ -4312,7 +4320,7 @@ language_tmpl : Template {
 					operator : "Error"
 					ensure_type_is : ensure_type.stop {}
 					type_demand : ensure_type.filter {
-						types : [ known_types.bool, known_types.float, known_types.int, known_types.str ]
+						types : [ type.bool, type.float, type.int, type.str ]
 						needs_unbox : False
 						ensure_type_of : ensure_type.propagate { fields : [ $expr ] }
 					}
@@ -4328,7 +4336,7 @@ language_tmpl : Template {
 					operator : "Length"
 					ensure_type_is : ensure_type.stop {}
 					type_demand : ensure_type.filter {
-						types : [ known_types.bin, known_types.bool, known_types.float, known_types.int, known_types.str ]
+						types : [ type.bin, type.bool, type.float, type.int, type.str ]
 						needs_unbox : False
 						ensure_type_of : ensure_type.propagate { fields : [ $expr ] }
 					}
@@ -4342,7 +4350,7 @@ language_tmpl : Template {
 
 						choices : [
 							choice_tmpl {
-								type : known_types.bin
+								item_type : type.bin
 								action : kws.binary_length {
 									source : converted_result
 								}
@@ -4359,11 +4367,11 @@ language_tmpl : Template {
 							parser.exact { word : "Lookup" },
 							space { mandatory : True },
 							parser.accumulate_list {
-								type : $identifier
+								item_type : $identifier
 								field : $names
 								in : parser.many_word {
 									of : parser.other {
-										type : $identifier
+										item_type : $identifier
 										field : Null
 									}
 									separator_word : "."
@@ -4401,14 +4409,14 @@ language_tmpl : Template {
 							parser.exact { word : "{" },
 							parser.accumulate_list {
 								field : $overrides
-								type : $attribute
+								item_type : $attribute
 								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
 									of : parser.sequence {
 										of : [
 											pure_space {},
 											parser.other {
-												type : $attribute
+												item_type : $attribute
 												field : Null
 												alternate : $instantiate_tmpl_attributes
 											}
@@ -4426,7 +4434,7 @@ language_tmpl : Template {
 					]
 					ensure_type_is : ensure_type.frame {}
 					type_demand : ensure_type.filter {
-						types : [ known_types.template ]
+						types : [ type.template ]
 						ensure_type_of : ensure_type.propagate { fields : [ $source ] }
 					}
 					api_value : apigen.many {
@@ -4439,7 +4447,7 @@ language_tmpl : Template {
 						]
 					}
 					code_value : perform_overrides {
-						accumulator_type : known_vm_types.mutable_frame
+						accumulator_type : type.mutable_frame
 						new_item : Template kws.frame_new {
 							creation_method : "instantiated"
 							container : parameters.self_frame
@@ -4463,7 +4471,7 @@ language_tmpl : Template {
 						actions : [
 							ensure_type.propagate { fields : [ $right ] },
 							ensure_type.propagate {
-								extra_types : [ known_types.null ]
+								extra_types : [ type.null ]
 								fields : [ $left ]
 							}
 						]
@@ -4473,7 +4481,7 @@ language_tmpl : Template {
 						default_action : converted_result
 						choices : [
 							choice_tmpl {
-								type : known_types.null
+								item_type : type.null
 								action : codegen.prepare_lookup_cache {
 									name : $optional_environment
 									in : codegen.other_code { field : $right }
@@ -4491,12 +4499,12 @@ language_tmpl : Template {
 							child_expression { field : $expression },
 							parser.exact { word : "?." },
 							parser.accumulate_list {
-								type : $identifier
+								item_type : $identifier
 								field : $names
 								nonempty : True
 								in : parser.many_word {
 									of : parser.other {
-										type : $identifier
+										item_type : $identifier
 										field : Null
 									}
 									separator_word : "."
@@ -4508,11 +4516,11 @@ language_tmpl : Template {
 					ensure_type_is : ensure_type.multiple {
 						actions : [
 							ensure_type.intrinsic { needs_unbox : False },
-							ensure_type.filter { types : [ known_types.null ] }
+							ensure_type.filter { types : [ type.null ] }
 						]
 					}
 					type_demand : ensure_type.filter {
-						types : [ known_types.frame, known_types.null ]
+						types : [ type.frame, type.null ]
 						ensure_type_of : ensure_type.propagate { fields : [ $expression ] }
 					}
 					api_value : apigen.other { fields : [ $expression ] }
@@ -4520,11 +4528,11 @@ language_tmpl : Template {
 						of : codegen.other_code { field : $expression }
 						choices : [
 							choice_tmpl {
-								type : known_types.null
+								item_type : type.null
 								action : kws.null_constant {}
 							},
 							choice_tmpl {
-								type : known_types.frame
+								item_type : type.frame
 								action : codegen.return_intrinsic_dispatch {
 									of : kws.lookup_field {
 										field : $names
@@ -4546,14 +4554,14 @@ language_tmpl : Template {
 							space { preferred : True },
 							parser.accumulate_list {
 								field : $attributes
-								type : $attribute
+								item_type : $attribute
 								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
 									of : parser.sequence {
 										of : [
 											pure_space {},
 											parser.other {
-												type : $attribute
+												item_type : $attribute
 												field : Null
 												alternate : $plain_attribute
 											}
@@ -4575,7 +4583,7 @@ language_tmpl : Template {
 						in : codegen.empty_parameter {
 							parameters : { source_template : emptiness }
 							in : codegen.collapse_others {
-								type : known_vm_types.mutable_frame
+								item_type : type.mutable_frame
 								target_flavour : codegen.flavour_attribute_accumulate
 								field : $attributes
 								initial : kws.frame_new {
@@ -4600,11 +4608,11 @@ language_tmpl : Template {
 										space { mandatory : True },
 										parser.exact { word : "With" },
 										parser.accumulate_list {
-											type : $identifier
+											item_type : $identifier
 											field : $names
 											in : parser.many_word {
 												of : parser.other {
-													type : $identifier
+													item_type : $identifier
 													field : Null
 												}
 												separator_word : "."
@@ -4622,7 +4630,7 @@ language_tmpl : Template {
 						actions : [
 							apigen.add_name {
 								field : $names
-								suffixes : For t : known_types, name : Name Select name
+								suffixes : For t : type, name : Name Where t.visible Select name
 							},
 							apigen.other { fields : [ $expression ] }
 						]
@@ -4637,7 +4645,7 @@ language_tmpl : Template {
 									source : parameters.context
 								}
 							}
-							choices : For t : known_types, name : Name Select choice_tmpl { type : t }
+							choices : For t : type, name : Name Where t.visible Select choice_tmpl { item_type : t }
 						}
 					}
 				}
@@ -4668,13 +4676,13 @@ language_tmpl : Template {
 						of : codegen.other_code { field : $expr }
 						choices : [
 							choice_tmpl {
-								type : known_types.int
+								item_type : type.int
 								action : kws.int_negate {
 									source : converted_result
 								}
 							},
 							choice_tmpl {
-								type : known_types.float
+								item_type : type.float
 								action : kws.float_negate {
 									source : converted_result
 								}
@@ -4686,7 +4694,7 @@ language_tmpl : Template {
 					pretty_name : "unique frame identifier"
 					level : 19
 					operator : "GenerateId"
-					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
+					ensure_type_is : ensure_type.filter { types : [ type.str ] }
 					type_demand : ensure_type.frame {
 						ensure_type_of : ensure_type.propagate { fields : [ $expr ] }
 					}
@@ -4704,14 +4712,14 @@ language_tmpl : Template {
 							parser.exact { word : "{" },
 							parser.accumulate_list {
 								field : $attributes
-								type : $attribute
+								item_type : $attribute
 								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
 									of : parser.sequence {
 										of : [
 											pure_space {},
 											parser.other {
-												type : $attribute
+												item_type : $attribute
 												field : Null
 												alternate : $new_tmpl_attributes
 											}
@@ -4724,7 +4732,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.list_independent { field : $attributes } ]
-					ensure_type_is : ensure_type.filter { types : [ known_types.template ] }
+					ensure_type_is : ensure_type.filter { types : [ type.template ] }
 					api_value : apigen.other_list {
 						field : $attributes
 						collect_names : True
@@ -4732,7 +4740,7 @@ language_tmpl : Template {
 					code_value : codegen.empty_parameter {
 						parameters : { source_template : emptiness }
 						in : codegen.collapse_others {
-							type : known_types.template
+							item_type : type.template
 							target_flavour : codegen.flavour_attribute_accumulate
 							field : $attributes
 							initial : kws.tmpl_new {
@@ -4753,14 +4761,14 @@ language_tmpl : Template {
 							parser.exact { word : "{" },
 								parser.accumulate_list {
 								field : $overrides
-								type : $attribute
+								item_type : $attribute
 								deduplicate : expanded_groups.attribute.expanded_common.name
 								in : parser.many {
 									of : parser.sequence {
 										of : [
 											pure_space {},
 											parser.other {
-												type : $attribute
+												item_type : $attribute
 												field : Null
 												alternate : $extend_tmpl_attributes
 											}
@@ -4777,7 +4785,7 @@ language_tmpl : Template {
 						environment.list_independent { field : $overrides }
 					]
 					ensure_type_is : ensure_type.filter {
-						types : [ known_types.template ]
+						types : [ type.template ]
 						ensure_type_of : propagate { fields : [ $source ] }
 					}
 					api_value : apigen.many {
@@ -4790,7 +4798,7 @@ language_tmpl : Template {
 						]
 					}
 					code_value : perform_overrides {
-						accumulator_type : known_types.template
+						accumulator_type : type.template
 						new_item : kws.tmpl_new
 						source_template : codegen.other_code { field : $source }
 					}
@@ -4805,7 +4813,7 @@ language_tmpl : Template {
 							parser.exact { word : "(" },
 							parser.accumulate_list {
 								field : $attributes
-								type : $attribute
+								item_type : $attribute
 								deduplicate : expanded_groups.attribute.expanded_common.name
 								forbid : [ $value ]
 								in : parser.many_word {
@@ -4814,7 +4822,7 @@ language_tmpl : Template {
 										of : [
 											pure_space {},
 											parser.other {
-												type : $attribute
+												item_type : $attribute
 												field : Null
 												alternate : $function_tmpl_attributes
 											},
@@ -4826,7 +4834,7 @@ language_tmpl : Template {
 							space { },
 							parser.exact { word : ")" },
 							space { },
-							parser.other { type: $expression  alternate : $expression0 field : $body }
+							parser.other { item_type : $expression  alternate : $expression0 field : $body }
 						]
 					}
 					apply_environment_to : [
@@ -4847,7 +4855,7 @@ language_tmpl : Template {
 							]
 						}
 					]
-					ensure_type_is : ensure_type.filter { types : [ known_types.template ] }
+					ensure_type_is : ensure_type.filter { types : [ type.template ] }
 					type_demand : ensure_type.propagate {
 						fields : [ $body ]
 						needs_unbox : False
@@ -4859,7 +4867,7 @@ language_tmpl : Template {
 					code_value : codegen.empty_parameter {
 						parameters : { source_template : emptiness }
 						in : codegen.collapse_others {
-							type : known_types.template
+							item_type : type.template
 							target_flavour : codegen.flavour_attribute_accumulate
 							field : $attributes
 							initial : kws.set_frame_or_tmpl {
@@ -4906,10 +4914,10 @@ language_tmpl : Template {
 					level : 21
 					pattern : parser.accumulate_list {
 						field : $parts
-						type : $identifier
+						item_type : $identifier
 						in : parser.many_word {
 							of : parser.other {
-								type : $identifier
+								item_type : $identifier
 								field : Null
 							}
 							separator_word : "."
@@ -4951,11 +4959,11 @@ language_tmpl : Template {
 							space { },
 							parser.exact { word : "." },
 							parser.accumulate_list {
-								type : $identifier
+								item_type : $identifier
 								field : $names
 								in : parser.many_word {
 									of : parser.other {
-										type : $identifier
+										item_type : $identifier
 										field : Null
 									}
 									separator_word : "."
@@ -5009,7 +5017,7 @@ language_tmpl : Template {
 							parser.exact { word : "[" },
 							parser.accumulate_list {
 								field : $items
-								type : $expression
+								item_type : $expression
 								in : parser.many_word {
 									separator_word : ","
 									of : parser.sequence {
@@ -5059,32 +5067,32 @@ language_tmpl : Template {
 					name : "False"
 					ensure_type_is : ensure_type.bool { }
 					code_value : kws.numeric_constant {
-						type : known_types.bool
+						item_type : type.bool
 						number : min
 					}
 				}
 				float_max : Template literal_tmpl {
 					pretty_name : "largest floating-point value"
 					name : "FloatMax"
-					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
+					ensure_type_is : ensure_type.filter { types : [ type.float ] }
 					code_value : kws.numeric_constant {
-						type : known_types.float
+						item_type : type.float
 						number : max
 					}
 				}
 				float_min : Template literal_tmpl {
 					pretty_name : "smallest floating-point value"
 					name : "FloatMin"
-					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
+					ensure_type_is : ensure_type.filter { types : [ type.float ] }
 					code_value : kws.numeric_constant {
-						type : known_types.float
+						item_type : type.float
 						number : min
 					}
 				}
 				id : Template literal_tmpl {
 					pretty_name : "unique identifier for current frame"
 					name : "Id"
-					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
+					ensure_type_is : ensure_type.filter { types : [ type.str ] }
 					code_value : kws.frame_id {
 						source : parameters.self_frame
 					}
@@ -5092,37 +5100,37 @@ language_tmpl : Template {
 				infinity : Template literal_tmpl {
 					pretty_name : "floating-point infinite value"
 					name : "Infinity"
-					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
+					ensure_type_is : ensure_type.filter { types : [ type.float ] }
 					code_value : kws.infinity_constant {}
 				}
 				int_max : Template literal_tmpl {
 					pretty_name : "largest integral value"
 					name : "IntMax"
-					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					ensure_type_is : ensure_type.filter { types : [ type.int ] }
 					code_value : kws.numeric_constant {
-						type : known_types.int
+						item_type : type.int
 						number : max
 					}
 				}
 				int_min : Template literal_tmpl {
 					pretty_name : "smallest integral value"
 					name : "IntMin"
-					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					ensure_type_is : ensure_type.filter { types : [ type.int ] }
 					code_value : kws.numeric_constant {
-						type : known_types.int
+						item_type : type.int
 						number : min
 					}
 				}
 				nan : Template literal_tmpl {
 					pretty_name : "floating-point not-a-number"
 					name : "NaN"
-					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
+					ensure_type_is : ensure_type.filter { types : [ type.float ] }
 					code_value : kws.nan_constant {}
 				}
 				null : Template literal_tmpl {
 					pretty_name : "null value"
 					name : "Null"
-					ensure_type_is : ensure_type.filter { types : [ known_types.null ] }
+					ensure_type_is : ensure_type.filter { types : [ type.null ] }
 					code_value : kws.null_constant {}
 				}
 				this : Template literal_tmpl {
@@ -5136,7 +5144,7 @@ language_tmpl : Template {
 					name : "True"
 					ensure_type_is : ensure_type.bool { }
 					code_value : kws.numeric_constant {
-						type : known_types.bool
+						item_type : type.bool
 						number : max
 					}
 				}
@@ -5146,10 +5154,10 @@ language_tmpl : Template {
 					level : max_level
 					pattern : parser.accumulate_list {
 						field : $parts
-						type : $time
+						item_type : $time
 						in : parser.many {
 							of : parser.other {
-								type : $time
+								item_type : $time
 								accumulate : True
 								field : Null
 							}
@@ -5157,13 +5165,13 @@ language_tmpl : Template {
 						}
 					}
 					apply_environment_to : [ ]
-					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					ensure_type_is : ensure_type.filter { types : [ type.int ] }
 					api_value : apigen.nop {}
 					code_value : codegen.fold_others {
 						target_flavour : codegen.flavour_accumulate
 						field : $parts
 						initial : kws.numeric_constant {
-							type : known_types.int
+							item_type : type.int
 							number : 0
 						}
 					}
@@ -5181,10 +5189,10 @@ language_tmpl : Template {
 						}
 					}
 					apply_environment_to : [ ]
-					ensure_type_is : ensure_type.filter { types : [ known_types.int, known_types.float ] }
+					ensure_type_is : ensure_type.filter { types : [ type.int, type.float ] }
 					api_value : apigen.nop {}
 					code_value : kws.numeric_constant {
-						type : known_types.int
+						item_type : type.int
 						number : $amount
 					}
 				}
@@ -5204,10 +5212,10 @@ language_tmpl : Template {
 						}
 					}
 					apply_environment_to : [ ]
-					ensure_type_is : ensure_type.filter { types : [ known_types.int ] }
+					ensure_type_is : ensure_type.filter { types : [ type.int ] }
 					api_value : apigen.nop {}
 					code_value : kws.numeric_constant {
-						type : known_types.int
+						item_type : type.int
 						number : $amount
 					}
 				}
@@ -5245,10 +5253,10 @@ language_tmpl : Template {
 						}
 					}
 					apply_environment_to : [ ]
-					ensure_type_is : ensure_type.filter { types : [ known_types.float ] }
+					ensure_type_is : ensure_type.filter { types : [ type.float ] }
 					api_value : apigen.nop {}
 					code_value : kws.numeric_constant {
-						type : known_types.float
+						item_type : type.float
 						number : $value
 					}
 				}
@@ -5263,7 +5271,7 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ ]
-					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
+					ensure_type_is : ensure_type.filter { types : [ type.str ] }
 					api_value : apigen.nop {}
 					code_value : kws.string_constant_from_field {
 						field : $name
@@ -5277,10 +5285,10 @@ language_tmpl : Template {
 							parser.exact { word : "\\\"" },
 							parser.accumulate_list {
 								field : $parts
-								type : $string_piece
+								item_type : $string_piece
 								in : parser.many {
 									of : parser.other {
-										type : $string_piece
+										item_type : $string_piece
 										field : Null
 									}
 								}
@@ -5289,10 +5297,10 @@ language_tmpl : Template {
 						]
 					}
 					apply_environment_to : [ environment.list_of { field : $parts } ]
-					ensure_type_is : ensure_type.filter { types : [ known_types.str ] }
+					ensure_type_is : ensure_type.filter { types : [ type.str ] }
 					api_value : apigen.other_list { field : $parts }
 					code_value : codegen.collapse_others {
-						type : known_types.str
+						item_type : type.str
 						field : $parts
 						initial : kws.string_constant { str : "" }
 					}
@@ -5304,8 +5312,8 @@ language_tmpl : Template {
 
 kws_repl_tmpl : Template kws_tmpl {
 	set_current : Template codegen.gen_tmpl {
-		arguments : [ { value : to  type : known_types.frame } ]
-		return_type : known_types.frame
+		arguments : [ { value : to  item_type : type.frame } ]
+		return_type : type.frame
 		to : Required
 	}
 	print : Template codegen.gen_tmpl {
@@ -5339,7 +5347,7 @@ language_with_repl_tmpl : Template language_tmpl {
 				space {},
 				parser.exact { word : keyword },
 				space {},
-				parser.other { type: $expression  alternate : $expression0 field : $expr },
+				parser.other { item_type : $expression  alternate : $expression0 field : $expr },
 				space {}
 			]
 		}
@@ -5374,7 +5382,7 @@ language_with_repl_tmpl : Template language_tmpl {
 			junk : action
 		}
 		in : Template kws.numeric_constant {
-			type : known_types.bool
+			item_type : type.bool
 			number : max
 		}
 	}
@@ -5391,7 +5399,7 @@ language_with_repl_tmpl : Template language_tmpl {
 					keyword : "Quit"
 					help : "Stop with the Flabbergast."
 					code_value : kws.numeric_constant {
-						type : known_types.bool
+						item_type : type.bool
 						number : min
 					}
 				}
@@ -5431,7 +5439,7 @@ language_with_repl_tmpl : Template language_tmpl {
 									}
 								}
 								cases : []
-								accumulator_type : known_types.str
+								accumulator_type : type.str
 							}
 						}
 					}
@@ -5475,7 +5483,7 @@ language_with_repl_tmpl : Template language_tmpl {
 					pattern : parser.sequence {
 						of : [
 							space {},
-							parser.other { type: $expression  alternate : $expression0 field : $expr },
+							parser.other { item_type : $expression  alternate : $expression0 field : $expr },
 							space {}
 						]
 					}

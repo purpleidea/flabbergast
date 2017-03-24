@@ -384,7 +384,7 @@ parser : compiler_lib.parser_tmpl {
 		class_gen :
 			(If require_definition
 				Then
-					"\tjava.util.ArrayList<\(type)> \(field) = new java.util.ArrayList<\(type)>();\n" &
+					"\tjava.util.ArrayList<\(item_type)> \(field) = new java.util.ArrayList<\(item_type)>();\n" &
 					(If deduplicate Is Null
 						Then ""
 						Else "\tjava.util.HashSet<\(deduplicate.dedup_type)> \(field)_dedup = new java.util.HashSet<\(deduplicate.dedup_type)>(\(initialiser));\n")
@@ -438,17 +438,17 @@ parser : compiler_lib.parser_tmpl {
 	other +: {
 		require_definition : If field Is Null Then False Else
 			(For common_field : Name, common_type : expanded_common Where common_field == field Reduce False With acc : True)
-		class_gen : If require_definition Then "\t\(type) \(field);\n" Else ""
+		class_gen : If require_definition Then "\t\(item_type) \(field);\n" Else ""
 		copy_instance : If require_definition Then "\t\t_obj.\(field) = \(field);\n" Else ""
 
 		pok : ((Lookup parse_complete In Container) { ok : True }).value
 		perr : ((Lookup parse_complete In Container) { ok : False }).value
 		target_rule :
-			Let base : "\(type).parseRule_\(alternate ?? "Base" Enforce Str)"
+			Let base : "\(item_type).parseRule_\(alternate ?? "Base" Enforce Str)"
 			In
 				If field Is Null
 				Then
-					"new ParseRule<\(type Enforce Str)>() { public boolean invoke(Ptr<Parser.Position> \(Id)_iposition, Ptr<\(type)> \(Id)_iresult) { boolean \(Id)_success = \(base Enforce Str)(\(Id)_iposition, \(Id)_iresult); " &
+					"new ParseRule<\(item_type Enforce Str)>() { public boolean invoke(Ptr<Parser.Position> \(Id)_iposition, Ptr<\(item_type)> \(Id)_iresult) { boolean \(Id)_success = \(base Enforce Str)(\(Id)_iposition, \(Id)_iresult); " &
 					(If deduplicate Is Null
 						Then ""
 						Else
@@ -460,7 +460,7 @@ parser : compiler_lib.parser_tmpl {
 			Then "_position.get().getParser().parseIntoList(_position, _obj.get().\(Lookup field In Container), \(target_rule))"
 			Else "\(target_rule)(_position, \(Id)_ptr)"
 		parser_gen :
-			(If field Is Null Then "" Else "\(indent)Ptr<\(type)> \(Id)_ptr = new Ptr<\(type)>();") &
+			(If field Is Null Then "" Else "\(indent)Ptr<\(item_type)> \(Id)_ptr = new Ptr<\(item_type)>();") &
 			"\(indent)if (\(parse_call)) {" &
 			(If field Is Null Then "" Else "\(indent)\t_obj.get().\(field) = \(Id)_ptr.get();") &
 			"\(pok)\(indent)} else {\(perr)\(indent)}"
@@ -488,9 +488,9 @@ common_fields : compiler_lib.common_fields_tmpl {
 		dedup_transform : ""
 	}
 	other +: {
-		class_gen : "\t\(type) \(field_name);\n"
+		class_gen : "\t\(item_type) \(field_name);\n"
 		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
-		dedup_type : type
+		dedup_type : item_type
 		dedup_transform : ""
 	}
 }
@@ -602,78 +602,6 @@ environment : compiler_lib.environment_tmpl {
 		class_gen : ""
 		value : "\t\tif (\(current_environment).getTopLevel() != \(If desired Then "true" Else "false")) { _success.set(false); _collector.reportRawError(\(class_name).this, \"At \(If desired Then "file-level" Else "nested") scope, \(pretty_name) is not allowed.\"); }"
 	}
-}
-# The correspondence between Flabbergast types in the compiler and their
-# implementation types (a.k.a. `real_type`) and the flag used in the union
-# types used by the environments to propagate type information (a.k.a.
-# `union_type`).
-known_types : compiler_lib.known_types_tmpl {
-	bin : {
-		union_type : "flabbergast.Type.Bin"
-		real_type : "byte[]"
-		name : "Bin"
-		unbox : True
-	}
-	bool : {
-		union_type : "flabbergast.Type.Bool"
-		real_type : "boolean"
-		name : "Bool"
-		max : "true"
-		min : "false"
-		constant_creator : "BoolConstant"
-		unbox : True
-	}
-	float : {
-		union_type : "flabbergast.Type.Float"
-		real_type : "double"
-		name : "Float"
-		max : "java.lang.Double.MAX_VALUE"
-		min : "java.lang.Double.MIN_VALUE"
-		constant_creator : "FloatConstant"
-		unbox : True
-	}
-	frame : {
-		union_type : "flabbergast.Type.Frame"
-		real_type : "flabbergast.Frame"
-		name : "Frame"
-		unbox : True
-	}
-	int : {
-		union_type : "flabbergast.Type.Int"
-		real_type : "long"
-		name : "Int"
-		max : "java.lang.Long.MAX_VALUE"
-		min : "java.lang.Long.MIN_VALUE"
-		constant_creator : "IntConstant"
-		unbox : True
-	}
-	str : {
-		union_type : "flabbergast.Type.Str"
-		real_type : "flabbergast.Stringish"
-		name : "Str"
-		unbox : False
-	}
-	template : {
-		union_type : "flabbergast.Type.Template"
-		real_type : "flabbergast.Template"
-		name : "Template"
-		unbox : True
-	}
-	null : {
-		union_type : "flabbergast.Type.Unit"
-		real_type : "flabbergast.Unit"
-		name : "Null"
-		unbox : True
-	}
-}
-# These are types known by the KWS VM that are not found in the Flabbergast
-# language. Therefore, they have a `real_type`, but not a `union_type`.
-known_vm_types : compiler_lib.known_vm_types_tmpl {
-	any : { real_type : "Object"  union_type : "flabbergast.TypeSet.ALL"  name : "Any" }
-	mutable_frame : { real_type : "flabbergast.MutableFrame"  name : "Frame" }
-	list : { real_type : "flabbergast.Context"  name : "List" }
-	function : { real_type : "flabbergast.ComputeValue"  name : "Definition" }
-	override_function : { real_type : "flabbergast.ComputeOverride"  name : "OverrideDefinition"}
 }
 # The mechanism code to do type checking in the compiler. Each syntax element
 # is told what types it may return and it propagates this type information to
@@ -828,8 +756,8 @@ kws : compiler_lib.kws_repl_tmpl {
 				For arg : arguments
 					Reverse
 					Reduce
-						"\(sum_indent)if (!\(arg.type.real_type).class.isAssignableFrom(\(arg.value.storage_name).getBackingType()) && (Class<?>) Object.class != (Class<?>) \(arg.type.real_type).class) throw new java.lang.IllegalStateException(java.lang.String.format(\"Expected \(arg.type.name) but got %s in \(rule_name).\", SupportFunctions.nameForClass(\(arg.value.storage_name).getBackingType())));" &
-						"\(sum_indent)\(generator).loadReboxed(\(arg.value.storage_name), \(arg.type.real_type).class);" &
+						"\(sum_indent)if (!\(arg.item_type.real_type).class.isAssignableFrom(\(arg.value.storage_name).getBackingType()) && (Class<?>) Object.class != (Class<?>) \(arg.item_type.real_type).class) throw new java.lang.IllegalStateException(java.lang.String.format(\"Expected \(arg.item_type.name) but got %s in \(rule_name).\", SupportFunctions.nameForClass(\(arg.value.storage_name).getBackingType())));" &
+						"\(sum_indent)\(generator).loadReboxed(\(arg.value.storage_name), \(arg.item_type.real_type).class);" &
 						acc
 						With acc : ""
 			base_code :
@@ -1424,10 +1352,10 @@ kws : compiler_lib.kws_repl_tmpl {
 	}
 	numeric_constant +: {
 		extra_indent : ""
-		max : type.max
-		min : type.min
+		max : item_type.max
+		min : item_type.min
 		gen_gen +: {
-			value : "\(indent)final LoadableValue \(storage_name) = new \(type.constant_creator)(\(number));" & code
+			value : "\(indent)final LoadableValue \(storage_name) = new \(item_type.constant_creator)(\(number));" & code
 		}
 	}
 	numeric_constant_units +: {
@@ -1557,7 +1485,7 @@ kws : compiler_lib.kws_repl_tmpl {
 		}
 	}
 	dynamic_type_check +: {
-		reference_type : "\(type.real_type).class"
+		reference_type : "\(item_type.real_type).class"
 	}
 	dynamic_type_check_parsed +: {
 		reference_type : "\(field).getTypeId()"
@@ -1834,13 +1762,13 @@ kws : compiler_lib.kws_repl_tmpl {
 			count : " + \(field).size()"
 			add +: {
 				value +original:
-					"\(indent)for (\(type) \(current_element) : \(field)) {" &
+					"\(indent)for (\(item_type) \(current_element) : \(field)) {" &
 					original &
 					"\(indent)}"
 			}
 			gen_gen +: {
 				value +original:
-					"\(indent)for (\(type) \(current_element) : \(field)) {" &
+					"\(indent)for (\(item_type) \(current_element) : \(field)) {" &
 					original &
 					"\(indent)}"
 			}
@@ -1999,7 +1927,7 @@ codegen : compiler_lib.codegen_tmpl {
 
 		gen_gen +: {
 			value :
-				"\(indent)final FieldValue \(storage_name) = \(generator).makeField(\"collapse_result\", \(type.real_type).class);" &
+				"\(indent)final FieldValue \(storage_name) = \(generator).makeField(\"collapse_result\", \(item_type.real_type).class);" &
 				"\(indent)final int \(Id)_start = \(generator).defineState();" &
 				initial.gen_gen(
 					indent : indent,
@@ -2277,7 +2205,7 @@ codegen : compiler_lib.codegen_tmpl {
 		extra_indent : "\t" & of.extra_indent
 		reference_type : of.storage_name & ".getBackingType()"
 		choice_tmpl +: {
-			target_type : "\(type.real_type).class"
+			target_type : "\(item_type.real_type).class"
 		}
 		converted_result : codegen.gen_tmpl {
 			extra_indent : ""
@@ -2296,7 +2224,7 @@ codegen : compiler_lib.codegen_tmpl {
 		extra_indent : "\t"
 		reference_type : "\(field).getTypeId()"
 		choice_tmpl +: {
-			target_type : type.union_type
+			target_type : item_type.union_type
 		}
 
 		gen_gen +: {
@@ -2685,7 +2613,62 @@ compiler : compiler_lib.language_with_repl_tmpl {
 			}
 		]
 	}
-
+	type_definitions +: {
+		bin +: {
+			union_type : "flabbergast.Type.Bin"
+			real_type : "byte[]"
+			unbox : True
+		}
+		bool +: {
+			union_type : "flabbergast.Type.Bool"
+			real_type : "boolean"
+			max : "true"
+			min : "false"
+			constant_creator : "BoolConstant"
+			unbox : True
+		}
+		float +: {
+			union_type : "flabbergast.Type.Float"
+			real_type : "double"
+			max : "java.lang.Double.MAX_VALUE"
+			min : "java.lang.Double.MIN_VALUE"
+			constant_creator : "FloatConstant"
+			unbox : True
+		}
+		frame +: {
+			union_type : "flabbergast.Type.Frame"
+			real_type : "flabbergast.Frame"
+			unbox : True
+		}
+		int +: {
+			union_type : "flabbergast.Type.Int"
+			real_type : "long"
+			max : "java.lang.Long.MAX_VALUE"
+			min : "java.lang.Long.MIN_VALUE"
+			constant_creator : "IntConstant"
+			unbox : True
+		}
+		str +: {
+			union_type : "flabbergast.Type.Str"
+			real_type : "flabbergast.Stringish"
+			unbox : False
+		}
+		template +: {
+			union_type : "flabbergast.Type.Template"
+			real_type : "flabbergast.Template"
+			unbox : True
+		}
+		null +: {
+			union_type : "flabbergast.Type.Unit"
+			real_type : "flabbergast.Unit"
+			unbox : True
+		}
+		any +: { real_type : "Object"  union_type : "flabbergast.TypeSet.ALL" }
+		mutable_frame +: { real_type : "flabbergast.MutableFrame" }
+		context +: { real_type : "flabbergast.Context" }
+		definition +: { real_type : "flabbergast.ComputeValue" }
+		override_definition +: { real_type : "flabbergast.ComputeOverride" }
+	}
 	# For rule groups, some require special handling not inferable from the
 	# compiler, so the `super_class_extra` and `class_extra` attributes provide
 	# that content.
@@ -2754,8 +2737,8 @@ compiler : compiler_lib.language_with_repl_tmpl {
 		type_name +: {
 			super_class_extra : "\tabstract Type getTypeId();\n\tabstract TypeSet getCastableFrom();\n\tabstract boolean getUnbox();\n"
 			type_element +: {
-				castable_from_type_bits : For t : castable_from Reduce acc & ", " & t.union_type With acc : type.union_type
-				class_extra : "\tType getTypeId() { return \(type.union_type); }\n\tTypeSet getCastableFrom() { return new TypeSet(\(castable_from_type_bits)); }\n\tboolean getUnbox() { return \(If type.unbox Then "true" Else "false"); }\n"
+				castable_from_type_bits : For t : type_def.castable_from Reduce acc & ", " & t.union_type With acc : type_def.union_type
+				class_extra : "\tType getTypeId() { return \(type_def.union_type); }\n\tTypeSet getCastableFrom() { return new TypeSet(\(castable_from_type_bits)); }\n\tboolean getUnbox() { return \(If type_def.unbox Then "true" Else "false"); }\n"
 			}
 		}
 		expression +: {
@@ -2855,7 +2838,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 							space { },
 							parser.exact { word : "(" },
 							parser.accumulate_list {
-								type : "expression"
+								item_type : "expression"
 								field : "arguments"
 								in : parser.many_word {
 									separator_word : ","
@@ -2863,7 +2846,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 										of : [
 											space { preferred : True },
 											parser.other {
-												type : "expression"
+												item_type : "expression"
 												alternate : "expression0"
 												field : Null
 											},

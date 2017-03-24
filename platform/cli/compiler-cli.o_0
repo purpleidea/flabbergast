@@ -364,7 +364,7 @@ parser : compiler_lib.parser_tmpl {
 		class_gen :
 			(If require_definition
 				Then
-					"\tinternal System.Collections.Generic.List<\(type)> \(field) = new System.Collections.Generic.List<\(type)>();\n" &
+					"\tinternal System.Collections.Generic.List<\(item_type)> \(field) = new System.Collections.Generic.List<\(item_type)>();\n" &
 					(If deduplicate Is Null
 						Then ""
 						Else "\tinternal System.Collections.Generic.Dictionary<\(deduplicate.dedup_type), bool> \(field)_dedup = new System.Collections.Generic.Dictionary<\(deduplicate.dedup_type), bool>{\(forbidden_pairs)};\n")
@@ -421,18 +421,18 @@ parser : compiler_lib.parser_tmpl {
 	other +: {
 		require_definition : If field Is Null Then False Else
 			(For common_field : Name, common_type : expanded_common Where common_field == field Reduce False With acc : True)
-		class_gen : If require_definition Then "\tinternal \(type) \(field);\n" Else ""
+		class_gen : If require_definition Then "\tinternal \(item_type) \(field);\n" Else ""
 		copy_instance : If require_definition Then "\t\t_obj.\(field) = \(field);\n" Else ""
 
 		pok : ((Lookup parse_complete In Container) { ok : True }).value
 		perr : ((Lookup parse_complete In Container) { ok : False }).value
 		target_rule :
-			Let base : "\(type).ParseRule_\(alternate ?? "Base")"
+			Let base : "\(item_type).ParseRule_\(alternate ?? "Base")"
 			In
 				If field Is Null && !(deduplicate Is Null)
 				Then
 					Let dedup_container : "_obj." & Lookup field In Container & "_dedup"
-					In "(ref ParserPosition _iposition, out \(type) _iresult) => { if (\(base)(ref _iposition, out _iresult)) { var \(Id)_key = \(deduplicate.dedup_transform)(_iresult.\(Lookup field_name In deduplicate Enforce Str)); if (\(dedup_container).ContainsKey(\(Id)_key)) { _iposition.NameConstraint(\(Id)_key); return false; } else { \(dedup_container)[\(Id)_key] = true; return true; } } else { return false; } }"
+					In "(ref ParserPosition _iposition, out \(item_type) _iresult) => { if (\(base)(ref _iposition, out _iresult)) { var \(Id)_key = \(deduplicate.dedup_transform)(_iresult.\(Lookup field_name In deduplicate Enforce Str)); if (\(dedup_container).ContainsKey(\(Id)_key)) { _iposition.NameConstraint(\(Id)_key); return false; } else { \(dedup_container)[\(Id)_key] = true; return true; } } else { return false; } }"
 				Else base
 		parse_call : If field Is Null
 			Then "ParserPosition.ParseIntoList(ref _position, _obj.\(Lookup field In Container), \(target_rule))"
@@ -462,9 +462,9 @@ common_fields : compiler_lib.common_fields_tmpl {
 		dedup_transform : ""
 	}
 	other +: {
-		class_gen : "\tinternal \(type) \(field_name);\n"
+		class_gen : "\tinternal \(item_type) \(field_name);\n"
 		copy_instance : "\t\t_obj.\(field_name) = \(field_name);\n"
-		dedup_type : type
+		dedup_type : item_type
 		dedup_transform : ""
 	}
 }
@@ -576,78 +576,6 @@ environment : compiler_lib.environment_tmpl {
 		class_gen : ""
 		value : "\t\tif (\(current_environment).TopLevel != \(If desired Then "true" Else "false")) { _success = false; _collector.ReportRawError(this, \"At file-level scope, \(pretty_name) is now allowed.\"); }"
 	}
-}
-# The correspondence between Flabbergast types in the compiler and their
-# implementation types (a.k.a. `real_type`) and the flag used in the union
-# types used by the environments to propagate type information (a.k.a.
-# `union_type`).
-known_types : compiler_lib.known_types_tmpl {
-	bin : {
-		union_type : "Flabbergast.Type.Bin"
-		real_type : "byte[]"
-		name : "Bin"
-		unbox : True
-	}
-	bool : {
-		union_type : "Flabbergast.Type.Bool"
-		real_type : "bool"
-		name : "Bool"
-		max : "true"
-		min : "false"
-		constant_creator : "BoolConstant"
-		unbox : True
-	}
-	float : {
-		union_type : "Flabbergast.Type.Float"
-		real_type : "double"
-		name : "Float"
-		max : "System.Double.MaxValue"
-		min : "System.Double.MinValue"
-		constant_creator : "FloatConstant"
-		unbox : True
-	}
-	frame : {
-		union_type : "Flabbergast.Type.Frame"
-		real_type : "Flabbergast.Frame"
-		name : "Frame"
-		unbox : True
-	}
-	int : {
-		union_type : "Flabbergast.Type.Int"
-		real_type : "long"
-		name : "Int"
-		max : "System.Int64.MaxValue"
-		min : "System.Int64.MinValue"
-		constant_creator : "IntConstant"
-		unbox : True
-	}
-	str : {
-		union_type : "Flabbergast.Type.Str"
-		real_type : "Flabbergast.Stringish"
-		name : "Str"
-		unbox : False
-	}
-	template : {
-		union_type : "Flabbergast.Type.Template"
-		real_type : "Flabbergast.Template"
-		name : "Template"
-		unbox : True
-	}
-	null : {
-		union_type : "Flabbergast.Type.Unit"
-		real_type : "Flabbergast.Unit"
-		name : "Null"
-		unbox : True
-	}
-}
-# These are types known by the KWS VM that are not found in the Flabbergast
-# language. Therefore, they have a `real_type`, but not a `union_type`.
-known_vm_types : compiler_lib.known_vm_types_tmpl {
-	any : { real_type : "object"  union_type : "Flabbergast.NameInfo.AnyType"  name : "Any" }
-	mutable_frame : { real_type : "Flabbergast.MutableFrame"  name : "Frame" }
-	list : { real_type : "Flabbergast.Context"  name : "List" }
-	function : { real_type : "Flabbergast.ComputeValue"  name : "Definition" }
-	override_function : { real_type : "Flabbergast.ComputeOverride"  name : "OverrideDefinition" }
 }
 # The mechanism code to do type checking in the compiler. Each syntax element
 # is told what types it may return and it propagates this type information to
@@ -796,8 +724,8 @@ kws : compiler_lib.kws_repl_tmpl {
 				For arg : arguments
 					Reverse
 					Reduce
-						"\(sum_indent)if (!typeof(\(arg.type.real_type)).IsAssignableFrom(\(arg.value.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Expected  \(arg.type.name) but got {0} in \(opcode).\", SupportFunctions.NameForType(\(arg.value.storage_name).BackingType)));" &
-						"\(sum_indent)\(generator).LoadReboxed(\(arg.value.storage_name), typeof(\(arg.type.real_type)));" &
+						"\(sum_indent)if (!typeof(\(arg.item_type.real_type)).IsAssignableFrom(\(arg.value.storage_name).BackingType)) throw new System.InvalidOperationException(System.String.Format(\"Expected  \(arg.item_type.name) but got {0} in \(opcode).\", SupportFunctions.NameForType(\(arg.value.storage_name).BackingType)));" &
+						"\(sum_indent)\(generator).LoadReboxed(\(arg.value.storage_name), typeof(\(arg.item_type.real_type)));" &
 						acc
 						With acc : ""
 			base_code :
@@ -1330,10 +1258,10 @@ kws : compiler_lib.kws_repl_tmpl {
 	}
 	numeric_constant +: {
 		extra_indent : ""
-		max : type.max
-		min : type.min
+		max : item_type.max
+		min : item_type.min
 		gen_gen +: {
-			value : "\(indent)var \(storage_name) = new \(type.constant_creator)(\(number));" & code
+			value : "\(indent)var \(storage_name) = new \(item_type.constant_creator)(\(number));" & code
 		}
 	}
 	numeric_constant_units +: {
@@ -1463,7 +1391,7 @@ kws : compiler_lib.kws_repl_tmpl {
 		}
 	}
 	dynamic_type_check +: {
-		reference_type : "typeof(\(type.real_type))"
+		reference_type : "typeof(\(item_type.real_type))"
 	}
 	dynamic_type_check_parsed +: {
 		reference_type : "\(field).TypeId"
@@ -1893,7 +1821,7 @@ codegen : compiler_lib.codegen_tmpl {
 
 		gen_gen +: {
 			value :
-				"\(indent)var \(storage_name) = \(generator).MakeField(\"collapse_result\", typeof(\(type.real_type)));" &
+				"\(indent)var \(storage_name) = \(generator).MakeField(\"collapse_result\", typeof(\(item_type.real_type)));" &
 				"\(indent)var \(Id)_label = \(generator).DefineState();" &
 				initial.gen_gen(
 					indent : indent,
@@ -2165,7 +2093,7 @@ codegen : compiler_lib.codegen_tmpl {
 		extra_indent : "\t" & of.extra_indent
 		reference_type : of.storage_name & ".BackingType"
 		choice_tmpl +: {
-			target_type : "typeof(\(type.real_type))"
+			target_type : "typeof(\(item_type.real_type))"
 		}
 		converted_result : codegen.gen_tmpl {
 			extra_indent : ""
@@ -2184,7 +2112,7 @@ codegen : compiler_lib.codegen_tmpl {
 		extra_indent : "\t"
 		reference_type : "\(field).TypeId"
 		choice_tmpl +: {
-			target_type : type.union_type
+			target_type : item_type.union_type
 		}
 
 		gen_gen +: {
@@ -2563,6 +2491,62 @@ compiler : compiler_lib.language_with_repl_tmpl {
 			}
 		]
 	}
+	type_definitions +: {
+		bin +: {
+			union_type : "Flabbergast.Type.Bin"
+			real_type : "byte[]"
+			unbox : True
+		}
+		bool +: {
+			union_type : "Flabbergast.Type.Bool"
+			real_type : "bool"
+			max : "true"
+			min : "false"
+			constant_creator : "BoolConstant"
+			unbox : True
+		}
+		float +: {
+			union_type : "Flabbergast.Type.Float"
+			real_type : "double"
+			max : "System.Double.MaxValue"
+			min : "System.Double.MinValue"
+			constant_creator : "FloatConstant"
+			unbox : True
+		}
+		frame +: {
+			union_type : "Flabbergast.Type.Frame"
+			real_type : "Flabbergast.Frame"
+			unbox : True
+		}
+		int +: {
+			union_type : "Flabbergast.Type.Int"
+			real_type : "long"
+			max : "System.Int64.MaxValue"
+			min : "System.Int64.MinValue"
+			constant_creator : "IntConstant"
+			unbox : True
+		}
+		str +: {
+			union_type : "Flabbergast.Type.Str"
+			real_type : "Flabbergast.Stringish"
+			unbox : False
+		}
+		template +: {
+			union_type : "Flabbergast.Type.Template"
+			real_type : "Flabbergast.Template"
+			unbox : True
+		}
+		null +: {
+			union_type : "Flabbergast.Type.Unit"
+			real_type : "Flabbergast.Unit"
+			unbox : True
+		}
+		any +: { real_type : "object"  union_type : "Flabbergast.NameInfo.AnyType" }
+		mutable_frame +: { real_type : "Flabbergast.MutableFrame" }
+		context +: { real_type : "Flabbergast.Context" }
+		definition +: { real_type : "Flabbergast.ComputeValue" }
+		override_definition +: { real_type : "Flabbergast.ComputeOverride" }
+	}
 
 	# For rule groups, some require special handling not inferable from the
 	# compiler, so the `super_class_extra` and `class_extra` attributes provide
@@ -2629,8 +2613,8 @@ compiler : compiler_lib.language_with_repl_tmpl {
 		type_name +: {
 			super_class_extra : "\tinternal abstract Type TypeId { get; }\n\tinternal abstract Type CastableFrom { get; }\n\tinternal abstract bool Unbox { get; }\n"
 			type_element +: {
-				castable_from_type_bits : For t : castable_from Reduce acc & " | " & t.union_type With acc : type.union_type
-				class_extra : "\tinternal override Type TypeId { get { return \(type.union_type); } }\n\tinternal override Type CastableFrom { get { return \(castable_from_type_bits); }}\n\tinternal override bool Unbox { get { return \(If type.unbox Then "true" Else "false"); }}\n"
+				castable_from_type_bits : For t : type_def.castable_from Reduce acc & " | " & t.union_type With acc : type_def.union_type
+				class_extra : "\tinternal override Type TypeId { get { return \(type_def.union_type); } }\n\tinternal override Type CastableFrom { get { return \(castable_from_type_bits); }}\n\tinternal override bool Unbox { get { return \(If type_def.unbox Then "true" Else "false"); }}\n"
 			}
 		}
 		expression +: {
@@ -2729,7 +2713,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 							space { },
 							parser.exact { word : "(" },
 							parser.accumulate_list {
-								type : "expression"
+								item_type : "expression"
 								field : "arguments"
 								in : parser.many_word {
 									separator_word : ","
@@ -2737,7 +2721,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 										of : [
 											space { preferred : True },
 											parser.other {
-												type : "expression"
+												item_type : "expression"
 												alternate : "expression0"
 												field : Null
 											},
