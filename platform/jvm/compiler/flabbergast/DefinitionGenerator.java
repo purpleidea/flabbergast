@@ -19,8 +19,8 @@ class DefinitionGenerator extends Generator {
     private final FieldValue initial_source_reference;
 
     DefinitionGenerator(AstNode node, CompilationUnit<?> owner,
-                      ClassVisitor type_builder, boolean has_original, String class_name,
-                      String root_prefix, Set<String> owner_externals)
+                        ClassVisitor type_builder, boolean has_original, String class_name,
+                        String root_prefix, Set<String> owner_externals)
     throws NoSuchMethodException, NoSuchFieldException,
         SecurityException {
         super(node, owner, type_builder, class_name, root_prefix,
@@ -137,7 +137,7 @@ class DefinitionGenerator extends Generator {
             initial_original = makeField("initial_original", Object.class);
             generateConsumeResult(initial_original);
             visitMethod(Future.class.getMethod("listen",
-                                                    ConsumeResult.class));
+                                               ConsumeResult.class));
             stopInterlock();
         } else {
             initial_original = null;

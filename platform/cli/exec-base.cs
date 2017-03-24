@@ -99,7 +99,7 @@ public abstract class Future {
         if (original == null) {
             return (task_master, reference, context, self, container) =>
                    new FailureFuture(task_master, new BasicSourceReference("used by override", filename,
-                                          start_line, start_column, end_line, end_column, reference), "override of non-existant attribute");
+                                     start_line, start_column, end_line, end_column, reference), "override of non-existant attribute");
         }
         return
             (task_master, reference, context, self, container) =>

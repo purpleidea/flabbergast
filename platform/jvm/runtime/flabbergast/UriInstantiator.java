@@ -19,7 +19,7 @@ public class UriInstantiator implements UriHandler {
     }
 
     public Future resolveUri(TaskMaster task_master, String uri,
-                                  Ptr<LibraryFailure> reason) {
+                             Ptr<LibraryFailure> reason) {
         Class<? extends Future> t = loader.resolveUri(uri, reason);
         if (t == null) {
             return null;

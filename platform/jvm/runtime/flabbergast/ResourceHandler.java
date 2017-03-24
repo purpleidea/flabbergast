@@ -23,7 +23,7 @@ public class ResourceHandler implements UriHandler {
     }
 
     public final Future resolveUri(TaskMaster task_master, String uri,
-                                        Ptr<LibraryFailure> reason) {
+                                   Ptr<LibraryFailure> reason) {
 
         if (!uri.startsWith("res:")) {
             reason.set(LibraryFailure.MISSING);

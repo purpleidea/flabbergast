@@ -66,8 +66,8 @@ public class MutableFrame extends Frame {
         }
         if (value instanceof ComputeValue) {
             Future computation = ((ComputeValue) value).invoke(
-                                          task_master, getSourceReference(), getContext(), this,
-                                          getContainer());
+                                     task_master, getSourceReference(), getContext(), this,
+                                     getContainer());
             attributes.put(name, computation);
             /*
              * When this computation has completed, replace its value in the

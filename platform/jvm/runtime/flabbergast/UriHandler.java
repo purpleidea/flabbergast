@@ -8,5 +8,5 @@ public interface UriHandler {
     int getPriority();
 
     Future resolveUri(TaskMaster task_master, String uri,
-                           Ptr<LibraryFailure> reason);
+                      Ptr<LibraryFailure> reason);
 }

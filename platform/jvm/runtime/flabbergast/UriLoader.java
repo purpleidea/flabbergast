@@ -8,5 +8,5 @@ public interface UriLoader {
     int getPriority();
 
     Class<? extends Future> resolveUri(String uri,
-                                            Ptr<LibraryFailure> reason);
+                                       Ptr<LibraryFailure> reason);
 }

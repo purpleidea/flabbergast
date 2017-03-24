@@ -19,7 +19,7 @@ public class CheckResult extends Future {
     protected void run() {
         try {
             Future computation = test_target.getConstructor(
-                                          TaskMaster.class).newInstance(task_master);
+                                     TaskMaster.class).newInstance(task_master);
             computation.listen(new ConsumeResult() {
 
                 @Override

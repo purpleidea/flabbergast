@@ -15,8 +15,8 @@ public class Lookup extends Future {
         }
 
         public Future invoke(TaskMaster task_master,
-                                  SourceReference source_reference, Context context, Frame self,
-                                  Frame container) {
+                             SourceReference source_reference, Context context, Frame self,
+                             Frame container) {
             if (names.length == 0) {
                 return new FailureFuture(task_master, source_reference, "Missing names in lookup.");
             }

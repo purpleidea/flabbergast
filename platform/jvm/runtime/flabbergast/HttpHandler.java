@@ -18,7 +18,7 @@ public class HttpHandler implements UriHandler {
         return 0;
     }
     public final Future resolveUri(TaskMaster task_master, String uri,
-                                        Ptr<LibraryFailure> reason) {
+                                   Ptr<LibraryFailure> reason) {
 
         if (!uri.startsWith("http:") && !uri.startsWith("https:")) {
             reason.set(LibraryFailure.MISSING);

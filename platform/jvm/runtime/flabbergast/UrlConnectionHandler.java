@@ -10,7 +10,7 @@ import flabbergast.TaskMaster.LibraryFailure;
 public abstract class UrlConnectionHandler implements UriHandler {
     protected abstract URL convert(String uri)throws Exception;
     public final Future resolveUri(TaskMaster task_master, String uri,
-                                        Ptr<LibraryFailure> reason) {
+                                   Ptr<LibraryFailure> reason) {
 
         try {
             URL url = convert(uri);

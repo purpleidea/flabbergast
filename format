@@ -2,4 +2,4 @@
 
 set -eu
 astyle --mode=cs -nqpHU $(find $(dirname $0)/platform/cli -name '*.cs' -not -name 'compiler-cli.cs' -not -name 'db-cli.cs' -not -name 'Options.cs' -not -name 'config.cs')
-astyle --mode=java --style=java -nqpHU $(find $(dirname $0)/platform/jvm -name '*.java' -not -name 'compiler-jvm.java' -not -name 'db-jvm.java' -not -name 'Configuration.java')
+astyle --mode=java --style=java -nqpHU $(find $(dirname $0)/platform/jvm/{runtime,compiler,testing} -name '*.java' -not -name 'db-jvm.java' -not -name 'Configuration.java')

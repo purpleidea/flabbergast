@@ -164,10 +164,10 @@ public class MainREPL {
             if (files.length == 1) {
                 Parser parser = Parser.open(files[0]);
                 Class<? extends Future> run_type = parser.parseFile(
-                        collector, compiler.getCompilationUnit(), "Printer");
+                                                       collector, compiler.getCompilationUnit(), "Printer");
                 if (run_type != null) {
                     Future computation = run_type.getConstructor(
-                                                  TaskMaster.class).newInstance(task_master);
+                                             TaskMaster.class).newInstance(task_master);
                     computation.listen(new ConsumeResult() {
 
                         @Override
@@ -218,15 +218,15 @@ public class MainREPL {
                 PrintToConsole printer = new PrintToConsole(reader);
                 RawPrint raw_printer = new RawPrint(reader);
                 Class<? extends Future> run_type = parser.parseRepl(
-                        collector, compiler.getCompilationUnit(),
-                        "flabbergast/interactive/Line" + (id++));
+                                                       collector, compiler.getCompilationUnit(),
+                                                       "flabbergast/interactive/Line" + (id++));
                 if (run_type != null) {
                     Future computation = run_type.getConstructor(
-                                                  TaskMaster.class, Frame.class, Frame.class,
-                                                  ConsumeResult.class, ConsumeResult.class,
-                                                  ConsumeResult.class).newInstance(task_master,
-                                                          root.get(), current.get(), current, printer,
-                                                          raw_printer);
+                                             TaskMaster.class, Frame.class, Frame.class,
+                                             ConsumeResult.class, ConsumeResult.class,
+                                             ConsumeResult.class).newInstance(task_master,
+                                                     root.get(), current.get(), current, printer,
+                                                     raw_printer);
                     computation.listen(keep_running);
                     computation.slot();
                     task_master.run();

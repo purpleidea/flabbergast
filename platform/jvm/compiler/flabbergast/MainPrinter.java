@@ -69,10 +69,10 @@ public class MainPrinter {
             Parser parser = Parser.open(files[0]);
             parser.setTrace(result.hasOption('t'));
             Class<? extends Future> run_type = parser.parseFile(collector,
-                                                    compiler.getCompilationUnit(), "Printer");
+                                               compiler.getCompilationUnit(), "Printer");
             if (run_type != null) {
                 Future computation = run_type.getConstructor(
-                                              TaskMaster.class).newInstance(task_master);
+                                         TaskMaster.class).newInstance(task_master);
                 PrintResult filewriter = new PrintResult(task_master,
                         computation, result.getOptionValue('o'));
                 filewriter.slot();

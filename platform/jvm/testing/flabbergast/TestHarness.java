@@ -70,8 +70,8 @@ public class TestHarness {
                 int test_id = id.get();
                 id.set(test_id + 1);
                 Class<? extends Future> test_type = parser.parseFile(
-                            collector, compiler.getCompilationUnit(), "Test"
-                            + test_id);
+                                                        collector, compiler.getCompilationUnit(), "Test"
+                                                        + test_id);
                 success = collector.isAnalyseDirty();
                 if (!success && test_type != null) {
                     CheckResult tester = new CheckResult(task_master, test_type);
@@ -96,8 +96,8 @@ public class TestHarness {
                 int test_id = id.get();
                 id.set(test_id + 1);
                 Class<? extends Future> test_type = parser.parseFile(
-                            collector, compiler.getCompilationUnit(), "Test"
-                            + test_id);
+                                                        collector, compiler.getCompilationUnit(), "Test"
+                                                        + test_id);
                 success = !collector.isAnalyseDirty()
                           && !collector.isParseDirty();
                 if (success && test_type != null) {

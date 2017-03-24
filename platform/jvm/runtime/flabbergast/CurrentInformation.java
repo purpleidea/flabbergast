@@ -34,7 +34,7 @@ public class CurrentInformation implements UriHandler {
     }
 
     public Future resolveUri(TaskMaster task_master, String uri,
-                                  Ptr<LibraryFailure> reason) {
+                             Ptr<LibraryFailure> reason) {
 
         if (!uri.startsWith("current:"))
             return null;

@@ -17,8 +17,8 @@ public class JsonParser extends Future {
         }
         @Override
         public Future invoke(TaskMaster task_master,
-                                  SourceReference src_ref, Context context, Frame self,
-                                  Frame container) {
+                             SourceReference src_ref, Context context, Frame self,
+                             Frame container) {
             Instantiation computation;
             if (node == null || node == JSONObject.NULL) {
                 computation = new Instantiation(task_master, src_ref, context,
@@ -33,8 +33,8 @@ public class JsonParser extends Future {
 
                     @Override
                     public Future invoke(TaskMaster a_task_master,
-                                              SourceReference a_reference, Context a_context,
-                                              Frame a_self, Frame a_container) {
+                                         SourceReference a_reference, Context a_context,
+                                         Frame a_self, Frame a_container) {
                         MutableFrame a_arg_frame = new MutableFrame(
                             a_task_master, a_reference, a_context, a_self);
                         JSONArray array = (JSONArray) node;
@@ -45,7 +45,7 @@ public class JsonParser extends Future {
                             } catch (JSONException e) {
                                 a_arg_frame.set(index + 1,
                                                 new FailureFuture(a_task_master,
-                                                                       a_reference, e.getMessage()));
+                                                                  a_reference, e.getMessage()));
                             }
                         }
                         return new Precomputation(a_arg_frame);
@@ -70,8 +70,8 @@ public class JsonParser extends Future {
                 computation.add("children", new ComputeValue() {
                     @Override
                     public Future invoke(TaskMaster o_task_master,
-                                              SourceReference o_reference, Context o_context,
-                                              Frame o_self, Frame o_container) {
+                                         SourceReference o_reference, Context o_context,
+                                         Frame o_self, Frame o_container) {
                         MutableFrame o_arg_frame = new MutableFrame(
                             o_task_master, o_reference, o_context, o_self);
                         int index = 1;
@@ -86,7 +86,7 @@ public class JsonParser extends Future {
                             } catch (JSONException e) {
                                 o_arg_frame.set(index,
                                                 new FailureFuture(o_task_master,
-                                                                       o_reference, e.getMessage()));
+                                                                  o_reference, e.getMessage()));
                             }
                             index++;
                         }
@@ -100,7 +100,7 @@ public class JsonParser extends Future {
                 computation.add("arg", new SimpleStringish((String) node));
             } else {
                 return new FailureFuture(task_master, src_ref,
-                                              "Unknown JSON entry.");
+                                         "Unknown JSON entry.");
             }
             return computation;
         }

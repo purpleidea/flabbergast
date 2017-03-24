@@ -17,7 +17,7 @@ public class SettingsHandler implements UriHandler {
     }
 
     public Future resolveUri(TaskMaster task_master, String uri,
-                                  Ptr<LibraryFailure> reason) {
+                             Ptr<LibraryFailure> reason) {
 
         if (!uri.startsWith("settings:"))
             return null;

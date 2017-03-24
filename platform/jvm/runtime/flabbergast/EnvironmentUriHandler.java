@@ -14,7 +14,7 @@ public class EnvironmentUriHandler implements UriHandler {
         return 0;
     }
     public Future resolveUri(TaskMaster task_master, String uri,
-                                  Ptr<LibraryFailure> reason) {
+                             Ptr<LibraryFailure> reason) {
         if (!uri.startsWith("env:")) {
             reason.set(LibraryFailure.MISSING);
             return null;

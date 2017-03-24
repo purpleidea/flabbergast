@@ -52,7 +52,7 @@ public abstract class CompilationUnit<T> {
      * @throws Exception
      */
     DelegateValue createDefinition(AstNode node, String syntax_id,
-                                 DefinitionBlock block, String root_prefix, Set<String> owner_externals)
+                                   DefinitionBlock block, String root_prefix, Set<String> owner_externals)
     throws Exception {
         generateId(node);
         String name = root_prefix + "$Definition" + id_gen.get(node) + syntax_id;
@@ -60,7 +60,7 @@ public abstract class CompilationUnit<T> {
             return functions.get(name);
         }
         DefinitionGenerator generator = createDefinitionGenerator(node, name,
-                                      false, root_prefix, owner_externals);
+                                        false, root_prefix, owner_externals);
         block.invoke(generator, generator.getInitialContainerFrame(),
                      generator.getInitialContext(), generator.getInitialSelfFrame(),
                      generator.getInitialSourceReference());
@@ -79,19 +79,19 @@ public abstract class CompilationUnit<T> {
                                                 Future.class);
         type_builder.visitSource(node.getFileName(), null);
         return new DefinitionGenerator(node, this, type_builder, has_original,
-                                     name, root_prefix, owner_externals);
+                                       name, root_prefix, owner_externals);
     }
 
     DelegateValue createOverrideDefinition(AstNode node, String syntax_id,
-                                         OverrideDefinitionBlock block, String root_prefix,
-                                         Set<String> owner_externals) throws Exception {
+                                           OverrideDefinitionBlock block, String root_prefix,
+                                           Set<String> owner_externals) throws Exception {
         generateId(node);
         String name = root_prefix + "$Override" + id_gen.get(node) + syntax_id;
         if (functions.containsKey(name)) {
             return functions.get(name);
         }
         DefinitionGenerator generator = createDefinitionGenerator(node, name, true,
-                                      root_prefix, owner_externals);
+                                        root_prefix, owner_externals);
         block.invoke(generator, generator.getInitialContainerFrame(),
                      generator.getInitialContext(), generator.getInitialOriginal(),
                      generator.getInitialSelfFrame(),

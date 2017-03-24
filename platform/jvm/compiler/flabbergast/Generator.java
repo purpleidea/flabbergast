@@ -306,15 +306,15 @@ abstract class Generator {
     }
 
     DelegateValue createDefinition(AstNode instance, String syntax_id,
-                                 CompilationUnit.DefinitionBlock block) throws Exception {
+                                   CompilationUnit.DefinitionBlock block) throws Exception {
         return owner.createDefinition(instance, syntax_id, block, root_prefix,
-                                    owner_externals);
+                                      owner_externals);
     }
 
     DelegateValue createOverrideDefinition(AstNode instance, String syntax_id,
-                                         CompilationUnit.OverrideDefinitionBlock block) throws Exception {
+                                           CompilationUnit.OverrideDefinitionBlock block) throws Exception {
         return owner.createOverrideDefinition(instance, syntax_id, block,
-                                            root_prefix, owner_externals);
+                                              root_prefix, owner_externals);
     }
 
     protected void createInterlock(MethodVisitor ctor_builder)
