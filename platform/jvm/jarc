@@ -8,20 +8,34 @@ do
 done
 trap 'EC=$?; rm -rf .build; exit $EC' EXIT
 
-test -d "$1"
+PKG="$1"
+VER="$2"
+PREFIX="flabbergast-${PKG}-${VER}"
+shift 2
+test -d "$PKG"
 rm -rf .build
 
+SOURCEPATH="$PKG"
+for each in "$@"
+do
+	SOURCEPATH="$SOURCEPATH:$each"
+done
+
 # Source JAR
-${JAR-jar} cfm "flabbergast-${1}-${2}-sources.jar" "${1}.manifest" -C "$1" .
+${JAR-jar} cfm "${PREFIX}-sources.jar" "${PKG}.manifest" -C "$PKG" .
+for each in "$@"
+do
+	${JAR-jar} uf "${PREFIX}-sources.jar" -C "$each" .
+done
 
 # JavaDoc JAR
 mkdir .build
-${JAVADOC-javadoc} -quiet -encoding UTF-8 -sourcepath "$1" -d .build $(find "$1" -name '*.java')
-${JAR-jar} cfm "flabbergast-${1}-${2}-javadoc.jar" "${1}.manifest" -C .build .
+${JAVADOC-javadoc} -quiet -encoding UTF-8 -sourcepath "$SOURCEPATH" -d .build $(find "$PKG" "$@" -name '*.java')
+${JAR-jar} cfm "${PREFIX}-javadoc.jar" "${PKG}.manifest" -C .build .
 rm -rf .build
 
 # Binary JAR
 mkdir .build
-${JAVAC-javac} -source 1.8 -target 1.8 -g -encoding UTF-8 -sourcepath "$1" -d .build $(find "$1" -name '*.java')
-${JAR-jar} cfm "flabbergast-${1}-${2}.jar" "${1}.manifest" -C .build .
+${JAVAC-javac} -source 1.8 -target 1.8 -g -encoding UTF-8 -sourcepath "$SOURCEPATH" -d .build $(find "$PKG" "$@" -name '*.java')
+${JAR-jar} cfm "${PREFIX}.jar" "${PKG}.manifest" -C .build .
 rm -rf .build

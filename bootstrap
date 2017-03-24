@@ -10,7 +10,7 @@ MAGIC_TARGETS = \
 	flabbergast_sql.7 \
 	platform/cli/compiler-cli.cs \
 	platform/cli/db-cli.cs \
-	platform/jvm/compiler/flabbergast/compiler-jvm.java \
+	platform/jvm/compiler-jvm.a \
 	platform/jvm/runtime/flabbergast/db-jvm.java \
 	$(NULL)
 
@@ -19,7 +19,7 @@ all: $(MAGIC_TARGETS)
 bootstrap.tar.bz2: all
 	tar cfj $@ $(MAGIC_TARGETS)
 
-platform/jvm/compiler/flabbergast/compiler-jvm.java: platform/jvm/compiler-jvm.o_0 src/compiler.o_0
+platform/jvm/compiler-jvm.a: platform/jvm/compiler-jvm.o_0 src/compiler.o_0
 	FLABBERGAST_PATH=$(FLABBERGAST_PATH):src $(FLABBERGAST) -o $@ $(firstword $^)
 
 platform/cli/compiler-cli.cs: platform/cli/compiler-cli.o_0 src/compiler.o_0

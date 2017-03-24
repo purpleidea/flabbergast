@@ -31,6 +31,7 @@ JSON_JAR="$JAR_PATH/json.jar"
 AC_SUBST([JSON_JAR])
 
 if test "$enable_jvm" != no; then
+	AC_CHECK_TOOL(AR, ar)
 	AC_PATH_TOOL(JAVA, java, undefined)
 	AC_PATH_TOOL(JAVAC, javac, undefined)
 	AC_PATH_TOOL(JAR, jar, undefined)

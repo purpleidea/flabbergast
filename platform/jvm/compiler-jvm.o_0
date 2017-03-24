@@ -1,4 +1,5 @@
 compiler_lib : From lib:compiler
+unix_ar_lib : From lib:unix/ar
 
 # The Java implementation of the parser. The parser definitions also create the
 # class definitions. Each syntax group in the compiler becomes an abstract
@@ -2957,6 +2958,11 @@ compiler : compiler_lib.language_with_repl_tmpl {
 			}
 		}
 	}
-	value : "package flabbergast;\n" & (For group : expanded_groups Reduce acc & group.value With acc : "")
+	ar : unix_ar_lib.archive_tmpl {
+		args : [ file_tmpl {
+			file_name : "compiler-jvm.java"
+			contents : "package flabbergast;\n" & (For group : expanded_groups Reduce acc & group.value With acc : "")
+		} ]
+	}
 }
-value : compiler.value
+value : compiler.ar.value
