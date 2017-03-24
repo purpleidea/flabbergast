@@ -17,7 +17,7 @@ BOOT_TARGET="www/bootstrap/bootstrap-$(git rev-parse HEAD).tar.bz2"
 mkdir -p "$(dirname ${BOOT_TARGET})"
 cp bootstrap.tar.bz2 "${BOOT_TARGET}"
 
-sed -i '1 s/^\xef\xbb\xbf//' platform/jvm/compiler/flabbergast/compiler-jvm.java platform/jvm/runtime/flabbergast/db-jvm.java
+sed -i '1 s/^\xef\xbb\xbf//' platform/jvm/compiler-jvm.a
 ./configure
 make clean all check
 
