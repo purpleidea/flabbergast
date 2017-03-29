@@ -1,3 +1,6 @@
+/* exported expandAll pageLoad searchChange searchClear showDef showHide showUse toggleSelection */
+"use strict";
+
 var validLookup = /^([a-z][a-zA-Z0-9_]*(\.[a-z][a-zA-Z0-9_]*)*)?$/;
 
 function checkNoMatches() {
