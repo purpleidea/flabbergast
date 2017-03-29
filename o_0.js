@@ -129,8 +129,8 @@ function pageLoad() {
     xsltRequest.send();
 }
 
-function searchClear(clear_element) {
-    var searchbox = clear_element.previousSibling;
+function searchClear() {
+    var searchbox = document.getElementById("search");
     searchbox.value = "";
     searchbox.focus();
     searchChange();

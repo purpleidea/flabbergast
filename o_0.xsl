@@ -21,7 +21,7 @@
         <div id="searchpane">
           <div id="searcharea">
             <input type="text" id="search" onchange="searchChange();" onkeypress="searchChange();" onpaste="searchChange();" oninput="searchChange();"/>
-            <span onclick="searchClear(this)">⌫</span><br/>
+            <span onclick="searchClear()">⌫</span><br/>
             <span id="showPartials" onclick="toggleSelection(this);" title="If an exact match is found, display any partial matches.">Partial</span>
             <span id="hideExternals" onclick="toggleSelection(this);" title="Only display matches for this library, not libraries it uses.">Local</span>
           </div>
