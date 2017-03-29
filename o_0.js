@@ -31,8 +31,8 @@ function expandAll(id) {
 }
 
 function pageLoad() {
-    document.getElementById("hidePartials").className = hidePartials ? "option-on" : "option-off";
-    document.getElementById("hideExternals").className = hideExternals ? "option-on" : "option-off";
+    updateSelection("showPartials");
+    updateSelection("hideExternals");
     var showTerm = function() {
         var term = document.location.hash;
         if (term.startsWith("#term-")) {
@@ -176,7 +176,7 @@ function searchChange() {
 
         var cssParts;
         if (exact_defs.length > 0 || exact_uses.length > 0 || starts_defs.length > 0 || starts_uses.length > 0) {
-            var showPartials = !hidePartials || (exact_defs.length == 0 && exact_uses.length == 0);
+            var showPartials = getSelection("showPartials") || (exact_defs.length == 0 && exact_uses.length == 0);
             cssParts = [{
                 items: exact_defs,
                 css: "font-weight: bold; color: #4F94CD; display: block !important;"
@@ -214,7 +214,7 @@ function searchChange() {
 
         termcss.innerHTML = cssParts.map(function(part) {
             return cssForArray(part.items, part.css);
-        }).join('') + (hideExternals ? "\n#terms a.external { display: none !important; }" : "");
+        }).join("") + (getSelection("hideExternals") ? "\n#terms a.external { display: none !important; }" : "");
         checkNoMatches();
     } else {
         searchbox.className = "error";
@@ -247,20 +247,20 @@ function showHide(roller) {
     roller.parentNode.className = is_hidden ? "" : "hidden";
 }
 
-function showOnly(name, value) {
+function getSelection(name) {
+    return (window.localStorage.getItem(name) || "false") === "true";
+}
+
+function updateSelection(name) {
+    var value = (window.localStorage.getItem(name) || "true") === "true";
     document.getElementById(name).className = value ? "option-on" : "option-off";
-    window.localStorage.setItem(name, value ? "true" : "false");
+}
+
+function toggleSelection(element) {
+    var value = (window.localStorage.getItem(element.id) || "true") !== "true";
+    element.className = value ? "option-on" : "option-off";
+    window.localStorage.setItem(element.id, value ? "true" : "false");
     searchChange();
-}
-
-function toggleExternals() {
-    hideExternals = !hideExternals;
-    showOnly("hideExternals", hideExternals);
-}
-
-function togglePartials() {
-    hidePartials = !hidePartials;
-    showOnly("hidePartials", hidePartials);
 }
 
 function updateRefs(term) {
