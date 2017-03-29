@@ -80,10 +80,6 @@ margin:.5em;
 padding:.3em;
 }
 
-#references {
-margin-top:2em;
-}
-
 #references a {
 border:1px solid #4F94CD;
 box-shadow:.1em .1em .3em 0 rgba(0,0,0,0.45);
@@ -94,6 +90,12 @@ margin-left:1em;
 margin-right:1em;
 text-align:center;
 padding:1em;
+}
+
+#references a.error,#references p {
+border:1px solid #C00;
+background-color:#FCC;
+color:#C00;
 }
 
 body {
@@ -179,7 +181,7 @@ width:90%;
 border:1px solid #A7ACAF;
 border-radius:.3em;
 overflow-y:scroll;
-height:calc(90vh - 3em);
+height:calc(90vh-3em);
 }
 
 #terms a {
@@ -200,4 +202,8 @@ transition:border-color 1s ease-in-out;
 
 a:hover,a:active,a:focus,.show,#searcharea .option-off {
 color:#36648B;
+}
+
+#references,#references p:first-of-type {
+margin-top:2em;
 }

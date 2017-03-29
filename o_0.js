@@ -48,6 +48,11 @@ function pageLoad() {
             }
         }
     };
+    var showLoadError = function(context, message) {
+        var p = document.createElement("p");
+        p.appendChild(document.createTextNode(context + ": " + (message || "Unknown error")));
+        document.getElementById("references").appendChild(p);
+    };
     var libraryNames = getLibraries();
     if (libraryNames.length == 0) {
         showTerm();
@@ -60,20 +65,32 @@ function pageLoad() {
         };
     };
     var libraries = libraryNames.map(makeLibraryInfo);
-    var inflight = libraries.length;
+    var inflight = libraries.length + 1;
     var unref = function() {
         if (--inflight > 0) {
             return;
         }
         var searchlistdiv = document.getElementById("terms").getElementsByTagName("div")[0];
-        libraries.sort(function(a, b) {
+        var sortedLibraries = libraries.sort(function(a, b) {
             var result = 0;
             for (var i = 0; result == 0 && i < a.nameParts.length && i < b.nameParts.length; i++) {
                 result = a.nameParts[i].localeCompare(b.nameParts[i]);
             }
             return result || (a.nameParts.length - b.nameParts.length);
-        }).forEach(function(info) {
-            searchlistdiv.appendChild(info.links);
+        });
+        sortedLibraries.filter(function(library) {
+            return library.links;
+        }).forEach(function(library) {
+            searchlistdiv.appendChild(library.links);
+        });
+        sortedLibraries.filter(function(library) {
+            return library.error;
+        }).forEach(function(library) {
+            var link = document.getElementById("lib-" + library.name);
+            if (link) {
+                link.className = "error";
+            }
+            showLoadError(library.name.replace("-", "/"), library.error);
         });
         showTerm();
     };
@@ -84,7 +101,10 @@ function pageLoad() {
     }).join(""));
     var downloadLibrary = function(info) {
         var request = new XMLHttpRequest();
-        request.addEventListener("error", unref);
+        request.addEventListener("error", function() {
+            unref();
+            info.error = request.statusText || "Unknown error";
+        });
         request.addEventListener("load", function() {
             info.links = termsForExternal.transformToFragment(request.responseXML, document);
             var nsResolver = request.responseXML.createNSResolver(request.responseXML.documentElement);
@@ -106,23 +126,27 @@ function pageLoad() {
         request.send();
     };
     var xsltRequest = new XMLHttpRequest();
-    xsltRequest.addEventListener("error", showTerm);
+    xsltRequest.addEventListener("error", function() {
+        showTerm();
+        showLoadError("External references", xsltRequest.statusText);
+    });
     xsltRequest.addEventListener("load", function() {
         try {
             termsForExternal.importStylesheet(xsltRequest.responseXML);
         } catch(e) {
-            console.log(e);
+            showLoadError("External references", e);
             showTerm();
             return;
         }
-        for (var i = 0; i < libraries.length; i++) {
+        libraries.forEach(function(library) {
             try {
-                downloadLibrary(libraries[i]);
+                downloadLibrary(library);
             } catch(e) {
-                console.log(e);
+                library.error = e;
                 unref();
             }
-        }
+        });
+        unref();
     });
     xsltRequest.open("GET", "o_0-xref.xsl", true);
     xsltRequest.overrideMimeType("text/xml");
@@ -267,6 +291,8 @@ function updateRefs(term) {
     var hash_name = term == null ? null : ("term-" + term);
     var reflist = document.getElementById("references").childNodes;
     for (var it = 0; it < reflist.length; it++) {
-        reflist[it].href.hash = hash_name;
+        if (reflist[it].tagName == "A") {
+            reflist[it].hash = hash_name;
+        }
     }
 }

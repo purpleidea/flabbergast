@@ -39,7 +39,7 @@
         <div id="references">
           <xsl:for-each select="//o_0:ref/text()[not(contains(., 'interop')) and generate-id() = generate-id(key('refs', .)[1])]">
             <xsl:sort select="."/>
-            <a href="{concat('doc-', translate(., '/', '-'), '.xml')}">lib:<xsl:value-of select="."/></a>
+            <a href="{concat('doc-', translate(., '/', '-'), '.xml')}" id="{concat('lib-', translate(., '/', '-'))}">lib:<xsl:value-of select="."/></a>
           </xsl:for-each>
         </div>
         <h2>Attributes</h2>
