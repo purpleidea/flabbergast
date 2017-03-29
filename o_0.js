@@ -1,15 +1,15 @@
 var validLookup = /^([a-z][a-zA-Z0-9_]*(\.[a-z][a-zA-Z0-9_]*)*)?$/;
 
 function checkNoMatches() {
-    var searchlist = document.getElementById('terms').getElementsByTagName('a');
+    var searchlist = document.getElementById("terms").getElementsByTagName("a");
     var any_visible = false;
     for (var it = 0; it < searchlist.length; it++) {
-        if (window.getComputedStyle(searchlist[it]).getPropertyValue('display') != 'none') {
+        if (window.getComputedStyle(searchlist[it]).getPropertyValue("display") != "none") {
             any_visible = true;
             break;
         }
     }
-    document.getElementById('nomatches').style.display = any_visible ? 'none' : 'block';
+    document.getElementById("nomatches").style.display = any_visible ? "none" : "block";
 }
 
 function cssForArray(arr, css) {
@@ -22,8 +22,8 @@ function cssForArray(arr, css) {
 }
 
 function expandAll(id) {
-    for (var target = document.getElementById(id); target != null && target.nodeName == 'DT'; target = target.parentElement.parentElement.previousElementSibling) {
-        if (target.className == 'hidden') {
+    for (var target = document.getElementById(id); target != null && target.nodeName == "DT"; target = target.parentElement.parentElement.previousElementSibling) {
+        if (target.className == "hidden") {
             target.className = null;
         }
     }
@@ -37,14 +37,14 @@ function pageLoad() {
         var term = document.location.hash;
         if (term.startsWith("#term-")) {
             term = term.substring(6);
-            var searchbox = document.getElementById('search');
+            var searchbox = document.getElementById("search");
             searchbox.value = term;
             searchChange();
         } else if (term.startsWith("#item-")) {
             expandAll(term.substring(1));
             // Bug: https://bugzilla.mozilla.org/show_bug.cgi?id=645075
             if (navigator.userAgent.indexOf("Firefox") > -1) {
-                location.href += '';
+                location.href += "";
             }
         }
     };
@@ -57,7 +57,7 @@ function pageLoad() {
         return {
             "name": name,
             "nameParts": name.split("-")
-        }
+        };
     };
     var libraries = libraryNames.map(makeLibraryInfo);
     var inflight = libraries.length;
@@ -65,7 +65,7 @@ function pageLoad() {
         if (--inflight > 0) {
             return;
         }
-        var searchlistdiv = document.getElementById('terms').getElementsByTagName('div')[0];
+        var searchlistdiv = document.getElementById("terms").getElementsByTagName("div")[0];
         libraries.sort(function(a, b) {
             var result = 0;
             for (var i = 0; result == 0 && i < a.nameParts.length && i < b.nameParts.length; i++) {
@@ -131,14 +131,14 @@ function pageLoad() {
 
 function searchClear(clear_element) {
     var searchbox = clear_element.previousSibling;
-    searchbox.value = '';
+    searchbox.value = "";
     searchbox.focus();
     searchChange();
 }
 
 function searchChange() {
-    var searchbox = document.getElementById('search');
-    var termcss = document.getElementById('termcss');
+    var searchbox = document.getElementById("search");
+    var termcss = document.getElementById("termcss");
     if (searchbox.value.length == 0) {
         searchbox.className = null;
         termcss.innerHTML = "";
@@ -223,15 +223,15 @@ function searchChange() {
 }
 
 function showDef(term) {
-    showTerm(term, 'def');
+    showTerm(term, "def");
 }
 
 function showUse(term) {
-    showTerm(term, 'use');
+    showTerm(term, "use");
 }
 
 function showTerm(term, prefix) {
-    var termcss = document.getElementById('termcss');
+    var termcss = document.getElementById("termcss");
     var visible = [];
     var hidden = ["#terms a." + prefix + "none"];
     var known_terms = getTerms();
@@ -265,7 +265,7 @@ function togglePartials() {
 
 function updateRefs(term) {
     var hash_name = term == null ? null : ("term-" + term);
-    var reflist = document.getElementById('references').childNodes;
+    var reflist = document.getElementById("references").childNodes;
     for (var it = 0; it < reflist.length; it++) {
         reflist[it].href.hash = hash_name;
     }
