@@ -4,7 +4,10 @@
  		<sub-class-of type="text/plain"/>
 		<comment>Flabbergast Configuration</comment>
 		<glob pattern="*.o_0"/>
-		<glob pattern="*.jo_0"/>
-		<glob pattern="*.no_0"/>
+	</mime-type>
+	<mime-type type="text/x-kwsvm">
+ 		<sub-class-of type="text/plain"/>
+		<comment>KWSVM Configuration</comment>
+		<glob pattern="*.kws"/>
 	</mime-type>
 </mime-info>

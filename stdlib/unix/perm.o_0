@@ -17,7 +17,7 @@ rwx : rw B| x
 wx : w B| x
 
 {{{Check if the integer provided is a valid mode.}}}
-is_valid_mode : utils_lib.allifier(base : is_valid_mode_list)
+is_valid_mode : utils_lib.allifier(base : is_valid_mode_list) Enforce Template
 
 {{{Check if the integers provided are valid modes.}}}
 is_valid_mode_list : Template {
@@ -26,7 +26,7 @@ is_valid_mode_list : Template {
 }
 
 {{{Convert a mode into a human readable form, as displayed by \Mono{ls -l}. See \{mode_to_str_list}}}}
-mode_to_str : utils_lib.str_concatifier(base : mode_to_str_list, delimiter : "")
+mode_to_str : utils_lib.str_concatifier(base : mode_to_str_list, delimiter : "") Enforce Template
 
 {{{Convert a list of modes into a human readable form, as displayed by \Mono{ls -l}.}}}
 mode_to_str_list : Template {

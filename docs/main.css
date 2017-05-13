@@ -1,8 +1,9 @@
 path {
-fill:#eee;
+fill:#ddd;
 fill-opacity:1;
 fill-rule:nonzero;
-stroke:none
+stroke:none;
+transition:fill 0.5s ease-in-out;
 }
 
 svg {
@@ -96,6 +97,11 @@ padding:0 0 0 .5em;
 #pane a {
 cursor:pointer;
 color:#fff;
+}
+
+#pane a:hover path {
+fill:#fff;
+transition:fill 0.5s ease-in-out;
 }
 
 a:hover,a:active,a:focus {

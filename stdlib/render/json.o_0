@@ -1,0 +1,60 @@
+Introduction{{{Templates for generation JavaScript Object Notation files.}}}
+
+utils_lib : From lib:utils
+
+str_transform : utils_lib.str_transform
+
+json : This
+
+{{{Escaping conventions used by JSON files}}}
+escape_transform_tmpl : Template {
+	backslash : str_transform.char_tmpl { char : "\\"  replacement : "\\\\" }
+	backspace : str_transform.char_tmpl { char : "\b"  replacement : "\\b" }
+	formfeed : str_transform.char_tmpl { char : "\f"  replacement : "\\f" }
+	newline : str_transform.char_tmpl { char : "\n"  replacement : "\\n" }
+	null : str_transform.char_tmpl { char : "\x00"  replacement : "\\u0000" }
+	quote : str_transform.char_tmpl { char : "\""  replacement : "\\\"" }
+	return : str_transform.char_tmpl { char : "\r"  replacement : "\\r" }
+	tab : str_transform.char_tmpl { char : "\t"  replacement : "\\t" }
+	nonprint : str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "\\u", utf16_0 ] }
+}
+
+{{{Transform a list of strings using default escaping transformations.}}}
+escape_list : utils_lib.str_escape_builder(args : escape_transform_tmpl {}) Enforce Template
+
+{{{Transform a string using the  default escaping transformations.}}}
+escape : utils_lib.str_concatifier(base : escape_list, delimiter : "") Enforce Template
+
+{{{Produce a list of other JSON fragments.}}}
+list : Template {
+	{{{A list of JSON elements.}}}
+	args : Required
+
+	{{{The rendered JSON string.}}}
+	json_value :
+		"[" & (For child : json_marshall_list(args : children) Concat child.json_value With ", ") & "]"
+}
+{{{Produce an object containing key-value pairs}}}
+object : Template {
+	{{{A frame of JSON elements (\{json.list}, \{json.object}, Boolean, Float, Integer, Null, or Str). Attribute names will be used as JSON object keys.}}}
+	args : Required
+
+	{{{The rendered JSON string.}}}
+	json_value :
+		"{" & (For child : json_marshall_list(args : args), arg_name : Name
+			Concat "\"" & json.escape(arg_name) & "\":" & child.json_value
+			With ", ") & "}"
+}
+json_marshall : util_lib.firstifier(base : json_marshall_list)
+json_marshall_list : Template {
+	args : Required
+	value : For arg : args, arg_name : Name Select arg_name : ((Lookup json_marshall_converters.TypeOf(arg) Here) {}).value
+	json_marshall_converters : Now {
+			str : Template { value : { json_value : "\"" & json.escape(arg) & "\"" } }
+			null : Template { value : { json_value : "null" } }
+			bool : Template { value : { json_value : If arg Then "true" Else "false" } }
+			int : float
+			float : Template { value : { json_value : arg To Str } }
+			frame : Template { value : arg }
+	}
+}

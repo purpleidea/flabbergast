@@ -1,0 +1,84 @@
+Introduction{{{Tools for generating Python object representations}}}
+
+utils_lib : From lib:utils
+
+str_transform : utils_lib.str_transform
+
+python : This
+{{{Escaping conventions used by normal Python strings}}}
+escape_transform_tmpl : Template {
+	backslash : str_transform.char_tmpl { char : "\\"  replacement : "\\\\" }
+	backspace : str_transform.char_tmpl { char : "\b"  replacement : "\\b" }
+	bell : str_transform.char_tmpl { char : "\a"  replacement : "\\a" }
+	formfeed : str_transform.char_tmpl { char : "\f"  replacement : "\\f" }
+	newline : str_transform.char_tmpl { char : "\n"  replacement : "\\n" }
+	null : str_transform.char_tmpl { char : "\x00"  replacement : "\\u0000" }
+	quote : str_transform.char_tmpl { char : "\""  replacement : "\\\"" }
+	return : str_transform.char_tmpl { char : "\r"  replacement : "\\r" }
+	tab : str_transform.char_tmpl { char : "\t"  replacement : "\\t" }
+	vertical_tab : str_transform.char_tmpl { char : "\v"  replacement : "\\v" }
+	nonprint : str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "\\x", utf8_0 ] }
+}
+
+{{{Escaping conventions used by multi-line Python strings}}}
+escape_multiline_transform_tmpl : Template escape_transform_tmpl {
+	# We replace newline with itself to keep it out of `nonprint`.
+	newline : str_transform.char_tmpl { char : "\n"  replacement : "\n" }
+}
+
+{{{Transform a list of strings using the multi-line escaping transformations.}}}
+escape_multiline_list : utils_lib.str_escape_builder(args : escape_multiline_transform_tmpl {}) Enforce Template
+
+{{{Transform a string using the multi-line escaping transformations.}}}
+escape_multiline : utils_lib.str_concatifier(base : escape_multiline_list, delimiter : "") Enforce Template
+
+{{{Transform a list of strings using default escaping transformations.}}}
+escape_list : utils_lib.str_escape_builder(args : escape_transform_tmpl {}) Enforce Template
+
+{{{Transform a string using the  default escaping transformations.}}}
+escape : utils_lib.str_concatifier(base : escape_list, delimiter : "") Enforce Template
+
+
+{{{Convenience template for generating Pystachio objects}}}
+object : Template {
+	{{{The Python object name.}}}
+	python_type : Required
+	{{{The attributes, which have been type checked, that will be assigned to the Python object.}}}
+	literal_attrs : []
+	{{{The attributes, which will be converted to escaped strings, that will be assigned to the Python object.}}}
+	string_attrs : []
+	{{{The attributes, which will be converted to multi-line escaped strings, that will be assigned to the Python object.}}}
+	multiline_string_attrs : []
+
+	{{{The present indentation level. At the top level, this should be overriden to the empty string.}}}
+	python_indent : Lookup python_indent In Container & "\t"
+
+	converted_literal_attrs :
+		For attr_name : Name, attr : literal_attrs
+			Where !(attr Is Null)
+			Select attr_name : If attr Is Frame Then attr.python_value Else attr To Str
+	converted_string_attrs :
+		For attr_name : Name, attr : string_attrs
+			Where !(attr Is Null)
+			Select attr_name : "\"" & python.escape(attr) & "\""
+	converted_multiline_string_attrs :
+		For attr_name : Name, attr : multiline_string_attrs
+			Where !(attr Is Null)
+			Select attr_name : "\"\"\"" & pythong.escape_multiline(attr) & "\"\"\""
+
+	python_attrs : For attr_name : Name, literal_attr : converted_literal_attrs, str_attr : converted_string_attrs, ml_str_attr : converted_multiline_string_attrs
+		Select attr_name : {
+				literal_count : If literal_attr Is Null Then 0 Else 1
+				str_count : If str_attr Is Null Then 0 Else 1
+				ml_str_count : If ml_str_attr Is Null Then 0 Else 1
+				attr : ((literal_attr ?? str_attr) ?? ml_str_attr) Enforce Str
+				value : "\n\(python_indent)\(attr_name) = \(attr),"
+				ok :
+					If literal_count Enforce Int + str_count Enforce Int + ml_str_count Enforce Int > 1
+						Then Error "Attribute \(attr_name) is multiply defined for Python object \(python_type)."
+						Else Null
+		}
+	{{{The rendered Python object}}}
+	python_value :
+		"\(python_type)(" & (For attr : python_attrs Concat attr.value With "") & "\n" & python_indent & ")"
+}

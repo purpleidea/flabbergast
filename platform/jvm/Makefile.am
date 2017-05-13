@@ -18,15 +18,11 @@ compilerdir = $(pkgdatadir)/compiler
 compiler_SCRIPTS = jvm-build-cache
 
 javadir = $(datadir)/java
-if BUILD_FATJAR
-java_DATA = flabbergast-$(VERSION).jar
-else
 java_DATA = \
 	flabbergast-runtime-$(VERSION).jar \
 	flabbergast-compiler-$(VERSION).jar \
+	flabbergast-stdlib-$(VERSION).jar \
 	$(NULL)
-endif
-java_DATA += flabbergast-stdlib-$(VERSION).jar
 
 JAVA_RUNTIME_DEPS = \
 	$(JANSI_JAR) \
@@ -36,6 +32,7 @@ JAVA_RUNTIME_DEPS = \
 
 JAVA_COMPILER_DEPS = \
 	$(ASM_JAR) \
+	$(ASM_COMMONS_JAR) \
 	$(COMMONS_CLI_JAR) \
 	$(NULL)
 
@@ -55,8 +52,8 @@ AM_JAR_LOG_FLAGS = "$(TESTING_CLASSPATH)"
 TESTING_CLASSPATH = $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) $(BUILDDIR)/flabbergast-stdlib-$(VERSION).jar $(BUILD_COMPILER_JAR))
 
 RUNTIME_INPUTS = $(wildcard runtime/flabbergast/*.java runtime/flabbergast/*/*.java)
-COMPILER_INPUTS = $(wildcard compiler/flabbergast/*.java)
-STDLIB_INPUTS = $(find ../../stdlib/ -name '*.o_0' -o -name '*.jo_0')
+COMPILER_INPUTS = $(wildcard compiler/flabbergast/*.java compiler/flabbergast/*/*.java)
+STDLIB_INPUTS = $(shell find ../../stdlib/ -name '*.o_0' -o -name '*.jo_0')
 TESTING_INPUTS = $(wildcard testing/flabbergast/*.java)
 
 SPACE = $(NULL) $(NULL)
@@ -66,53 +63,9 @@ flabbergast-$(VERSION).jar: $(RUNTIME_INPUTS) $(COMPILER_INPUTS) compiler-jvm.a
 	rm -rf .build
 	mkdir .build
 	cd .build && for each in $(sort $(JAVA_RUNTIME_DEPS) $(JAVA_COMPILER_DEPS)); do $(JAR) xf $$each; done
-	rm -rf compiler-generated
-	mkdir -p compiler-generated/flabbergast && cd compiler-generated/flabbergast && $(AR) x ../../compiler-jvm.a
-	CLASSPATH=$(METAINF_JAR) $(JAVAC) -g -encoding UTF-8 -cp .build -sourcepath runtime:compiler:compiler-generated  -d .build $(RUNTIME_INPUTS) $(COMPILER_INPUTS)
-	$(JAR) cf "flabbergast-${VERSION}.jar" -C .build .
-	rm -rf .build
-else
-flabbergast-runtime-$(VERSION).jar flabbergast-runtime-$(VERSION)-sources.jar flabbergast-runtime-$(VERSION)-javadoc.jar: runtime.manifest $(RUNTIME_INPUTS)
-	CLASSPATH=$(subst $(SPACE),:,$(METAINF_JAR) $(JAVA_RUNTIME_DEPS)) ./jarc runtime $(VERSION)
-
-flabbergast-compiler-$(VERSION).jar flabbergast-compiler-$(VERSION)-sources.jar flabbergast-compiler-$(VERSION)-javadoc.jar: compiler.manifest $(COMPILER_INPUTS) flabbergast-runtime-$(VERSION).jar compiler-jvm.a
-	rm -rf compiler-generated
-	mkdir -p compiler-generated/flabbergast && cd compiler-generated/flabbergast && $(AR) x ../../compiler-jvm.a
-	CLASSPATH=$(subst $(SPACE),:,$(METAINF_JAR) $(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) flabbergast-runtime-$(VERSION).jar) ./jarc compiler $(VERSION) compiler-generated
-endif
-
-flabbergast-stdlib-$(VERSION).jar flabbergast-stdlib-$(VERSION)-sources.jar flabbergast-stdlib-$(VERSION)-javadoc.jar: stdlib.manifest $(STDLIB_INPUTS) $(COMPILER_JAR)
-	rm -rf .build
-	mkdir .build
-	rsync -a --include '**.o_0' --include '**.jo_0' --include '**/' --exclude '*' ../../stdlib/ .build
-	$(JAR) cfm flabbergast-stdlib-$(VERSION)-sources.jar stdlib.manifest -C .build .
-	cd .build && $(JAVA) -cp $(subst $(SPACE),:,$(JAVA_COMPILER_DEPS) $(JAVA_RUNTIME_DEPS) $(BUILD_COMPILER_JAR)) flabbergast.MainBuildCache -P
-	find .build -type f -a -not -name '*.class' -exec rm {} \;
-	$(JAR) cfm flabbergast-stdlib-$(VERSION).jar stdlib.manifest -C .build .
-	rm -rf .build
-	$(JAR) cf flabbergast-stdlib-$(VERSION)-javadoc.jar -C stdlib-javadoc .
-
-flabbergast-testing-$(VERSION).jar flabbergast-testing-$(VERSION)-sources.jar flabbergast-testing-$(VERSION)-javadoc.jar: testing.manifest $(TESTING_INPUTS) $(COMPILER_JAR) flabbergast-stdlib-$(VERSION).jar
-	CLASSPATH=$(TESTING_CLASSPATH) ./jarc testing $(VERSION)
-
-runtime.manifest: Makefile
-	@echo "Manifest-Version: 1.0" > $@
-	@echo "Class-Path: $(JAVA_RUNTIME_DEPS)" >> $@
-	@echo "Created-By: $(VERSION) (The Flabbergast Project)" >> $@
-
-compiler.manifest: Makefile
-	@echo "Manifest-Version: 1.0" > $@
-	@echo "Class-Path: $(javadir)/flabbergast-runtime-$(VERSION).jar $(JAVA_COMPILER_DEPS)" >> $@
-	@echo "Created-By: $(VERSION) (The Flabbergast Project)" >> $@
-
-stdlib.manifest: Makefile
-	@echo "Manifest-Version: 1.0" > $@
-	@echo "Created-By: $(VERSION) (The Flabbergast Project)" >> $@
-
-testing.manifest: Makefile
-	@echo "Manifest-Version: 1.0" > $@
-	@echo "Main-Class: flabbergast.TestHarness" >> $@
-	@echo "Created-By: $(VERSION) (The Flabbergast Project)" >> $@
+	rm -rf fat-generated
+	./unar compiler-jvm.a fat-generated/flabbergast/compiler
+	./unar db-jvm.a fat-generated/flabbergast/db
 
 jvm-build-cache: Makefile
 	@echo '#!/bin/sh' > $@

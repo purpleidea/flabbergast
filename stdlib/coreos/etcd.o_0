@@ -1,0 +1,85 @@
+Introduction{{{Access an etcd key-value store.}}}
+
+{{{Get values from the key-value store and instantiate the results as \{etcd.key_value_tmpl}.}}}
+retrieve : Template From native:coreos/etcd.get {
+	{{{The keys (or key prefixes) to retrieve, as a binary blob or string which will be converted to a UTF-8 byte sequence.}}}
+	args : Required
+	{{{The etcd instance to connect to.}}}
+	etcd_connection : Used
+	{{{The arguments provided are prefixes rather than full key names.}}}
+	is_prefix : False
+	{{{Limit the number of retrieved results. Must be integer or null.}}}
+	limit : Null
+	{{{The sort order of the results. Should be one of \{ordering}}}}
+	order : Null
+	{{{Limit retrieval by revision number. Must be integer or null.}}}
+	revision : Null
+	{{{The field to sort the results by. Should be one of \{field}.}}}
+	sort_by : Null
+	{{{Stop retrieval when a particular key is reached. Must be a blob or string to stop at, or null for no limit.}}}
+	stop_at : Null
+}
+
+{{{Get current alarms for the store and instantiate them as \{etcd.alarm_tmpl}.}}}
+alarms : Template From native:coreos/etcd.alarms {
+	{{{The etcd instance to connect to.}}}
+	etcd_connection : Used
+}
+
+{{{Get current members of the store and instantiate the results as \{etcd.member_tmpl}.}}}
+members : Template From native:coreos/etcd.members {
+	{{{The etcd instance to connect to.}}}
+	etcd_connection : Used
+}
+
+{{{The sort order of the results.}}}
+ordering : {
+	none : From native:coreos/etcd.ordering.none
+	ascending : From native:coreos/etcd.ordering.ascend
+	descending : From native:coreos/etcd.ordering.descend
+}
+
+{{{The field on which the results are sorted.}}}
+field : {
+	key : From native:coreos/etcd.field.key
+	version : From native:coreos/etcd.field.version
+	created : From native:coreos/etcd.field.create
+	modified : From native:coreos/etcd.field.mod
+	value : From native:coreos/etcd.field.value
+}
+
+{{{The templates for results.}}}
+etcd : {
+	{{{A template to use as the base for the discovered alarms.}}}
+	alarm_tmpl : Template {
+		{{{The integer ID of the member that is in an alarm state.}}}
+		member_id : Used
+		{{{The type of the alarm. One of:  none, nospace (quota is exhausted), unrecognized.}}}
+		type : Used
+	}
+	{{{A template to use as the base for the discovered key-value pairs.}}}
+	key_value_tmpl : Template {
+		{{{The bytes that define the key in this key-value pair.}}}
+		key : Used
+		{{{The bytes that define the value in this key-value pair.}}}
+		value : Used
+		{{{The revision number when this key-value pair was created.}}}
+		created : Used
+		{{{The revision number when this key-value pair was modified.}}}
+		modified : Used
+		{{{The version number of this key-value pair.}}}
+		version : Used
+	}
+	{{{A template to use as the base for the discovered members.}}}
+	member_tmpl : Template {
+		{{{The integer ID of the member that is in an alarm state.}}}
+		member_id : Used
+		{{{The name of the member.}}}
+		name : Used
+		{{{A list of the peer URIs associated with this member.}}}
+		peer_uris : Used
+		{{{A list of the client URIs associated with this member.}}}
+		client_uris : Used
+	}
+
+}

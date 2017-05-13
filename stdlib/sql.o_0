@@ -4,13 +4,10 @@ utils_lib : From lib:utils
 {{{Query an SQL database and produce a frame containing a frame for each row.
 
 The names of the columns, which must be valid Flabbergast identifiers, will be
-the attribute names in each “row” frame. The special column name
-\Mono{ATTRNAME} will become the attribute name of the “row” frame in the
-containing frame, otherwise, the “row” frames will be numbered. A column name
-can be prefixed by \Mono{$} to allow lookups. In this case, the column value,
-which must be a string, is treated as a lookup, which may contain periods, and
-evaluated with contextual lookup semantics.}}}
-retrieve : Template From interop:sql/query {
+the attribute names in each “row” frame. If the column name is empty it will
+become the attribute name of the “row” frame in the containing frame,
+otherwise, the “row” frames will be numbered.}}}
+retrieve : Template From native:sql.query {
 	{{{A connection from a \Mono{From sql:} import}}}
 	connection : Required
 	{{{A string containing the implementation-specific SQL statement.}}}
@@ -28,8 +25,6 @@ queryifier : Template {
 	value : Template base {
 		{{{A frame of expressions or columns to be included in the resulting table.}}}
 		columns : Required
-		{{{A frame of expressions or columns containing strings that will be looked up and the results included in the resulting table.}}}
-		lookup_columns : {}
 		{{{A collection of expressions (or columns) that must be true to include a
 		row in the results.}}}
 		where : Template {}
@@ -65,32 +60,38 @@ queryifier : Template {
 			For table_tmpl : user_defined_tables {}, name : Name
 				Select name : table_tmpl {}
 
-		{{{A list of tables, inferred from \{columns} and \{lookup_columns}, to be included in this
+		{{{A list of tables, inferred from \{columns}, to be included in this
 		query.}}}
 		tables :
-			For x : columns Append lookup_columns Append exp_group
+			For x : columns Append exp_group
 				Reduce
 					For t : x.sql_tables, a : acc, name : Name Select name : (t ?? a) Enforce Str
 				With acc : {}
 
 		{{{Generate the \Mono{FROM} clause.}}}
 		from_clause :
-			For t : tables, pos : Ordinal
-				Reduce (If pos > 1 Then acc & ", " Else "") & t
-				With acc : Null
+			For t : tables Concat t With ", "
 		{{{Generate the columns in the \Mono{SELECT}.}}}
 		column_clause :
-			For col : columns, lcol : lookup_columns, name : Name, pos : Ordinal
-				Reduce (If pos > 1 Then acc & ", " Else "") & (col ?? lcol).sql_expr & " AS " & provider.symbol_start Enforce Str & (If col Is Null Then "$" Else If lcol Is Null Then "" Else Error name & " is both a column and a lookup column.") & name & provider.symbol_end Enforce Str
-				With acc : Null
+			For col : columns, name : Name, pos : Ordinal
+				Concat col.sql_expr & " AS " & provider.symbol_start Enforce Str & provider.escape_symbol(name) & provider.symbol_end Enforce Str
+				With ", "
+		column_parameters :
+			For col : columns
+				Reduce acc Append col.sql_parameters
+				With acc : []
 		{{{Generate the \Mono{WHERE} clause, if any.}}}
 		where_clause :
 			For clause : exp_where, position : Ordinal
 				Reduce (If position > 1 Then acc & " AND " Else " WHERE ") & clause.sql_expr
 				With acc : ""
+		where_parameters :
+			For clause : exp_where, position : Ordinal
+				Reduce acc Append clause.sql_parameters
+				With acc : []
 		sql_aggregate_context : Null
 		sql_non_aggregate_result_cols :
-			For x : columns Append lookup_columns Append exp_where
+			For x : columns Append exp_where
 				Reduce For acc_cols : acc, x_cols : x.sql_non_aggregate_columns, name : Name Select name : acc_cols ?? x_cols.sql_expr
 				With acc : {}
 		sql_group_cols :
@@ -98,27 +99,33 @@ queryifier : Template {
 				Reduce For acc_cols : acc, x_cols : x.sql_non_aggregate_columns, name : Name Select name : acc_cols ?? x_cols.sql_expr
 				With acc : {}
 		sql_results_contain_aggregate :
-			For x : columns Append lookup_columns Append exp_where
+			For x : columns Append exp_where
 				Reduce For a : acc, s : x.sql_aggregated_tables, n : Name Select n : (a ?? s)
 				With acc : {}
 
 		ungrouped_aggregate_cols :
-			For group : sql_group_cols, result : sql_non_aggregate_result_cols
+			(For group : sql_group_cols, result : sql_non_aggregate_result_cols
 					Where group Is Null
-					Reduce acc & " " & result
-					With acc : ""
+					Concat result
+					With " ") ?? ""
 
 		group_clause :
-			If (For s : sql_results_contain_aggregate Reduce True With acc : False) && Length (ungrouped_aggregate_cols Enforce Str) > 0
+			If (For s : sql_results_contain_aggregate Count) > 0 && Length (ungrouped_aggregate_cols Enforce Str) > 0
 				Then Error ("The following columns are not grouped:" & ungrouped_aggregate_cols)
 				Else
 					(For clause : exp_group, position : Ordinal
 						Reduce (If position > 1 Then acc & ", " Else " GROUP BY ") & clause.sql_expr
 						With acc : "")
+		group_parameters :
+					For clause : exp_group
+						Reduce acc Append clause.sql_parameters
+						With acc : []
 		{{{Generate the total query.}}}
 		sql_query :
 			If column_clause Is Null Then Error "No columns specified in query."
 			Else "SELECT " & column_clause Enforce Str & (If from_clause Is Null Then provider.null_from Else " FROM " & from_clause Enforce Str) & where_clause Enforce Str & group_clause Enforce Str
+		{{{A positional list of parameters. These are useful if generating queries with \Mono{?} that need matching information to fill in.}}}
+		sql_parameters : column_parameters Append where_parameters Append group_parameters
 	}
 }
 
@@ -162,12 +169,13 @@ offline_table_tmpl : Template {
 		{{{The type of the column. If not specified, it is assumed to be a string.}}}
 		sql_type : sql_types.str
 
-		sql_tables : Now utils_lib.frame(sql_from, name : Id)
+		sql_tables : Now { Attribute(Id) : Now This }
 		sql_column : column_name
 
 		sql_expr : sql_from Enforce Str & "." & provider.symbol_start Enforce Str & column_name Enforce Str & provider.symbol_end Enforce Str
-		sql_non_aggregate_columns : utils_lib.frame(This, name : Id)
+		sql_non_aggregate_columns : { Attribute(Id) : Now This }
 		sql_aggregated_tables : {}
+		sql_parameters : []
 	}
 
 	known_columns : columns {}
@@ -180,27 +188,28 @@ alias_table_tmpl : Template {
 	backing : Required
 	aliasable_table : False
 	sql_from : If backing.aliasable_table Then backing.sql_from Enforce Str & " AS " & name Else Error "Cannot create alias \(name). The backing table is not aliasable."
-	known_columns : Let this_table : utils_lib.frame(sql_from, name : Id) In
+	known_columns : Let this_table : { Attribute(Id) : sql_from } In
 		For backing_column : backing.known_columns, col_name : Name Select col_name : provider.expr.base_expr_tmpl {
 				sql_expr : name & "." & sql_column
 				sql_column : backing_column.sql_column
 				sql_type : backing_column.sql_type
 				sql_tables : this_table
-				sql_non_aggregate_columns : utils_lib.frame(This, name : Id)
+				sql_non_aggregate_columns : { Attribute(Id) : Now This }
 				sql_aggregated_tables : {}
+				sql_parameters : []
 		}
 }
 
 
 {{{Convert a value into a SQL expression if possible.}}}
-sql_marshall : utils_lib.str_concatifier(base : sql_marshall_list, delimiter : "")
+sql_marshall : utils_lib.str_concatifier(base : sql_marshall_list, delimiter : "") Enforce Template
 
 {{{Convert a list of Flabbergast items to an SQL expression.}}}
 sql_marshall_list : Template {
 	provider : Required
 	value :
 		For arg : args, arg_name : Name
-		Select arg_name : (TypeOf arg With sql_marshall_converters {}).value
+		Select arg_name : ((Lookup sql_marshall_converters.TypeOf(arg) Here) {}).value
 }
 
 sql_marshall_converters : {
@@ -233,6 +242,7 @@ sql_marshall_converters : {
 				sql_type : sql_types.int
 			}
 		}
+	lookup_handler : Template { value : Error "Cannot convert lookup handler to SQL." }
 	null : Template { value :  Null }
 	template : Template { value : Error "Cannot convert template to SQL." }
 	str :
@@ -283,9 +293,10 @@ sql_literal_table_tmpl : Template {
 					Then Error "Column “\(name)” in literal table does not have consistent type."
 					Else column_tmpl { sql_expr : provider.symbol_start Enforce Str & table_name Enforce Str & provider.symbol_end Enforce Str & "." & provider.symbol_start Enforce Str & name & provider.symbol_end Enforce Str  sql_type : type }
 	column_tmpl : Template {
-		sql_tables : Now utils_lib.frame(sql_from, name : Id)
-		sql_non_aggregate_columns : utils_lib.frame(This, name : Id)
+		sql_tables : Now { Attribute(Id) : Now This }
+		sql_non_aggregate_columns : { Attribute(Id) : Now This }
 		sql_aggregated_tables : {}
+		sql_parameters : []
 	}
 	aliasable_table : False
 	sql_from : (provider.generate_literal_from {}).value
@@ -300,59 +311,47 @@ sql_arith_ops : {
 }
 
 {{{All the rules for arithemtic operations in SQL.}}}
-sql_aritmetic_tmpl : Template {
-	ii : {
-		ops : sql_arith_ops.add.id B| sql_arith_ops.sub.id B| sql_arith_ops.mul.id B| sql_arith_ops.div.id B| sql_arith_ops.mod.id
-		left_type : sql_types.int.id
-		right_type : sql_types.int.id
-		result_type : sql_types.int
-		render : Template {
-			value : "(" & specials.l.sql_expr Enforce Str & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ")"
+sql_arithmetic_rules : {
+	Attribute(sql_types.float.id B| sql_types.int.id) : {
+		Attribute(sql_types.float.id B| sql_types.int.id) : {
+			Attribute(sql_arith_ops.add.id B| sql_arith_ops.sub.id B| sql_arith_ops.mul.id B| sql_arith_ops.div.id) : Template {
+				result_type : synthetic_sql_type { coerce : specials.l.sql_type.coerce B& specials.r.sql_type.coerce }
+				value : "(" & specials.l.sql_expr Enforce Str & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ")"
+			}
+			Attribute(sql_arith_ops.mod.id) : Template {
+				result_type : Now sql_types.int
+				value : "(" & specials.l.sql_expr Enforce Str & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ")"
+			}
 		}
 	}
-	nn : {
-		ops : sql_arith_ops.add.id B| sql_arith_ops.sub.id B| sql_arith_ops.mul.id B| sql_arith_ops.div.id
-		left_type : sql_types.int.id B| sql_types.float.id
-		right_type : sql_types.int.id B| sql_types.float.id
-		result_type : sql_types.float
-		render : Template {
-			value : "(" & specials.l.sql_expr Enforce Str & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ")"
+	Attribute(sql_types.timestamp.id) : {
+		Attribute(sql_types.interval.id) : {
+			Attribute(sql_arith_ops.add.id B| sql_arith_ops.sub.id) : Template {
+				result_type : Now sql_types.timestamp
+				value : "(" & specials.l.sql_expr Enforce Str & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ")"
+			}
+		}
+		Attribute(sql_types.timestamp.id) : {
+			Attribute(sql_types.timestamp.id) : {
+				Attribute(sql_arith_ops.sub.id): Template {
+					result_type : Now sql_types.interval
+					value : "(" & specials.l.sql_expr Enforce Str & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ")"
+				}
+			}
 		}
 	}
-	tv : {
-		ops : sql_arith_ops.add.id B| sql_arith_ops.sub.id
-		left_type : sql_types.timestamp.id
-		right_type : sql_types.interval.id
-		result_type : sql_types.timestamp
-		render : Template {
-			value : "(" & specials.l.sql_expr Enforce Str & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ")"
+	Attribute(sql_types.interval.id) : {
+		Attribute(sql_types.int.id) : {
+			Attribute(sql_arith_ops.mul.id) : Template {
+				result_type : Now sql_types.interval
+				value : "(" & specials.l.sql_expr Enforce Str & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ")"
+			}
 		}
-	}
-	tt : {
-		ops : sql_arith_ops.sub.id
-		left_type : sql_types.timestamp.id
-		right_type : sql_types.timestamp.id
-		result_type : sql_types.interval
-		render : Template {
-			value : "(" & specials.l.sql_expr Enforce Str & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ")"
-		}
-	}
-	vi : {
-		ops : sql_arith_ops.mul.id
-		left_type : sql_types.interval.id B| sql_types.int.id
-		right_type : sql_types.interval.id B| sql_types.int.id
-		result_type : sql_types.interval
-		render : Template {
-			value : "(" & specials.l.sql_expr Enforce Str & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ")"
-		}
-	}
-	vv : {
-		ops : sql_arith_ops.add.id B| sql_arith_ops.sub.id
-		left_type : sql_types.interval.id
-		right_type : sql_types.interval.id
-		result_type : sql_types.interval
-		render : Template {
-			value : "(" & specials.l.sql_expr Enforce Str & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ")"
+		Attribute(sql_types.interval.id) : {
+			Attribute(sql_arith_ops.add.id B| sql_arith_ops.sub.id) : Template {
+				result_type : Now sql_types.interval
+				value : "(" & specials.l.sql_expr Enforce Str & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ")"
+			}
 		}
 	}
 }
@@ -457,29 +456,29 @@ sql_provider : Template {
 	column_discovery : Template retrieve {
 		table : Required
 		sql_row_tmpl : Template expr.base_expr_tmpl {
-			sql_tables : Now utils_lib.frame(table.sql_from, name : GenerateId table)
-			sql_non_aggregate_columns : utils_lib.frame(This, name : Id)
+			sql_tables : Now { Attribute(GenerateId table) : table.sql_from }
+			sql_non_aggregate_columns : { Attribute(Id) : Now This }
 			sql_aggregated_tables : {}
+			sql_parameters : []
 		}
 	}
 	cast_name : casting_name {}
 	{{{List of arithmetic rules this database supports.}}}
-	arithmetic_rules : sql_aritmetic_tmpl {}
+	sql_arithmetic_rules : Used
 	{{{Generate a FROM clause containing literal data.}}}
 	generate_literal_from : Template {
 		column_list :
+			symbol_start Enforce Str & table_name Enforce Str & symbol_end Enforce Str & "("
 			(For name : Name, type : column_types, pos : Ordinal
-				Reduce acc Enforce Str & (If pos > 1 Then "," Else "") & symbol_start Enforce Str & name & symbol_end Enforce Str
-				With acc : symbol_start Enforce Str & table_name Enforce Str & symbol_end Enforce Str & "(") & ")"
+				Concat symbol_start Enforce Str & name & symbol_end Enforce Str With ",")
+			& ")"
 		value_list :
 			For row : marshalled_rows, pos : Ordinal
-				Reduce
-					acc &
-					(If pos > 1 Then "," Else "") &
-					(For column : row, type : column_types, name : Name, pos : Ordinal
-						Reduce acc & (If pos > 1 Then "," Else "") & (column?.sql_expr ?? "NULL")
-						With acc : "(") & ")"
-				With acc : ""
+				Concat
+					"("
+						& (For column : row Concat (column?.sql_expr ?? "NULL") With ",")
+						& ")"
+				With ","
 		value : "(VALUES " & value_list Enforce Str & ") AS " & column_list
 	}
 	{{{The kinds of expressions that maybe used in an SQL query.}}}
@@ -497,11 +496,25 @@ sql_provider : Template {
 			sql_non_aggregate_columns : Required
 			{{{All the tables that are under aggegation in this expression.}}}
 			sql_aggregated_tables : Required
+			{{{All of the parameter values from the arguments of this expression.}}}
+			sql_parameters : Required
+		}
+		{{{A template to allow creating expressions from existing expressions.}}}
+		proxy_tmpl : Template base_expr_tmpl {
+			{{{The real expression to use.}}}
+			inner : Required
+			sql_expr : inner.sql_expr
+			sql_type : inner.sql_type
+			sql_tables : inner.sql_tables
+			sql_non_aggregate_columns : innert.sql_non_aggregate_columns
+			sql_aggregated_tables : inner.sql_aggregated_tables
+			sql_parameters : inner.sql_parameters
 		}
 		base_const_tmpl : Template base_expr_tmpl {
 			sql_tables : {}
 			sql_non_aggregate_columns : {}
 			sql_aggregated_tables : {}
+			sql_parameters : []
 		}
 		base_unary_expr_tmpl : Template base_expr_tmpl {
 			{{{The argument to cast.}}}
@@ -509,6 +522,7 @@ sql_provider : Template {
 			sql_tables : arg.sql_tables
 			sql_non_aggregate_columns : arg.sql_non_aggregate_columns
 			sql_aggregated_tables : arg.sql_aggregated_tables
+			sql_parameters : arg.sql_parameters
 		}
 		base_unary_function_tmpl : Template base_unary_expr_tmpl {
 			sql_arg_type : Required
@@ -524,24 +538,13 @@ sql_provider : Template {
 			sql_tables : For left_table : specials.l.sql_tables, right_table : specials.r.sql_tables, name : Name Select name : left_table ?? right_table
 			sql_non_aggregate_columns : For left_cols : specials.l.sql_non_aggregate_columns, right_cols : specials.r.sql_non_aggregate_columns, name : Name Select name : (left_cols ?? right_cols)
 			sql_aggregated_tables : For l : specials.l.sql_aggregated_tables, r : specials.r.sql_aggregated_tables, n : Name Select n : (l ?? r)
+			sql_parameters : specials.l.sql_parameters Append specials.r.sql_parameters
 		}
 		base_arith_expr_tmpl : Template base_binary_expr_tmpl {
 			sql_rule :
-				For arith : provider.arithmetic_rules
-					Where
-						arith.ops B& sql_op.id != 0 &&
-						specials.l.sql_type.coerce B& arith.left_type != 0 &&
-						specials.r.sql_type.coerce B& arith.right_type != 0
-					Reduce acc ?? arith
-					With acc : Null
-			sql_type :
-				If sql_rule Is Null
-					Then sql_types.int # The type doesn't matter. We're just trying to avoid absurd errors.
-					Else sql_rule.result_type
-			sql_expr :
-				If sql_rule Is Null
-					Then Error "Cannot find arithmetic for \(specials.l.sql_type.name) \(sql_op.symbol) \(specials.r.sql_type.name)."
-					Else (sql_rule.render{}).value
+				(Lookup arithmetic_rules.Attribute(specials.l.sql_type.coerce).Attribute(specials.r.sql_type.coerce).Attribute(sql_op.id) Using (From lib:lookup).flag_contains_handler In provider) {}
+			sql_type : sql_rule.result_type
+			sql_expr : sql_rule.value
 		}
 		base_args_tmpl : Template base_expr_tmpl {
 			sql_args : sql_marshall_list(args : args, provider : provider)
@@ -549,6 +552,10 @@ sql_provider : Template {
 				For arg : sql_args
 					Reduce For table : arg.sql_tables, acc_table : acc, name : Name Select name : table ?? acc_table
 					With acc : {}
+			sql_parameters :
+				For arg : sql_args
+					Reduce acc Append arg.sql_parameters
+					With acc : []
 		}
 		base_infix_expr_tmpl : Template base_args_tmpl {
 			{{{The expressions to be put together.}}}
@@ -562,9 +569,7 @@ sql_provider : Template {
 
 			sql_expr :
 				If sql_type.coerce == 0 Then Error "Cannot compute type." Else
-					(For arg : sql_args, pos : Ordinal
-					Reduce acc & (If pos > 1 Then sql_op Else "") & arg.sql_expr
-					With acc : "(") & ")"
+					"(" & (For arg : sql_args Concat arg.sql_expr With sql_op) & ")"
 
 			sql_type : synthetic_sql_type {
 				coerce :
@@ -635,6 +640,7 @@ sql_provider : Template {
 			}
 			sql_non_aggregate_columns : {}
 			sql_aggregated_tables : arg.sql_tables
+			sql_parameters : arg.sql_parameters
 		}
 		base_variadic_func_tmpl : Template base_args_tmpl {
 			{{{The expressions aggregate.}}}
@@ -648,9 +654,7 @@ sql_provider : Template {
 
 			sql_expr :
 				If sql_type.coerce == 0 Then Error "Bad type in \(sql_func)." Else
-				(For arg : sql_args, pos : Ordinal
-					Reduce acc & (If pos > 1 Then ", " Else "") & arg.sql_expr
-					With acc : sql_func & "(") & ")"
+				sql_func & "(" & (For arg : sql_args Concat arg.sql_expr With ", ") & ")"
 
 			sql_type : synthetic_sql_type {
 				coerce :
@@ -682,6 +686,18 @@ sql_provider : Template {
 					Then Error "Incompatible types in comparison."
 					Else "(\(specials.l.sql_expr) \(sql_op) \(specials.r.sql_expr))"
 		}
+		arithmetic_fold : Template {
+			first : Required
+			terms : Required
+			specials : sql_marshall_list(args : { f : first }, provider : provider)
+			result : For term : terms Reduce term { left : Drop } With left : specials.f
+			sql_expr : result.sql_expr
+			sql_type : result.sql_type
+			sql_tables : result.sql_tables
+			sql_non_aggregate_columns : result.sql_non_aggregate_columns
+			sql_aggregated_tables : result.sql_aggregated_tables
+			sql_parameters : result.sql_parameters
+		}
 
 		add : Template base_arith_expr_tmpl {
 			sql_op : sql_arith_ops.add
@@ -712,6 +728,7 @@ sql_provider : Template {
 				sql_tables : For test_table : when_specials.t.sql_tables, input_table : when_specials.r.sql_tables, name : Name Select name : test_table ?? input_table
 				sql_non_aggregate_columns : For test_cols : when_specials.t.sql_non_aggregate_columns, result_cols : when_specials.r.sql_non_aggregate_columns, name : Name Select name : test_cols ?? result_cols
 				sql_aggregated_tables : For l : when_specials.t.sql_aggregated_tables, r : when_specials.r.sql_aggregated_tables, n : Name Select n : (l ?? r)
+				sql_parameters : when_specials.t.sql_parameters Append when_specials.r.sql_parameters
 			}
 
 			specials : Template {
@@ -720,11 +737,10 @@ sql_provider : Template {
 			sql_specials : sql_marshall_list(args : specials {}, provider : provider)
 
 			sql_expr :
-				(For case : cases
-					Reduce acc & case.sql_when
-					With acc : "(CASE " & input_expr) &
-				(If sql_specials.e Is Null Then "" Else " ELSE " & sql_specials.e.sql_expr) &
-				" END)"
+				"(CASE " & input_expr
+					& (For case : cases Concat case.sql_when With "")
+					& (If sql_specials.e Is Null Then "" Else " ELSE " & sql_specials.e.sql_expr)
+					& " END)"
 
 			sql_type : synthetic_sql_type {
 				coerce :
@@ -752,6 +768,10 @@ sql_provider : Template {
 				Where !(x Is Null)
 				Reduce (For c : x.sql_aggregated_tables, a : acc, n : Name Select x : (a ?? c))
 				With acc : {}
+			sql_parameters : For x : cases Append sql_specials
+				Where !(x Is Null)
+				Reduce acc Append x.sql_parameters
+				With acc : []
 		}
 		case_bool : Template base_case_tmpl {
 			sql_allowed_test_type : sql_types.bool
@@ -785,11 +805,9 @@ sql_provider : Template {
 				Else sql_types.bool
 
 			haystack_expr :
-				For h : haystack_marshalled, pos : Ordinal
-					Reduce
-						(If pos > 1 Then acc Enforce Str & "," Else "") &
-						h.sql_expr Enforce Str
-					With acc : Null
+				For h : haystack_marshalled
+					Concat h.sql_expr Enforce Str
+					With ","
 			sql_expr :
 				If haystack_expr Is Null
 					Then "FALSE"
@@ -805,6 +823,10 @@ sql_provider : Template {
 				For arg : haystack_marshalled
 					Reduce For a : acc, r : arg.sql_aggregated_tables, n : Name Select n : (a ?? r)
 					With acc : {}
+			sql_parameters :
+				For arg : haystack_marshalled
+					Reduce acc Append arg.sql_parameters
+					With acc : specials.n.sql_parameters
 
 		}
 		contains_subquery : Template subquery {
@@ -972,6 +994,7 @@ sql_provider : Template {
 			sql_aggregated_tables : For s : specials
 				Reduce For a : acc, s : s.sql_aggregated_tables, n : Name Select n : (a ?? s)
 				With acc : {}
+			sql_parameters : specials.i.sql_parameters Append specials.s.sql_parameters Append specials.l.sql_parameters
 		}
 		sub : Template base_arith_expr_tmpl {
 			sql_op : sql_arith_ops.sub
@@ -986,10 +1009,8 @@ sql_provider : Template {
 			{{{A collection of expressions (or columns) by which to group the
 			resulting columns.}}}
 			group_by : Template {}
-			{{{A collection of tables that will be captured from outside the
-			subquery. Any tables not listed here will be included in the \Mono{FROM}
-			clause.}}}
-			shared_tables : Template {}
+			{{{A collection of tables that will be in the \Mono{FROM} clause. Any tables not listed here will be included in the outside query.}}}
+			from : Template {}
 
 			# WHERE clause
 			exp_where : where {}
@@ -997,6 +1018,7 @@ sql_provider : Template {
 				For clause : exp_where, position : Ordinal
 					Reduce (If position > 1 Then acc & " AND " Else " WHERE ") & clause.sql_expr
 					With acc : ""
+			where_parameters : For clause : exp_where Reduce acc Append clause.sql_parameters With acc : []
 
 			# All the tables used by the query
 			total_tables :
@@ -1005,23 +1027,21 @@ sql_provider : Template {
 						For x_table : x.sql_tables, acc_table : acc, name : Name
 							Select name : (x_table ?? acc_table) Enforce Str
 					With acc : {}
-			# The tables that should be shared with the superquery
-			requested_tables : For t : shared_tables {} Select GenerateId t : t
+			# The tables that should be in the FROM of  the superquery
+			exp_from : from {}
+			requested_tables : For t : exp_from Select GenerateId t : t
 			# The tables that the subquery actually uses from the superquery
 			sql_tables :
 				For t : total_tables, r : requested_tables, n : Name
-					Where !(t Is Null) && !(r Is Null)
+					Where !(t Is Null) && (r Is Null)
 					Select n : t
 			# The tables that are used by the subquery and should remain bound
 			tables :
 				For t : total_tables, r : requested_tables, n : Name
-					Where !(t Is Null) && (r Is Null)
+					Where !(t Is Null) && !(r Is Null)
 					Select n : t
 
-			from_clause :
-				For t : tables, pos : Ordinal
-					Reduce (If pos > 1 Then acc & ", " Else "") & t
-					With acc : Null
+			from_clause : For t : tables Concat t With ", "
 			# Total aggregated tables
 			total_aggregated_tables :
 				For x : [result] Append exp_where Append exp_group
@@ -1032,7 +1052,7 @@ sql_provider : Template {
 
 			sql_aggregated_tables :
 				For t : total_aggregated_tables, r : requested_tables, n : Name
-					Where !(t Is Null) && !(r Is Null)
+					Where !(t Is Null) && (r Is Null)
 					Select n : t
 
 			# GROUP BY clause
@@ -1060,21 +1080,23 @@ sql_provider : Template {
 					Select n : g
 
 			ungrouped_aggregate_cols :
-				For group : sql_group_cols, result : sql_non_aggregate_result_cols
+				(For group : sql_group_cols, result : sql_non_aggregate_result_cols
 					Where group Is Null
-					Reduce acc & " " & result
-					With acc : ""
+					Reduce result
+					With " ") ?? ""
 
 			group_clause :
-				If (For s : sql_results_contain_aggregate Reduce True With acc : False) && Length (ungrouped_aggregate_cols Enforce Str) > 0
+				If (For s : sql_results_contain_aggregate Count) > 0 && Length (ungrouped_aggregate_cols Enforce Str) > 0
 					Then Error ("The following columns are not grouped:" & ungrouped_aggregate_cols)
 					Else
 						(For clause : exp_group, position : Ordinal
 							Reduce (If position > 1 Then acc & ", " Else " GROUP BY ") & clause.sql_expr
 							With acc : "")
+			group_parameters : For clause : exp_group Reduce acc Append clause.sql_parameters With acc : []
 			# Query itself
 			sql_type : result.sql_type
 			sql_expr : "(SELECT \(result.sql_expr Enforce Str)" & (If from_clause Is Null Then provider.null_from Else " FROM " & from_clause Enforce Str) & where_clause Enforce Str & group_clause Enforce Str & ")"
+			sql_parameters : result.sql_parameters Append where_parameters Append group_parameters
 		}
 		sum : Template base_aggregate_func_tmpl {
 			sql_func : "SUM"
@@ -1095,28 +1117,27 @@ sql_provider : Template {
 		}
 	}
 	escape : utils_lib.str_concatifier(base : utils_lib.str_escape_builder(args : transformations), delimiter : "")
+	escape_symbol : utils_lib.str_concatifier(base : utils_lib.str_escape_builder(args : symbol_transformations), delimiter : "")
 }
 sql_provider_with_union_literal : Template sql_provider {
 	generate_literal_from : Template {
 		value_list :
 			For row : marshalled_rows, pos : Ordinal
-				Reduce
-					acc &
-					(If pos > 1 Then " UNION " Else "") &
-					(For column : row, type : column_types, name : Name, pos : Ordinal
-						Reduce acc & (If pos > 1 Then "," Else "") & (column?.sql_expr ?? "NULL") & " AS " & symbol_start Enforce Str & name & symbol_end Enforce Str
-						With acc : "SELECT ") & provider.null_from Enforce Str
-				With acc : ""
+				Concat
+					"SELECT " & (For column : row, type : column_types, name : Name
+						Concat (column?.sql_expr ?? "NULL") & " AS " & symbol_start Enforce Str & name & symbol_end Enforce Str
+						With ",") & provider.null_from Enforce Str
+				With " UNION "
 		value : "(" & value_list Enforce Str & ") AS " & symbol_start Enforce Str & table_name Enforce Str & symbol_end Enforce Str
 	}
 }
 sql_providers : {
 	mssql : Template sql_provider {
 		table_discovery +: {
-			sql_query : "SELECT QUOTENAME(table_schema) + '.' + QUOTENAME(table_name) AS sql_from, QUOTENAME(table_schema, '''') as table_schema, QUOTENAME(table_name, '''') AS table_name, LOWER(LEFT(table_schema, 1)) + RIGHT(table_schema, LEN(table_schema) - 1) + '_' + table_name AS [ATTRNAME] FROM information_schema.tables WHERE UPPER(table_schema) NOT IN ('SYS', 'INFORMATION_SCHEMA') AND PATINDEX('%[^a-zA-Z0-9_]%', table_schema) = 0 AND PATINDEX('%[^a-zA-Z0-9_]%', table_name) = 0;"
+			sql_query : "SELECT QUOTENAME(table_schema) + '.' + QUOTENAME(table_name) AS sql_from, QUOTENAME(table_schema, '''') as table_schema, QUOTENAME(table_name, '''') AS table_name, LOWER(LEFT(table_schema, 1)) + RIGHT(table_schema, LEN(table_schema) - 1) + '_' + table_name AS [] FROM information_schema.tables WHERE UPPER(table_schema) NOT IN ('SYS', 'INFORMATION_SCHEMA') AND PATINDEX('%[^a-zA-Z0-9_]%', table_schema) = 0 AND PATINDEX('%[^a-zA-Z0-9_]%', table_name) = 0;"
 		}
 		column_discovery +: {
-			sql_query : "SELECT QUOTENAME(table_schema) + '.' + QUOTENAME(table_name) + '.' + QUOTENAME(column_name) AS sql_expr, QUOTENAME(column_name) AS sql_column, LOWER(LEFT(column_name, 1)) + RIGHT(column_name, LEN(column_name) - 1) AS [ATTRNAME], data_type, 'sql_types.' + data_xlate.lookup AS [$sql_type] FROM information_schema.columns, (VALUES ('bigint', 'int'), ('decimal', 'int'), ('int', 'int'), ('money', 'int'), ('numeric', 'int'), ('smallint', 'int'), ('smallmoney', 'int'), ('tinyint', 'int'), ('bit', 'bool'), ('float', 'float'), ('real', 'float'), ('%char%', 'str'), ('%text%', 'str'), ('%binary%', 'str'), ('%datetime%', 'timestamp'), ('time%', 'timestamp'), ('date', 'timestamp'), ('%binary', 'blob')) AS data_xlate (name, lookup) WHERE table_schema = \(table.table_schema) AND table_name = \(table.table_name) AND data_type LIKE data_xlate.name AND PATINDEX('%[^a-zA-Z0-9_]%', column_name) = 0;"
+			sql_query : "SELECT QUOTENAME(table_schema) + '.' + QUOTENAME(table_name) + '.' + QUOTENAME(column_name) AS sql_expr, QUOTENAME(column_name) AS sql_column, LOWER(LEFT(column_name, 1)) + RIGHT(column_name, LEN(column_name) - 1) AS [], data_type, 'sql_types.' + data_xlate.lookup AS [$sql_type] FROM information_schema.columns, (VALUES ('bigint', 'int'), ('decimal', 'int'), ('int', 'int'), ('money', 'int'), ('numeric', 'int'), ('smallint', 'int'), ('smallmoney', 'int'), ('tinyint', 'int'), ('bit', 'bool'), ('float', 'float'), ('real', 'float'), ('%char%', 'str'), ('%text%', 'str'), ('%binary%', 'str'), ('%datetime%', 'timestamp'), ('time%', 'timestamp'), ('date', 'timestamp'), ('%binary', 'blob')) AS data_xlate (name, lookup) WHERE table_schema = \(table.table_schema) AND table_name = \(table.table_name) AND data_type LIKE data_xlate.name AND PATINDEX('%[^a-zA-Z0-9_]%', column_name) = 0;"
 		}
 		quote_start : "('"
 		quote_end : "')"
@@ -1129,6 +1150,9 @@ sql_providers : {
 			quote : utils_lib.str_transform.char_tmpl { char : "'"  replacement : "''" }
 			nonprint : utils_lib.str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "' + NCHAR(", utf8_0, ") + '" ] }
 			unicode : utils_lib.str_transform.range_tmpl { start : "\u0100"  end : "\uFFFF"  replacement : [ "' + NCHAR(", utf32, ") + '" ]  mode : mode_decimal }
+		}
+		symbol_transformations : {
+			quote : utils_lib.str_transform.char_tmpl { char : "]"  replacement : "]]" }
 		}
 		allowed_expressions +: {
 			extract +: {
@@ -1163,23 +1187,19 @@ sql_providers : {
 				sql_expr : "DATEADD(SECOND,\(arg.epoch To Int), CONVERT(VARCHAR(30), '1970-01-01 00:00:00 Z') AS 'DATETIMEOFFSET')"
 			}
 		}
-		arithmetic_rules : sql_aritmetic_tmpl {
-			tv : {
-				ops : sql_arith_ops.add.id B| sql_arith_ops.sub.id
-				left_type : sql_types.timestamp.id
-				right_type : sql_types.interval.id
-				result_type : sql_types.timestamp
-				render : Template {
-					value : "DATEADD('second', 0 " & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ", " & specials.l.sql_expr Enforce Str & ")"
+		sql_arithmetic_rules : {
+			Attribute(sql_types.timestamp.id) : {
+				Attribute(sql_types.interval.id) : {
+					Attribute(sql_arith_ops.add.id B| sql_arith_ops.sub.id) : Template {
+						result_type : Now sql_types.timestamp
+						value : "DATEADD('second', 0 " & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ", " & specials.l.sql_expr Enforce Str & ")"
+					}
 				}
-			}
-			tt : {
-				ops : sql_arith_ops.sub.id
-				left_type : sql_types.timestamp.id
-				right_type : sql_types.timestamp.id
-				result_type : sql_types.interval
-				render : Template {
-					value : "DATEDIFF('second', " & specials.l.sql_expr Enforce Str & ", " & specials.r.sql_expr Enforce Str & ")"
+				Attribute(sql_types.timestamp.id) : {
+					Attribute(sql_arith_ops.sub.id) : Template {
+						result_type : Now sql_types.interval
+						value : "DATEDIFF('second', " & specials.l.sql_expr Enforce Str & ", " & specials.r.sql_expr Enforce Str & ")"
+					}
 				}
 			}
 		}
@@ -1201,6 +1221,9 @@ sql_providers : {
 			double_quote : utils_lib.str_transform.char_tmpl { char : "\""  replacement : "\\\"" }
 			tab : utils_lib.str_transform.char_tmpl { char : "\t"  replacement : "\\t" }
 			eof : utils_lib.str_transform.char_tmpl { char : "\x1A"  replacement : "\\Z" }
+		}
+		symbol_transformations : {
+			quote : utils_lib.str_transform.char_tmpl { char : "`"  replacement : "``" }
 		}
 		symbol_start : "`"
 		symbol_end : "`"
@@ -1227,23 +1250,19 @@ sql_providers : {
 				sql_expr : "TIMESTAMPADD(SECOND, \(arg.epoch To Int) + TIME_TO_SEC(TIMEDIFF(TIMESTAMP '1970-01-01 00:00:00',CONVERT_TZ('1970-01-01 00:00:00',@@session.time_zone,'+00:00'))),TIMESTAMP '1970-01-01 00:00:00')"
 			}
 		}
-		arithmetic_rules : sql_aritmetic_tmpl {
-			tt : {
-				ops : sql_arith_ops.sub.id
-				left_type : sql_types.timestamp.id
-				right_type : sql_types.timestamp.id
-				result_type : sql_types.interval
-				render : Template {
-					value : "TIMESTAMPDIFF(SECOND, " & specials.l.sql_expr Enforce Str & ", " & specials.r.sql_expr Enforce Str & ")"
+		sql_arithmetic_rules : {
+			Attribute(sql_types.timestamp.id) : {
+				Attribute(sql_types.timestamp.id) : {
+					Attribute(sql_arith_ops.sub.id) : Template {
+						result_type : Now sql_types.interval
+						value : "TIMESTAMPDIFF(SECOND, " & specials.l.sql_expr Enforce Str & ", " & specials.r.sql_expr Enforce Str & ")"
+					}
 				}
-			}
-			tv : {
-				ops : sql_arith_ops.add.id B| sql_arith_ops.sub.id
-				left_type : sql_types.timestamp.id
-				right_type : sql_types.interval.id
-				result_type : sql_types.timestamp
-				render : Template {
-					value : "TIMESTAMPADD(SECOND, " & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ", " & specials.l.sql_expr & ")"
+				Attribute(sql_types.interval.id) : {
+					Attribute(sql_arith_ops.add.id B| sql_arith_ops.sub.id) : Template {
+						result_type : Now sql_types.timestamp
+						value : "TIMESTAMPADD(SECOND, " & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ", " & specials.l.sql_expr & ")"
+					}
 				}
 			}
 		}
@@ -1257,6 +1276,9 @@ sql_providers : {
 		}
 		transformations : {
 			quote : utils_lib.str_transform.char_tmpl { char : "'"  replacement : "''" }
+		}
+		symbol_transformations : {
+			quote : utils_lib.str_transform.char_tmpl { char : "\""  replacement : "\"\"" }
 		}
 		null_from : " FROM DUAL"
 		allowed_expressions +: {
@@ -1303,6 +1325,9 @@ sql_providers : {
 			tab : utils_lib.str_transform.char_tmpl { char : "\t"  replacement : "\\t" }
 			nonprint : utils_lib.str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "\\x", utf8_0 ] }
 			unicode : utils_lib.str_transform.range_tmpl { start : "\u0100"  end : "\uFFFF"  replacement : [ "\\U", utf32]  mode : mode_hex_upper }
+		}
+		symbol_transformations : {
+			quote : utils_lib.str_transform.char_tmpl { char : "\""  replacement : "\"\"" }
 		}
 		allowed_expressions +: {
 			interval_const +: {
@@ -1364,6 +1389,9 @@ sql_providers : {
 			# surrogate pairs.
 			quote : utils_lib.str_transform.char_tmpl { char : "'"  replacement : "''" }
 		}
+		symbol_transformations : {
+			quote : utils_lib.str_transform.char_tmpl { char : "\""  replacement : "\"\"" }
+		}
 		allowed_expressions +: {
 			interval_const +: {
 				sql_expr : time Enforce Int
@@ -1393,23 +1421,19 @@ sql_providers : {
 				sql_expr : "DATETIME(\(arg.epoch To Int), 'unixepoch', 'utc')"
 			}
 		}
-		arithmetic_rules : sql_aritmetic_tmpl {
-			tt : {
-				ops : sql_arith_ops.sub.id
-				left_type : sql_types.timestamp.id
-				right_type : sql_types.timestamp.id
-				result_type : sql_types.interval
-				render : Template {
-					value : "(STRFTIME('%s', " & specials.l.sql_expr Enforce Str & ") - STRFTIME('%s', " & specials.r.sql_expr Enforce Str & "))"
+		sql_arithmetic_rules : {
+			Attribute(sql_types.timestamp.id) : {
+				Attribute(sql_types.timestamp.id) : {
+					Attribute(sql_arith_ops.sub.id) : Template {
+						result_type : Now sql_types.interval
+						value : "(STRFTIME('%s', " & specials.l.sql_expr Enforce Str & ") - STRFTIME('%s', " & specials.r.sql_expr Enforce Str & "))"
+					}
 				}
-			}
-			tv : {
-				ops : sql_arith_ops.add.id B| sql_arith_ops.sub.id
-				left_type : sql_types.timestamp.id
-				right_type : sql_types.interval.id
-				result_type : sql_types.timestamp
-				render : Template {
-					value : "DATETIME(" & specials.l.sql_expr & ", '" & sql_op.symbol Enforce Str & "' || " & specials.r.sql_expr Enforce Str & " || ' seconds')"
+				Attribute(sql_types.interval.id) : {
+					Attribute(sql_arith_ops.add.id B| sql_arith_ops.sub.id) : Template {
+						result_type : Now sql_types.timestamp
+						value : "DATETIME(" & specials.l.sql_expr & ", '" & sql_op.symbol Enforce Str & "' || " & specials.r.sql_expr Enforce Str & " || ' seconds')"
+					}
 				}
 			}
 		}

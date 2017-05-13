@@ -5,23 +5,12 @@ set -exu
 # Prepare the source tree for building
 ./autogen.sh
 
-# See if we can bootstrap using the installed Flabbergast
-# TODO: This should be empty, but the current Flabbergast package can't deal with that
-export FLABBERGAST_PATH=/nonexistent
-./bootstrap bootstrap.tar.bz2
-
-BOOT_TARGET="www/bootstrap/bootstrap-$(git rev-parse HEAD).tar.bz2"
-mkdir -p "$(dirname ${BOOT_TARGET})"
-cp bootstrap.tar.bz2 "${BOOT_TARGET}"
-
-sed -i '1 s/^\xef\xbb\xbf//' platform/jvm/compiler-jvm.a
 ./configure
 make clean all check
 
-# See if we can boostrap using the built JVM Flabbergast
-make -C platform/jvm testingclasspath.sh
+cd platform/jvm
 . platform/jvm/testingclasspath.sh
 FLABBERGAST="java flabbergast.MainPrinter" ./bootstrap genclean all
 make clean all check
-
+mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent install sonar:sonar
 $TRAVIS_PULL_REQUEST || ./mkwww

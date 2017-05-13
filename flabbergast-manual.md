@@ -26,7 +26,7 @@ This won't do anything useful, but we have a basic skeleton. Let's create a job.
         job { # Create a job. This could also be `aurora_lib.job`, but we have nothing else named `job`.
           instances : 1 # One replica of this job should run.
           job_name : "hello_world" # Provide a friendly job name.
-          task : aurora_lib.task { processes : [] } # Each job needs a task.
+          run_task : aurora_lib.task { processes : [] } # Each job needs a task.
         }
       ]
     }
@@ -47,7 +47,7 @@ This will create one job, but this file won't work. A job needs a `cluster` and 
         job {
           instances : 1
           job_name : "hello_world"
-          task : aurora_lib.task { processes : [] }
+          run_task : aurora_lib.task { processes : [] }
         }
       ]
     }
@@ -68,7 +68,7 @@ I chose to put `cluster`, `role`, and `resources` resources at the top-level. Th
           role : "jrhacker"
           instances : 1
           job_name : "hello_world"
-          task : aurora_lib.task { processes : [] }
+          run_task : aurora_lib.task { processes : [] }
         }
       ]
     }
@@ -94,7 +94,7 @@ I can even split the `resources` frame.
           cluster : "cluster1"
           instances : 1
           job_name : "hello_world"
-          task : aurora_lib.task { processes : [] }
+          run_task : aurora_lib.task { processes : [] }
         }
       ]
     }
@@ -117,7 +117,7 @@ Our task is pretty useless, let's give it some processes:
         job {
           instances : 1
           job_name : "hello_world"
-          task : aurora_lib.task {
+          run_task : aurora_lib.task {
             processes : { # Define the processes ⋯
               hw : process { # ⋯ using process template
                 process_name : "hw" # The name of this process will be `hw`
@@ -145,7 +145,7 @@ This will give us a basic configuration. Aurora allows multiple replicas/instanc
         job {
           instances : 1
           job_name : "hello_world"
-          task : aurora_lib.task {
+          run_task : aurora_lib.task {
             processes : {
               hw : process {
                 process_name : "hw"
@@ -173,7 +173,7 @@ Aurora also allows setting multiple ports for incoming connections.
         job {
           instances : 1
           job_name : "hello_world"
-          task : aurora_lib.task {
+          run_task : aurora_lib.task {
             port_defs +: {
               xmpp : Null # Creating a new null entry, defines a new port. By setting it to a string, it becomes an alias.
             }
@@ -466,7 +466,7 @@ In Flabbergast, all keywords start with a capital letter and identifiers start w
 
 ### Types and Constants
 
-Flabbergast has a small handful of types: integers (`Int`), floating-pointer numbers (`Float`), Boolean values (`Bool`), text strings (`Str`), binary strings (`Bin`), frames (`Frame`) and templates (`Template`).
+Flabbergast has a small handful of types: integers (`Int`), floating-pointer numbers (`Float`), Boolean values (`Bool`), text strings (`Str`), binary blobs (`Bin`), lookup handlers (`LookupHandler`), frames (`Frame`) and templates (`Template`).
 
 Integral and floating-point number literals are specified in the familiar way. They can also be manipulated using the typical `+`, `-`, `*`, `/` and `%` operators. In mixed-type expressions, integers are automatically promoted to floating-point numbers. They also can be compared using `==`, `!=`, `<`, `<=`, `>`, `>=`, and `<=>`. The `<=>` operator will be familiar to Perl and Ruby programmers: it compares two values and returns -1, 0, or 1 if the left operand is less than, equal to, or greater than the right operand, respectively. There is also a unary negation operator `-`. A few floating-point exceptional tests are provided: `Is Finite` and `Is NaN` to check if the number is finite or not-a-number in the IEEE sense, respectively. Also, the floating-point constants `NaN`, `Infinity`, `FloatMax`, and `FloatMin`, and integer constants `IntMax` and `IntMin` are provided.
 
@@ -475,17 +475,19 @@ The Boolean constants provided are `True` and `False` that can be manipulated us
 String literals, delimited by double quotation marks, can cover multiple lines and can contain embedded escape sequences and expressions. The escape sequences supported include the single-character escapes supported by C, triplets of octal digits, pairs of hexadecimal digits, and Unicode-friendly quadruplets of hexadecimal digits. Embedded expressions start with `\(`, followed by an expression, and terminated with a matching `)`; the expression must return a string, or a type that can be coerced to a string. Strings can also be joined together with the `&` operator. For example, `a`, `b` and `c` will have the same value and the reference to `x`, which is an integer, is converted to a string:
 
     x : 3
-    a : "foo=\(x)\n"
-    b : "foo=\(x)
+    a : "foo=\(x)\x0D"
+    b : "foo=\(x)\n"
+    c : "foo=\(x)
     "
-    c : "foo=" & x & "\n"
+    d : "foo=" & x & "\n"
+    c : "\u2665\U0001F60A"
 
-Sometimes, attribute names are provided as strings and, since not all strings are valid attribute names, it is useful to have a way to create a string that is a valid attribute name. By placing `$` before a valid identifier, a string with the identifier name will be created.
+Sometimes, it is useful to have a way to create a string that is an attribute name. By placing `$` before a valid identifier, a string with the identifier name will be created.
 
     x : $foo == "foo" # True
     y : $5 # Error
 
-Binary strings are handled mostly by library functions as a way to pass binary data around, including conversion to and from text strings, hashing, and database interaction.
+Binary blobs are handled mostly by library functions as a way to pass binary data around, including conversion to and from text strings, hashing, and database interaction.
 
 Frames are collections of attributes. Literal frames are specified starting with `{`, followed by a list of attributes, and terminated with a matching `}`. Each attribute is a name, followed by `:`, and an expression. Frames inherit the context of the frame in which they are defined. Templates look similar except that they are preceded by the `Template` keyword. There are two important differences between templates and frames: frames are immutable while templates can be manipulated and variable resolution can look inside frames, but not inside of templates. Neither can be coerced to strings. More details on frames are provided later.
 
@@ -530,7 +532,7 @@ The values of the following frames all have the same values in the same order:
 
 ### Flow Control
 
-A conditional expression is provided: `If`, an expression which returns a Boolean value, `Then`, an expression to be returned if the first expression is true, `Else`, an expression to be returned if the first expression is false. This expression, very importantly, impacts contextual lookup. Free identifiers in the `Then` and `Else` expressions are not resolved unless that expression is selected. This means that they can contain invalid references without causing an error. For instance, `y` will be 5 and no error will occur even though `z` is not defined.
+A conditional expression is provided: `If`, an expression which returns a Boolean value, `Then`, an expression to be returned if the first expression is true, `Else`, an expression to be returned if the first expression is false. This expression, very importantly, impacts contextual lookup. Lookups in the `Then` and `Else` expressions are not resolved unless that expression is selected. This means that they can contain invalid references without causing an error. For instance, `y` will be 5 and no error will occur even though `z` is not defined.
 
     x : 5
     y : If x < 10 Then x Else z
@@ -561,13 +563,20 @@ A period-separated list of identifiers can also be appended to any expression, i
        x : 3
        y : This.x + 1 # Yields 4
      }
-     b : (a).x # Yields 4
+     b : (a).y # Yields 4
 
 The keyword `Container` access the parent of the frame (either the current frame if it is used alone, or the preceding frame if used in an contextual or direct lookup).
 
      a : 1
      b : {
        a : Container.a # Yields 1
+     }
+
+There is also a `This` keyword that returns the current frame. This is less useful than `Container` for lookups, but can be useful in constructing self-referential structures.
+
+     a : This
+     b : {
+       owner : a
      }
 
 The `Lookup` expression performs a remote contextual lookup; `Lookup a.b.c In x` will start contextual lookup for `a.b.c` starting from the context of the frame `y`, rather than the current context.
@@ -681,6 +690,29 @@ Presently, there are two ordering operations: `Reverse` reverses the order of th
 
 Note that if two values have the same sort key, in the example -1 and 1 do, then the order between them is not guaranteed. Any type that can be compared using the `<=>` can be used as a sort key, but all must be of the same type.
 
+If there is a collection of nested frames, they can concatenated using `Flatten`, which works like `For`, so it can do the same zip, if required.
+
+    For a :
+      [
+        { text : "Hi"  recipients : [ "Andre", "Gráinne", "Kyle" ] },
+        { text : "Something else"  recipients : [ "Andre", "Kyle" ] }
+      ]
+      Flatten recipient : a.recipients
+      Select recipient & ": " & a.text
+    # Yields [ "Andre: Hi", "Gráinne: Hi", "Kyle: Hi", "Andre: Something else", "Kyle: Something else" ]
+
+Things can also be recomposed using `Group By`:
+
+    For a :
+      [
+        { text : "Hi"  recipients : [ "Andre", "Gráinne", "Kyle" ] },
+        { text : "Something else"  recipients : [ "Andre", "Kyle" ] }
+      ]
+      Flatten recipient : a.recipients
+      Group messages : a.text By recipient
+      Select { r : recipient  m : messages }
+    # Yields [ { r : "Andre" m : [ "Hi", "Something else" ] }, { r : "Gráinne" m : [ "Hi" ] }, { r : "Kyle"  m : [ "Hi", "Something else" ] } ]
+
 ### Frames and Templates
 
 In addition to literal frames, frames can be instantiated from templates. The instantiation can also amended a template by adding, removing, or overriding attributes. The syntax for instantiation is an expression yielding a template followed by `{`, an optional list of amendments, and terminated by `}`. Templates are created in a syntax similar to literal frames: `Template {`, a list of attributes, followed by `}`.
@@ -732,6 +764,30 @@ In this example, `c` would be circular evaluation when using normal evaluation s
 
 For Java programmers, there's an analogy for the two modes of template instantiation: anonymous inner classes. Creating a template is a bit like instantiating an anonymous inner class. If that class has multiple methods, then template instantiation gives similar behaviour. If only one method is of interest, then it can be instantiated using function-like instantiation, much like lambda notation in Java 8.
 
+Attribute names are normally valid identifiers, but they can also be arbitrary strings or numbers. To do this, the left-hand side of an expression can be replaced with `Attribute`:
+
+     {
+        Attribute("NOT A VALID IDENTIFER!!!!") : 5
+        Attribute(z * 5) : z
+     }
+
+The name is evaluated in _the context of the parent_. That is:
+
+     a : {
+       Attribute(x) : 5
+       x : "foo"
+     }
+
+will fail because `Attribute(x)` is evaluated before `x` is available. The following will work:
+
+     a : {
+       Attribute(x) : 5 # results in bar : 5
+       x : "foo"
+     }
+     x : bar
+
+This means the `Attribute` works much like `Now`.
+
 ### Data Reshaping
 
 It's useful to remember how all the pieces of structured data manipulation in the language work. The following diagram shows the different formats of data and the syntax that navigates between them.
@@ -740,22 +796,76 @@ It's useful to remember how all the pieces of structured data manipulation in th
 
 Templates can be made from scratch or from existing templates. Frames can be made from scratch, by instantiating templates, the fricassée `Select` operations, or the `Append` expression. Scalar values can be distilled from frames using the fricassée `Reduce` operation. Scalar values can be manipulated a number of ways not shown in the diagram.
 
-### TypeOf Expression
-The `TypeOf` expression allows type-directed lookup. This operation gets the type of a value. Rather than return that value as a string or type type, it performs a lookup so that a user-defined value is returned.
+### Lookup Expression
+Lookups can be extended in several important ways:
 
-For instance, `TypeOf "x"` will perform a lookup for `str` and return whatever value that is. The name of the variable looked up is the same as the types but lower case.
+- the names being looked up
+- the method by which lookup is done (`LookupHandler`)
+- the context in which the lookup happens
 
-The expression takes an optional prefix specified using `With`: `TypeOf "x" With foo` would resolve to `foo.str`
+The lookup expression has corresponding parts:
 
-This allows the `TypeOf` expression to change the semantics as desired. For instance, here is a case where direct comparison is desired:
+> `Lookup` names [`Using` handler] context
+
+The hander is optional and if none is specified, contextual lookup is used.
+
+#### Context
+Every lookup is searching through an ordered collection of frames. There are three contexts possible:
+
+- `Here` -- this lookups in the current frame and all of its containers and the containers of its ancestors.
+- `In`_expr_ -- this performs lookup as if the lookup was initiated in another frame, provided by _expr_
+- `Within`_expr_ -- this performs lookup only in one frame, provided by _expr_; this excludes its containers
+
+A normal lookup, _e.g._, `x.y`, is evaluated in the `Here` context, _i.e._, `Lookup x.y Here`.
+
+For example, consider:
+
+    a : {
+      x : 3
+      y0 : x # Yields 3
+      z0 : q # Yields 5
+      y1 : Lookup x Here # Yields 3
+      z1 : Lookup q Here # Yields 5
+    }
+    q : 5
+    y2 : Lookup x In a # Yields 3
+    z2 : Lookup q In a # Yields 5
+    y3 : Lookup x Within a # Yields 3
+    z3 : Lookup q Within a # Error
+
+In this example, inside frame `a`, the lookups that produce `y1` and `z1` using the `Here` context match the normal lookups `y0` and `z0`. The lookups that define `y2` and `z2` also match `y0` and `z0`, respectively, because, although the lookup is initiated outside `a`, the `In a` context shifts them to the same context as `Here` for `y1` and `z1`. Finally, the lookups that produce `y3` and `z3` are somewhat different. `y3` produces the same value as `y0`, `y1`, and `y2` because `Within a` starts the lookup inside `a` and that frame contains an attribute `x`. However, `z3` fails because lookup must be contained inside `a`, and `a` does not contain an attribute `q`; the other lookups climbed out of `a` to its parent to find `q`, but `Within` does not permit this.
+
+#### Names
+Flabbergast permits frames to have attribute names which are not identifiers; any string or integer can be used as name using `Attribute(`_expr_`)` on the left-hand side of an attribute. Consequently, this same syntax can be used in a lookup:
+
+    Lookup Attribute("NOT A VALID IDENTIFER!!!") Here
+    Lookup Attribute(10 * x) Here
+
+These can also be mixed with normal identifiers:
+
+    Lookup foo.Attribute(10 * x) Here
+    Lookup Attribute(10 * x).value Here
+
+Sometimes, a variable number of identifiers are needed. In which case, the `Flatten` name can be used:
+
+    Lookup Flatten(["x", "y"]).value Here
+    Lookup foo.Flatten(x).value Here
+
+`Flatten` take a frame and uses the attribute values, which must be strings or integers, and uses them as the names for lookup.
+
+Finally `TypeOf` allows type-directed lookup. This operation gets the type of a value. Rather than return that value as a string or type type, it performs a lookup so that a user-defined value is returned.
+
+For instance, `Lookup TypeOf("x") Here` will perform a lookup for `str` and return whatever value that is. The name of the variable looked up is the same as the types but lower case.
+
+This allows the `TypeOf` to change the semantics as desired. For instance, here is a case where direct comparison is desired:
 
     type_id : { bin : 0  bool : 1  int : 2  float :  3  frame : 4  null : 5  str : 6  template : 7 }
-    are_x_and_y_the_same_type : TypeOf x With type_id == TypeOf y With type_id
+    are_x_and_y_the_same_type : Lookup type_id.TypeOf(x) == Lookup type_id.TypeOf(y)
 
 Suppose we want to know if a type can be converted to an SQL literal:
 
     has_sql_literal : { bin : True  bool : True  int : True float :  True  frame : False  null : True  str : True  template : False }
-    can_x_be_an_sql_literal : TypeOf has_sql_literal With x
+    can_x_be_an_sql_literal : Lookup has_sql_literal.TypeOf(x) Here
 
 We can even be craftier and convert a value by lookup:
 
@@ -769,10 +879,42 @@ We can even be craftier and convert a value by lookup:
       str :  Template { value : provider.quote_start & utils_lib.str_escape(input, transformations : provider.transformations) & provider.quote_end }
       template :  Template { value : Error "Cannot convert template to SQL." }
     }
-    value : (TypeOf x With create_sql_literal)(input : x)
+    value : (Lookup create_sql_literal.TypeOf(x) Here)(input : x)
 
 That is, use `TypeOf` to find a function-like template and then call it on the value.
 
+#### Lookup Handlers
+A lookup handler is algorithm by which lookup happens. Normally, the contextual lookup algorithm is used and this algorithm can be accessed using `Contextual`. The [`lib:lookup`](http://docs.flabbergast.org/master/doc-lookup.xml) library provides other lookup algorithms and methods to combine and create new algorithms.
+
+All lookups in Flabbergast work by creating a grid with all frames that the lookup can investigate, provided by the context, along the horizontal and all the names that are part of the lookup along the vertical. Lookup proceeds by trying to fill in the grid, filling each column top to bottom, working from first column to last column.
+
+For example, consider the following code:
+
+    b : {
+      a: {
+        x : { }
+      }
+    }
+    x : { y : 3 }
+    Lookup x.y In b.a
+
+This would create a table as follows. Each column is handled by an _exploration_ algorithm. If exploration reaches the bottom of a column, producing a value, then a _collection_ algorithm can receive that value and choose to provide a result value or trigger exploration of the next frame. The numbers indicate the order in which operations are called:
+
+|           | frame “b.a” | frame “b” | root frame |
+|-----------|-------------|-----------|------------|
+| `x`       | 1           | 3         | 4          |
+| `y`       | 2           |           | 5          |
+| Collector |             |           | 6          |
+
+The `lib:lookup` provides a number of useful lookup handlers for debugging and production use. Given a relevant lookup handler, it can be plugged into the lookup expression by the `Using` syntax:
+
+     Lookup x.y Using (From lib:lookup).existence_handler Here # Returns whether `x.y` can be found
+
+The exact behaviour of lookup will depend on the handler provided. For details, see the documentation for each handler. Since contextual lookup is the default, if the `Using` clause is omitted, it is as if `Contextual` was provided:
+
+    Lookup x.y Using Contextual Here
+
+In fact, `x.y` is really a short hand of the above.
 
 ### Miscellaneous
 
@@ -780,16 +922,17 @@ The `Let` expression allows binding a value to a new name. For example, `Let a :
 
 The `Append` operators concatenates two frames. The attribute names are the same as if a literal list had been used. This means that `{ a : 5 } Append [ 6 ]` will produce the same frame as `[ 5, 6 ]`.
 
-The `From` expression allows importing external content into the program. This does two jobs: allows accessing libraries and allows access information for the program being configured. The `From` keyword is always followed by a URI. The `lib:` URI is  used for the standard library. By convention, it is best to do all the importing at the start of a file:
+The `From` expression allows importing external content into the program. This does two jobs: allows accessing libraries and allows access information for the program being configured. The `From` keyword is always followed by a URI. The `lib:` URI is  used for libraries and searches the `FLABBERGAST_PATH` for libraries. By convention, it is best to do all the importing at the start of a file:
 
     foo_lib : From lib:foo
+    bar_baz_lib : From lib:bar/baz
 
 Presently, there are handlers for:
 
 * SQL databases (`sql:`)
 * local files (`file:` and `res:`)
 * FTP and HTTP URLs (`ftp:`, `ftps:`, `http:`, and `https:`)
-* VM-specific settings using `java.lang.System.getProperty` on the JVM and `System.Configuration.ConfigurationManager.AppSettings` (`settings:`)
+* VM-specific settings using `java.lang.System.getProperty` on the JVM (`settings:`)
 * environment variables (`env:`)
 * Flabbergast runtime information (`current:`)
 
@@ -800,6 +943,8 @@ Presently, there are handlers for:
     release_versions : sql_lib.retrieve { connection : release_db, sql_query : "SELECT version, artifact, checksum FROM release_info ORDER BY push_date WHERE version == '\(token)'" }
 
 Implementation-specific keywords start with `X`. They should not be used in most code, but are often present in libraries to support binding to the underlying platform.
+
+There are additional handlers available via plugins include EtcD, GraphQL, Kubernetes, S3, and Zookeeper. Consult the individual documentation for those plugins for use.
 
 ## Using the Language
 
@@ -1233,8 +1378,8 @@ The `str_escape` and corresponding `str_transform` templates allow escaping a st
 
 Currently, Flabbergast lacks a documentation generator, so the best information is the source comments.
 
-### Rendering (`lib:render`)
-This library converts frames in to other formats, including INI, JSON, Python, XML, and YAML. In short, the library provides templates such that a frame can be rendered to output formats. The exact semantics are different for each format, but, in general, the templates are composed into the desired structure providing the hierarchy and the library generates a string containing the output file. Escaping is handled automatically.
+### Rendering (`lib:render/*`)
+These libraries convert frames in to other formats, including INI, JSON, Python, XML, and YAML. In short, the library provides templates such that a frame can be rendered to output formats. The exact semantics are different for each format, but, in general, the templates are composed into the desired structure providing the hierarchy and the library generates a string containing the output file. Escaping is handled automatically.
 
 ### Mathematics (`lib:math`)
 The mathematics library contains all the usual functions for:
@@ -1245,6 +1390,9 @@ The mathematics library contains all the usual functions for:
  - constants: `natural`, `pi`, `tau`
 
 Much like `lib:utils`, there are `_list` variants of these. The trigonometric functions are a bit unique: by setting `angle_unit`, the units used for angles can be changed between degrees, gradians, radians, and turns; the default is radians.
+
+### Lookup Handlers (`lib:lookup`)
+This library provides a number of lookup handlers and additional functionality to combine them and produce new lookup handlers.
 
 ### Relational Database Access (`lib:sql` and `sql:`)
 Flabbergast provides access to SQL-like databases available through JDBC and ADO.NET providers. Fundamentally, this system exists in two parts: `lib:sql` provides mechanisms for composing queries and the `sql:` URIs connect to databases. When accessing a URI, for instance, `sql:sqlite:foo.sqlite`, Flabbergast scans the database metadata and provides that as a structure of frames. The `lib:sql` library can then be used to compose a query, checking that the query is valid given the format of the database, and converts the results to a list of matching rows. This format is easily ingested by `For Each`.
@@ -1280,76 +1428,13 @@ These read data from an external file and provide a `Bin` value containing the c
 ### HTTP Files (`http:`, `https:`)
 These read data from a web URL and provide a frame with two attributes: `data` containing the contents of the file, as a `Bin` value; `content_type` containing the content-type string provided by the server.
 
-### Parsing (`lib:parse`)
-A mirror to `lib:render`, this contains `parse_json`, which parses a string containing JSON and produces templates compatible with `lib:render`. It will produce a template of the form:
-
-     Template {
-       json : Used
-       json_root : <contents of file>
-     }
-
-The structure of the JSON file is preserved using template instantiations: `json.object`, `json.list`, and `json.scalar`. These mirror exactly the format in `lib:render`. This means a JSON file can be re-encoded using:
-
-     render_lib : From lib:render
-     parse_lib : From lib:parse
-     foo : parse_lib.parse_json(json_data) {
-        json : render_lib.json
-     }
-     value : foo.json_root.json_value
-
-It is reasonable to supply other templates to convert the JSON input to something else. For instance, these transform it in to Flabbergast objects, assuming all the names are Flabbergast-compatible:
-
-     foo : parse_lib.parse_json(json_data) {
-        json : {
-          list : Template {
-            value : children
-          }
-          scalar : Template {
-            value : arg
-          }
-          object : Template {
-            value : For child : children Select child.json_name : child.value
-          }
-        }
-     }
-     flabbergast_value : foo.json_root.value
-
-Due to contextual lookup, it is possible to define templates inside to change the behaviour at lower levels:
-
-     foo : parse_lib.parse_json(json_data) {
-        json : {
-          list : Template {
-            # If there is a list in attribute named “integers”, convert all the
-            # numbers in it to integers.
-            json :
-              If json_name == "integers"
-                Then {
-                  scalar : Template {
-                    json_value : arg To Int
-                } Else {}
-            json_value : children
-          }
-          scalar : Template {
-            json_value : arg
-          }
-          render_lib : From lib:render
-          object : Template {
-            # The tree under an attribute named “magic” will be converted back
-            # to JSON as a string; the rest to Flabbergast.
-            json : If json_name == "magic"
-              Then render_lib.json
-              Else Lookup json in Container
-            json_value : For child : children Select child.json_name : child.json_value
-          }
-        }
-     }
-     flabbergast_value : foo.json_root.json_value
-
 ### Apache Aurora (`lib:apache/aurora`)
 Configures jobs for running on the Apache Aurora framework, which managers long-running jobs on Mesos.
 
-### Archives (`lib:unix/ar`)
-Since Flabbergast only outputs a single value, it can be awkward to generate multiple files. To combat this, it supports creating `ar`-style archives, which are plain text. To do this, instantiate `archive_tmpl` with the `args` being a list of `file_tmpl`, each with `file_name` and `contents`. The resulting file can then be unpacked using the UNIX `ar` program.
+### Archives (`lib:unix/ar` and `lib:unix/zip`)
+Since Flabbergast only outputs a single value, it can be awkward to generate multiple files. To combat this, it supports creating `ar`-style archives, which are plain text and binary `ZIP` archives.
+
+To create an archive this, instantiate `archive_tmpl` with the `args` being a list of `file_tmpl`, each with `file_name` and `contents`. Both libraries use compatible interfaces. The resulting file from `lib:unix/ar` can then be unpacked using the UNIX `ar` program; the resulting file from `lib:zip` can be unpacked with `unzip`. Both implementations support POSIX permissions and user/group IDs. The `ar` format does not support directories.
 
 ### Permission Specifiers (`lib:unix/perm`)
 Helps generate UNIX-style file permissions and format them nicely.

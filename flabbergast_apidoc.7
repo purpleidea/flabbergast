@@ -12,7 +12,7 @@ The documentation for libraries is stored as an XML document named \fBdoc-\fInam
 
 The documents are mixed Flabbergast API, in the namespace \fBhttp://flabbergast.org/api\fR assigned to the prefix \fBo_0\fR, and XHTML, in the namespace \fBhttp://www.w3.org/1999/xhtml\fR assigned to the default prefix.
 
-The root element is \fBo_0:lib\fR which has the attribute \fBname\fR containing the library name (\fIe.g.\fR, \fBfoo/bar\fR). It may have a \fBgithub\fR attribute containing the URL to the GitHub URL for this file.
+The root element is \fBo_0:lib\fR which has the attribute \fBo_0:name\fR containing the library name (\fIe.g.\fR, \fBfoo/bar\fR). It may have a \fBgithub\fR attribute containing the URL to the GitHub URL for this file.
 
 The root element may contain a \fBo_0:description\fR element and one or more \fBo_0:attr\fB elements.
 
@@ -38,8 +38,8 @@ The line in the source file where the Flabbergast attribute finishes.
 endcol
 The column on the source line where the Flabbergast attribute finishes.
 .TP
-informative
-A Boolean value indicating whether the attribute will not appear in the output frame or template. This is only true for \fBUsed\fR and \fBDrop\fR attributes.
+flavour
+Whether the attribute is \fBd\fRefinition, \fBo\fRverride, \fBr\fRequired, or \fBu\fRsed, drop (\fBx\fR).
 
 The element contains a single, optional, \fBo_0:description\fR element, a number of \fBo_0:type\fR elements contain the name of a Flabbergast type, any number \fBo_0:use\fR elements, any number of \fBo_0:ref\fR elements,  and more \fBo_0:attribute\fR elements for its children. The type information is advisory and may be missing.
 
@@ -51,5 +51,4 @@ A reference element, \fBo_0:ref\fR indicates that another library is imported wi
 
 .SH SEE ALSO
 .BR flabbergast_language (7),
-.BR jflabbergast-docgen (7),
-.BR nflabbergast-docgen (7).
+.BR jflabbergast-docgen (7).

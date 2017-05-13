@@ -46,8 +46,9 @@ test_query : Template sql_lib.offline_query {
 			group_by +: {
 				a : column.xxx.aaa
 			}
-			shared_tables +: {
-				zzz : table.zzz
+			from +: {
+				xxx : table.xxx
+				yyy : table.yyy
 			}
 		}
 	}

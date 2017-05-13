@@ -1,4 +1,4 @@
-result : (From lib:render).uri.url {
+result : (From lib:render/uri).url {
 	schema : "foo"
 	host : "fé"
 	path : ["x", "y"]

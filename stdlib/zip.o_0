@@ -1,0 +1,51 @@
+Introduction{{{Templates for generating UNIX \Mono{ar} archives, which are conveniently text-only.}}}
+{{{A BSD \Mono{ar} style archive}}}
+archive_tmpl : Template (From native:zip.archive) {
+	{{{The collection of \{file_tmpl} files.}}}
+	args : Required
+	{{{The default user ID to create files.}}}
+	uid : 0
+	{{{The default group ID to create files.}}}
+	gid : 0
+	{{{The modification time, as a time or seconds since the epoch.}}}
+	mtime : time_lib.now.utc
+	{{{The user permission bits.}}}
+	user : perm_lib.rw
+	{{{The group permission bits.}}}
+	group : perm_lib.r
+	{{{The other permission bits.}}}
+	other : perm_lib.r
+}
+
+{{{A file in a compressed archive}}}
+file_tmpl : Template (From native:zip.file) {
+	{{{The file name.}}}
+	file_name : Required
+	{{{The file contents.}}}
+	contents : Required
+	uid : Used
+	gid : Used
+	mtime : Used
+	user : Used
+	group : Used
+	other : Used
+}
+
+{{{A symbolic link in a compressed archive.}}}
+symlink_tmpl : Template (From native:zip.symlink) {
+	{{{The file name.}}}
+	file_name : Required
+	{{{The target of the link.}}}
+	target : Required
+	value : Error "Symbolic links are not supported."
+	uid : Used
+	gid : Used
+	mtime : Used
+	user : Used
+	group : Used
+	other : Used
+}
+
+
+time_lib : From lib:time
+perm_lib : From lib:unix/perm

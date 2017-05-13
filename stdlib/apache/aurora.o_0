@@ -1,5 +1,5 @@
 Introduction{{{Apache Aurora framework configuration templates.}}}
-render_lib : From lib:render
+python : From lib:render/python
 utils_lib : From lib:utils
 
 environment : environments.devel
@@ -75,10 +75,10 @@ aurora_file : Template {
 	python_indent : "\t"
 	{{{The rendered Aurora file}}}
 	value :
-		(For job : jobs
+		"jobs = [\n" & (For job : jobs
 			Where !(job Is Null)
-			Reduce acc & python_indent & job.python_value & ",\n"
-			With acc : "jobs = [\n") & "\t]\n"
+			Concat python_indent & job.python_value
+			With  ",\n") & " ]\n"
 }
 
 {{{A collection of jobs. This is an indirection layer to make sharing configuration easier, it has no equivalent in Aurora.}}}
@@ -87,14 +87,14 @@ job_group : Template {
 	jobs : Required
 
 	python_value :
-		For job : jobs, pos : Ordinal
+		For job : jobs
 			Where !(job Is Null)
-			Reduce (If pos > 1 Then acc & ",\n" & python_indent Else "") & job.python_value
-			With acc : ""
+			Concat python_indent & job.python_value
+			With ",\n"
 }
 
 {{{An Aurora process, defining a binary to run inside a task.}}}
-process : Template render_lib.python.object {
+process : Template python.object {
 	{{{The process name will be made available from the attribute name.}}}
 	process_name : Used
 	{{{The command line, or any string of BASH commands to start the process.}}}
@@ -130,25 +130,24 @@ process : Template render_lib.python.object {
 	multiline_string_attrs : {
 		cmdline :
 			For part : command_line
-			Reduce
-				acc &
-				(If part Is Frame Then part.command_line_value Else utils_lib.str_replace(part, str : "{{", with : "{{&")) & "\\\n"
-			With acc : ""
+			Concat
+				If part Is Frame Then part.command_line_value Else utils_lib.str_replace(part, str : "{{", with : "{{&")
+			With  "\\\n"
 	}
 	ordering :
 		(For p : requires
 			Let other_process : (Lookup process_name In p) Enforce Str
 			Order By other_process
-			Reduce "\(acc)\(python_indent)Constraint(order=['\(other_process)', '\(process_name)']),\n"
-			With acc : "") &
+			Concat "\(python_indent)Constraint(order=['\(other_process)', '\(process_name)']),\n"
+			With "") &
 		(For p : blocks
 			Let other_process : (Lookup process_name In p) Enforce Str
 			Order By other_process
-			Reduce "\(acc)\(python_indent)Constraint(order=['\(process_name)', '\(other_process)']),\n"
-			With acc : "")
+			Concat "\(python_indent)Constraint(order=['\(process_name)', '\(other_process)']),\n"
+			With "")
 }
 {{{An Aurora task, container of multiple processes.}}}
-task : Template render_lib.python.object {
+task : Template python.object {
 	{{{A frame containing a frame for each process that runs inside this task.}}}
 	processes : Required
 	{{{The maximum number of times a task can fail before being marked.}}}
@@ -201,31 +200,28 @@ task : Template render_lib.python.object {
 		max_failures : max_task_failures
 		finalization_wait : Lookup finalization_wait In Container
 		constraints :
-			(For process : Container.processes
-				Reduce acc & process.ordering
-				With acc : "[\n") & python_indent & "]"
+			"[" & (For process : Container.processes
+				Concat process.ordering
+				With "\n") & python_indent & "]"
 		resources :
-			(For resource : resource_info, resource_name : Name
+			"Resource(" & (For resource : resource_info, resource_name : Name
 				Where !(resource Is Null)
-				Reduce
-					acc & resource_name & " = " &
-					(If resource Is Float Then resource Else resource Enforce Int) & ", "
-				With acc : "Resource(") & ")"
+				Concat
+					resource_name & " = " &
+					(If resource Is Float Then resource Else resource Enforce Int)
+				With  ", ") & ")"
 		processes :
-			(For process : Container.processes, pos : Ordinal
-				Reduce
-					acc &
-					(If pos > 1 Then ",\n\(python_indent)\t" Else "") &
-					process.python_value
-				With acc : "[") & "]"
+			"[" & (For process : Container.processes, pos : Ordinal
+				Concat "\(python_indent)\t\(process.python_value)"
+				With "\n") & " ]"
 	}
 	string_attrs : {}
 }
 {{{An Aurora job, which runs a task}}}
-job : Template render_lib.python.object {
+job : Template python.object {
 	job_name : Used
 	{{{The task to run in this job.}}}
-	task : Required
+	run_task : Required
 	{{{The user account as whom this job will be scheduled.}}}
 	role : Used
 	{{{The cluster in which this job will be scheduled.}}}
@@ -264,14 +260,13 @@ job : Template render_lib.python.object {
 
 	python_type : "Job"
 	literal_attrs : {
-		task : Lookup task.python_value In Container
+		task : run_task.python_value
 		instances : Let x : Lookup instances In Container In If x Is Null Then Null Else x Enforce Int
 		cron_collision_policy : Lookup cron_collision_policy In Container
 		constraints :
-			(For c : { host : constraint.host  rack : constraint.rack }, c_name : Name
+			"{" & (For c : { host : constraint.host  rack : constraint.rack }, c_name : Name
 				Where !(c Is Null)
-				Reduce
-					acc &
+				Concat
 					"'\(c_name)' : '" &
 					(If c Is Int
 						Then
@@ -280,8 +275,8 @@ job : Template render_lib.python.object {
 								Else Error "Constraint \(c) on \(c_name) seems a bit silly."
 						Else
 							python.escape(args : c, delimiter : ",")) &
-						"',"
-					With acc : "{") & "}"
+						"'"
+					With ",") & "}"
 		max_task_failures :
 			Let x : Lookup max_task_failures In Container
 				In
@@ -292,20 +287,19 @@ job : Template render_lib.python.object {
 		production : Lookup production In Container Enforce Bool
 		container : Let x : Lookup container In Container In If x Is Null Then Null Else x.python_value
 		announce :
-			Let task : Lookup task In Container
-			In render_lib.python.object {
+			python.object {
 				python_type : "Announcer"
 				literal_attrs : {
 					portmap :
-						(For port : task.ports
-							Reduce acc & port.alias
-							With acc : "{") & "}"
+						"{" & (For port : run_task.ports
+							Concat port.alias
+							With ",") & "}"
 				}
 				string_attrs : {
-					primary_port : Lookup port_name In task.primary_port
+					primary_port : Lookup port_name In run_task.primary_port
 				}
 			}
-		update_config : render_lib.python.object {
+		update_config : python.object {
 			python_type : "UpdateConfig"
 			literal_attrs : {
 				max_total_failures :
@@ -338,7 +332,7 @@ job : Template render_lib.python.object {
 			}
 			string_attrs : {}
 		}
-		health_check_config : render_lib.python.object {
+		health_check_config : python.object {
 			python_type : "HealthCheckConfig"
 			literal_attrs : {
 				initial_interval_secs :
@@ -376,5 +370,5 @@ docker_container : Template {
 	{{{The Docker container to be pulled.}}}
 	image : Required
 
-	python_value : "Docker(image = \"" & render_lib.python.escape(image) & "\")"
+	python_value : "Docker(image = \"" & python.escape(image) & "\")"
 }

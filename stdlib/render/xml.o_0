@@ -1,0 +1,119 @@
+Introduction{{{Templates for generation XML documents}}}
+
+utils_lib : From lib:utils
+
+str_transform : utils_lib.str_transform
+
+xml : This
+{{{An XML attribute found in an \{element}.}}}
+attribute : Template {
+	{{{The XML unqualified name for the attribute.}}}
+	attr_name : Required
+	{{{The value for the attribute.}}}
+	attr_value : Required
+	{{{The URI of the namespace to which this attribute belongs. If not set, it will inherit the namespace set by a containing element.}}}
+	xml_ns : Used
+
+	xml_attr :
+		Let qname : Lookup namespaces.Attribute(xml_ns) In xml_containing_element
+			In (If qname Is Null || qname == "" Then "" Else "\(qname):") &
+				"\(attr_name)=\"\(xml.escape(attr_value))\""
+}
+attribute_set : Template {
+	{{{The attributes in the set.}}}
+	args : Required
+	xml_attr : For arg : args Concat arg.xml_attr With acc : " "
+}
+{{{A comment in the XML document.}}}
+comment : Template {
+	content : Required
+	xml_value : "<!-- " & xml.escape(content) & " -->"
+}
+{{{An XML document.}}}
+document : Template {
+	{{{The root XML element.}}}
+	root : Required
+	{{{The default XML namespace URI for the document. By default, it is the default (empty) URI.}}}
+	xml_ns : ""
+	{{{Use a self-closing tag for empty elements.}}}
+	collapse_empty : True
+
+	{{{The rendered XML document.}}}
+	xml_value : "<?xml version=\"1.0\" encoding=\"utf-8\"?>" & root.xml_value
+
+	xml_root : True
+}
+{{{An element (tag) in an XML document.}}}
+element : Template {
+	{{{The local name of the tag.}}}
+	node_name : Required
+	{{{A list of child XML nodes (elements, comments, processing instructions,
+	or text) or strings (automatically treated as text nodes).}}}
+	children : Required
+	{{{A collection of XML attributes.}}}
+	attributes : []
+	{{{The name space definitions to be set at this node. The attribute names are the URIs and the values are the qualified name to be used in the document. To set the default namespace, set the qualified name to Null.}}}
+	namespaces : {}
+	{{{The URI of the namespace to which this attribute belongs. If not set, it will inherit the namespace set by a containing element.}}}
+	xml_ns : Used
+
+	{{{The qualified node name.}}}
+	qname :
+		Let qname : Lookup namespaces.Attribute(xml_ns) In xml_containing_element
+			In (If qname Is Null || qname == "" Then "" Else "\(qname):")
+	attr_values :
+		For attr : attributes, attr_name : Name
+			Concat
+				If attr == "xmlns"
+					Then Error "Cannot define XML namespace via attribute."
+					Else If attr Is Frame Then attr.xml_attr Else " \(attr_name)=\"\(xml.escape(attr To Str))\""
+			With ""
+	child_values :
+		For child : children
+		Where !(child Is Null)
+		Concat
+				If child Is Str Then xml.escape(child)
+				Else If child Is Frame Then child.xml_value
+				Else Error "Cannot XMLise value."
+		With ""
+	xml_root : False
+	xmlns_defs :
+		For uri : namespaces, qname : Name
+			Concat If qname Is Null || qname == "" Then " xmlns=\"\(xml.escape(uri))\"" Else " xmlns:\(qname)=\"\(xml.escape(uri))\""
+				With ""
+	xml_value :
+		"<\(qname)\(attr_values)\(xmlns_defs)" &
+		(If collapse_empty && child_values == ""
+			Then "/>"
+			Else ">\(child_values)</\(qname)>")
+}
+
+{{{Escaping conventions used by XML files}}}
+escape_transform_tmpl : Template {
+	amp : str_transform.char_tmpl { char : "&"  replacement : "&amp;" }
+	quot : str_transform.char_tmpl { char : "\""  replacement : "&quot;" }
+	apos : str_transform.char_tmpl { char : "'"  replacement : "&apos;" }
+	lt : str_transform.char_tmpl { char : "<"  replacement : "&gt;" }
+	gt : str_transform.char_tmpl { char : ">"  replacement : "&lt;" }
+	nonprint : str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "&#", utf32, ";" ]  mode : mode_decimal }
+}
+
+{{{Transform a list of strings using default escaping transformations.}}}
+escape_list : utils_lib.str_escape_builder(args : escape_transform_tmpl {}) Enforce Template
+
+{{{Transform a string using the  default escaping transformations.}}}
+escape : utils_lib.str_concatifier(base : escape_list, delimiter : "") Enforce Template
+
+
+{{{A processing instruction. The mysterious unused sauce of XML.}}}
+processing_instruction : Template {
+	target : Required
+	parameters : ""
+
+	xml_value : "<?\(target) \(xml.escape(parameters))?>"
+}
+{{{A text node.}}}
+text : Template {
+	content : Required
+	xml_value : xml.escape(content)
+}

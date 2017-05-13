@@ -19,7 +19,7 @@ pkgdatadir="${datadir}/@PACKAGE@"
 
 EXIT_CODE="0"
 IFS=":"
-DIRECTORIES="${FLABBERGAST_PATH:-}:${pkgdatadir}/lib:/usr/share/flabbergast/lib:/usr/local/flabbergast/lib:$HOME/.local/share/flabbergast/lib"
+DIRECTORIES="${FLABBERGAST_PATH:-}:${pkgdatadir}/lib:/usr/share/flabbergast/lib:/usr/local/flabbergast/lib:${XDG_DATA_HOME:-$HOME/.local/share}/flabbergast"
 for DIRECTORY in ${@:-$DIRECTORIES}
 do
 	if [ "x$DIRECTORY" = x ]

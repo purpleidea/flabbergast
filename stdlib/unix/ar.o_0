@@ -3,7 +3,7 @@ Introduction{{{Templates for generating UNIX \Mono{ar} archives, which are conve
 archive_tmpl : Template {
 	{{{The collection of \{file_tmpl} files.}}}
 	args : Required
-	value : For file : args Reduce acc & file.value With acc : "!<arch>\n"
+	value : "!<arch>\n" & (For file : args Concat file.value With "")
 	{{{The default user ID to create files.}}}
 	uid : 0
 	{{{The default group ID to create files.}}}
@@ -31,7 +31,7 @@ file_tmpl : Template {
 	group : Used
 	other : Used
 
-	file_name_length : utils_lib.str_utf8_length(file_name)
+	file_name_length : If utils_lib.str_find(file_name, str : "/") Is Null Then utils_lib.str_utf8_length(file_name) Else Error "ar archives do not support directories."
 	# If the file name is more than 16 characters, use the BSD `ar` encoding.
 	file_header : If file_name_length > 16 Then "#1/" & file_name_length Else file_name
 	header_suffix : If file_name_length > 16 Then file_name Else ""
@@ -46,6 +46,21 @@ file_tmpl : Template {
 		header_perms &
 		utils_lib.str_pad(packed_length, length : 10) &
 		"`\n" & header_suffix & contents & (If packed_length % 2 == 1 Then "\n" Else "")
+}
+
+{{{A symbolic link in a compressed archive. These are not supported.}}}
+symlink_tmpl : Template {
+	{{{The file name.}}}
+	file_name : Required
+	{{{The target of the link.}}}
+	target : Required
+	value : Error "Symbolic links are not supported."
+	uid : Used
+	gid : Used
+	mtime : Used
+	user : Used
+	group : Used
+	other : Used
 }
 
 time_lib : From lib:time

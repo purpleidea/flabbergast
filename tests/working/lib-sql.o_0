@@ -43,8 +43,6 @@ test_query : Template sql_lib.offline_query {
 		c : expr.negate {
 			arg : column.yyy.ccc
 		}
-	}
-	lookup_columns : {
 		d : column.xxx.aaa
 	}
 
@@ -80,11 +78,11 @@ test_query : Template sql_lib.offline_query {
 }
 
 sql_stmts : {
-	mssql : "SELECT ((NOT ([BLAH].[XXX].[AAA] IS NULL))AND((CAST([BLAH].[XXX].[BBB] AS INTEGER)) <= 5)) AS [a], AVG([BLAH].[YYY].[DDD]) AS [b], (- [BLAH].[YYY].[CCC]) AS [c], [BLAH].[XXX].[AAA] AS [$d] FROM [BLAH].[XXX], [BLAH].[YYY] WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN ('foo') END) LIKE ('foo%')) GROUP BY CONCAT([BLAH].[XXX].[AAA], [BLAH].[XXX].[BBB]), [BLAH].[YYY].[CCC]"
-	mysql : "SELECT ((NOT (`BLAH`.`XXX`.`AAA` IS NULL))AND((CAST(`BLAH`.`XXX`.`BBB` AS SIGNED)) <= 5)) AS `a`, AVG(`BLAH`.`YYY`.`DDD`) AS `b`, (- `BLAH`.`YYY`.`CCC`) AS `c`, `BLAH`.`XXX`.`AAA` AS `$d` FROM `BLAH`.`XXX`, `BLAH`.`YYY` WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN 'foo' END) LIKE 'foo%') GROUP BY CONCAT(`BLAH`.`XXX`.`AAA`, `BLAH`.`XXX`.`BBB`), `BLAH`.`YYY`.`CCC`"
-	oracle : "SELECT ((NOT (\"BLAH\".\"XXX\".\"AAA\" IS NULL))AND((CAST(\"BLAH\".\"XXX\".\"BBB\" AS INTEGER)) <= 5)) AS \"a\", AVG(\"BLAH\".\"YYY\".\"DDD\") AS \"b\", (- \"BLAH\".\"YYY\".\"CCC\") AS \"c\", \"BLAH\".\"XXX\".\"AAA\" AS \"$d\" FROM \"BLAH\".\"XXX\", \"BLAH\".\"YYY\" WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN 'foo' END) LIKE 'foo%') GROUP BY (\"BLAH\".\"XXX\".\"AAA\"||\"BLAH\".\"XXX\".\"BBB\"), \"BLAH\".\"YYY\".\"CCC\""
-	postgresql : "SELECT ((NOT (\"BLAH\".\"XXX\".\"AAA\" IS NULL))AND((CAST(\"BLAH\".\"XXX\".\"BBB\" AS INTEGER)) <= 5)) AS \"a\", AVG(\"BLAH\".\"YYY\".\"DDD\") AS \"b\", (- \"BLAH\".\"YYY\".\"CCC\") AS \"c\", \"BLAH\".\"XXX\".\"AAA\" AS \"$d\" FROM \"BLAH\".\"XXX\", \"BLAH\".\"YYY\" WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN E'foo' END) LIKE E'foo%') GROUP BY (\"BLAH\".\"XXX\".\"AAA\"||\"BLAH\".\"XXX\".\"BBB\"), \"BLAH\".\"YYY\".\"CCC\""
-	sqlite : "SELECT ((NOT (\"BLAH\".\"XXX\".\"AAA\" IS NULL))AND((CAST(\"BLAH\".\"XXX\".\"BBB\" AS INTEGER)) <= 5)) AS \"a\", AVG(\"BLAH\".\"YYY\".\"DDD\") AS \"b\", (- \"BLAH\".\"YYY\".\"CCC\") AS \"c\", \"BLAH\".\"XXX\".\"AAA\" AS \"$d\" FROM \"BLAH\".\"XXX\", \"BLAH\".\"YYY\" WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN 'foo' END) LIKE 'foo%') GROUP BY (\"BLAH\".\"XXX\".\"AAA\"||\"BLAH\".\"XXX\".\"BBB\"), \"BLAH\".\"YYY\".\"CCC\""
+	mssql : "SELECT ((NOT ([BLAH].[XXX].[AAA] IS NULL))AND((CAST([BLAH].[XXX].[BBB] AS INTEGER)) <= 5)) AS [a], AVG([BLAH].[YYY].[DDD]) AS [b], (- [BLAH].[YYY].[CCC]) AS [c], [BLAH].[XXX].[AAA] AS [d] FROM [BLAH].[XXX], [BLAH].[YYY] WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN ('foo') END) LIKE ('foo%')) GROUP BY CONCAT([BLAH].[XXX].[AAA], [BLAH].[XXX].[BBB]), [BLAH].[YYY].[CCC]"
+	mysql : "SELECT ((NOT (`BLAH`.`XXX`.`AAA` IS NULL))AND((CAST(`BLAH`.`XXX`.`BBB` AS SIGNED)) <= 5)) AS `a`, AVG(`BLAH`.`YYY`.`DDD`) AS `b`, (- `BLAH`.`YYY`.`CCC`) AS `c`, `BLAH`.`XXX`.`AAA` AS `d` FROM `BLAH`.`XXX`, `BLAH`.`YYY` WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN 'foo' END) LIKE 'foo%') GROUP BY CONCAT(`BLAH`.`XXX`.`AAA`, `BLAH`.`XXX`.`BBB`), `BLAH`.`YYY`.`CCC`"
+	oracle : "SELECT ((NOT (\"BLAH\".\"XXX\".\"AAA\" IS NULL))AND((CAST(\"BLAH\".\"XXX\".\"BBB\" AS INTEGER)) <= 5)) AS \"a\", AVG(\"BLAH\".\"YYY\".\"DDD\") AS \"b\", (- \"BLAH\".\"YYY\".\"CCC\") AS \"c\", \"BLAH\".\"XXX\".\"AAA\" AS \"d\" FROM \"BLAH\".\"XXX\", \"BLAH\".\"YYY\" WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN 'foo' END) LIKE 'foo%') GROUP BY (\"BLAH\".\"XXX\".\"AAA\"||\"BLAH\".\"XXX\".\"BBB\"), \"BLAH\".\"YYY\".\"CCC\""
+	postgresql : "SELECT ((NOT (\"BLAH\".\"XXX\".\"AAA\" IS NULL))AND((CAST(\"BLAH\".\"XXX\".\"BBB\" AS INTEGER)) <= 5)) AS \"a\", AVG(\"BLAH\".\"YYY\".\"DDD\") AS \"b\", (- \"BLAH\".\"YYY\".\"CCC\") AS \"c\", \"BLAH\".\"XXX\".\"AAA\" AS \"d\" FROM \"BLAH\".\"XXX\", \"BLAH\".\"YYY\" WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN E'foo' END) LIKE E'foo%') GROUP BY (\"BLAH\".\"XXX\".\"AAA\"||\"BLAH\".\"XXX\".\"BBB\"), \"BLAH\".\"YYY\".\"CCC\""
+	sqlite : "SELECT ((NOT (\"BLAH\".\"XXX\".\"AAA\" IS NULL))AND((CAST(\"BLAH\".\"XXX\".\"BBB\" AS INTEGER)) <= 5)) AS \"a\", AVG(\"BLAH\".\"YYY\".\"DDD\") AS \"b\", (- \"BLAH\".\"YYY\".\"CCC\") AS \"c\", \"BLAH\".\"XXX\".\"AAA\" AS \"d\" FROM \"BLAH\".\"XXX\", \"BLAH\".\"YYY\" WHERE (CASE  WHEN TRUE THEN 5 ELSE 5 END) AND ((CASE 3 WHEN 2 THEN 'foo' END) LIKE 'foo%') GROUP BY (\"BLAH\".\"XXX\".\"AAA\"||\"BLAH\".\"XXX\".\"BBB\"), \"BLAH\".\"YYY\".\"CCC\""
 }
 
 results : For provider : sql_lib.sql_providers, stmt : sql_stmts, name : Name

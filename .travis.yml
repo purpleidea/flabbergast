@@ -2,17 +2,19 @@ sudo: required
 dist: trusty
 language: c
 before_script:
-- sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-- echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
-- sudo apt-add-repository -y ppa:flabbergast/ppa
-- sudo apt-get update -qq
-- sudo apt-get install -qq -y --force-yes flabbergast-java devscripts groff
-  man-db xmlstarlet texlive-binaries equivs inkscape
+- sudo apt-get install -qq -y --force-yes devscripts groff man-db xmlstarlet texlive-binaries equivs inkscape
 - sudo mk-build-deps -i -t "apt-get -qq -y --force-yes --no-install-recommends"
 script: "./.travis-build"
 notifications:
   on_success: never
   on_failure: change
+git:
+  depth: 3
+addons:
+  sonarcloud:
+    organization: "flabbergast-config"
+    token:
+      secure: "z3q7whxV5EBuJvAPYuZDGNwgiqLSXddlvQ7ljQWgThQkVylTfboYpVi0AbCm4sUtMv+OKqI4TWNw+atT4K7j6W0QmP+YKBMmtrPe+pc3RU7BnqZsk9eQkbiUggSsfkZv9fp69X/VGhyFxqk9lCfK1dXVNBNg69R2SIZd69EDkoY="
 deploy:
   provider: s3
   access_key_id: AKIAJY7JELRUQJ6ESEWA

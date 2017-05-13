@@ -5,7 +5,7 @@ utils_lib : From lib:utils
 absolute : utils_lib.firstifier(base : absolute_list)
 
 {{{Compute the absolute value of a list of numbers.}}}
-absolute_list : Template From interop:math/abs {
+absolute_list : Template From native:math.abs {
 	{{{A list of numbers.}}}
 	args : Used
 }
@@ -23,10 +23,10 @@ angle_unit_radians : 1.0
 angle_unit_turns : 6.283185307179586231996
 
 {{{Compute the smallest integral value greater than or equal to the argument.}}}
-ceiling : utils_lib.firstifier(base : ceiling_list)
+ceiling : utils_lib.firstifier(base : ceiling_list) Enforce Template
 
 {{{Compute the smallest integral value greater than or equal to each number in a list.}}}
-ceiling_list : Template From interop:math/ceiling {
+ceiling_list : Template From native:math.ceiling {
 	{{{A list of numbers.}}}
 	args : Used
 }
@@ -34,39 +34,39 @@ ceiling_list : Template From interop:math/ceiling {
 {{{Trigonometic functions for a circle.}}}
 circle : {
 	arccos : utils_lib.firstifier(base : arccos_list)
-	arccos_list : Template From interop:math/circle/arccos {
+	arccos_list : Template From native:math.circle.arccos {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	arcsin : utils_lib.firstifier(base : arcsin_list)
-	arcsin_list : Template From interop:math/circle/arcsin {
+	arcsin_list : Template From native:math.circle.arcsin {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	arctan : utils_lib.firstifier(base : arctan_list)
-	arctan_list : Template From interop:math/circle/arctan {
+	arctan_list : Template From native:math.circle.arctan {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	cos : utils_lib.firstifier(base : cos_list)
-	cos_list : Template From interop:math/circle/cos {
+	cos_list : Template From native:math.circle.cos {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	sin : utils_lib.firstifier(base : sin_list)
-	sin_list : Template From interop:math/circle/sin {
+	sin_list : Template From native:math.circle.sin {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	tan : utils_lib.firstifier(base : tan_list)
-	tan_list : Template From interop:math/circle/tan {
+	tan_list : Template From native:math.circle.tan {
 		{{{A list of angles.}}}
 		args : Used
 	}
 }
 
 {{{Compute a running product.}}}
-cumulative_product : cumulative_productifier(base : utils_lib.identity)
+cumulative_product : cumulative_productifier(base : utils_lib.identity) Enforce Template
 
 {{{Convert a function-like template from one that returns a list of numbers
 into a list of cumulative products.}}}
@@ -82,7 +82,7 @@ cumulative_productifier : Template {
 }
 
 {{{Compute a running sum.}}}
-cumulative_sum : cumulative_sumifier(base : utils_lib.identity)
+cumulative_sum : cumulative_sumifier(base : utils_lib.identity) Enforce Template
 
 {{{Convert a function-like template from one that returns a list of numbers
 into a list of cumulative sums.}}}
@@ -98,10 +98,10 @@ cumulative_sumifier : Template {
 }
 
 {{{Compute the largest integral value less than or equal to the argument.}}}
-floor : utils_lib.firstifier(base : floor_list)
+floor : utils_lib.firstifier(base : floor_list) Enforce Template
 
 {{{Compute the largest integral value less than or equal to the each number in a list.}}}
-floor_list : Template From interop:math/floor {
+floor_list : Template From native:math.floor {
 	{{{A list of numbers.}}}
 	args : Used
 }
@@ -109,41 +109,41 @@ floor_list : Template From interop:math/floor {
 {{{Trigonometic functions for a hyperbola.}}}
 hyperbola : {
 	arccos : utils_lib.firstifier(base : arccos_list)
-	arccos_list : Template From interop:math/hyperbola/arccos {
+	arccos_list : Template From native:math.hyperbola.arccos {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	arcsin : utils_lib.firstifier(base : arcsin_list)
-	arcsin_list : Template From interop:math/hyperbola/arcsin {
+	arcsin_list : Template From native:math.hyperbola.arcsin {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	arctan : utils_lib.firstifier(base : arctan_list)
-	arctan_list : Template From interop:math/hyperbola/arctan {
+	arctan_list : Template From native:math.hyperbola.arctan {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	cos : utils_lib.firstifier(base : cos_list)
-	cos_list : Template From interop:math/hyperbola/cos {
+	cos_list : Template From native:math.hyperbola.cos {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	sin : utils_lib.firstifier(base : sin_list)
-	sin_list : Template From interop:math/hyperbola/sin {
+	sin_list : Template From native:math.hyperbola.sin {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	tan : utils_lib.firstifier(base : tan_list)
-	tan_list : Template From interop:math/hyperbola/tan {
+	tan_list : Template From native:math.hyperbola.tan {
 		{{{A list of angles.}}}
 		args : Used
 	}
 }
 {{{Compute the logarithm of the argument. See \{log_list} for details.}}}
-log : utils_lib.firstifier(base : log_list)
+log : utils_lib.firstifier(base : log_list) Enforce Template
 
 {{{Compute the logarithm of the argument.}}}
-log_list : Template From interop:math/log {
+log_list : Template From native:math.log {
 	{{{A list of numbers.}}}
 	args : Used
 	{{{The base to use.}}}
@@ -161,7 +161,7 @@ pi : 3.14159265358979323846
 power : utils_lib.firstifier(base : power_list)
 
 {{{Compute the argument raised to an exponent.}}}
-power_list : Template From interop:math/power {
+power_list : Template From native:math.power {
 	{{{A list of numbers.}}}
 	args : Used
 	{{{A number to raise the values.}}}
@@ -171,10 +171,10 @@ power_list : Template From interop:math/power {
 
 {{{Rounds the arguments to a specified number of decimal places. See
 \{round_list} for details.}}}
-round : utils_lib.firstifier(base : round_list)
+round : utils_lib.firstifier(base : round_list) Enforce Template
 
 {{{Rounds the arguments to a specified number of decimal places.}}}
-round_list : Template From interop:math/round {
+round_list : Template From native:math.round {
 	{{{A list of numbers.}}}
 	args : Used
 	{{{The number of decimal places. Must be non-negative.}}}
@@ -185,11 +185,11 @@ round_list : Template From interop:math/round {
 }
 
 {{{Sum a list of numbers.}}}
-sum : utils_lib.sum
+sum : utils_lib.sum Enforce Template
 
 {{{Convert a function-like template from one that returns a list of numbers to
 a single sum.}}}
-sumifier : utils_lib.sumifier
+sumifier : utils_lib.sumifier Enforce Template
 
 {{{The ratio of a circle's circumference to its radius, \Emph{τ}.}}}
 tau : pi * 2

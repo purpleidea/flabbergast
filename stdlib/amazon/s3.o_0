@@ -1,0 +1,36 @@
+Introduction{{{Allows access to an S3 object store.}}}
+
+{{{Directly retrieve an S3 data object.}}}
+retrieve : Template From native:amazon/s3.get_object {
+	{{{Bucket holding the object.}}}
+	bucket : Used
+	{{{The path in the bucket.}}}
+	path : Used
+	{{{The S3 connection retrieved using \Mono{From s3:}.}}}
+	s3_connection : Used
+}
+
+{{{Get the geographical location of an S3 bucket.}}}
+bucket_location : Template From native:amazon/s3.get_bucket_location {
+	{{{Bucket holding the object.}}}
+	bucket : Used
+	{{{The S3 connection retrieved using \Mono{From s3:}.}}}
+	s3_connection : Used
+}
+
+{{{Find all the buckets associated with this connection.}}}
+list_buckets : Template From native:amazon/s3.list_buckets {
+	{{{The S3 connection retrieved using \Mono{From s3:}.}}}
+	s3_connection : Used
+}
+
+s3 : {
+	bucket_tmpl : Template {
+	  path : Template  From native:amazon/s3.get_object {
+			bucket : Now name
+		}
+		location : Template From native:amazon/s3.get_bucket_location {
+			bucket : Now name
+		}
+	}
+}

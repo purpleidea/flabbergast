@@ -16,7 +16,7 @@ mkdir -p ${TARGET_DIR}
 
 cat > ${TARGET} <<EOI
 <?xml version="1.0" encoding="utf-8"?>
-<?xml-stylesheet href="o_0-index.xsl" type="text/xsl"?>
+<?xml-stylesheet href="o_0.xsl" type="text/xsl"?>
 <o_0:index xmlns:o_0="http://flabbergast.org/api">
 EOI
 
@@ -38,8 +38,9 @@ echo '</o_0:index>' >> ${TARGET}
 
 cat > ${TOPDIR}/www/index.xml <<EOI
 <?xml version="1.0" encoding="utf-8"?>
-<?xml-stylesheet href="o_0-versions.xsl" type="text/xsl"?>
-<o_0:versions xmlns:o_0="http://flabbergast.org/api">
+<?xml-stylesheet href="master/o_0.xsl" type="text/xsl"?>
+<o_0:versions xmlns="http://www.w3.org/1999/xhtml" xmlns:o_0="http://flabbergast.org/api" o_0:name="Flabergast" o_0:github="https://github.com/flabbergast-config/flabbergast">
+<p>Is Flabbergast making you go o_0? If so, start with <a href="https://github.com/flabbergast-config/flabbergast/blob/master/flabbergast-manual.md">the Flabbergast Manual</a>. If you just want to know the name of that template thing that does the stuff, this the right place.</p>
 <o_0:version o_0:name="Current" o_0:tag="master"/>
 EOI
 curl https://api.github.com/repos/flabbergast-config/flabbergast/releases | jq -r '.[] | if .tag_name | tonumber >= 0.19 then "<o_0:version o_0:name=\"\(.name)\" o_0:tag=\"\(.tag_name)\"/>" else empty end' - >> ${TOPDIR}/www/index.xml

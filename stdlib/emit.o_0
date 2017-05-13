@@ -1,0 +1,1251 @@
+Introduction{{{A library to compile KWS bytecode into usable programs}}}
+
+{{{Compile a KWS program, execute it and return the value from this program.}}}
+load : Template From native:emit.load {
+	{{{A frame of the non-entry blocks in this function. The attribute names will be the names of the block. The values are a frame with two attributes: \{body} which is a template which ammends one from \{block} and \{parameters} which is a frame desribing the parameters of the block. The names of the parameters frame will be the name available in the block and the value is the type from \{type}.}}}
+	blocks : Required
+	{{{A template which amends one from \{block} that servers as the main entry block for the root function.}}}
+	body : Required
+	{{{The source file name that will appear in execution trace.}}}
+	file_name : Required
+	{{{A frame of function definitions. The attribute names will be the names of the functions and the values should be invocation of the function-like templates from \{function}.}}}
+	functions : Required
+}
+
+{{{Compile a KWS program to JVM bytecode and produce a JAR file and return the bytes of that JAR.}}}
+jar : Template From native:emit.jar {
+	{{{The name of the library in the standard Flabbergast naming style.}}}
+	library_name : Required
+	{{{The timestamp associated with the source file that generated the library. This will affect the library search scheme as the VM will load the latest version of this library.}}}
+	library_modification_time : Required
+}
+
+{{{Compile a KWS program that produces a definition (rather than a root definition), package it as a template with one attribute and return the template. The template will have no internal scope or ancestry.}}}
+template : Template From native:emit.load_template {
+	{{{A frame of the non-entry blocks in this function. The attribute names will be the names of the block. The values are a frame with two attributes: \{body} which is a template which ammends one from \{block} and \{parameters} which is a frame desribing the parameters of the block. The names of the parameters frame will be the name available in the block and the value is the type from \{type}.}}}
+	blocks : Required
+	{{{A template which amends one from \{block} that servers as the main entry block for the definition. The parameter \{context} will be supplied.}}}
+	body : Required
+	{{{The attribute name to assign the value to in the template.}}}
+	name : "value"
+	{{{The source file name that will appear in execution trace.}}}
+	file_name : Required
+	{{{A frame of function definitions. The attribute names will be the names of the functions and the values should be invocation of the function-like templates from \{function}.}}}
+	functions : Required
+}
+
+{{{The KWS types that are allowed as block parameters.}}}
+type : {
+	{{{The boxed type}}}
+	any : From native:emit.type.a Enforce Frame
+  {{{The binary blob type (\Mono{Bin})}}}
+	bin : From native:emit.type.b Enforce Frame
+  {{{The lookup context type}}}
+	context : From native:emit.type.c Enforce Frame
+  {{{The standard attribute definition type}}}
+	definition : From native:emit.type.d Enforce Frame
+  {{{The fricassée operation type}}}
+	fricassee : From native:emit.type.e Enforce Frame
+  {{{The fricassée grouper type}}}
+	grouper : From native:emit.type.g Enforce Frame
+  {{{The fricassée zipper type}}}
+	zipper : From native:emit.type.p Enforce Frame
+  {{{The floating point number type (\Mono{Float})}}}
+	float : From native:emit.type.f Enforce Frame
+  {{{The integer type (\Mono{Int})}}}
+	int : From native:emit.type.i Enforce Frame
+  {{{The fricassée collector type}}}
+	collector : From native:emit.type.k Enforce Frame
+  {{{The lookup handler type (\Mono{LookupHandler})}}}
+	lookup_handler : From native:emit.type.l Enforce Frame
+  {{{The fricassée accumulator type}}}
+	accumulator : From native:emit.type.m Enforce Frame
+  {{{The lookup name type}}}
+	name : From native:emit.type.n Enforce Frame
+  {{{The override attibute type}}}
+	override : From native:emit.type.o Enforce Frame
+  {{{The frame type (\Mono{Frame})}}}
+	frame : From native:emit.type.r Enforce Frame
+  {{{The string type (\Mono{Str})}}}
+	str : From native:emit.type.s Enforce Frame
+  {{{The template type (\Mono{Template})}}}
+	template : From native:emit.type.t Enforce Frame
+  {{{The fricassée distributor type}}}
+	distributor : From native:emit.type.u Enforce Frame
+  {{{The attribute definition type}}}
+	attribute : From native:emit.type.x Enforce Frame
+  {{{The Boolean type (\Mono{Bool})}}}
+	bool : From native:emit.type.z Enforce Frame
+}
+
+{{{Function-like templates for defining new KWS functions in the generated code.}}}
+function : {
+	{{{Create a fricassée accumulator-type function which gets parameters named \Mono{context} and \Mono{previous} in its entry block and returns a boxed (\Mono{any}) value with attribute builders.}}}
+	accumulator : Template From emit.function.accumulator {
+		{{{A frame of the non-entry blocks in this function. The attribute names will be the names of the block. The values are a frame with two attributes: \{body} which is a template which ammends one from \{block} and \{parameters} which is a frame desribing the parameters of the block. The names of the parameters frame will be the name available in the block and the value is the type from \{type}.}}}
+		blocks : Required
+		{{{A template which amends one from \{block} that servers as the main entry block for this function.}}}
+		body : Required
+		{{{A frame of captures for the function. The attribute name is the variable for the capture and the value is the type from \{type}.}}}
+		captures : Required
+	}
+	{{{Create a fricassée collector-type function which gets parameters named \Mono{context} and \Mono{root} in its entry block and returns a boxed (\Mono{any}) value.}}}
+	collector : Template From emit.function.definition {
+		{{{A frame of the non-entry blocks in this function. The attribute names will be the names of the block. The values are a frame with two attributes: \{body} which is a template which ammends one from \{block} and \{parameters} which is a frame desribing the parameters of the block. The names of the parameters frame will be the name available in the block and the value is the type from \{type}.}}}
+		blocks : Required
+		{{{A template which amends one from \{block} that servers as the main entry block for this function.}}}
+		body : Required
+		{{{A frame of captures for the function. The attribute name is the variable for the capture and the value is the type from \{type}.}}}
+		captures : Required
+	}
+ 	{{{Create a fricassée distributor-type function which gets a parameter named \Mono{context} in its entry block and returns a fricassée chain (\Mono{fricassee}) value.}}}
+	distributor : Template From emit.function.distributor {
+		{{{A frame of the non-entry blocks in this function. The attribute names will be the names of the block. The values are a frame with two attributes: \{body} which is a template which ammends one from \{block} and \{parameters} which is a frame desribing the parameters of the block. The names of the parameters frame will be the name available in the block and the value is the type from \{type}.}}}
+		blocks : Required
+		{{{A template which amends one from \{block} that servers as the main entry block for this function.}}}
+		body : Required
+		{{{A frame of captures for the function. The attribute name is the variable for the capture and the value is the type from \{type}.}}}
+		captures : Required
+	}
+	{{{Create a definition-type function which gets a parameter named \Mono{context} in its entry block and returns a boxed (\Mono{any}) value.}}}
+	definition : Template From emit.function.definition {
+		{{{A frame of the non-entry blocks in this function. The attribute names will be the names of the block. The values are a frame with two attributes: \{body} which is a template which ammends one from \{block} and \{parameters} which is a frame desribing the parameters of the block. The names of the parameters frame will be the name available in the block and the value is the type from \{type}.}}}
+		blocks : Required
+		{{{A template which amends one from \{block} that servers as the main entry block for this function.}}}
+		body : Required
+		{{{A frame of captures for the function. The attribute name is the variable for the capture and the value is the type from \{type}.}}}
+		captures : Required
+	}
+ 	{{{Create an override definition-type function which gets parameters named \Mono{context} and \Mono{original} in its entry block and returns a boxed (\Mono{any}) value.}}}
+	definition : Template From emit.function.definition {
+		{{{A frame of the non-entry blocks in this function. The attribute names will be the names of the block. The values are a frame with two attributes: \{body} which is a template which ammends one from \{block} and \{parameters} which is a frame desribing the parameters of the block. The names of the parameters frame will be the name available in the block and the value is the type from \{type}.}}}
+		blocks : Required
+		{{{A template which amends one from \{block} that servers as the main entry block for this function.}}}
+		body : Required
+		{{{A frame of captures for the function. The attribute name is the variable for the capture and the value is the type from \{type}.}}}
+		captures : Required
+	}
+}
+
+{{{Templates for overall flow of logic in a basic block.}}}
+block : {
+	{{{Perform an unconditional branch to another block.}}}
+	br : Template From native:emit.block.br {
+		{{{The name of the block.}}}
+		target : Required
+		{{{A frame containing the results of \{instruction} function-like templates invocations to provide parameters to the block. These must match the number of type of the parameters to the block; the names do not need to match and are used purely for order.}}}
+		target_args : Required
+	}
+	{{{Unbox a value and select a path based on the type discovered.}}}
+	br_a : Template native:emit.block.br_a {
+		{{{The results of \{instruction} function-like templates invocations for the value to be unboxed.}}}
+		arg : Required
+		{{{The possible paths to select. The attribute name must be the name of an unboxable type and the value is a frame with two attributes: \Mono{block}, the name of the block to choose, and \Mono{args}, a frame of \{instruction} results to match the parameters of the block; the names do not need to match and are used purely for order. If the block must have one additional final parameter of the correct type (except for the null path, which needs none). Any missing paths will generate an automatic runtime type error.}}}
+		paths : Required
+	}
+	{{{Unbox two values, assumed to be numeric, upgrade as appropriate, and select a path based on the type. If non-numeric values are unboxed, an automatic runtime type error is generated.}}}
+	br_aa : Template native:emit.block.br_aa {
+		{{{The results of \{instruction} function-like templates invocations for the left-hand value to be unboxed.}}}
+		left : Required
+		{{{The results of \{instruction} function-like templates invocations for the right-hand value to be unboxed.}}}
+		right : Required
+		{{{The name of the block to use when both arguments are integers. The block must take two integer arguments in addition to the arguments provided by \{int_args}.}}}
+		int_block : Required
+		{{{A frame containing the results of \{instruction} function-like templates invocations to provide parameters to the block. These must match the number of type of the parameters to the block; the names do not need to match and are used purely for order.}}}
+		int_args : Required
+		{{{The name of the block to use when at least one argument is a floating-point number. The block must take two floating-point arguments in addition to the arguments provided by \{float_args}.}}}
+		float_block : Required
+		{{{A frame containing the results of \{instruction} function-like templates invocations to provide parameters to the block for the floating-point path. These must match the number of type of the parameters to the block; the names do not need to match and are used purely for order.}}}
+		float_args : Required
+	}
+	{{{Take a fixed floating-point value and a boxed value, unbox a numeric value, upgrade it to a floating point, and branch to a floating-point block which takes two parameters. If non-numeric values are unboxed, an automatic runtime type error is generated.}}}
+	br_fa : Template native:emit.block.br_fa {
+		{{{The results of \{instruction} function-like templates invocations for the left-hand floating-point value.}}}
+		left : Required
+		{{{The results of \{instruction} function-like templates invocations for the right-hand value to be unboxed.}}}
+		right : Required
+		{{{The name of the block. It must take two floating-point parameters in addition to the arguments provided.}}}
+		target : Required
+		{{{A frame containing the results of \{instruction} function-like templates invocations to provide parameters to the block. These must match the number of type of the parameters to the block; the names do not need to match and are used purely for order.}}}
+	}
+	{{{Take a fixed integer value and a boxed value, unbox a numeric value, upgrade as appropriate, and select a path based on the type. If non-numeric values are unboxed, an automatic runtime type error is generated.}}}
+	br_ia : Template native:emit.block.br_ia {
+		{{{The results of \{instruction} function-like templates invocations for the left-hand integer value.}}}
+		left : Required
+		{{{The results of \{instruction} function-like templates invocations for the right-hand value to be unboxed.}}}
+		right : Required
+		{{{The name of the block to use when both arguments are integers. The block must take two integer arguments in addition to the arguments provided by \{int_args}.}}}
+		int_block : Required
+		{{{A frame containing the results of \{instruction} function-like templates invocations to provide parameters to the block. These must match the number of type of the parameters to the block; the names do not need to match and are used purely for order.}}}
+		int_args : Required
+		{{{The name of the block to use when at least one argument is a floating-point number. The block must take two floating-point arguments in addition to the arguments provided by \{float_args}.}}}
+		float_block : Required
+		{{{A frame containing the results of \{instruction} function-like templates invocations to provide parameters to the block for the floating-point path. These must match the number of type of the parameters to the block; the names do not need to match and are used purely for order.}}}
+		float_args : Required
+	}
+	{{{Switch to one of two blocks based on a Boolean value.}}}
+  br_z : Template native:emit.block.br_z {
+		{{{The results of \{instruction} function-like templates invocations for the Boolean condition that selects a path.}}}
+		condition : Required
+ 		{{{The name of the block to use when the condition is true.}}}
+		true_block : Required
+		{{{A frame containing the results of \{instruction} function-like templates invocations to provide parameters to the block. These must match the number of type of the parameters to the block; the names do not need to match and are used purely for order.}}}
+		true_args : Required
+		{{{The name of the block to use when the Boolean condition is false.}}}
+		false_block : Required
+		{{{A frame containing the results of \{instruction} function-like templates invocations to provide parameters to the block for the falseing-point path. These must match the number of type of the parameters to the block; the names do not need to match and are used purely for order.}}}
+		false_args : Required
+	}
+	{{{Raise an error and stop execution.}}}
+	error : Template native:emit.block.error {
+		{{{The results of \{instruction} function-like templates invocations for the error message displayed to the user, which must be a string.}}}
+		message : Required
+	}
+	{{{Create a block with additional variable definitions. This block type does not exist in the KWS specification; it is a convience construct to perform intermeidate variable binding.}}}
+	let : Template native:emit.block.let {
+		{{{A frame containing the results of \{instruction} function-like templates invocations that will be bound in the \{in} template.}}}
+		args : Required
+		{{{A template, which must amend one of \{block} which controls the flow of the block. The results of the \{args} will be made available, by the same name, in this template in a form that can be used in place of an \{instruction} function-like template result.}}}
+		in : Required
+	}
+	{{{Complete successfully with a single value. This is the exit point for most function types.}}}
+	return : Template native:emit.block.return {
+		{{{The results of \{instruction} function-like templates invocations for the return value to be sent to the caller. The type of the return value depends on the function type (disallowed for accumulators, fricassée for distributors, and a boxed value otherwise).}}}
+		result : Required
+	}
+	{{{Complete successfully with a value and builders. This is the exit point for accumulatr function types.}}}
+	return_accumulator : Template native:emit.block.return_accumulator {
+		{{{A frame containing the results of \{instruction} function-like templates invocations to emit builders from an accumulator function.}}}
+		builders : Required
+		{{{The results of \{instruction} function-like templates invocations for the boxed return value to be sent to the caller. This return can only be used for accumulator functions.}}}
+		result : Required
+	}
+
+}
+
+{{{Values and function-like templates for KWS instructions.}}}
+instruction : {
+	{{{Add two floating point numbers in the standard IEEE-754 way.}}}
+	add_f : Template native:emit.instruction.add_f {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+	{{{Add two integral numbers.}}}
+	add_i : Template native:emit.instruction.add_i {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+	{{{Add predefined names to a name list.}}}
+	add_n : Template native:emit.instruction.add_n {
+		{{{An instruction result for the name source to extend.}}}
+		source : Required
+		{{{A list of literal strings to append to the names to be looked up.}}}
+		args : Required
+	}
+	{{{Add the name of the type of the value in box to a name list.}}}
+	add_n_a : Template native:emit.instruction.add_n_a {
+		{{{An instruction result for the name source to extend.}}}
+		source : Required
+		{{{An instruction result with a box type to use as a type-directed lookup name.}}}
+		arg : Required
+	}
+	{{{Add the name of the type of the value in box to a name list.}}}
+	add_n_i : Template native:emit.instruction.add_n_i {
+		{{{An instruction result for the name source to extend.}}}
+		source : Required
+		{{{An instruction result with an ordinal type to add to a lookup name.}}}
+		ordinal : Required
+	}
+	{{{Add an ordinal name to a name list.}}}
+	add_n_f : Template native:emit.instruction.add_n_r {
+		{{{An instruction result for the name source to extend.}}}
+		source : Required
+		{{{An instruction result with a frame type to add all the attribute values to the name.}}}
+		frame : Required
+	}
+	{{{Add an variable string name to a name source.}}}
+	add_n_s : Template native:emit.instruction.add_n_s {
+		{{{An instruction result for the name source to extend.}}}
+		source : Required
+		{{{An instruction result with a string type to use as a lookup name.}}}
+		name : Required
+	}
+	{{{Create a grouper which classifies contexts using a floating-point number. Any contiguous run of the same value will be grouped together.}}}
+	adjacent_f : Template native:emit.instruction.adjacent_f {
+		{{{An instruction result with a string type to use a name for the adjacent parameter.}}}
+		name : Required
+		{{{An instruction result with a definition to compute the adjacency key.}}}
+		definition : Required
+	}
+	{{{Create a grouper which classifies contexts using an integer. Any contiguous run of the same value will be grouped together.}}}
+ 	adjacent_i : Template native:emit.instruction.adjacent_i {
+		{{{An instruction result with a string type to use a name for the adjacent parameter.}}}
+		name : Required
+		{{{An instruction result with a definition to compute the adjacency key.}}}
+		definition : Required
+	}
+	{{{Create a grouper which classifies contexts using a string. Any contiguous run of the same value will be grouped together.}}}
+ 	adjacent_s : Template native:emit.instruction.adjacent_s {
+		{{{An instruction result with a string type to use a name for the adjacent parameter.}}}
+		name : Required
+		{{{An instruction result with a definition to compute the adjacency key.}}}
+		definition : Required
+	}
+	{{{Create a grouper which classifies contexts using a Boolean value. Any contiguous run of the same value will be grouped together.}}}
+ 	adjacent_z : Template native:emit.instruction.adjacent_z {
+		{{{An instruction result with a string type to use a name for the adjacent parameter.}}}
+		name : Required
+		{{{An instruction result with a definition to compute the adjacency key.}}}
+		definition : Required
+	}
+	{{{Create a grouper which classifies contexts using a floating-point number. Contexts with the same classification will be grouped together except when the classifier returns null, in which case, the context will be placed in all output groups.}}}
+	alwaysinclude_f : Template native:emit.instruction.alwaysinclude_f {
+		{{{An instruction result with a string type to use a name for the adjacent parameter.}}}
+		name : Required
+		{{{An instruction result with a definition to compute the key or null for the wildcard.}}}
+		definition : Required
+	}
+	{{{Create a grouper which classifies contexts using an integer. Contexts with the same classification will be grouped together except when the classifier returns null, in which case, the context will be placed in all output groups.}}}
+ 	alwaysinclude_i : Template native:emit.instruction.alwaysinclude_i {
+		{{{An instruction result with a string type to use a name for the adjacent parameter.}}}
+		name : Required
+		{{{An instruction result with a definition to compute the key or null for the wildcard.}}}
+		definition : Required
+	}
+	{{{Create a grouper which classifies contexts using a string. Contexts with the same classification will be grouped together except when the classifier returns null, in which case, the context will be placed in all output groups.}}}
+ 	alwaysinclude_s : Template native:emit.instruction.alwaysinclude_s {
+		{{{An instruction result with a string type to use a name for the adjacent parameter.}}}
+		name : Required
+		{{{An instruction result with a definition to compute the key or null for the wildcard.}}}
+		definition : Required
+	}
+	{{{Create a grouper which classifies contexts using a Boolean value. Contexts with the same classification will be grouped together except when the classifier returns null, in which case, the context will be placed in all output groups.}}}
+ 	alwaysinclude_z : Template native:emit.instruction.alwaysinclude_z {
+		{{{An instruction result with a string type to use a name for the adjacent parameter.}}}
+		name : Required
+		{{{An instruction result with a definition to compute the key or null for the wildcard.}}}
+		definition : Required
+	}
+	and_g : Template native:emit.instruction.and_g {
+		{{{A list of instruction results with groupers.}}}
+		args : Required
+	}
+	and_i : Template native:emit.instruction.and_i {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+	atos : Template native:emit.instruction.atos {
+		{{{An instruction result with a box type to convert to a string.}}}
+		arg : Required
+
+	}
+	atoz : Template native:emit.instruction.atoz {
+		{{{An instruction result with a box type to convert to a string.}}}
+		arg : Required
+		{{{A list of Flabbergast types to return true if the boxed item has this type. The types are strings in the same format as when types are converted to attribute names.}}}
+		types : Required
+	}
+	boundary : Template native:emit.instruction.boundary {
+		{{{An instruction results which returns a definition, which must return a Boolean, that creates a new group when it returns true.}}}
+		definition : Required
+		{{{A instruction result with a Boolean type that determines if the item which triggered the change is the last item of the previous group (True) or the first item in the next group (false).}}}
+		trailing : Required
+	}
+	btoa : Template native:emit.instruction.btoa {
+		{{{An instruction result with a boolean type to be boxed.}}}
+		arg : Required
+	}
+	{{{Creates a grouper which evaluates a definition in each context, which must return a floating-point number, sorts the keys from smallest to largest, and divides the keys into a fixed number of buckets and places the contexts in the corresponding buckets.}}}
+	buckets_f : Template native:emit.instruction.buckets_f {
+		{{{An instruction results which returns a definition, which must return a floating-point number, that decides which bucket this context should belong to.}}}
+		definition : Required
+		{{{An instruction result with an integer result to determine the number of buckets.}}}
+		count : Required
+	}
+	{{{Creates a grouper which evaluates a definition in each context, which must return an integer, sorts the keys from smallest to largest, and divides the keys into a fixed number of buckets and places the contexts in the corresponding buckets.}}}
+	buckets_i : Template native:emit.instruction.buckets_i {
+		{{{An instruction results which returns a definition, which must return an integer, that decides which bucket this context should belong to.}}}
+		definition : Required
+		{{{An instruction result with an integer result to determine the number of buckets.}}}
+		count : Required
+	}
+	{{{Creates a grouper which evaluates a definition in each context, which must return a string, sorts the keys from smallest to largest, and divides the keys into a fixed number of buckets and places the contexts in the corresponding buckets.}}}
+	buckets_s : Template native:emit.instruction.buckets_s {
+		{{{An instruction results which returns a definition, which must return a string, that decides which bucket this context should belong to.}}}
+		definition : Required
+		{{{An instruction result with an integer result to determine the number of buckets.}}}
+		count : Required
+	}
+	{{{Evaluate a definition using the provided context.}}}
+	call_d : Template native:emit.instruction.call_d {
+		{{{An instruction results which returns a definition.}}}
+		definition : Required
+		{{{An instruction which results in the context in which the definition should be evaluated.}}}
+		context : Required
+	}
+	call_o : Template native:emit.instruction.call_o {
+		{{{An instruction results which returns a definition.}}}
+		definition : Required
+		{{{An instruction which results in the context in which the definition should be evaluated.}}}
+		context : Required
+		{{{An instruction which results in a boxed value containing the original value being overriden.}}}
+		original : Required
+	}
+	{{{Create a new fricassée chain with iterates over all the output from each of the provided chains in sequence.}}}
+	cat_e : Template native:emit.instruction.cat_e {
+		{{{A list of instruction results which return fricassée chains. The order of the chains is respected.}}}
+		chains : Required
+		{{{An instruction which results in the context in which any downstream operations should be evaluated.}}}
+		context : Required
+	}
+	{{{Create a new definition from a collector by binding the fricassée chain.}}}
+	cat_ke : Template native:emit.instruction.cat_ke {
+		{{{An instruction results which returns a collector definition.}}}
+		definition : Required
+		{{{An instruction results which returns a fricassée chain.}}}
+		chain : Required
+	}
+	{{{Create a new frame by concatenating frames, numbering the items.}}}
+	cat_r : Template native:emit.instruction.cat_r {
+		{{{An instruction which results in the context in which the resulting frame will exist.}}}
+		context : Required
+		{{{An instruction which results in the frame whose values should be placed first in the resulting frame.}}}
+		first : Required
+		{{{An instruction which results in the frame whose values should be placed second in the resulting frame.}}}
+		second : Required
+	}
+	{{{Create a new context containing the provided frame as the first element followed by the elements in the provided context as the remaining elements and update \Mono{This} to refer to the added frame. Duplicates may be removed.}}}
+	cat_rc : Template native:emit.instruction.cat_rc {
+		{{{An instruction which results in the frame to be \Mono{This} in the new context. The frame has public visibility.}}}
+		first : Required
+		{{{An instruction which results in a context to be appended to the new context. Any frames here retain their current visibility.}}}
+		second : Required
+	}
+	{{{Create a new string by concatenating existing strings.}}}
+	cat_s : Template native:emit.instruction.cat_s {
+		{{{An instruction which results in a string should be placed first in the resulting string.}}}
+		first : Required
+		{{{An instruction which results in a string should be placed second in the resulting string.}}}
+		second : Required
+	}
+	{{{Create a discriminator for a grouping operation that assigns items to groups in blocks based on their position.}}}
+	chunk_e : Template native:emit.instruction.chunk_e {
+		{{{An instruction which results in an integer is the number of items in a block.}}}
+		length : Required
+	}
+	{{{Compare two floating point numbers and return -1, 0, or 1 depending on their sorting.}}}
+	cmp_f : Template native:emit.instruction.cmp_f {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+	{{{Compare two integers and return -1, 0, or 1 depending on their sorting.}}}
+	cmp_i : Template native:emit.instruction.cmp_i {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+	{{{Compare two strings and return -1, 0, or 1 depending on their sorting.}}}
+	cmp_s : Template native:emit.instruction.cmp_s {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+ 	{{{Compare two Booleans and return -1, 0, or 1 depending on their sorting.}}}
+	cmp_z : Template native:emit.instruction.cmp_z {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+	{{{Get the lookup handler for contextual lookup.}}}
+	contextual : native:emit.instruction.contextual Enforce Frame
+	{{{Create a grouper that will classify each context using an floating-point and then create groups that contains one context from each classification.}}}
+	count_w : Template native:emit.instruction.count_w {
+		{{{An instruction results which returns an integer that decides how many items will be in the window or how much the window will shift.}}}
+		definition : Required
+	}
+	{{{Create a grouper that will classify each context using an floating-point and then create groups that contains one context from each classification.}}}
+	crosstab_f : Template native:emit.instruction.crosstab_f {
+		{{{An instruction results which returns a definition, which must return a floating-point number, that decides which classification this context belongs to.}}}
+		definition : Required
+	}
+	{{{Create a grouper that will classify each context using an integer and then create groups that contains one context from each classification.}}}
+	crosstab_i : Template native:emit.instruction.crosstab_i {
+		{{{An instruction results which returns a definition, which must return an integer, that decides which classification this context belongs to.}}}
+		definition : Required
+	}
+	{{{Create a grouper that will classify each context using an string and then create groups that contains one context from each classification.}}}
+	crosstab_s : Template native:emit.instruction.crosstab_s {
+		{{{An instruction results which returns a definition, which must return a string, that decides which classification this context belongs to.}}}
+		definition : Required
+	}
+	{{{Create a grouper that will classify each context using a Booean and then create groups that contains one context from each classification.}}}
+	crosstab_z : Template native:emit.instruction.crosstab_z {
+		{{{An instruction results which returns a definition, which must return a Boolean, that decides which classification this context belongs to.}}}
+		definition : Required
+	}
+	{{{Get the \{This} value from a context.}}}
+	ctr_c : Template native:emit.instruction.ctr_c {
+		{{{An instruction which results in the context from which the \Mono{This} frame will be extracted.}}}
+		context : Required
+	}
+	{{{Get the \Mono{Container} value from a context (\Emph{i.e.}, the \Mono{This} at time of creation).}}}
+	ctr_r : Template native:emit.instruction.ctr_r {
+		{{{An instruction which results in the frame from which the \Mono{Container} frame will be extracted.}}}
+		frame : Required
+	}
+	{{{Extract the context embedded in a frame. The calling context is provided and will determine what private attributes will be visible in the resulting context.}}}
+	ctxt_r : Template native:emit.instruction.ctxt_r {
+		{{{An instruction which results in the context that will determine what private frames are visible in the resulting context.}}}
+		context : Required
+		{{{An instruction which results in the frame from which the context will be extracted.}}}
+		frame : Required
+	}
+	{{{Evaluate a definition using the provided context.}}}
+	debug_d : Template native:emit.instruction.debug_d {
+		{{{An instruction which results in the context that will be passed to the target definition.}}}
+		context : Required
+		{{{An instruction results which returns a definition that will be the result of this instruction.}}}
+		definition : Required
+	}
+	{{{Create a floating point discriminator during a grouping operation.}}}
+	disc_g_f : Template native:emit.instruction.disc_g_f {
+		{{{An instruction results which returns a definition that will return a floating-pointer number used to classify the context.}}}
+		definition : Required
+		{{{An instruction results which returns a name to bind the discriminated result to in downstream fricassée operations..}}}
+		name : Required
+	}
+	{{{Create an integer discriminator during a grouping operation.}}}
+	disc_g_i : Template native:emit.instruction.disc_g_i {
+		{{{An instruction results which returns a definition that will return an integer used to classify the context.}}}
+		definition : Required
+		{{{An instruction results which returns a name to bind the discriminated result to in downstream fricassée operations..}}}
+		name : Required
+	}
+	{{{Create a string discriminator during a grouping operation.}}}
+	disc_g_s : Template native:emit.instruction.disc_g_s {
+		{{{An instruction results which returns a definition that will return a string used to classify the context.}}}
+		definition : Required
+		{{{An instruction results which returns a name to bind the discriminated result to in downstream fricassée operations..}}}
+		name : Required
+	}
+	{{{Create a Boolean discriminator during a grouping operation.}}}
+	disc_g_z : Template native:emit.instruction.disc_g_z {
+		{{{An instruction results which returns a definition that will return a Boolean used to classify the context.}}}
+		definition : Required
+		{{{An instruction results which returns a name to bind the discriminated result to in downstream fricassée operations.}}}
+		name : Required
+	}
+	{{{Place a value in a frame's \Emph{gather} buckets using an integer ordinal so that it can be picked up later.}}}
+	disperse_i : Template native:emit.instruction.disperse_i {
+		{{{An instruction results which returns a frame to add the item to.}}}
+		frame : Required
+		{{{An instruction results which returns an ordinal  (as an integer) as the name for the gather bucket.}}}
+		name : Required
+		{{{An instruction results which returns a boxed value to be added to the bucket; this value will be returned.}}}
+		arg : Required
+	}
+	{{{Place a value in a frame's \Emph{gather} buckets using a string name so that it can be picked up later.}}}
+	disperse_s : Template native:emit.instruction.disperse_s {
+		{{{An instruction results which returns a frame to add the item to.}}}
+		frame : Required
+		{{{An instruction results which returns a name (as a string) as the name for the gather bucket.}}}
+		name : Required
+		{{{An instruction results which returns a boxed value to be added to the bucket; this value will be returned.}}}
+		arg : Required
+	}
+	{{{Perform floating-point division.}}}
+	div_f : Template native:emit.instruction.div_f {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+	{{{Perform integer division.}}}
+	div_i : Template native:emit.instruction.div_i {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+	{{{Discard elements from the a fricassée chain as long as a returns true. Once it returns false, all remaining contexts will be kept. An error occurs if it returns a non-boolean value.}}}
+	drop_ed : Template native:emit.instruction.drop_ed {
+		{{{An instruction result for the fricassée chain to filter.}}}
+		source : Required
+		{{{An instruction result for the definition to use for filtering; it must return a Boolean.}}}
+		clause : Required
+	}
+	{{{Discard a fixed number of elements from a fricassée chain.}}}
+	drop_ei : Template native:emit.instruction.drop_ei {
+		{{{An instruction result for the fricassée chain to filter.}}}
+		source : Required
+		{{{An instruction result which results in an integer for the number of items to discard. Negative values are treated as zero.}}}
+		count : Required
+	}
+	{{{Remove the definition of an attribute. If this builder is used sequentially after a builder that defines this name, the previous definition will be discarded.}}}
+	drop_x : Template native:emit.instruction.drop_x {
+		{{{An instruction results which returns a name (as a string) as the name for the attribute.}}}
+		name : Required
+	}
+	{{{Discard a fixed number of elements from the end of a fricassée chain.}}}
+	dropl_ei : Template native:emit.instruction.dropl_ei {
+		{{{An instruction result for the fricassée chain to filter.}}}
+		source : Required
+		{{{An instruction result which results in an integer for the number of items to discard. Negative values are treated as zero.}}}
+		count : Required
+	}
+	{{{Create a window that moves by a floating-point range.}}}
+	duration_f : Template native:emit.instruction.duration_f {
+		{{{An instruction result which is a definition to compute the position, as a floating-point number or integer, from the context.}}}
+		definition : Required
+		{{{An instruction result which results in a floating-point value to move the range by.}}}
+		duration : Required
+	}
+	{{{Create a window that moves by an integer range.}}}
+	duration_i : Template native:emit.instruction.duration_i {
+		{{{An instruction result which is a definition to compute the position, as an integer, from the context.}}}
+		definition : Required
+		{{{An instruction result which results in an integer value to move the range by.}}}
+		duration : Required
+	}
+	{{{Reduce the Fricassée chain to a single value.}}}
+	etoa_ao : Template native:emit.instruction.etoa_ao {
+		{{{An instruction result for the fricassée chain to reduce.}}}
+		source : Required
+		{{{An instruction result which is a boxed value as the initial value to provide to the accumulator.}}}
+		initial : Required
+		{{{An instruction result which is an override definition to process each element.}}}
+		reducer : Required
+	}
+	{{{Extract single value from the fricassée chain.}}}
+	etoa_d : Template native:emit.instruction.etoa_d {
+		{{{An instruction result for the fricassée chain to reduce.}}}
+		source : Required
+		{{{An instruction result which is a definition to compute the value for the context.}}}
+		extractor : Required
+	}
+	{{{Extract single value from the fricassée chain with an alternate.}}}
+	etoa_dd : Template native:emit.instruction.etoa_dd {
+		{{{An instruction result for the fricassée chain to reduce.}}}
+		source : Required
+		{{{An instruction result which is a definition to compute the value for the context.}}}
+		extractor : Required
+		{{{An instruction result which is a definition to compute an alternate value if the chain has no items or more than one.}}}
+		alternate : Required
+	}
+	{{{Create a definition that, when instantiated, will yield the next value in from the fricassée chain. If there are no more values, an error occurs.}}}
+	etod : Template native:emit.instruction.etod {
+		{{{An instruction result for the fricassée chain to reduce.}}}
+		source : Required
+		{{{An instruction result which is a definition to compute the value for the context.}}}
+		definition : Required
+	}
+	{{{Create a definition that, when instantiated, will yield the next value in from the fricassée chain. If there are no more values, a default value is used.}}}
+	etod_a : Template native:emit.instruction.etod_a {
+		{{{An instruction result for the fricassée chain to reduce.}}}
+		source : Required
+		{{{An instruction result which is a definition to compute the value for the context.}}}
+		definition : Required
+		{{{An instruction result which is a boxed value to be used when the chain is exhausted.}}}
+		empty : Required
+	}
+	{{{Group the items in a fricassée chain using the groupers provided to determine which items belong in the same group and then create the feed those items through the collectors specified by groupers.}}}
+	etoe_g : Template native:emit.instruction.etoe_g {
+		{{{An instruction result for the fricassée chain to reduce.}}}
+		source : Required
+		{{{A list of instruction results which return groupers.}}}
+		groupers : Required
+	}
+	{{{Accumulate an additional value during fricassée.}}}
+	etoe_m : Template native:emit.instruction.etoe_m {
+		{{{An instruction result for the fricassée chain to modify.}}}
+		source : Required
+		{{{An instruction result which is a boxed value as the initial value to provide to the accumulator.}}}
+		initial : Required
+		{{{An instruction result which is an accumulator definition to process each element.}}}
+		reducer : Required
+	}
+	{{{Flatten values in a fricassée chain using the supplied flattening steps.}}}
+	etoe_u : Template native:emit.instruction.etoe_u {
+		{{{An instruction result for the fricassée chain to modify.}}}
+		source : Required
+		{{{An instruction result which is a distributor definition to process each element.}}}
+		flattener : Required
+	}
+	{{{Count the number of items processed in a fricassée chain.}}}
+	etoi : Template native:emit.instruction.etoi {
+		{{{An instruction result for the fricassée chain to read.}}}
+		source : Required
+	}
+	{{{Collect the items into a frame with the attributes given by the accumulator.}}}
+	etor_am : Template native:emit.instruction.etor_am {
+		{{{An instruction result for the fricassée chain to read.}}}
+		source : Required
+		{{{An instruction result which is a boxed value as the initial value to provide to the accumulator.}}}
+		initial : Required
+		{{{An instruction result which is an accumulator definition to process each element.}}}
+		reducer : Required
+	}
+	{{{Collect the items into a frame with the attributes numbered based on the order in which they were received.}}}
+	etor_i : Template native:emit.instruction.etor_i {
+		{{{An instruction result for the fricassée chain to read.}}}
+		source : Required
+		{{{An instruction result which is a definition to compute the attribute value from the context.}}}
+		compute_value : Required
+	}
+	{{{Collect the items into a frame with the attribute names provided.}}}
+	etor_s : Template native:emit.instruction.etor_s {
+		{{{An instruction result for the fricassée chain to read.}}}
+		source : Required
+		{{{An instruction result which is a definition to compute the attribute name (as either a string or integer) from the context.}}}
+		compute_name : Required
+		{{{An instruction result which is a definition to compute the attribute value from the context.}}}
+		compute_value : Required
+	}
+	{{{Access External URI.}}}
+	ext : Template native:emit.instruction.ext {
+		{{{A string with the URI.}}}
+		uri : Required
+	}
+	filt_e : Template native:emit.instruction.filt_e {
+		{{{An instruction result for the fricassée chain to filter.}}}
+		source : Required
+		{{{An instruction result which is a definition to determine whether or not to keep the context. The definition must return a Boolean.}}}
+		clause : Required
+	}
+	{{{Create a box containing the provided floating point value.}}}
+	ftoa : Template native:emit.instruction.ftoa {
+		{{{An instruction results which returns a floating-point value to be boxed.}}}
+		arg : Required
+	}
+	{{{Convert a floating-point number to an integer by truncation.}}}
+	ftoi : Template native:emit.instruction.ftoi {
+		{{{An instruction results which returns a floating-point value to truncate.}}}
+		arg : Required
+	}
+	{{{Create a string representation of a floating-point number.}}}
+	ftos : Template native:emit.instruction.ftos {
+		{{{An instruction results which returns a floating-point value to convert to a string.}}}
+		arg : Required
+	}
+	{{{Prepare a function for use by supply its captured arguments.}}}
+	function : Template native:emit.instruction.function {
+		{{{The name of the function (as a string)}}}
+		name : Required
+		{{{A list of instruction results which are to be used as the captures. The names do not need to match; only order is used. The number and type of the arguments must match.}}}
+		args : Required
+	}
+	{{{Get values placed in a frame's \Emph{gather} buckets by ordinal.}}}
+	gather_i : Template native:emit.instruction.gather_i {
+		{{{An instruction results which returns a frame to read.}}}
+		frame : Required
+		{{{An instruction results which returns an ordinal (as an integer) as the name for the gather bucket.}}}
+		ordinal : Required
+	}
+	{{{Get values placed in a frame's \Emph{gather} buckets by name.}}}
+	gather_s : Template native:emit.instruction.gather_s {
+		{{{An instruction results which returns a frame to read.}}}
+		frame : Required
+		{{{An instruction results which returns a name (as a string) as the name for the gather bucket.}}}
+		name : Required
+	}
+	{{{Extract a unique identifier from a frame.}}}
+	id : Template native:emit.instruction.id {
+		{{{An instruction results which returns a frame to read.}}}
+		frame : Required
+	}
+	{{{Call a KWS function.}}}
+	import_function : Template native:emit.instruction.import_function {
+		{{{The name of the function, as a string.}}}
+		name : Required
+		{{{The return type of the function from \{type}.}}}
+		return_type : Required
+		{{{A list of arguments to the function. The argument types will be used to find the correct function.}}}
+		args : Required
+	}
+	{{{Produce a positive infinite value representable as a floating-point number.}}}
+	inf_f : native:emit.instruction.inf_f Enforce Frame
+	{{{Produce a positive infinite value representable as a floating-point number.}}}
+	is_finite : Template native:emit.instruction.is_finite {
+		{{{An instruction results which returns a floating-point value to check.}}}
+		arg : Required
+	}
+	{{{Check if a floating-point value is a number.}}}
+	is_nan : Template native:emit.instruction.is_nan {
+		{{{An instruction results which returns a floating-point value to check.}}}
+		arg : Required
+	}
+	{{{Create a box containing the provided integer value.}}}
+	itoa : Template native:emit.instruction.itoa {
+		{{{An instruction results which returns an integer value to box.}}}
+		arg : Required
+	}
+	{{{Create a floating-point representation of an integral number.}}}
+	itof : Template native:emit.instruction.itof {
+		{{{An instruction results which returns an integer value to convert.}}}
+		arg : Required
+	}
+	{{{Create a string representation of an integral number.}}}
+	itos : Template native:emit.instruction.itos {
+		{{{An instruction results which returns an integer value to convert.}}}
+		arg : Required
+	}
+	{{{Convert an integer value to Boolean by comparing it to reference, which is an integer literal. If the value and reference are equal, true is returned, false otherwise.}}}
+	itoz : Template native:emit.instruction.itoz {
+		{{{An integer to compare again.}}}
+		reference : Required
+		{{{An instruction results which returns an integer value to convert.}}}
+		arg : Required
+	}
+	{{{Create a new lookup handler with the same \Emph{exact} explorer as contextual lookup and a lookup collector that uses a fricassée collector.}}}
+	ktol : Template native:emit.instruction.ktol {
+		{{{An instruction results which returns a name (as a string) as the name for the current value in the fricassée chain.}}}
+		name : Required
+		{{{An instruction which results in the context that will be passed to the definition.}}}
+		context : Required
+		{{{An instruction result which is a collector definition to compute the result of the lookup value.}}}
+		definition : Required
+	}
+	{{{Get the number of bytes in a Bin.}}}
+	len_b : Template native:emit.instruction.len_b {
+		{{{An instruction results which returns a blob.}}}
+		arg : Required
+	}
+	{{{Get the number of Unicode characters in a string.}}}
+	len_s : Template native:emit.instruction.len_s {
+		{{{An instruction results which returns a string.}}}
+		arg : Required
+	}
+	{{{Define values. This does not correspond to a KWS instruction.}}}
+	let : Template native:emit.instruction.let {
+		{{{A frame of instruction values to make bound in \{in}.}}}
+		definitions : Required
+		{{{A function-like template which will be instantiated with the above definitions available.}}}
+		in : Required
+	}
+	{{{Adds new attributes to the downstream operations in a fricassée chain.}}}
+	let_e : Template native:emit.instruction.let_e {
+		{{{An instruction result for the fricassée chain to modify.}}}
+		source : Required
+		{{{A list of instruction results which are builders.}}}
+		builders : Required
+	}
+	lookup : Template native:emit.instruction.lookup {
+		{{{An instruction result for the context.}}}
+		context : Required
+		{{{A list of strings which are the names to lookup}}}
+		names : Required
+	}
+	{{{Perform lookup over a list of frames.}}}
+	lookup_l : Template native:emit.instruction.lookup_l {
+		{{{An instruction result for the context.}}}
+		context : Required
+		{{{An instruction result which is the lookup handler to use.}}}
+		handler : Required
+		{{{An instruction result which is the names to lookup.}}}
+		names : Required
+	}
+	{{{Create a box containing the provided lookup handler value.}}}
+	ltoa : Template native:emit.instruction.ltoa {
+		{{{An instruction results which returns a lookup handler.}}}
+		arg : Required
+	}
+	{{{The largest value representable as a floating-point number.}}}
+	max_f : native:emit.instruction.max_f Enforce Frame
+	{{{The largest value representable as a integral number.}}}
+	max_i : native:emit.instruction.max_i Enforce Frame
+	{{{The Boolean true.}}}
+	max_z : native:emit.instruction.max_z Enforce Frame
+	{{{The smallest value representable as a floating-point number.}}}
+	min_f : native:emit.instruction.min_f Enforce Frame
+	{{{The smallest value representable as a integral number.}}}
+	min_i : native:emit.instruction.min_i Enforce Frame
+	{{{The Boolean false.}}}
+	min_z : native:emit.instruction.min_z Enforce Frame
+	{{{Divide two integers and compute remainder.}}}
+	mod_f : Template native:emit.instruction.mod_f {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+	{{{Divide two floating-point numbers and compute remainder.}}}
+	mod_i : Template native:emit.instruction.mod_i {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+	{{{Create an infinite sequence by applying the same function to the input.}}}
+	mtoe : Template native:emit.instruction.mtoe {
+		{{{An instruction result for the context to be passed to the definition and the remainder of the fricassée chain.}}}
+		context : Required
+		{{{An instruction result which is a boxed value as the initial value to provide to the accumulator.}}}
+		initial : Required
+		{{{An instruction result which is an accumulator definition to generate the next element.}}}
+		definition : Required
+	}
+	{{{Multiply two floating-point numbers.}}}
+	mul_f : Template native:emit.instruction.mul_f {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+	{{{Multiply two integers.}}}
+	mul_i : Template native:emit.instruction.mul_i {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+	{{{A not-a-number value representable as a floating-point value.}}}
+	nan_f : native:emit.instruction.nan_f Enforce Frame
+	{{{Produce the additive inverse of a floating-point value.}}}
+	neg_f : Template native:emit.instruction.neg_f {
+		{{{An instruction results which returns a floating-point number to negate.}}}
+		arg : Required
+	}
+	{{{Produce the additive inverse of an integer value.}}}
+	neg_i : Template native:emit.instruction.neg_i {
+		{{{An instruction results which returns an integer number to negate.}}}
+		arg : Required
+	}
+	{{{Creates a fricassée grouper with a collection operation for the output for this grouping operation.}}}
+	new_g : Template native:emit.instruction.new_g {
+		{{{An instruction result with a string type to use as an attribute name.}}}
+		name : Required
+		{{{An instruction results which returns a collector definition.}}}
+		definition : Required
+	}
+	{{{Creates a fricassée grouper which acts like a grouping key, but sets the name to a fixed value.}}}
+	new_g_a : Template native:emit.instruction.new_g_a {
+		{{{An instruction result with a string type to use as an attribute name.}}}
+		name : Required
+		{{{An instruction results which returns a boxed value to use.}}}
+		arg : Required
+	}
+	{{{Create a new fricassée chain by merging the attributes of frames.}}}
+	new_p : Template native:emit.instruction.new_p {
+		{{{An instruction result for the context to be used as the base of the zipping operations and the remainder of the fricassée chain.}}}
+		context : Required
+		{{{An instruction results which returns a Boolean value that determines if only attributes shared across all frames should be considered. If false, missing values are replaced with \Mono{Null}.}}}
+		intersect : Required
+		{{{A list of instruction results for the zipper used to build the fricassée chain. Order does not matter.}}}
+		zippers : Required
+	}
+	{{{Create a fricassée zipper that binds the current iteration ordinal to a name.}}}
+	new_p_i : Template native:emit.instruction.new_p_i {
+		{{{An instruction result with a string type to use as an attribute name.}}}
+		name : Required
+	}
+	{{{Create a fricassée zipper that includes a frame in the iteration process.}}}
+	new_p_r : Template native:emit.instruction.new_p_r {
+		{{{An instruction result with a string type to use as an attribute name.}}}
+		name : Required
+		{{{An instruction result with a frame type to iterate over.}}}
+		frame : Required
+	}
+	{{{Create a fricassée zipper that binds the current iteration attribute name to a name.}}}
+	new_p_s : Template native:emit.instruction.new_p_s {
+		{{{An instruction result with a string type to use as an attribute name.}}}
+		name : Required
+	}
+	{{{Create frame whose attributes will be those in the supplied builders.}}}
+	new_r : Template native:emit.instruction.new_r {
+		{{{An instruction result for the context to be used as the base context for the new frame.}}}
+		context : Required
+		{{{An instruction result which is a Boolean to determine if \Mono{This} inside the frame should refer to the new frame (true) or the existing value of \Mono{This} (false).}}}
+		self_is_this : Required
+		{{{A list of instruction results which are integers or strings that define the gather buckets associated with this frame. Gatherers from templates are automatically included. Order does not matter.}}}
+		gatherers : Required
+		{{{A list of instruction results which are templates, frames, and/or attribute builders that will create the attributes in the new frame. Order matters.}}}
+		builders : Required
+	}
+	{{{Create a frame containing integral numbers, over the range specified, assigned to keys from 1 to the number of items.}}}
+	new_r_i : Template native:emit.instruction.new_r_i {
+		{{{An instruction result for the context to be used as the base context for the new frame.}}}
+		context : Required
+		{{{An instruction result for starting number, which must be an integer.}}}
+		start : Required
+		{{{An instruction result for ending number, which must be an integer. If this number is less than the start number, the output will be empty; otherwise, this number will be included in the output.}}}
+		end : Required
+	}
+	{{{Create a new definition builder from zero or more existing builders.}}}
+	new_t : Template native:emit.instruction.new_t {
+		{{{An instruction result for the context to be used as the base context for the new template.}}}
+		context : Required
+		{{{A list of instruction results which are integers or strings that define the gather buckets associated with this template. Gatherers from templates are automatically included. Order does not matter.}}}
+		gatherers : Required
+		{{{A list of instruction results which are templates, frames, and/or attribute builders that will create the attributes in the new template. Order matters.}}}
+		builders : Required
+	}
+	{{{Creates a builder with an ordinal name set to a fixed value.}}}
+	new_x_ia : Template native:emit.instruction.new_x_ia {
+		{{{An instruction results which returns an ordinal (as an integer) for the attribute name.}}}
+		ordinal : Required
+		{{{An instruction results which returns a boxed value to use.}}}
+		arg : Required
+	}
+	{{{Creates a builder with a string name set to a fixed value.}}}
+	new_x_sa : Template native:emit.instruction.new_x_sa {
+		{{{An instruction results which returns a name (as a string) for the attribute name.}}}
+		name : Required
+		{{{An instruction results which returns a boxed value to use.}}}
+		arg : Required
+	}
+	{{{Creates a builder with a string name set to a definition.}}}
+	new_x_sd : Template native:emit.instruction.new_x_sd {
+		{{{An instruction results which returns a name (as a string) for the attribute name.}}}
+		name : Required
+		{{{An instruction results which returns a definition.}}}
+		definition : Required
+	}
+	{{{Creates a builder with a string name set to an override definition.}}}
+	new_x_so : Template native:emit.instruction.new_x_so {
+		{{{An instruction results which returns a name (as a string) for the attribute name.}}}
+		name : Required
+		{{{An instruction results which returns an override definition.}}}
+		definition : Required
+	}
+	{{{A box containing no value. This is what Flabbergast uses for \Mono{Null}.}}}
+	nil_a : native:emit.instruction.nil_a Enforce Frame
+	{{{An empty context.}}}
+	nil_c : native:emit.instruction.nil_c Enforce Frame
+	{{{A name source with no names in it.}}}
+	nil_n : native:emit.instruction.nil_n Enforce Frame
+	{{{Get a frame containing no attributes. This frame will always have the id \Mono{empty}.}}}
+	nil_r : native:emit.instruction.nil_r Enforce Frame
+	{{{Get a window that, when used for length, will consume all the item, and, when used for next, will start at the end of the previous window.}}}
+	nil_w : native:emit.instruction.nil_w Enforce Frame
+	{{{Produce a new grouper which defines the same attributes but replaces their definitions with \{nil_a} as if by \{new_g_a}.}}}
+	not_g : Template native:emit.instruction.not_g {
+		{{{An instruction results which returns a grouper value to invert.}}}
+		arg : Required
+	}
+	{{{Produce the bit-wise NOT of an integer.}}}
+	not_i : Template native:emit.instruction.not_i {
+		{{{An instruction results which returns an integer value to invert.}}}
+		arg : Required
+	}
+	{{{Produce the Boolean complement.}}}
+	not_z : Template native:emit.instruction.not_z {
+		{{{An instruction results which returns a Boolean value to invert.}}}
+		arg : Required
+	}
+	{{{Produce a new grouper that splits the input contexts to every grouper provided and then aggregates the resulting groups.}}}
+	or_g : Template native:emit.instruction.or_g {
+		{{{A list of instruction results for the groupers to include. Order does not matter}}}
+		groupers : Required
+	}
+	{{{Produce the bit-wise OR of two integers.}}}
+	or_i : Template native:emit.instruction.or_i {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+	{{{Reorder the results of a fricassée chain by computing a value, which must be a floating point value (or integer) and then reordering the input provided by the source based on \{cmp_f}.}}}
+	ord_e_f : Template native:emit.instruction.ord_e_f {
+		{{{An instruction result for the fricassée chain to reorder.}}}
+		source : Required
+		{{{An instruction result for a Boolean value that, if true, will sort the items from smallest to largest, or, if false, largest to smallest.}}}
+		ascending : Required
+		{{{An instruction result which is a definition to determine whether or not to keep the context. The definition must return a floating-point number or an integer.}}}
+		clause : Required
+	}
+	{{{Reorder the results of a fricassée chain by computing a value, which must be an integer and then reordering the input provided by the source based on \{cmp_i}.}}}
+	ord_e_i : Template native:emit.instruction.ord_e_i {
+		{{{An instruction result for the fricassée chain to reorder.}}}
+		source : Required
+		{{{An instruction result for a Boolean value that, if true, will sort the items from smallest to largest, or, if false, largest to smallest.}}}
+		ascending : Required
+		{{{An instruction result which is a definition to determine whether or not to keep the context. The definition must return an integer.}}}
+		clause : Required
+	}
+	{{{Reorder the results of a fricassée chain by computing a value, which must be Boolean, floating point, integer, or string, and then reordering the input provided by the source based on \{cmp_s}.}}}
+	ord_e_s : Template native:emit.instruction.ord_e_s {
+		{{{An instruction result for the fricassée chain to reorder.}}}
+		source : Required
+		{{{An instruction result for a Boolean value that, if true, will sort the items from smallest to largest, or, if false, largest to smallest.}}}
+		ascending : Required
+		{{{An instruction result which is a definition to determine whether or not to keep the context. The definition must return a string (or type which is convertible to string).}}}
+		clause : Required
+	}
+	{{{Reorder the results of a fricassée chain by computing a value, which must be Boolean and then reordering the input provided by the source based on \{cmp_z}.}}}
+	ord_e_z : Template native:emit.instruction.ord_e_z {
+		{{{An instruction result for the fricassée chain to reorder.}}}
+		source : Required
+		{{{An instruction result for a Boolean value that, if true, will sort the items from smallest to largest, or, if false, largest to smallest.}}}
+		ascending : Required
+		{{{An instruction result which is a definition to determine whether or not to keep the context. The definition must return a Boolean.}}}
+		clause : Required
+	}
+	{{{Creates a new attribute which has the same behaviour as the one provided but does not allow the attribute to be visible outside of the frame of its children.}}}
+	priv_x : Template native:emit.instruction.priv_x {
+		{{{An instruction results which returns an attribute builder to hide.}}}
+		inner : Required
+	}
+	{{{Creates a new grouper which is the alternate (\{or_g}) of every combination of the provided groupers (\{and.g}) and the complement (\{not.g}) of the others.}}}
+	powerset : Template native:emit.instruction.powerset {
+		{{{A list of instruction results for the groupers to include. Order does not matter}}}
+		groupers : Required
+	}
+	{{{Create an attribute with the specified name to be an error requesting this attribute be overridden.}}}
+	require_x : Template native:emit.instruction.require_x {
+		{{{An instruction results which returns a name (as a string) for the attribute name.}}}
+		name : Required
+	}
+	{{{Reverse the order in which items in a fricassée chain are processed.}}}
+	rev_e : Template native:emit.instruction.rev_e {
+		{{{An instruction result for the fricassée chain to reorder.}}}
+		source : Required
+	}
+	{{{Create a grouper that puts items into groups based on performing \Mono{pow(primitive, position) % size}.}}}
+	ring_g : Template native:emit.instruction.ring_g {
+		{{{An instruction results which returns an integer to use as the base.}}}
+		primitive : Required
+		{{{An instruction results which returns an integer to use as the ring size.}}}
+		size : Required
+	}
+	{{{Create a box containing the provided frame value.}}}
+	rtoa : Template native:emit.instruction.rtoa {
+		{{{An instruction results which returns a frame value to box.}}}
+		arg : Required
+	}
+	{{{Iterates over a frame of frames and put each inner frame as the head of the context in which the chain is evaluated.}}}
+	rtoe : Template native:emit.instruction.rtoe {
+		{{{An instruction result for the frame to iterate over.}}}
+		source : Required
+		{{{An instruction result for the context to use as the base context for downstream fricassée operations.}}}
+		context : Required
+	}
+	{{{Create a new definition that discards the calling context and uses the context provided.}}}
+	seal_d : Template native:emit.instruction.seal_d {
+		{{{An instruction result for the context to use.}}}
+		context : Required
+		{{{An instruction result for the definition to capture.}}}
+		definition : Required
+	}
+	{{{Create a new override definition that discards the calling context and uses the context provided.}}}
+	seal_o : Template native:emit.instruction.seal_o {
+		{{{An instruction result for the context to use.}}}
+		context : Required
+		{{{An instruction result for the override definition to capture.}}}
+		definition : Required
+	}
+	{{{Create a window that requires that adjacent items have less than an adjacent floating-point distance and that the whole window has less than a maximum floating-point distance.}}}
+	session_f : Template native:emit.instruction.session_f {
+		{{{An instruction results which returns an definition that returns a floating-point value or integer as the value to use to identify each item in the window.}}}
+		definition : Required
+		{{{An instruction result which returns a floating-point number indicating the maximum limit for two adjacent item.}}}
+		adjacent : Required
+		{{{An instruction result which returns a floating-point number indicating the maximum limit for the whole session.}}}
+		maximum : Required
+	}
+	{{{Create a window that requires that adjacent items have less than an adjacent integral distance and that the whole window has less than a maximum integral distance.}}}
+	session_i : Template native:emit.instruction.session_i {
+		{{{An instruction results which returns an definition that returns an integer as the value to use to identify each item in the window.}}}
+		definition : Required
+		{{{An instruction result which returns an integer indicating the maximum limit for two adjacent item.}}}
+		adjacent : Required
+		{{{An instruction result which returns an integer indicating the maximum limit for the whole session.}}}
+		maximum : Required
+	}
+	{{{Shift an integer to the left or right by a number of bits.}}}
+	sh_i : Template native:emit.instruction.sh_i {
+		{{{An instruction result which returns an integer to shift.}}}
+		arg : Required
+		{{{An instruction result which returns an integer indicating the number of bits to shift by.}}}
+		offset : Required
+	}
+	{{{Randomly permute the order of a fricassée chain.}}}
+	shuf_e : Template native:emit.instruction.shuf_e {
+		{{{An instruction result for the fricassée chain to reorder.}}}
+		source : Required
+	}
+	{{{Create a box containing the provided string value.}}}
+	stoa : Template native:emit.instruction.stoa {
+		{{{An instruction results which returns a string to box.}}}
+		arg : Required
+	}
+	{{{Create a discriminator for a grouping operation that assigns items to rotating groups based on their position.}}}
+	stripe_e : Template native:emit.instruction.stripe_e {
+		{{{An instruction results which returns an integer indicating the number of items in each group. Values less than 1 will result in an error.}}}
+		width : Required
+	}
+	{{{Perform floating-point subtraction.}}}
+	sub_f : Template native:emit.instruction.sub_f {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+	{{{Perform integer subtraction.}}}
+	sub_i : Template native:emit.instruction.sub_i {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+	{{{Allow contexts from a fricassée chain as long as a clause returns true. Once it returns false, all remaining contexts will be discarded.}}}
+	take_ed : Template native:emit.instruction.take_ed {
+		{{{An instruction result for the fricassée chain to modify.}}}
+		source : Required
+		{{{An instruction result which is a definition to determine whether or not to keep the context. The definition must return a Boolean.}}}
+		clause : Required
+	}
+	{{{Keep up to a fixed number of contexts from the start of a fricassée chain.}}}
+	take_ei : Template native:emit.instruction.take_ei {
+		{{{An instruction result for the fricassée chain to modify.}}}
+		source : Required
+		{{{An instruction result with an integer result to determine the number of items.}}}
+		count : Required
+	}
+	{{{Keep up to a fixed number of contexts from the end of a fricassée chain.}}}
+	takel_ei : Template native:emit.instruction.takel_ei {
+		{{{An instruction result for the fricassée chain to modify.}}}
+		source : Required
+		{{{An instruction result with an integer result to determine the number of items.}}}
+		count : Required
+	}
+	{{{Create a box containing the provided template value.}}}
+	ttoa : Template native:emit.instruction.ttoa {
+		{{{An instruction results which returns a template to box.}}}
+		arg : Required
+	}
+	{{{Produce a windowed fricassée grouper.}}}
+	window_g : Template native:emit.instruction.window_g {
+		{{{An instruction result for the window algorithm used to compute the length window.}}}
+		length : Required
+		{{{An instruction result for the window algorithm used to compute the start of the next window.}}}
+		next : Required
+	}
+	{{{Produce the bit-wise XOR of two integers.}}}
+	xor_i : Template native:emit.instruction.xor_i {
+		{{{An instruction result for the left-hand operand.}}}
+		left : Required
+		{{{An instruction result for the right-hand operand.}}}
+		right : Required
+	}
+	{{{Create a box containing the provided Boolean value.}}}
+	ztoa : Template native:emit.instruction.ztoa {
+		{{{An instruction results which returns a Boolean to box.}}}
+		arg : Required
+	}
+	{{{Create a string representation of a Boolean value.}}}
+	ztos : Template native:emit.instruction.ztos {
+		{{{An instruction results which returns a Boolean to convert.}}}
+		arg : Required
+	}
+}

@@ -1,0 +1,28 @@
+Export json;
+
+json = _ (
+		  Float('-'? [0-9]* ('.' [0-9]*) ([eE] '-'? [0-9]+)?) :: Number
+		| Float('-'? [0-9]* ([eE] '-'? [0-9]+)?) :: Number
+		| Integer('-'? [0-9]*, 10) :: Number
+		| 'true' :: ConstantSyntax True
+		| 'false' :: ConstantSyntax False
+		| 'null' :: ConstantSyntax Null
+		| '('::Operator Flabbergast ')'::Operator
+		| '['::Operator Frame json.list { children : Repeat(json _, ','::Keyword) } ']'::Operator
+		| '{'::Operator Frame json.object { children : Repeat(property, ','::Keyword) } '}'::Operator
+		| string) _
+
+property = _ Frame { "key" : ('('::Operator Flabbergast ')'::Operator | string) _ ':'::Operator _; "value" : json } _;
+
+string =
+	('"' Concat(
+		  ('\\b'::Escape "\b")
+		| ('\\f'::Escape "\f")
+		| ('\\n'::Escape "\n")
+		| ('\\r'::Escape "\r")
+		| ('\\t'::Escape "\t")
+		| ('\\u' HexCodepoint(4))::Escape
+		| String([^\"\u0000-\u001F\u007F]+
+	)) '\') :: StringDoubleQuoted;
+
+_ = [ \t\n\r]*;

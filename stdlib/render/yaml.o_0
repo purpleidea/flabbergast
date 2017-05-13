@@ -1,0 +1,70 @@
+Introduction{{{Templates for generation YAML Ain't Markup Language documents. For details, don't see XML.}}}
+
+utils_lib : From lib:utils
+
+str_transform : utils_lib.str_transform
+
+yaml : This
+
+yaml_indent : ""
+{{{Escaping conventions used by YAML files}}}
+escape_transform_tmpl : Template {
+	backslash : str_transform.char_tmpl { char : "\\"  replacement : "\\\\" }
+	backspace : str_transform.char_tmpl { char : "\b"  replacement : "\\b" }
+	bell : str_transform.char_tmpl { char : "\a"  replacement : "\\a" }
+	escape : str_transform.char_tmpl { char : "\x33"  replacement : "\\e" }
+	formfeed : str_transform.char_tmpl { char : "\f"  replacement : "\\f" }
+	newline : str_transform.char_tmpl { char : "\n"  replacement : "\\n" }
+	null : str_transform.char_tmpl { char : "\x00"  replacement : "\\0" }
+	quote : str_transform.char_tmpl { char : "\""  replacement : "\\\"" }
+	return : str_transform.char_tmpl { char : "\r"  replacement : "\\r" }
+	tab : str_transform.char_tmpl { char : "\t"  replacement : "\\t" }
+	vtab : str_transform.char_tmpl { char : "\v"  replacement : "\\v" }
+	nonprint : str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "\\", utf8_0 ] }
+}
+
+{{{Transform a list of strings using default escaping transformations.}}}
+escape_list : utils_lib.str_escape_builder(args : escape_transform_tmpl {}) Enforce Template
+
+{{{Transform a string using the default escaping transformations.}}}
+escape : utils_lib.str_concatifier(base : escape_list, delimiter : "") Enforce Template
+
+
+{{{Produce a list of other YAML fragments.}}}
+list : Template {
+	{{{A list of YAML elements (list, object, or scalar).}}}
+	children : Required
+
+	yaml_indent : parent_yaml_indent & "  "
+	parent_yaml_indent : Lookup yaml_indent In Container
+
+	{{{The rendered YAML string.}}}
+	yaml_value :
+		"\n" & (For child : children
+			Concat parent_yaml_indent & "- " & child.yaml_value & "\n"
+			With "")
+}
+{{{Produce an object containing key-value pairs}}}
+object : Template {
+	{{{A list of YAML elements (list, object, or scalar). Attribute names will be used as YAML keys.}}}
+	children : Required
+	yaml_indent : parent_yaml_indent & "  "
+	parent_yaml_indent : Lookup yaml_indent In Container
+
+	{{{The rendered YAML string.}}}
+	yaml_value :
+		"\n" & (For child : children, arg_name : Name
+			Concat parent_yaml_indent & arg_name & ": " & child.yaml_value & "\n"
+			With "")
+}
+{{{Produce a single YAML value}}}
+scalar : Template {
+	{{{The value to be converted. Most Flabbergast types will be mapped automatically.}}}
+	arg : Required
+	yaml_value :
+			If arg Is Str Then "\"" & yaml.escape(arg) & "\""
+			Else If arg Is Null Then "null"
+			Else If arg Is Bool Then (If arg Then "true" Else "false")
+			Else If arg Is Int || arg Is Float Then arg To Str
+			Else Error "Cannot YAMLise value."
+}

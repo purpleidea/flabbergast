@@ -8,7 +8,7 @@ decimal_codepoint : utils_lib.str_concatifier(base : utils_lib.str_escape_builde
 		end : "\U0010FFFF"
 		replacement : [ utf32 ]
 		mode : mode_decimal
-	}), delimiter : "")
+	}), delimiter : "") Enforce Template
 
 {{{Transformations to escape strings as UTF-32 hex values.}}}
 utf32_be_transform : utils_lib.str_concatifier(base : utils_lib.str_escape_builder(utils_lib.str_transform.range_tmpl {
@@ -16,7 +16,7 @@ utf32_be_transform : utils_lib.str_concatifier(base : utils_lib.str_escape_build
 		end : "\U0010FFFF"
 		replacement : [ utf32 ]
 		mode : mode_hex_lower
-	}), delimiter : "")
+	}), delimiter : "") Enforce Template
 
 {{{Transformations that can be done on a string to escape it.}}}
 str_transform : {
@@ -32,6 +32,14 @@ str_transform : {
 
 		char_case : "if (c == \(codepoint Enforce Str)) { print \"\(replacement_bytes Enforce Str)\"; } else "
 		range_case : ""
+	}
+	{{{Create a special transformation that can be used to pass unescaped values through nested transformations.}}}
+	passthrough_tmpl : Template char_tmpl {
+		{{{A magic string that can be placed in the input and will pass through other escaping unchanged.}}}
+		char : utils_lib.char_maker()
+		char_maker : Now utils_lib.char_maker
+		{{{The string to use in the outermost escaped result.}}}
+		replacement : Required
 	}
 	{{{Transform a range of characters into a numeric escape sequence.}}}
 	range_tmpl : Template {
@@ -71,8 +79,8 @@ str_transform : {
 		start_codepoint : decimal_codepoint(start)
 		end_codepoint : decimal_codepoint(end)
 		replacement_bytes : For x : replacement
-			Reduce acc & (If x Is Str Then "print \"" & utf32_be_transform(x) & "\";" Else x.value)
-			With acc : ""
+			Concat If x Is Str Then "print \"" & utf32_be_transform(x) & "\";" Else x.value
+			With ""
 
 		char_case : ""
 		range_case : "if (c >= \(start_codepoint Enforce Str) && c <= \(end_codepoint Enforce Str)) { M = \"\(mode)\"; \(replacement_bytes Enforce Str) } else "
@@ -85,9 +93,8 @@ make_shell_escaper : Template {
 	transformations : Required
 
   program :
-	 For t : transformations Reduce t.char_case & acc
-	  With acc : (For t : transformations Reduce t.range_case & acc
-		  With acc : "")
+	 (For t : transformations Reverse Concat t.range_case With "") &
+	 (For t : transformations Reverse Concat t.char_case With "")
 
   value : "iconv --to utf32be | xxd -c 4 -p | gawk -l ordchr 'function p(f, c) { s = sprintf(f, int(c)); for(i = 1; i <= length(s); i++) { printf(\"%08x\", ord(substr(s, i, 1)));} } BEGIN { m[\"hu0\"] = \"%08X\"; m[\"hu1\"] = \"%04X\"; m[\"hu2\"] = \"%02X\"; m[\"hl0\"] = \"%08x\"; m[\"hl1\"] = \"%04x\"; m[\"hl2\"] = \"%02x\"; m[\"d0\"] = \"%d\"; m[\"d1\"] = \"%d\"; m[\"d2\"] = \"%d\"; } { c = strtonum(\"0x\"$0); \(program Enforce Str) { print $0; } }' | xxd -r -p | iconv --from utf32be"
 }

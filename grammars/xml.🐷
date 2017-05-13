@@ -1,0 +1,58 @@
+Export xml;
+
+xml = element;
+
+element = (
+      '<'::Operator Frame xml.element {
+        "node_name" : Str(qname @ name)::TypeDef "attributes" : List(xml_attribute), (
+            '/>'::Operator "children" : List()
+          | '>'::Operator "children" : List(node) '</'::Operator (^name)::Type '>'::Operator)
+        }
+    | '<{'::Operator Frame xml.element {
+        "node_name" : Flabbergast '}'::Operator, "attributes" : List(xml_attribute), (
+            '/>'::Operator "children" : List()
+          | '>'::Operator "children" : List(node) '</{}>'::Operator)
+        }
+    )
+
+node =
+      element
+    | '{'::Operator Flabbergast '}'::Operator
+    | Frame xml.text { "content" : Concat((
+        Str([^<&{]+)::Markup
+      | '&lt;'::Character "<"
+      | '&gt;'::Character ">"
+      | '&quot;'::Character "\""
+      | '&apos;'::Character "'"
+      | '&amp;'::Character "&"
+      | ('&#' DecimalCodepoint ';')::Character
+      | ('&#x' HexCodepoint ';')::Character
+      )+) }
+    | ('<!--' Frame xml.comment { "content" : Str([^>]*) } '-->')::Comment
+    | '<?'::Operator Frame xml.processing_instruction { "target" : Str([^> \t\n\r]*), "parameters" : Str([^>?]*) } '?>'::Operator
+
+xml_attribute = '[ \t\r\n']+ (
+      '*{'::Operator Template xml.attribute_set { "args" : Flabbergast } '}'::Operator
+    | Template xml.attribute { "attr_name" : (Str(qname) | '{'::Operator Flabbergast '}'::Operator ) '='::Operator, "attr_value" : (
+      ('\''::Operator Concat((
+           Str([^'<&{]+)
+         | '&lt;'::Character "<"
+         | '&gt;'::Character ">"
+         | '&quot;'::Character "\""
+         | '&apos;'::Character "'"
+         | '&amp;'::Character "&"
+         | '&#' DecimalCodepoint ';'::Character
+         | '&#x' HexCodepoint ';'::Character
+         )*) '\''::Operator)::StringSingleQuoted
+      |  ('\"'::Operator Concat((
+           Str([^"<&{]+)
+         | '&lt;'::Character "<"
+         | '&gt;'::Character ">"
+         | '&quot;'::Character "\""
+         | '&apos;'::Character "'"
+         | '&amp;'::Character "&"
+         | ('&#' DecimalCodepoint ';')::Character
+         | ('&#x' HexCodepoint ';')::Character
+         )*) '\"'::Operator)::StringDoubleQuoted
+      | '{'::Operator Flabbergast '}'::Operator
+      ) }

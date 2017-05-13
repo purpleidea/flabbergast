@@ -11,6 +11,8 @@
 
 `Int` – integral number.
 
+`LookupHandler` – algorithm for resolving names.
+
 `Null` – nothing much.
 
 `Str` – a Unicode text string
@@ -56,8 +58,6 @@ Type coercion: `x To t` (_e.g._, `3 To Float`)
 
 Type check: `x Is t` (_e.g._, `3 Is Bool`, `a Is Null`)
 
-Type determination: `TypeOf x` or `TypeOf x With foo` (_e.g._, `TypeOf "x" With foo` will `foo.str`)
-
 Finite: `x Is Finite`
 
 Not-a-number: `x Is NaN`
@@ -67,6 +67,12 @@ Raise an error: `Error "Make it stop."`
 String length: `Length "hello"`
 
 Remote contextual lookup: `Lookup x.y In someframe`
+
+Remote custom lookup: `Lookup x.y Using handler In someframe`
+
+Custom lookup: `Lookup x.y Using handler Here`
+
+Type-directed lookup: `Lookup foo.TypeOf(x) Here` (_e.g._, `Lookup foo.TypeOf("x") Here` will `foo.str`)
 
 Instantiate a template: `tmpl { overrides... }` (_e.g._, `some_template { x : 3 }`)
 
@@ -130,29 +136,62 @@ Remove: `name : Drop`
 
 Eager evaluation: `name : Now expr` This causes the expression to be evaluated immediately, instead of upon instantiation.
 
-## Fricassée Selectors
-
-Filter: `... Where condition` (_e.g._, `For x : args Where x > 5 Select x`)
-
-Ordering: `... Order By expr` (_e.g._, `For x : args Order By x To Str Select x`)
-
-Reverse: `... Reverse` (_e.g._, `For x : args Reverse Select x`)
-
-Accumulating value: `... Accumulate expr With name : initial` (_e.g._, running product `For x : args Accumulate product * x With product : 1 Select product`)
-
-Name binding: `... Let a : expr, b : expr` (_e.g._, `For x : args Let x_squared : x * x Reduce x_squared * acc + x_squared With acc : 0`
+## Fricassée Sources
 
 Pass-through selector: `For Each x`
 
 Merged attribute selector: `For x : expr1, y : expr2, n : Name, o : Ordinal`
 
-## Fricassée Results
+## Fricassée Transformations
+
+Accumulating value: `Accumulate expr With name : initial` (_e.g._, running product `For x : args Accumulate product * x With product : 1 Select product`)
+
+Flattening: `Flatten x : expr1, y : expr2, n : Name, o : Ordinal`
+
+Grouping: `Group x : collectX, y : collectY By a : exprA, b : exprB` (_e.g._, `For x : args Group target : Select x.target By x.port Enforce Int`)
+
+Name binding: `Let a : expr, b : expr` (_e.g._, `For x : args Let x_squared : x * x Reduce x_squared * acc + x_squared With acc : 0`
+
+Ordering: `Order By expr` (_e.g._, `For x : args Order By x To Str Select x`)
+
+Reverse: `Reverse` (_e.g._, `For x : args Reverse Select x`)
+
+Randomisation: `Shuffle`
+
+Discard input at start (count): `Drop expr` (_e.g._, `For x : args Drop 3 Select x)
+
+Discard input from end (count): `DropLast expr` (_e.g._, `For x : args DropLast 3 Select x)
+
+Discard input with condition: `DropWhile expr` (_e.g._, `For x : args DropWhile x < 3 Select x)
+
+Keep input at start (count): `Take expr` (_e.g._, `For x : args Keep 3 Select x)
+
+Keep input from end (count): `TakeLast expr` (_e.g._, `For x : args TakeLast 3 Select x)
+
+Keep input with condition: `TakeWhile expr` (_e.g._, `For x : args TakeWhile x < 3 Select x)
+
+Filter: `Where condition` (_e.g._, `For x : args Where x > 5 Select x`)
+
+## Fricassée Collectors
 
 Reducer (fold): `Reduce expr With name : initial` (_e.g._, `For x : args Reduce x + acc With acc : 0`)
 
 To list (map): `Select expr` (_e.g._, `For x : arg Select x * 2`)
 
 To frame (map): `Select nameexpr : expr` (_e.g._, `For x : arg, name : Name Select name : x * 2`)
+
+Single result: `Single x` (_e.g._, `For x : arg Where x.id == 3 Single x`)
+
+Single result: `Single x Or default` (_e.g._, `For x : arg Where x.id == 3 Single x Or Null`)
+
+To string: `Concat expr With delimiter` (_e.g._, `For x : args Concat x With ", "`)
+
+Total count: `Count` (_e.g._, `For x : args Count`)
+
+Cumulative operation to list (scan): `Scan expr With name : initial` (_e.g._, `For x : args Scan x + acc With acc : 0`)
+
+Cumulative operation to frame (scan): `Scan expr With name : initial` (_e.g._, `For x : args, name : Name Scan name : x + acc With acc : 0`)
+
 
 ## String Parts
 

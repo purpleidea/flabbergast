@@ -1,12 +1,7 @@
 *.a
 *.asc
-*.manifest
-*.pom
+*.iml
 .build
-build
-compiler-generated
-flabbergast-*.jar
-manifest
-maven-deploy
-runtime/flabbergast/db-jvm.java
-testingclasspath.sh
+.idea/
+.settings/
+target/

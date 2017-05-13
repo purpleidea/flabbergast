@@ -1,0 +1,164 @@
+Introduction{{{Lookup handlers and tools for manipulating lookup handlers.}}}
+
+{{{Lookups up all possible values and returns them as a list. Normally, \{x.y.z}, will find the first frame \{x} that contains \{y} that contains \{z}. With this lookup handler, lookup will continue to find all frames \{x} that contain \{y} that contain \{z} and a list of all values will be returned. If no frames are found, an empty list is returned.}}}
+all_handler : From native:lookup.all Enforce LookupHandler
+
+{{{Attempts a lookup using contextual lookup, but discards any null values rather than causing a type error.}}}
+coalescing_handler : From native:lookup.coalescing Enforce LookupHandler
+
+{{{Attempts a lookup using contextual lookup, but returns true if the value exists and false if it does not.}}}
+existence_handler : From native:lookup.existence Enforce LookupHandler
+
+{{{Performs contextual lookup, but handles numeric indices such that the frame's attribute name matches if it evenly divides the lookup's name. If there are multiple matching attributes in the frame, an error occurs.}}}
+flag_divided_handler : From native:lookup.flag_divided Enforce LookupHandler
+{{{Performs contextual lookup, but handles numeric indices such that the lookup's name mathces if it evenly divides the frame's attribute name. If there are multiple matching attributes in the frame, an error occurs.}}}
+flag_divides_handler : From native:lookup.flag_divides Enforce LookupHandler
+{{{Performs contextual lookup, but handles numeric indices as bit fields and requires that the all bits set in the frame's attribute name be present in the lookup's name. If there are multiple matching attributes in the frame, an error occurs.}}}
+flag_contained_handler : From native:lookup.flag_contained Enforce LookupHandler
+{{{Performs contextual lookup, but handles numeric indices as bit fields and requires that the all bits set in the lookup's name be present in the frame's attribute name. If there are multiple matching attributes in the frame, an error occurs.}}}
+flag_contains_handler : From native:lookup.flag_contains Enforce LookupHandler
+{{{Performs contextual lookup, but handles numeric indices as bit fields and requires that the there are bits in common between the lookup's name and the frame's attribute name. If there are multiple matching attributes in the frame, an error occurs.}}}
+flag_intersect_handler : From native:lookup.flag_intersect Enforce LookupHandler
+
+{{{Computes the most likely look using Levenshtein distance between requested and available attribute names. This is mostly intended as a debugging tool and should not be used in normal code. It finds and returns the first “best” match.}}}
+fuzzy_handler : Template From native:lookup.fuzzy  {
+	{{{The maximum Levenshtein distance allowed to be considered a match.}}}
+	cutoff : Used
+}
+
+{{{Lookups up all possible values, which must be frames, and returns a composite of the attributes in lookup order. Effectively, if \{x.y} is looked up, it returns a frame containing \{x.y.a}, \{x.y.b}, ... for all possible names that exist and create a single frame with the result.}}}
+merge_handler : From native:lookup.merge Enforce LookupHandler
+
+{{{Allows discarding intermediate frames during lookup. In the provided handlers, during each non-final step of the lookup, the lookup must produce a frame in which to look up values. This modifies the handler to perform a check at each step and allows stopping.}}}
+filtered_explorer : Template From native:lookup.filtered_explorer {
+	{{{The lookup handler to modify.}}}
+	base : Used
+	{{{A function-like template to use as a filter. It will have two overrides \{input}, with the frame being investigated, and \{name} the attribute name being searched. Must return \{True} to keep the frame or \{False} to reject it.}}}
+	filter : Used
+}
+
+{{{Allows rewriting intermediate frames during lookup. In the provided handlers, during each non-final step of the lookup, the lookup must produce a frame in which to look up values. This modifies the handler to call a template with this value at each step.}}}
+transforming_explorer : Template From native:lookup.transforming_explorer {
+	{{{The lookup handler to modify.}}}
+	base : Used
+	{{{A function-like template to use as a transformer. It will have two overrides \{input}, with the value being investigated, and \{name} the attribute name being searched. Must return a frame to continue lookup.}}}
+	mapper : Used
+}
+
+{{{Allows rewriting the output of a lookup operation.}}}
+transforming_selector : Template From native:lookup.transforming_selector {
+	{{{The lookup handler to modify.}}}
+	base : Used
+	{{{A function-like template to use as a transformer. It will have \{args} overridden with the original result of the lookup operation. The return value will be the new result.}}}
+	mapper : Used
+}
+
+{{{Allows discarding possible outputs during lookup. This modifies the lookup to check if the output is valid. If the lookup operation can return another value, it will be used. If there are no more values available, the lookup will result in an error.}}}
+filtered_selector : Template From native:lookup.filtered_selector {
+	{{{The lookup handler to modify.}}}
+	base : Used
+	{{{A function-like template to use as a filter. It will have \{args} overridden wth the result of the lookup. Must return \{True} to keep the frame or \{False} to reject it.}}}
+	filter : Used
+}
+
+{{{Processes a fixed number of items with the explorer of one lookup handler then switches to another. If fewer names are looked up, the second handler may never be used.}}}
+take_first : Template From native:lookup.take_first {
+	{{{The lookup handler to use initially.}}}
+	head : Used
+	{{{The lookup handler to use after the count is met.}}}
+	tail : Used
+	{{{The number of names to lookup with the first handler.}}}
+	count : Used
+}
+
+{{{Processes items with the explorer of one lookup handler then switches to another for the last fixed number of items. If fewer names are looked up, the first handler may never be used.}}}
+take_last : Template From native:lookup.take_last {
+	{{{The lookup handler to use initially.}}}
+	head : Used
+	{{{The lookup handler to use for the last number of items.}}}
+	tail : Used
+	{{{The number of names to lookup with the second handler.}}}
+	count : Used
+}
+
+{{{Uses one explorer until a name is seen and then switches to another.}}}
+take_until : Template From native:lookup.take_until {
+	{{{The lookup handler to use initially.}}}
+	head : Used
+	{{{The lookup handler to use after one of the names is seen.}}}
+	tail : Used
+	{{{An integer or strings that, if encountered during lookup, switch the handler's mode.}}}
+	name : Used
+}
+
+{{{Uses one explorer until one of the names provided is seen and then switches to another.}}}
+take_until_any : Template From native:lookup.take_until_any {
+	{{{The lookup handler to use initially.}}}
+	head : Used
+	{{{The lookup handler to use after one of the names is seen.}}}
+	tail : Used
+	{{{A frame where the values are integer or strings that, if encountered during lookup, switch the handler's mode.}}}
+	names : Used
+}
+
+{{{Modify a lookup handler to produce a default value if lookup has no results.}}}
+or_else : Template From native:lookup.or_else {
+	{{{The lookup handler to modify.}}}
+	base : Used
+	{{{The default value to use instead.}}}
+	default : Used
+}
+
+{{{Modify a lookup handler to compute a default value if lookup has no results.}}}
+or_else_compute : Template From native:lookup.or_else_compute {
+	{{{The lookup handler to modify.}}}
+	base : Used
+	{{{A template which will be instantiated in the lookup's context. It must have a \{value} attribute which will be returned.}}}
+	default : Used
+}
+
+{{{Attaches the explorer of one lookup handler to the selector of another. Each lookup handler has two parts: an explorer, which examines each frame in the context and produces a value or decides the frame is not relevant, and a selector, that takes any values produces by the explorers and determines the final result. The handlers provided have either a special explorer or a special selector. This allows grafting the two together to make a handler with both properties.}}}
+splice_handlers : Template From native:lookup.splice_handlers {
+	{{{The handler to use for its explorer.}}}
+	explorer : Used
+	{{{The handler to use for its selector.}}}
+	selector : Used
+}
+
+{{{Create a new lookup handler based on templates to perform the exploration and selection processes.}}}
+custom : Template From native:lookup.custom {
+	{{{The template to use for the exploration. If null, the exploration from contextual lookup will be used. This template will be instantiated as a function-like template with \Mono{name} as the current attribute name being explored, \Mono{seen} being the number of names processed so far, and \Mono{remaining} being the number of names yet to process. It must return a frame or function-like template result from \{action}.}}}
+	explorer : Used
+	{{{The template to use for the selection. If null, the selection from contextual lookup will be used. This template will be instantiated as a function-like template with a Boolean \Mono{empty} to indicate if a value is provided and \Mono{current} being the value discovered by the explorer (or null if empty). It must return a frame or function-like template result from \{action}.}}}
+	selector : Used
+}
+
+{{{The actions for a custom lookup handler.}}}
+action : {
+	{{{Get a value from the current frame. This is different than lookup the value and using \{finish} because it can access private attributes. This is only valid in explorers.}}}
+	access : Template From native:action.access {
+		{{{The name of the attribute, as either a string or integer.}}}
+		name : Used
+		{{{A template to handle the resulting value. It will be instantiated in the same way as \{custom.selector}.}}}
+		next : Used
+	}
+	{{{Indicate a failure in the lookup operation.}}}
+	fail : From native:action.fail Enforce Frame
+	{{{Indicate several successful values from the lookup operation. This can only be used in explorers and it duplicates the current column.}}}
+	fork : Template From native:action.fork {
+		args : Used
+	}
+	{{{Indicate a successful value from the lookup operation. For explorers, this triggers the next name to be processed; for selectors, this returns this value to the caller.}}}
+	finish : Template From native:action.finish {
+		current : Used
+	}
+	{{{Indicate the next value should be tried. For explorers, this abandons the exploration of the current frame in this context and proceeds to the next frame. For selectors, this indicates that the next explorer for the next column should be tried. This is not valid in the selector when empty; using it will result in an inscrutable error.}}}
+	next : From native:action.next Enforce Frame
+	{{{Perform an operation and trigger the next operation to use a different template.}}}
+	then : Template From native:action.then {
+		{{{The template that should be used next. Both explorers and selectors are stateful, so this is a way to create a modified state for the next step. A fresh explorer is from the original template is created for every frame to be explored during lookup; changes to that state are visible only until that column is finished. Selectors have state for an entire lookup operation.}}}
+		next : Used
+		{{{The action that should actually be performed}}}
+		action : Used
+	}
+}

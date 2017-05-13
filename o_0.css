@@ -1,3 +1,5 @@
+@charset "UTF-8";
+
 path {
 fill-opacity:1;
 fill-rule:nonzero;
@@ -26,7 +28,7 @@ text-decoration:none;
 cursor:pointer;
 }
 
-dt {
+dt, .useitem {
 border:1px solid #fff;
 margin-bottom:.2em;
 margin-top:.2em;
@@ -34,22 +36,17 @@ padding:.2em .2em .4em;
 transition:border-color .5s ease-in-out;
 }
 
-dt:hover {
+dt:hover, .useitem:hover {
 border:1px solid #4F94CD;
 border-radius:.2em;
 transition:border-color .5s ease-in-out;
 }
 
-dt span.use,dt span.def {
-color:#36648B;
-cursor:pointer;
+.useitem svg {
+margin-left:12px;
 }
 
-dt span.def {
-font-style:italic;
-}
-
-dt > div > span.terminal,dt > div > span.roll {
+dt > div > span.terminal,dt > div > span.roll, dd .useitem span.terminal {
 color:#ddd;
 padding-right:.5em;
 }
@@ -77,31 +74,33 @@ justify-content:space-between;
 
 .info {
 padding:.2em;
+min-height:22px;
 }
 
-.uses .deflink {
-color:#36648B;
-margin-left:1em;
-margin-right:1em;
-cursor:pointer;
-}
-
-.info .type {
+.info .type, dt .flavour, .useitem .def {
 color:#4F94CD;
 margin:.5em;
 padding:.3em;
-}
-
-.info .type svg {
-vertical-align:middle;
 }
 
 .info .type path {
 fill:#4F94CD;
 }
 
-.info .type path.star {
+span.use path, span.def path {
+fill:#36648B;
+}
+
+:target span.use path, :target span.def path {
+fill:#555;
+}
+
+.info path.star {
 fill:#FFCC00;
+}
+
+dt .flavour path {
+fill:#555;
 }
 
 #references a,#index a,#man a {
@@ -122,7 +121,13 @@ padding:5px;
 }
 
 #tabbar span path {
-fill:#eee;
+fill:#ddd;
+transition:fill 0.5s ease-in-out;
+}
+
+#tabbar span:hover path {
+fill:#fff;
+transition:fill 0.5s ease-in-out;
 }
 
 #tabbar span.selected {
@@ -206,6 +211,7 @@ fill:#fff;
 
 #content p:first-child {
 font-size:120%;
+margin-left:1em;
 }
 
 #searcharea {
@@ -221,7 +227,7 @@ padding:.2em;
 border:1px solid #A7ACAF;
 color:gray;
 padding:.2em;
-width:80%;
+width:100%;
 }
 
 .button,#searcharea .option-off,#searcharea .option-on {
@@ -255,6 +261,7 @@ display:flex;
 flex-direction:column;
 flex:1;
 min-height:0;
+margin-top:1em;
 }
 
 #terms #nomatches {
@@ -280,16 +287,87 @@ display:block;
 padding:.5em;
 }
 
-:target {
+dt:target {
 font-weight:700;
 }
 
 :target + dd.populated {
-border-radius:.2em;
-border:1px solid #4F94CD;
-transition:border-color 1s ease-in-out;
+font-weight:700;
+}
+
+:target + dd.populated dl {
+font-weight:normal;
+}
+
+dt:target path {
+fill: #000;
 }
 
 a:hover,a:active,a:focus,.show {
 color:#36648B;
+}
+
+table {
+border:1px solid #36648B;
+box-shadow:.1em .1em .3em 0 rgba(0,0,0,0.45);
+left:1em;
+right:1em;
+width:calc(100%-2em);
+margin:1em;
+}
+
+tr {
+text-align:left;
+}
+
+th {
+background-color:#4F94CD;
+background-image:linear-gradient(tobottom,#4F94CD,#3279b3);
+background-repeat:repeat-x;
+color:#fff;
+}
+
+tbody tr:nth-child(even) {
+background-color:#eee;
+}
+
+th,td {
+margin:0;
+padding:.5em;
+}
+
+#indexcontent {
+padding:.5em;
+}
+
+#tabbar a span {
+float:right;
+}
+
+.fullpath {
+display: none;
+}
+
+:target .fullpath, dt:hover .fullpath {
+display: inline;
+}
+
+#copybuffer {
+display: none;
+}
+
+.copy {
+display: none;
+}
+
+:target .copy, dt:hover .copy {
+display: inline;
+}
+
+.copy path {
+fill: #36648B
+}
+
+tt.termlink {
+cursor:pointer;
 }

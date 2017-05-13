@@ -1,0 +1,49 @@
+Introduction{{{Tools for generating Windows-style INI files}}}
+
+utils_lib : From lib:utils
+
+str_transform : utils_lib.str_transform
+
+ini : This
+{{{Escaping conventions used by INI files}}}
+escape_transform_tmpl : Template {
+	backslash : str_transform.char_tmpl { char : "\\"  replacement : "\\\\" }
+	backspace : str_transform.char_tmpl { char : "\b"  replacement : "\\b" }
+	bell : str_transform.char_tmpl { char : "\a"  replacement : "\\a" }
+	colon : str_transform.char_tmpl { char : ":"  replacement : "\\:" }
+	equals : str_transform.char_tmpl { char : "="  replacement : "\\=" }
+	newline : str_transform.char_tmpl { char : "\n"  replacement : "\\n" }
+	null : str_transform.char_tmpl { char : "\x00"  replacement : "\\0" }
+	octothrope : str_transform.char_tmpl { char : "#"  replacement : "\\#" }
+	return : str_transform.char_tmpl { char : "\r"  replacement : "\\r" }
+	semi : str_transform.char_tmpl { char : ";"  replacement : "\\;" }
+	tab : str_transform.char_tmpl { char : "\t"  replacement : "\\t" }
+}
+
+{{{Transform a list of strings using default escaping transformations.}}}
+escape_list : utils_lib.str_escape_builder(args : escape_transform_tmpl {}) Enforce Template
+
+{{{Transform a string using the  default escaping transformations.}}}
+escape : utils_lib.str_concatifier(base : escape_list, delimiter : "") Enforce Template
+
+{{{Convert a frame to an INI file. Each attribute name is used as the INI
+key and any values which are frames are treated as hierarchical sections.}}}
+object : Template {
+	{{{The root path for all the sections in the INI file.}}}
+	prefix : ""
+	{{{The separator between hierarchical paths. This varies depending on the program.}}}
+	heirarchy_separator : "\\"
+
+	value :
+		(For arg : args, arg_name : Name
+			Where !(arg Is Frame)
+			Concat "\n" & arg_name & "=" &
+				(If arg Is Bool Then (If arg Then "true" Else "false")
+				Else If arg Is Str Then "\"" & ini.escape(arg) & "\""
+				Else arg To Str)
+			With "") &
+		(For arg : args, arg_name : Name
+			Where arg Is Frame
+			Concat "[" & prefix & arg_name & "]\n" & ini.object(args : arg, prefix : prefix & arg_name & heirarchy_separator, heirarchy_separator : heirarchy_separator)
+			With "\n")
+}

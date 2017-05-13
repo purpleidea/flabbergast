@@ -21,17 +21,17 @@ schedule : Template {
 			{ name : $month_day  value : day_of_month min : 1  max : 31 },
 			{ name : $month  value : month  min : 1  max : 12 },
 			{ name : $week_day  value : day_of_week  min : 0  max : 6 }
-		], pos : Ordinal
-		Reduce
+		]
+		Concat
 			Let
 				spec : If part.value Is Int Then part.value To Str Else part.value.cron_spec Enforce Str,
 				min : (If part.value Is Int Then part.value Else part.value.cron_min ?? part.min) Enforce Int,
 				max : (If part.value Is Int Then part.value Else part.value.cron_max ?? part.max) Enforce Int
 			In
 				If min >= part.min && max <= part.max
-				Then (If pos > 1 Then acc & "\t" Else "") & spec
+				Then spec
 				Else Error "The cron specification for \(part.name) has range \(min) to \(max), which exceeds the allowed range \(part.min) to \(part.max)."
-		With acc : ""
+		With "\t"
 }
 
 {{{A scheduling specifier for any time.}}}
@@ -48,15 +48,14 @@ list : Template {
 
 	cron_nest : 0
 	cron_spec :
-		For item : of, pos : Ordinal
+		For item : of
 			Where !(item Is Null)
-			Reduce
-				(If pos > 1 Then acc & "," Else "") & (
-					If item Is Int
-						Then item
-						Else If item.cron_nest <= cron_nest Then Error "Cannot nest these cron items."
-						Else item.cron_spec)
-			With acc : Null
+			Concat
+				If item Is Int
+					Then item
+					Else If item.cron_nest <= cron_nest Then Error "Cannot nest these cron items."
+					Else item.cron_spec
+			With ","
 	cron_max :
 		For item : of
 			Where !(item Is Null) && (item Is Int || !(item.cron_min Is Null))

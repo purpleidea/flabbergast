@@ -1,0 +1,136 @@
+Introduction{{{Support for querying MongoDB instances}}}
+
+{{{Get a list of the names of the databases available from a MongoDB instance.}}}
+list_databases : Template From native:mongodb.list_databases {
+	{{{The MongoDB instance to query.}}}
+	mongodb_connection : Required
+}
+
+{{{Access a particular MongoDB database.}}}
+get_database : Template {
+	{{{The name of the database.}}}
+	database : Required
+	{{{The MongoDB instance to query.}}}
+	mongodb_connection : Required
+	value : From native:mongodb.get_database {}
+	{{{Perform an aggregation operation on this database.}}}
+	aggregate : Template From native:mongodb.aggregate {
+		{{{The criteria describing the aggregation operation. This can include values from \{convert}.}}}
+		args : Required
+		{{{The collection on which the aggregation is applied. If null, it is applied to the whole database.}}}
+		collection : Null
+		mongodb_database : Now value
+		{{{The selection of the output. See \{result}.}}}
+		selector : Used
+	}
+	{{{Perform a find (record fetch) operation on this database.}}}
+	find : Template From native:mongodb.find {
+		{{{A list of operations to apply to the data fetched from the database. Use the functions in \{operation} to create operations.}}}
+		args : Required
+		{{{The name of the collection to use for searching.}}}
+		collection : Used
+		{{{A converer for the output. See \{output}.}}}
+		converter : Used
+		{{{The initial set of selection criteria. This can include values from \{convert}.}}}
+		criteria : Used
+		mongodb_database : Now value
+		{{{The selection of the output. See \{result}.}}}
+		selector : Used
+	}
+	{{{List the names of the collections in this database.}}}
+	list_collections : Template From native:mongodb.list_collections {
+		mongodb_database : Now value
+	}
+
+}
+
+{{{Convert special BSON values.}}}
+convert : {
+	{{{Create a JavaScript code fragment.}}}
+	code : Template From native:mongodb.code {
+		{{{The JavaScript code, as a string.}}}
+		code : Required
+		{{{A frame describing the BSON document to use as the scope or null to have no scope.}}}
+		scope : Null
+	}
+	{{{Create a datetime BSON value.}}}
+	datetime : Template From native:mongodb.convert_time {
+		{{{A time as integer or floating point value of seconds since the epoch or frame containing an attribute \{epoch} with the same.}}}
+		time : Required
+	}
+	{{{A database object UUID.}}}
+	objectid : Template From native:mongodb.convert_objectid {
+		{{{The ID as hex-encoded string or a 12-byte representation.}}}
+		id : Required
+	}
+	{{{A regular expression BSON value.}}}
+	regex : Template From native:mongodb.convert_regex {
+		{{{The regular expression pattern as a string.}}}
+		pattern : Required
+	}
+}
+
+{{{An operation to apply to a \{get_database.find} query.}}}
+operation : {
+	{{{Apply a filter selection operation.}}}
+	filter : Template From native:mongodb.operation_filter {
+		{{{A frame with a set of BSON values describing the filter.}}}
+		args : Required
+	}
+	{{{Keep at most a specified number of results from the previous operation.}}}
+	limit : Template From native:mongodb.operation_limit {
+		{{{The number of rows to keep.}}}
+		limit : Required
+	}
+	{{{Get the maximum value from the resulting data according to some comparator.}}}
+	max : Template From native:mongodb.operation_max {
+		{{{A frame with a set of BSON values describing the comparator.}}}
+		args : Required
+	}
+	{{{Get the minimum value from the resulting data according to some comparator.}}}
+	min : Template From native:mongodb.operation_min {
+		{{{A frame with a set of BSON values describing the comparator.}}}
+		args : Required
+	}
+	{{{Project out a subset of the properties of the data.}}}
+	projection : Template From native:mongodb.operation_projection {
+		{{{A frame with a set of BSON values describing the property manipulations.}}}
+		args : Required
+	}
+	{{{Discard a specified number of results from the previous operation.}}}
+	skip : Template From native:mongodb.operation_skip {
+		{{{The number of rows to discard.}}}
+		skip : Required
+	}
+	{{{Apply an ordering to the data.}}}
+	sort : Template From native:mongodb.operation_min {
+		{{{A frame with a set of BSON values describing the comparator.}}}
+		args : Required
+	}
+}
+
+{{{The results desired from a query.}}}
+results : {
+	{{{Return all possible results.}}}
+	all : (From native:mongodb.select_all) Enforce Frame
+	{{{Return only the first result.}}}
+	first : (From native:mongodb.select_first) Enforce Frame
+}
+
+{{{The method to convert the result document to Flabbergast.}}}
+output : {
+	{{{Perform as direct a translation as possible; converting special values as \{mongodb.convert}.}}}
+	direct : (From native:mongodb.result_direct) Enforce Frame
+	{{{Convert the BSON document as a frame, apply special transformations to the attributes.}}}
+	frame : Template From native:mongodb.result_frame {
+		{{{For each attribute specified in the frame, the value must be an \{output} to describe how to convert that attribute. Missing attributes are specified as if \{direct} was used.}}}
+		args : Required
+	}
+	{{{Convert the BSON document as a template instantiation, apply special transformations to the attributes.}}}
+	template : Template From native:mongodb.result_template {
+		{{{For each attribute specified in the frame, the value must be an \{output} to describe how to convert that attribute. Missing attributes are specified as if \{direct} was used.}}}
+		args : Required
+		{{{The template to instantiate for the BSON document.}}}
+		template : Required
+	}
+}

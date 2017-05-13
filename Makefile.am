@@ -2,12 +2,9 @@ ACLOCAL_AMFLAGS = -I m4
 NULL =
 
 SUBDIRS = \
+	platform/jvm \
 	vim \
 	$(NULL)
-
-if BUILD_JVM
-SUBDIRS += platform/jvm
-endif
 
 mimedir = $(datadir)/mime/packages
 
@@ -24,8 +21,6 @@ man1_MANS = \
 man7_MANS = \
 	flabbergast_apidoc.7 \
 	flabbergast_language.7 \
-	flabbergast_uri.7 \
-	flabbergast_sql.7 \
 	$(NULL)
 
 mime_DATA = flabbergast.xml
@@ -36,14 +31,6 @@ pkgdata_DATA = \
 	o_0.xsl \
 	o_0-xref.xsl \
 	$(NULL)
-
-PERCENT = %
-
-install-data-hook:
-	for f in $$(find stdlib \( -name '*.o_0' -o -name '*.?o_0' \) -type f -printf "$(PERCENT)P " ); do \
-		$(mkinstalldirs) $$(dirname $(DESTDIR)$(pkgdatadir)/lib/$${f}); \
-		$(INSTALL_DATA) $(srcdir)/stdlib/$$f $(DESTDIR)$(pkgdatadir)/lib/$${f}; \
-	done	
 
 clean-local:
 	rm -rf pkgroot

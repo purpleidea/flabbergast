@@ -1,0 +1,27 @@
+Introduction{{{Allows access to a ZooKeeper distributed locking service}}}
+
+{{{Directly retrieve a ZooKeeper data object.}}}
+retrieve : Template From native:apache/zookeeper.get {
+	{{{The path in the ZooKeeper hierarchy.}}}
+	path : Used
+	{{{The ZooKeeper cluster connection retrieved using \Mono{From zookeeper:}.}}}
+	zk_connection : Used
+}
+
+zookeeper : {
+	node : Template retrieve {
+		children : For path : child_paths Select Template zookeeper.node { path : Now path }
+		parent : If parent_path Is Null Then Null Else Template zookeeper.node { path : Now parent_path }
+	}
+}
+
+{{{The version of the ZooKeeper client.}}}
+version : (From native:apache/zookeeper.version) Enforce Int
+
+{{{Checks that the paths provided are well-formed ZooKeeper paths.}}}
+validate_paths : Template From native:apache/zookeeper.validate_path {
+	{{{A list of paths to validate, which must be strings.}}}
+	args : Used
+	{{{Whether the paths are being created with a sequential flag.}}}
+	is_sequential : Used
+}

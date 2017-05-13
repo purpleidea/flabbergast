@@ -1,17 +1,17 @@
 #!/bin/sh
 set -e
 case "$1" in
-	remove|purge)
-		find /usr/share/flabbergast/lib /usr/local/share/flabbergast/lib -name '*.class' -exec rm {} \;
-		test ! -d /usr/local/share/flabbergast/lib || find /usr/local/share/flabbergast/lib -name '*.class' -exec rm {} \;
-		update-flabbergast
-		;;
-		upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
-		;;
-	*)
-		echo "postrm called with unknown argument '$1'" >&2
-		exit 1
-		;;
+remove | purge)
+	for each in /usr/share/flabbergast/lib /usr/local/share/flabbergast/lib; do
+		test ! -d "${each}" || find "${each}" -name '*.class' -exec rm {} \;
+	done
+	;;
+upgrade | failed-upgrade | abort-install | abort-upgrade | disappear) ;;
+
+*)
+	echo "postrm called with unknown argument '$1'" >&2
+	exit 1
+	;;
 esac
 
 #DEBHELPER#

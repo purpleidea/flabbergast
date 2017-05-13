@@ -1,0 +1,28 @@
+#!/bin/sh
+
+set -eux
+
+FORMAT_JAR=.git/google-java-format.jar
+test -f ${FORMAT_JAR} || wget -O ${FORMAT_JAR} https://github.com/google/google-java-format/releases/download/google-java-format-1.6/google-java-format-1.6-all-deps.jar
+
+if [ $(git diff --cached --name-only --diff-filter=AMR | grep -c \\.java\$) -gt 0 ]
+then
+	java -jar ${FORMAT_JAR} -r $(git diff --cached --name-only --diff-filter=AMR | grep \\.java\$)
+	git add $(git diff --cached --name-only --diff-filter=AMR | grep \\.java\$)
+fi
+
+if which prettier > /dev/null
+then
+	for JS in $(git diff --cached --name-only --diff-filter=AMR | grep \\.js\$)
+	do
+		prettier --write ${JS}
+		git add ${JS}
+	done
+fi
+
+for XML in $(git diff --cached --name-only --diff-filter=AMR | grep '\.\(xml\|xsl\)$')
+do
+	xmllint -format ${XML} > temp
+	mv temp ${XML}
+	git add ${XML}
+done

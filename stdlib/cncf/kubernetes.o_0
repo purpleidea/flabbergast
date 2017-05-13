@@ -1,0 +1,588 @@
+Introduction{{{Allows access to a Kubernetes cluster.}}}
+
+{{{Selectors to restrict operations by labels}}}
+label_selector : {
+	{{{Combine existing label selectors.}}}
+	in : Template (From native:cncf/kubernetes.label_in) {
+		{{{The selectors to combine.}}}
+		args : Used
+	}
+	{{{Checks that the label on the Kubernetes object is in the provided set of values.}}}
+	in : Template (From native:cncf/kubernetes.label_in) {
+		{{{The values the label can be.}}}
+		args : Used
+		{{{The name of the label.}}}
+		key : Used
+	}
+	{{{Checks that the label on the Kubernetes object is not in the provided set of values.}}}
+	not_in : Template (From native:cncf/kubernetes.label_not_in) {
+		{{{The values the label can be.}}}
+		args : Used
+		{{{The name of the label.}}}
+		key : Used
+	}
+	{{{Checks that the Kubernets object has a label with the provided name. The value of the label on the object is irrelevant.}}}
+	with : Template (From native:cncf/kubernetes.label_with) {
+		{{{The name of the label.}}}
+		key : Used
+	}
+	{{{Checks that the Kubernetes object does not have a label with the provided name.}}}
+	without : Template (From native:cncf/kubernetes.label_without) {
+		{{{The name of the label.}}}
+		key : Used
+	}
+}
+
+{{{The default selection is no label restrictions.}}}
+label_selectors : Null
+{{{The default namespace to search is all of them.}}}
+namespace : Null
+
+{{{List all the cluster role bindings in a Kubernetes cluster. Will return a list of bindings using \{kubernetes.role_binding_tmpl}.}}}
+list_cluster_role_bindings : Template (From native:cncf/kubernetes.list_cluster_role_bindings) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the cluster roles in a Kubernetes cluster. Will return a list of roles using \{kubernetes.role_tmpl}.}}}
+list_cluster_roles : Template (From native:cncf/kubernetes.list_cluster_roles) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the config maps in a Kubernetes cluster. Will return a list of config maps using \{kubernetes.config_map_tmpl}.}}}
+list_config_maps : Template (From native:cncf/kubernetes.list_config_maps) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the daemon sets in a Kubernetes cluster. Will return a list of daemon sets using \{kubernetes.daemon_set_tmpl}.}}}
+list_daemon_sets : Template (From native:cncf/kubernetes.list_daemon_sets) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the deployments in a Kubernetes cluster. Will return a list of deployments using \{kubernetes.deployment_tmpl}.}}}
+list_deployments : Template (From native:cncf/kubernetes.list_deployments) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the endpoints in a Kubernetes cluster. Will return a list of endpoints using \{kubernetes.endpoint_tmpl}.}}}
+list_endpoints : Template (From native:cncf/kubernetes.list_endpoints) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the horizontal pod auto-scalers in a Kubernetes cluster. Will return a list of horizontal pod auto-scalers using \{kubernetes.horizontal_pod_auto_scalers_tmpl}.}}}
+list_horizontal_pod_auto_scalers : Template (From native:cncf/kubernetes.list_horizontal_pod_auto_scalers) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the limit rangers in a Kubernetes cluster. Will return a list of limit rangers using \{kubernetes.limit_range_tmpl}.}}}
+list_limit_ranges : Template (From native:cncf/kubernetes.list_limit_ranges) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the namespaces in a Kubernetes cluster. Will return a list of namespaces using \{kubernetes.namespace_tmpl}.}}}
+list_namespaces : Template (From native:cncf/kubernetes.list_namespaces) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+}
+
+{{{List all the network policies in a Kubernetes cluster. Will return a list of network policies using \{kubernetes.network_policy_tmpl}.}}}
+list_network_policies : Template (From native:cncf/kubernetes.list_network_policies) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the nodes in a Kubernetes cluster. Will return a list of nodes using \{kubernetes.node_tmpl}.}}}
+list_nodes : Template (From native:cncf/kubernetes.list_nodes) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the persistent volume claims in a Kubernetes cluster. Will return a list of persistent volume claims using \{kubernetes.persistent_volume_claim_tmpl}.}}}
+list_persistent_volume_claims : Template (From native:cncf/kubernetes.list_ersistent_volume_claims) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the persistent volumes in a Kubernetes cluster. Will return a list of persistent volumes using \{kubernetes.persistent_volume_tmpl}.}}}
+list_persistent_volume_claims : Template (From native:cncf/kubernetes.list_persistent_volume_claims) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the pods in a Kubernetes cluster. Will return a list of pods using \{kubernetes.pod_tmpl}.}}}
+list_pods : Template (From native:cncf/kubernetes.list_pods) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the priority classes in a Kubernetes cluster. Will return a list of priority classes using \{kubernetes.priority_class_tmpl}.}}}
+list_priority_classes : Template (From native:cncf/kubernetes.list_priority_classes) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the replica sets in a Kubernetes cluster. Will return a list of replica sets using \{kubernetes.Replica_set_tmpl}.}}}
+list_replica_sets : Template (From native:cncf/kubernetes.list_replica_sets) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the replication controllers in a Kubernetes cluster. Will return a list of replication controllers using \{kubernetes.replication_controller_tmpl}.}}}
+list_replication_controllers : Template (From native:cncf/kubernetes.list_replication_controllers) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the resource quotas in a Kubernetes cluster. Will return a list of resource quotas using \{kubernetes.resource_quota_tmpl}.}}}
+list_resource_quotas : Template (From native:cncf/kubernetes.list_resource_quotas) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the role bindings in a Kubernetes cluster. Will return a list of role bindings using \{kubernetes.role_binding_tmpl}.}}}
+list_role_bindings : Template (From native:cncf/kubernetes.list_role_bindings) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the roles in a Kubernetes cluster. Will return a list of roles using \{kubernetes.role_tmpl}.}}}
+list_roles : Template (From native:cncf/kubernetes.list_roles) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the secrets in a Kubernetes cluster. Will return a list of secrets using \{kubernetes.secret_tmpl}.}}}
+list_secrets : Template (From native:cncf/kubernetes.list_secrets) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the service accounts in a Kubernetes cluster. Will return a list of service accounts using \{kubernetes.service_account_tmpl}.}}}
+list_service_accounts : Template (From native:cncf/kubernetes.list_service_accounts) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the services in a Kubernetes cluster. Will return a list of services using \{kubernetes.service_tmpl}.}}}
+list_services : Template (From native:cncf/kubernetes.list_services) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the stateful sets in a Kubernetes cluster. Will return a list of stateful sets using \{kubernetes.stateful_set_tmpl}.}}}
+list_stateful_sets : Template (From native:cncf/kubernetes.list_stateful_sets) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{List all the storage classes in a Kubernetes cluster. Will return a list of storage classes using \{kubernetes.storage_classes_tmpl}.}}}
+list_storage_classes : Template (From native:cncf/kubernetes.list_storage_classes) {
+	{{{A connection to the cluster.}}}
+	k8s_connection : Used
+	{{{A frame of label selectors or null.}}}
+	label_selectors : Used
+	{{{A namespace to search or null.}}}
+	namespace : Used
+}
+
+{{{The templates used to instantiate frames for data returned from Kubernetes.}}}
+kubernetes : {
+	{{{Details of the condition for a variety of different entities.}}}
+	condition_tmpl : Template {
+		{{{Human-readable message indicating details about last transition.}}}
+		message : Required
+		{{{Unique, one-word, camel-case reason for the condition's last transition.}}}
+		reason : Required
+		{{{Status is the status of the condition. Can be true, false, or null (unknown).}}}
+		status : Required
+		{{{Type is the type of the condition.}}}
+		type : Required
+  }
+	{{{A configuration map which contains non-secret configuration data.}}}
+	config_map_tmpl : Template {
+		{{{A key-value map of configuration data; values may be strings or binary data.}}}
+		data : Required
+		{{{The name of this config map.}}}
+		name : Required
+		{{{The namespace to which this config map belongs.}}}
+		namespace : Required
+	}
+	{{{A daemon set ensures that all (or some) nodes run a copy of a pod. As nodes are added to the cluster, pods are added to them.}}}
+	daemon_set_tmpl : Template {
+		{{{Represents the latest available observations of a daemon set's current state.}}}
+		conditions : Required
+		{{{The minimum number of seconds for which a newly created daemon set pod should be ready without any of its container crashing, for it to be considered available.}}}
+		min_ready_seconds : Required
+		{{{The maximum number of pods that can be unavailable during the update. Value can be an absolute number (\Emph{e.g.}, 5) or a percentage of total number of pods at the start of the update (\Emph{e.g.}, 10%).}}}
+		max_unavailable : Required
+		name : Required
+		namespace : Required
+		{{{The number of old history to retain to allow rollback.}}}
+		revision_history_limit : Required
+		{{{A label query over pods that are managed by the daemon set.}}}
+		selector : Required
+		{{{A description of the pod that will be created.}}}
+		template : Required
+		{{{Type of daemon set update.}}}
+		update_stragety : Required
+		{{{Count of hash collisions for the daemon set.}}}
+		status_collision_count : Required
+		{{{The number of nodes that are running at least 1 daemon pod and are supposed to run the daemon pod.}}}
+		status_current_number_scheduled : Required
+		{{{The total number of nodes that should be running the daemon pod (including nodes correctly running the daemon pod).}}}
+		status_desired_number_scheduled : Required
+		{{{The number of nodes that should be running the daemon pod and have one or more of the daemon pod running and available (ready for at least \{min_ready_seconds}).}}}
+		status_number_available : Required
+		{{{The number of nodes that are running the daemon pod, but are not supposed to run the daemon pod.}}}
+		status_number_misscheduled : Required
+		{{{The number of nodes that should be running the daemon pod and have one or more of the daemon pod running and ready.}}}
+		status_number_ready : Required
+		{{{The number of nodes that should be running the daemon pod and have none of the daemon pod running and available (ready for at least \{minReadySeconds}).}}}
+		status_number_unavailable : Required
+		{{{The most recent generation observed by the daemon set controller.}}}
+		status_observed_generation : Required
+		{{{The total number of nodes that are running updated daemon pod.}}}
+		status_updated_number_scheduled : Required
+	}
+	deployment_tmpl : Template {
+		conditions : Required
+		min_ready_seconds : Required
+		name : Required
+		namespace : Required
+		paused : Required
+		process_deadline_seconds : Required
+		replicas : Required
+		revision_history_limit : Required
+		revision_history_limit : Required
+		status_available_replicas : Required
+		status_collision_count : Required
+		status_observed_generation : Required
+		status_ready_replicas : Required
+		status_replicas : Required
+		status_unavailable_replicas : Required
+		status_updated_replicas : Required
+	}
+	egress_policy_tmpl : Template {
+		{{{A list of peers; each is a frame with \{namespace_selector} and \{pod_selector} which are label selectors.}}}
+		peers : Required
+		{{{A list of ports that are open; each is a frame with \{protocol} and \{port}.}}}
+		ports : Required
+	}
+	endpoint_tmpl : Template {
+		name : Required
+		namespace : Required
+		{{{ \{subset_tmpl} }}}
+		subsets : Required
+	}
+	horizontal_pod_auto_scalers_tmpl : Template {
+		conditions : Required
+		max_replicas : Required
+		min_replicas : Required
+		name : Required
+		namespace : Required
+		status_current_replicas : Required
+		status_desired_replicas : Required
+		status_last_scale_time : Required
+		status_observed_generation : Required
+	}
+	ingress_policy_tmpl : Template {
+		{{{A list of peers; each is a frame with \{namespace_selector} and \{pod_selector} which are label selectors.}}}
+		peers : Required
+		{{{A list of ports that are open; each is a frame with \{protocol} and \{port}.}}}
+		ports : Required
+	}
+	limit_range_tmpl : Template {
+		name : Required
+		namespace : Required
+		type : Required
+	}
+	{{{The template for a namespace in Kubernetes.}}}
+	namespace_tmpl : Template {
+		{{{The name of the namespace.}}}
+		namespace : Required
+		{{{The current phase of the namespace.}}}
+		phase : Required
+	}
+	network_policies_tmpl : Template {
+		{{{ \{kubernetes.egress_policy_tmpl} }}}
+		egress : Required
+		{{{ \{kubernetes.ingress_policy_tmpl} }}}
+		ingress : Required
+		name : Required
+		namespace : Required
+		policy_types : Required
+	}
+	node_tmpl : Template {
+	}
+	persistent_volume_tmpl : Template {
+		access_modes : Required
+		name : Required
+		namespace : Required
+		status_message : Required
+		status_reason : Required
+	}
+	{{{The template for a pod in Kubernetes.}}}
+	pod_tmpl : Template {
+		{{{The name of the pod.}}}
+		name : Required
+		{{{The namespace to which the pod belongs.}}}
+		namespace : Required
+		{{{A human-readable message explaining why the pod is in this state.}}}
+		status_message : Required
+		{{{A machine-readable explanation why the pod is in this state.}}}
+		status_reason : Required
+		{{{The current phase of the pod. \Link{https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-phase}}}}
+		phase : Required
+		{{{The time the pod was started.}}}
+		start_time : Required
+	}
+	pod_spec_tmpl : Template {
+		{{{Optional duration in seconds the pod may be active on the node relative to start time before the system will actively try to mark it failed and kill associated containers.}}}
+		active_deadliene_seconds : Required
+		{{{If specified, the pod's scheduling constraints.}}}
+		affinity : Required
+		{{{Whether a service account token should be automatically mounted.}}}
+		automount_service_account_token : Required
+		{{{List of containers belonging to the pod.}}}
+	}
+	priority_class_tmpl : Template {
+		description : Required
+		global_default : Required
+		name : Required
+		namespace : Required
+		value : Required
+	}
+	replica_set_tmpl : Template {
+		conditions : Required
+		min_ready_seconds : Required
+		name : Required
+		namespace : Required
+		replicas : Required
+		status_available_replicas : Required
+		status_fully_labelled_replicas : Required
+		status_observed_generation : Required
+		status_ready_replicas : Required
+		status_replicas : Required
+	}
+	replication_controller_tmpl : Template {
+		conditions : Required
+		min_ready_seconds : Required
+		name : Required
+		namespace : Required
+		replicas : Required
+		status_available_replicas : Required
+		status_fully_labelled_replicas : Required
+		status_observed_generation : Required
+		status_ready_replicas : Required
+		status_replicas : Required
+	}
+	resource_quota_tmpl : Template {
+		hard : Required
+		name : Required
+		namespace : Required
+		scopes : Required
+		status_hard : Required
+		status_used : Required
+	}
+	role_binding_tmpl : Template {
+    is_cluster : Required
+    name : Required
+    namespace : Required
+    role_api_group : Required
+    role_kind : Required
+    role_name : Required
+		{{{ \{subject_tmpl} }}}
+    subjects : Required
+	}
+	role_tmpl : Template {
+		name : Required
+		namespace : Required
+		is_cluster : Required
+		{{{ \{rule_tmpl} }}}
+		rules : Required
+	}
+	rule_tmpl : Template {
+		api_groups : Required
+		non_resource_urls : Required
+		resource_names : Required
+		resources : Required
+		verbs : Required
+	}
+	secret_tmpl : Template {
+		name : Required
+		namespace : Required
+		type : Required
+	}
+	service_account_tmpl : Template {
+		automount_service_account_token : Required
+		name : Required
+		namespace : Required
+	}
+	service_tmpl : Template {
+		cluster_ip : Required
+		external_name : Required
+		external_traffic_policy : Required
+		health_Check_node_port : Required
+		load_balancer_ip : Required
+		loadbalancer_ingresses : Required
+		name : Required
+		namespace : Required
+		publish_non_ready_addresses : Required
+		session_affinity : Required
+		type : Required
+	}
+	service_ingress_tmpl : Template {
+		hostname : Required
+		ip : Required
+	}
+	stateful_set_tmpl : Template {
+		conditions : Required
+		name : Required
+		namespace : Required
+		{{{ \{kubernetes.persistent_volume_claim_tmpl} }}}
+		persistent_volume_claim : Required
+		pod_management_policy : Required
+		replicas : Required
+		revision_history_limit : Required
+		service_name : Required
+		status_collision_count : Required
+		status_current_revision : Required
+		status_observed_generation : Required
+		status_ready_replicas : Required
+		status_replicas : Required
+		status_updated_replicas : Required
+		status_updated_revision : Required
+	}
+	storage_classes_tmpl : Template {
+		allow_volume_expansion : Required
+		allowed_toplogies : Required
+		mount_options : Required
+		name : Required
+		namespace : Required
+		provisioner : Required
+		reclaim_policy : Required
+		volume_binding_mode : Required
+	}
+	subject_tmpl : Template {
+		api_group : Required
+		kind : Required
+		name : Required
+		namespace : Required
+	}
+	subset_tmpl : Template {
+		{{{ \{subset_port_tmpl} }}}
+		ports : Required
+		{{{ \{subset_address_tmpl} }}}
+		addresses : Required
+	}
+	subset_address_tmpl : Template {
+		ip : Required
+		nodename : Required
+		hostname : Required
+	}
+	subset_port_tmpl : Template {
+		port : Required
+		protocol : Required
+	}
+}

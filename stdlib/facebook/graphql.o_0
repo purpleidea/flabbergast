@@ -1,0 +1,53 @@
+Introduction{{{Construct queries and access GraphQL servers.}}}
+
+{{{Construct the expected response type for a GraphQL server.}}}
+response : {
+	{{{Expect a boolean value as a response.}}}
+	bool : From native:facebook/graphql.response.boolean Enforce Frame
+	{{{Expect a floating-point value as a response.}}}
+  float : From native:facebook/graphql.response.float Enforce Frame
+	{{{Expect a integer value as a response.}}}
+  int : From native:facebook/graphql.response.int Enforce Frame
+	{{{Expect a string value as a response.}}}
+  str : From native:facebook/graphql.response.string Enforce Frame
+	{{{Optional response elements which may be null.}}}
+	nullable : {
+		{{{Expect an optional boolean value as a response.}}}
+  	bool : From native:facebook/graphql.response.boolean_or_null Enforce Frame
+		{{{Expect an optional floating-point value as a response.}}}
+  	float : From native:facebook/graphql.response.float_or_null Enforce Frame
+		{{{Expect an optional integer value as a response.}}}
+  	int : From native:facebook/graphql.response.int_or_null Enforce Frame
+		{{{Expect an optional string value as a response.}}}
+  	str : From native:facebook/graphql.response.string_or_null Enforce Frame
+	}
+	{{{Expect a homogeneous list of items as a response.}}}
+	list : Template (From native:facebook/graphql.response.list) {
+		{{{A response type for the items in the list. Note that by GraphQL standards, lists cannot contain other lists directly.}}}
+		of : Used
+		{{{Whether the list is optional in the response.}}}
+		nullable : False
+	}
+  {{{Expect an object as a response.}}}
+	object : Template (From native:facebook/graphql.response.object) {
+		{{{The properties expected in the response object. The attribute name, which must be a string, will the name of the key-value pair in the JSON response and the attribute value must be a response type.}}}
+		args : Used
+		{{{Whether the list is optional in the response.}}}
+		nullable : False
+		{{{A template to use for constructing the response object. If null, objects will be created as frames. If a template is provided, the template will be instantiated with the properties of the response as overrides on the template.}}}
+		template : Null
+	}
+}
+{{{Perform a GraphQL query from a string.}}}
+query : Template (From native:facebook/graphql.query) {
+	{{{A GraphQL server connection obtained using a \Mono{graphql:} URI.}}}
+	graphql_connection : Used
+	{{{Any arguments to the query. Flabbergast values will be automatically converted to GraphQL values. If a frame contains only numeric attribute names, it will be converted to a list, compacting into a new array without gaps in numeric order. If a frame contains only string attribute names, it will be converted to an object. Mixed naming is not permitted. GraphQL forbids direct nesting of lists.}}}
+	args : Used
+	{{{A string containing the GraphQL query.}}}
+	query : Used
+	{{{The name of the operation. The purpose of this is for tracing and debugging.}}}
+	operation_name : Id
+	{{{A frame where each attribute describes the name of the property in the response and the value is type expected from the \{response} descriptions. These must be matched to the query.}}}
+	response : Used
+}

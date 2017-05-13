@@ -12,7 +12,7 @@ add : Template {
 }
 
 {{{Return the conjunction (and) of the arguments.}}}
-all : allifier(base : identity)
+all : allifier(base : identity) Enforce Template
 
 {{{Convert a function-like template from one that returns a list of Booleans to
 a conjunctions (and).}}}
@@ -24,7 +24,7 @@ allifier : Template {
 }
 
 {{{Return the disjunction (or) of the arguments.}}}
-any : anyifier(base : identity)
+any : anyifier(base : identity) Enforce Template
 
 {{{Convert a function-like template from one that returns a list of Booleans to
 a disjunction (or).}}}
@@ -37,60 +37,92 @@ anyifier : Template {
 
 {{{Compress binary data.}}}
 bin_compress : {
-	gzip : firstifier(base : bin_compress_list.gzip)
+	gzip : firstifier(base : bin_compress_list.gzip) Enforce Template
 }
 
 {{{Compress lists of binary data.}}}
 bin_compress_list : {
-	gzip : Template From interop:utils/bin/compress/gzip {
-		{{{The binary data to hash.}}}
-		args : Used
+	gzip : bip_compress_ifier.gzip(base : identity)
+}
+
+{{{Compress lists of binary data.}}}
+bin_compress_ifier : {
+	gzip : Template From native:utils.bin.compress.gzip {
+		base : Used
 	}
 }
 
+{{{Concatenate the arguments.}}}
+bin_concat : bin_concatifier(base : identity) Enforce Template
+
+{{{Convert a function-like template from one that returns a list of blobs to
+a single blob.}}}
+bin_concatifier : Template {
+	base : Required
+	value : Template base {
+		value +original:
+			For item : original, pos : Ordinal
+			Reduce acc Append item
+			With acc : From native:utils.bin_empty Enforce Bin
+	}
+}
+
+{{{A Bin value that contains no bytes.}}}
+bin_empty : From native:utils.bin_empty Enforce Bin
+
 {{{Dedecompress binary data.}}}
 bin_decompress : {
-	gzip : firstifier(base : bin_decompress_list.gzip)
+	gzip : firstifier(base : bin_decompress_list.gzip) Enforce Template
 }
 
 {{{Dedecompress lists of binary data.}}}
 bin_decompress_list : {
-	gzip : Template From interop:utils/bin/uncompress/gzip {
-		{{{The binary data to hash.}}}
+	gzip : bin_decompress_ifier.gzip(base : identity)
+}
+
+{{{Convert a function-like template from one that returns a list of binary data to one that returns a list of compressed binary data.}}}
+bin_decompress_ifier : {
+	gzip : Template From native:utils.bin.uncompress.gzip {
 		args : Used
 	}
 }
 
 {{{Compute the hash of binary data.}}}
 bin_hash : {
-	md5 : firstifier(base : bin_hash_list.md5)
-	sha1 : firstifier(base : bin_hash_list.sha1)
-	sha256 : firstifier(base : bin_hash_list.sha256)
+	md5 : firstifier(base : bin_hash_list.md5) Enforce Template
+	sha1 : firstifier(base : bin_hash_list.sha1) Enforce Template
+	sha256 : firstifier(base : bin_hash_list.sha256) Enforce Template
 }
 
 {{{Compute a list of hashes of a list of binary data.}}}
 bin_hash_list : {
-	md5 : Template From interop:utils/bin/hash/md5 {
-		{{{The binary data to hash.}}}
-		args : Used
+	md5 : bin_hash_ifier.md5(base : identity)
+	sha1 : bin_hash_ifier.sha1(base : identity)
+	sha256 : bin_hash_ifier.sha256(base : identity)
+}
+
+{{{Convert a function-like template from one taht returns a list of binary data to one that returns a list of hashes.}}}
+bin_hash_ifier : {
+	md5 : Template From native:utils.bin.hash.md5 {
+		base : Used
 	}
-	sha1 : Template From interop:utils/bin/hash/sha1 {
-		{{{The binary data to hash.}}}
-		args : Used
+	sha1 : Template From native:utils.bin.hash.sha1 {
+		base : Used
 	}
-	sha256 : Template From interop:utils/bin/hash/sha256 {
-		{{{The binary data to hash.}}}
-		args : Used
+	sha256 : Template From native:utils.bin.hash.sha256 {
+		base : Used
 	}
 }
 
 {{{Convert binary data into a hexadecimal string.}}}
-bin_to_hex_str : str_concatifier(base : bin_to_hex_str_list)
+bin_to_hex_str : str_concatifier(base : bin_to_hex_str_list) Enforce Template
 
 {{{Convert a list of binary data into a list of hexadecimal strings.}}}
-bin_to_hex_str_list : Template From interop:utils/bin/to/hexstr {
-		{{{The binary data to convert.}}}
-		args : Used
+bin_to_hex_str_list : bin_to_hex_str_ifier(base : identity) Enforce Template
+
+{{{Convert a function-like template that returns a list of binary data into a one that returns a list of hexadecimal strings.}}}
+bin_to_hex_str_ifier : Template From native:utils.bin.to.hexstr {
+		base : Used
 		{{{The separator between bytes.}}}
 		delimiter : ""
 		{{{Whether to use upper or lowercase alphabetical characters.}}}
@@ -106,66 +138,92 @@ bin_to_c_array_str : Template str_concatifier(base : bin_to_hex_str_list) {
 
 {{{Convert binary data to a string by decoding it.}}}
 bin_to_str : {
+	{{{Convert binary data to a string by decoding it as whatever the Knuth-forsaken system charset is.}}}
+	system : str_concatifier(base : bin_to_str_list.system) Enforce Template
+
 	{{{Convert binary data to a string by decoding it as UTF-8.}}}
-	utf8 : str_concatifier(base : bin_to_str_list.utf8)
+	utf8 : str_concatifier(base : bin_to_str_list.utf8) Enforce Template
 
 	{{{Convert binary data to a string by decoding it as big-endian UTF-16.}}}
-	utf16be : str_concatifier(base : bin_to_str_list.utf16be)
+	utf16be : str_concatifier(base : bin_to_str_list.utf16be) Enforce Template
 
 	{{{Convert binary data to a string by decoding it as little-endian UTF-16.}}}
-	utf16le : str_concatifier(base : bin_to_str_list.utf16le)
+	utf16le : str_concatifier(base : bin_to_str_list.utf16le) Enforce Template
 
 	{{{Convert binary data to a string by decoding it as big-endian UTF-32.}}}
-	utf32be : str_concatifier(base : bin_to_str_list.utf32be)
+	utf32be : str_concatifier(base : bin_to_str_list.utf32be) Enforce Template
 
 	{{{Convert binary data to a string by decoding it as little-endian UTF-32.}}}
-	utf32le : str_concatifier(base : bin_to_str_list.utf32le)
+	utf32le : str_concatifier(base : bin_to_str_list.utf32le) Enforce Template
 
 	{{{Convert binary data to a string by encoding it as Base64.}}}
-	base64 : str_concatifier(base : bin_to_str_list.base64)
+	base64 : str_concatifier(base : bin_to_str_list.base64) Enforce Template
 }
 
 {{{Convert a list of binary data to a list of strings by decoding.}}}
 bin_to_str_list : {
+	{{{Convert a list of binary data to a list of strings by decoding it as whatever the Knuth-forsake system charset is.}}}
+	system : bin_to_str_ifier.system(base : identity) Enforce Template
+
 	{{{Convert a list of binary data to a list of strings by decoding it as UTF-8.}}}
-	utf8 : Template From interop:utils/str/from/utf8 {
-		{{{The binary data to convert to strings.}}}
-		args : Used
-	}
+	utf8 : bin_to_str_ifier.utf8(base : identity) Enforce Template
 
 	{{{Convert a list of binary data to a list of strings by decoding it as big-endian UTF-16.}}}
-	utf16be : Template From interop:utils/str/from/utf16be {
-		{{{The binary data to convert to strings.}}}
-		args : Used
-	}
+	utf16be : bin_to_str_ifier.utf16be(base : identity) Enforce Template
 
 	{{{Convert a list of binary data to a list of strings by decoding it as little-endian UTF-16.}}}
-	utf16le : Template From interop:utils/str/from/utf16le {
-		{{{The binary data to convert to strings.}}}
-		args : Used
-	}
+	utf16le : bin_to_str_ifier.utf16le(base : identity) Enforce Template
 
 	{{{Convert a list of binary data to a list of strings by decoding it as big-endian UTF-32.}}}
-	utf32be : Template From interop:utils/str/from/utf32be {
-		{{{The binary data to convert to strings.}}}
-		args : Used
-	}
+	utf32be : bin_to_str_ifier.utf32be(base : identity) Enforce Template
 
 	{{{Convert a list of binary data to a list of strings by decoding it as little-endian UTF-32.}}}
-	utf32le : Template From interop:utils/str/from/utf32le {
-		{{{The binary data to convert to strings.}}}
-		args : Used
-	}
+	utf32le : bin_to_str_ifier.utf32le(base : identity) Enforce Template
 
 	{{{Convert a list of binary data to a list of strings by encoding it as Base64.}}}
-	base64 : Template From interop:utils/bin/to/base64 {
-		{{{The binary data to convert to strings.}}}
-		args : Used
+	base64 : bin_to_str_ifier.base64(base : identity) Enforce Template
+}
+
+{{{Convert function-like templates that return a list of binary data to ones that return a list of decoded strings by decoding.}}}
+bin_to_str_ifier : {
+	{{{Convert a function-like template that returns a list of binary data to one that returns a list of strings by decoding them as whatever the Knuth-forsaken system charset is.}}}
+	system : Template From native:utils.str.from.system {
+		base : Used
+	}
+
+	{{{Convert a function-like template that returns a list of binary data to one that returns a list of strings by decoding them as UTF-8.}}}
+	utf8 : Template From native:utils.str.from.utf8 {
+		base : Used
+	}
+
+	{{{Convert a function-like template that returns a list of binary data to one that returns a list of strings by decoding them as big-endian UTF-16.}}}
+	utf16be : Template From native:utils.str.from.utf16be {
+		base : Used
+	}
+
+	{{{Convert a function-like template that returns a list of binary data to one that returns a list of strings by decoding them as little-endian UTF-16.}}}
+	utf16le : Template From native:utils.str.from.utf16le {
+		base : Used
+	}
+
+	{{{Convert a function-like template that returns a list of binary data to one that returns a list of strings by decoding them as big-endian UTF-32.}}}
+	utf32be : Template From native:utils.str.from.utf32be {
+		base : Used
+	}
+
+	{{{Convert a function-like template that returns a list of binary data to one that returns a list of strings by decoding them as little-endian UTF-32.}}}
+	utf32le : Template From native:utils.str.from.utf32le {
+		base : Used
+	}
+
+	{{{Convert a function-like template that returns a list of binary data to one that returns a list of strings by encoding them as Base64.}}}
+	base64 : Template From native:utils.bin.to.base64 {
+		base : Used
 	}
 }
 
 {{{Compute the bitwise and of the arguments.}}}
-bitand : bitandifier(base : identity)
+bitand : bitandifier(base : identity) Enforce Template
 
 {{{Convert a function-like template from one that returns a list of integers
 into one that returns the bitwise and of their values.}}}
@@ -189,7 +247,7 @@ bitorifier : Template {
 }
 
 {{{Compute the bitwise exclusive or of the arguments.}}}
-bitxor : bitxorifier(base : identity)
+bitxor : bitxorifier(base : identity) Enforce Template
 
 {{{Convert a function-like template from one that returns a list of integers
 into one that returns the bitwise exclusive or of their values.}}}
@@ -201,7 +259,7 @@ bitxorifier : Template {
 }
 
 {{{Limits the range of a list of values. For details, see \{clampifier}.}}}
-clamp_list : clampifier(base : identity)
+clamp_list : clampifier(base : identity) Enforce Template
 
 {{{Convert a function-like template from one that returns a list of values into
 one that returns a list of values clipped between the inclusive range \{lower}
@@ -225,7 +283,7 @@ clampifier : Template {
 
 
 {{{Count the number of items in a frame.}}}
-count : sumifier(base : count_list)
+count : sumifier(base : count_list) Enforce Template
 
 {{{Count the number of item in a list of frames.}}}
 count_list : Template {
@@ -234,6 +292,14 @@ count_list : Template {
 		For arg : args, arg_name : Name
 		Select
 			arg_name : (For x : arg Reduce k + 1 With k : 0)
+}
+
+{{{A counter is a way to produce a series of distinct values without having to connect the output of the previous value to the input of the next. Each counter is a function-like template that returns a function-like template. Whenever the counter is instantiated, a new unique counter will be referenced by the returned template. Whenever the returned template is instantiated, it will increment the counter and return the unique value as the appropriate type.}}}
+counter : {
+  {{{Create a counter that returns integers.}}}
+	int : From native:utils.counter.int Enforce Template
+  {{{Create a counter that returns strings which contain a single private-use Unicode character.}}}
+	unicode : From native:utils.counter.unicode Enforce Template
 }
 
 {{{Divides the values in a frame by a constant or divides a constant by the values in a frame.}}}
@@ -276,12 +342,12 @@ one that returns a list.}}}
 flattenifier : Template {
 	base : Required
 	value : Template base {
-		value +original: For item : original Reduce acc Append item With acc : []
+		value +original: For item : original Flatten x : item Select x
 	}
 }
 
 {{{Return the first argument supplied.}}}
-first : firstifier(base : identity)
+first : firstifier(base : identity) Enforce Template
 
 {{{Convert a function-like template from one that returns a list of non-null
 values into one that returns the first non-null value.}}}
@@ -292,26 +358,44 @@ firstifier : Template {
 	}
 }
 
+{{{Encode floating-point numbers as a bytes.}}}
+float_to_bin : {
+	float32 : bin_concatifier(base : float_to_bin_list.float32) Enforce Template
+	float64 : bin_concatifier(base : float_to_bin_list.float64) Enforce Template
+}
+
+{{{Encode a collection of floating-point numbers value as a bytes.}}}
+float_to_bin_list : {
+	float32 : float_to_bin_ifier.float32(base : identity) Enforce Template
+	float64 : float_to_bin_ifier.float64(base : identity) Enforce Template
+}
+
+{{{Convert a function-like template from one that returns a list of floating-point numbers to one that returns a list of bytes.}}}
+float_to_bin_ifier : {
+	float32 : Template From floaterop:utils.float32.to.bin {
+		{{{Encode the floateger in big endian form.}}}
+		big_endian : Used
+	}
+	float64 : Template From floaterop:utils.float64.to.bin {
+		{{{Encode the floateger in big endian form.}}}
+		big_endian : Used
+	}
+}
+
 {{{Convert a float into a string with precision control. See
 \{float_to_str_list} for details.}}}
-float_to_str : str_concatifier(base : float_to_str_list, delimiter : "")
+float_to_str : str_concatifier(base : float_to_str_list, delimiter : "") Enforce Template
 
 {{{Convert floats into strings with precision control.}}}
-float_to_str_list : Template From interop:utils/float/to/str {
-	args : Used
+float_to_str_list : float_to_str_ifier(base : identity) Enforce Template
+
+{{{Convert a function-like template from one that returns a list of floats to one that returns a list of strings.}}}
+float_to_str_list : Template From native:utils.float.to.str {
+	base : Used
 	{{{Use scientific/exponential notation instead of fixed-point.}}}
 	exponential : False
 	{{{The number of decimal digits to use.}}}
 	digits : 0
-}
-
-{{{Create a frame with the specified attribute name and value.}}}
-frame : Template {
-	{{{The value to be used. Only one may be specified.}}}
-	args : Used
-	{{{The name to use}}}
-	name : Required
-	value : For arg : args Select name : arg
 }
 
 {{{Checks if the values in a frame are greater than a constant.}}}
@@ -349,30 +433,60 @@ ifier_apply : Template {
 	value : For arg : args Reduce arg(base : acc) With acc : base
 }
 
-{{{Convert a Unicode codepoint (integer) into a string.}}}
-int_to_char : str_concatifier(base : int_to_char_list, delimiter : "")
-
-{{{Convert a list of Unicode codepoints (integers) into a list of strings.}}}
-int_to_char_list : Template From interop:utils/str/from/codepoint {
-	args : Used
+{{{Encode integers as a bytes.}}}
+int_to_bin : {
+	int8 : bin_concatifier(base : int_to_bin_list.int8) Enforce Template
+	int16 : bin_concatifier(base : int_to_bin_list.int16) Enforce Template
+	int32 : bin_concatifier(base : int_to_bin_list.int32) Enforce Template
+	int64 : bin_concatifier(base : int_to_bin_list.int64) Enforce Template
 }
 
-{{{Convert an integer to a valid identifier. See \{int_to_ordinal_list} for
-details.}}}
-int_to_ordinal : str_concatifier(base : int_to_ordinal_list, delimiter : "")
+{{{Encode a collection of integer value as a bytes.}}}
+int_to_bin_list : {
+	int8 : int_to_bin_ifier.int8(base : identity) Enforce Template
+	int16 : int_to_bin_ifier.int16(base : identity) Enforce Template
+	int32 : int_to_bin_ifier.int32(base : identity) Enforce Template
+	int64 : int_to_bin_ifier.int64(base : identity) Enforce Template
+}
 
-{{{Convert integers to a valid identifiers.}}}
-int_to_ordinal_list : Template From interop:utils/ordinal {
-	args : Used
+{{{Convert a function-like template from one that returns a list of integers to one that returns a list of bytes.}}}
+int_to_bin_ifier : {
+	int8 : From native:utils.int8.to.bin Enforce Template
+	int16 : Template From native:utils.int16.to.bin {
+		{{{Encode the integer in big endian form.}}}
+		big_endian : Used
+	}
+	int32 : Template From native:utils.int32.to.bin {
+		{{{Encode the integer in big endian form.}}}
+		big_endian : Used
+	}
+	int64 : Template From native:utils.int64.to.bin {
+		{{{Encode the integer in big endian form.}}}
+		big_endian : Used
+	}
+}
+
+{{{Convert a Unicode codepoint (integer) into a string.}}}
+int_to_char : str_concatifier(base : int_to_char_list, delimiter : "") Enforce Template
+
+{{{Convert a list of Unicode codepoints (integers) into a list of strings.}}}
+int_to_char_list : int_to_char_ifier(base : identity) Enforce Template
+
+{{{Convert a function-like template from one that returns list of Unicode codepoints (integers) into one that returns a list of strings.}}}
+int_to_char_ifier : Template From native:utils.str.from.codepoint {
+	base : Used
 }
 
 {{{Convert an integer to a string with precision control. See \{int_to_str} for
 details.}}}
-int_to_str : str_concatifier(base : int_to_str_list, delimiter : "")
+int_to_str : str_concatifier(base : int_to_str_list, delimiter : "") Enforce Template
 
 {{{Convert integers to strings with precision control.}}}
-int_to_str_list : Template From interop:utils/int/to/str {
-	args : Used
+int_to_str_list : int_to_str_ifier(base : identity)
+
+{{{Convert a function-like template that returns a list of integers into one that returns a list of strings.}}}
+int_to_str_ifier : Template From native:utils.int.to.str {
+	base : Used
 	{{{The number of digits to display. If the number is too small, it will be
 	padded with zeros.}}}
 	digits : 0
@@ -386,12 +500,12 @@ is_list : Template {
 	args : Used
 	value :
 		For arg : args, arg_name : Name, arg_pos : Ordinal
-			Reduce acc && arg_name == int_to_ordinal(arg_pos)
+			Reduce acc && arg_name Is Int
 			With acc : True
 }
 
 {{{Return the last argument supplied.}}}
-last : lastifier(base : identity)
+last : lastifier(base : identity) Enforce Template
 
 {{{Convert a function-like template from one that returns a list of non-null
 values into one that returns the last non-null value.}}}
@@ -425,7 +539,7 @@ lesser_or_equal : Template {
 }
 
 {{{Remove attribute names from a frame or compact entries in a list.}}}
-list : listifier(base : identity)
+list : listifier(base : identity) Enforce Template
 
 {{{Chang a function-like template to remove attribute names from a frame or compact entries in a list.}}}
 listifier : Template {
@@ -438,14 +552,14 @@ listifier : Template {
 {{{Checks if the arguments match reference values.}}}
 matches : Template {
 	{{{A list of items to compare. The items may be of any comparable type.}}}
-	args : Required
+	args : Used
 	{{{A list of reference values to compare against. These must match the length and types of \{args}.}}}
 	refs : Required
 	value : For x : args, y : refs Reduce acc && (x Is Null && y Is Null || x == y) With acc : True
 }
 
 {{{Finds the maximum in a list of values.}}}
-max : maxifier(base : identity)
+max : maxifier(base : identity) Enforce Template
 
 {{{Convert a function-like template from one that returns a list of homogeneous
 values into one that returns the largest value.}}}
@@ -465,7 +579,7 @@ maxifier : Template {
 }
 
 {{{Finds the minimum in a list of values.}}}
-min : minifier(base : identity)
+min : minifier(base : identity) Enforce Template
 
 {{{Convert a function-like template from one that returns a list of homogeneous
 values into one that returns the largest value.}}}
@@ -495,7 +609,7 @@ multiply : Template {
 }
 
 {{{Selects all non-null values in a frame.}}}
-non_null : non_nullifier(base : identity)
+non_null : non_nullifier(base : identity) Enforce Template
 
 {{{Convert a function-like template from on that returns a list of values to
 one that returns a list without nulls.}}}
@@ -510,7 +624,7 @@ non_nullifier : Template {
 }
 
 {{{Select all the non-null values in a frame, discarding their attribute names.}}}
-non_null_as_list : listifier(base : non_null)
+non_null_as_list : listifier(base : non_null) Enforce Template
 
 {{{Replaces all null values in a frame with \{default}.}}}
 or_default : Template {
@@ -523,25 +637,31 @@ or_default : Template {
 }
 
 {{{Convert a string containing digits and stuff into a floating-point number.}}}
-parse_float : firstifier(base : parse_float_list)
+parse_float : firstifier(base : parse_float_list) Enforce Template
 
 {{{Convert strings containing digits into integers.}}}
-parse_float_list : Template From interop:utils/parse/float {
-	args : Used
+parse_float_list : parse_float_ifier(base : identity) Enforce Template
+
+{{{Convert a function-like template thate returns a list of strings containing digits into a function that returns a list of floating-point numbers.}}}
+parse_float_ifier : Template From native:utils.parse.float {
+	base : Used
 }
 
 {{{Convert a string containing digits into an integer.}}}
-parse_int : firstifier(base : parse_int_list)
+parse_int : firstifier(base : parse_int_list) Enforce Template
 
 {{{Convert strings containing digits into integers.}}}
-parse_int_list : Template From interop:utils/parse/int {
-	args : Used
+parse_int_list : parse_int_ifier(base : identity) Enforce Template
+
+{{{Convert a function-like template thate returns a list of strings containing digits into a function that returns a list of integers.}}}
+parse_int_ifier : Template From native:utils.parse.int {
+	base : Used
 	{{{The radix to use for the digits. The limits of this are platform-dependant.}}}
 	radix : 10
 }
 
 {{{Multiply a list of numbers.}}}
-product : productifier(base : identity)
+product : productifier(base : identity) Enforce Template
 
 {{{Convert a function-like template from one that returns a list of numbers to
 a single product.}}}
@@ -552,14 +672,41 @@ productifier : Template {
 	}
 }
 
+{{{Generate function-like templates that produce random sequences.}}}
+random : {
+	{{{Generate a random sequence of uniformly distributed Boolean values.}}}
+	bool : Template From native:utils.random.bool {
+		{{{An integer to use as the seed number for the sequence or null to pick one automatically.}}}
+		seed : Null
+	}
+	{{{Generate a random sequence of uniformly distributed floating point values between 0 and 1.}}}
+	float : From native:utils.random.float {
+		{{{An integer to use as the seed number for the sequence or null to pick one automatically.}}}
+		seed : Null
+	}
+	{{{Generate a random sequence of Gaussian distributed floating point values between 0 and 1.}}}
+	gaussian : From native:utils.random.gaussian {
+		{{{An integer to use as the seed number for the sequence or null to pick one automatically.}}}
+		seed : Null
+	}
+	{{{Generate a random sequence of uniformly distributed integer values.}}}
+	int : From native:utils.random.int {
+		{{{An integer to use as the seed number for the sequence or null to pick one automatically.}}}
+		seed : Null
+	}
+}
+
 {{{Get the Unicode category for every character in a string. See
 \{str_categories_list} for details.}}}
-str_categories : flattenifier(base : str_categories_list)
+str_categories : flattenifier(base : str_categories_list) Enforce Template
 
 {{{Get the Unicode category for every character in strings. The value to be
 returned for each category must be user-defined.}}}
-str_categories_list : Template From interop:utils/str/to/categories {
-	args : Used
+str_categories_list : str_categories_ifier(base : identity) Enforce Template
+
+{{{Convert a function-like template from one that returns strings to one that returns a list of Unicode caregories for each character in the string.}}}
+str_categories_ifier : Template From native:utils.str.to.categories {
+	base : Used
 
 	letter_lower : Used
 	letter_modifier : Used
@@ -595,7 +742,7 @@ str_categories_list : Template From interop:utils/str/to/categories {
 
 {{{Get the Unicode category name for every character in a string. See
 \{str_categories_list} for details.}}}
-str_categories_spec : flattenifier(base : str_categories_spec_list)
+str_categories_spec : flattenifier(base : str_categories_spec_list) Enforce Template
 
 {{{Get the Unicode category name for every character in a string. The names are
 from the Unicode specification. See \{str_categories_list} for details.}}}
@@ -633,15 +780,18 @@ str_categories_spec_list : Template str_categories_list {
 }
 
 {{{Convert a string into a list of codepoints (integers) for each character.}}}
-str_codepoints : flattenifier(base : str_codepoints_list)
+str_codepoints : flattenifier(base : str_codepoints_list) Enforce Template
 
 {{{Convert strings into lists of codepoints (integers) for each character.}}}
-str_codepoints_list : Template From interop:utils/str/to/codepoints {
-	args : Used
+str_codepoints_list : str_codepoints_ifier(base : identity) Enforce Template
+
+{{{Convert a function-like template that returns strings into one that returns lists of codepoints (integers) for each character.}}}
+str_codepoints_ifier : Template From native:utils.str.to.codepoints {
+	base : Used
 }
 
 {{{Concatenate the arguments.}}}
-str_concat : str_concatifier(base : identity, delimiter : "")
+str_concat : str_concatifier(base : identity, delimiter : "") Enforce Template
 
 {{{Convert a function-like template from one that returns a list of strings to
 a single string with the \{delimiter} between them.}}}
@@ -652,25 +802,28 @@ str_concatifier : Template {
 		delimiter : Used
 		value +original:
 			For item : original, pos : Ordinal
-			Reduce
-				(If pos > 1 Then acc & delimiter Else "") &
-				item
-			With acc : ""
+			Concat item
+			With delimiter
 	}
 }
 
 {{{Decode strings.}}}
 str_decode : {
 	{{{Encode a Unicode string as a punycode/IDN ASCII string.}}}
-	punycode : str_concatifier(base : str_decode_list.punycode, delimiter : ".")
+	punycode : str_concatifier(base : str_decode_list.punycode, delimiter : ".") Enforce Template
 }
 
-{{{Encode lists of strings.}}}
+{{{Decode lists of strings.}}}
 str_decode_list : {
-	{{{Encode a list of Unicode string as a list of punycode/IDN ASCII strings.}}}
-	punycode : Template From interop:utils/str/decode/punycode {
-		{{{A list of strings to transform.}}}
-		args : Used
+	{{{Decode a list of punycode/IDN ASCII string as a list of Unicode strings.}}}
+	punycode : str_decode_ifier.punycode(base : identity)
+}
+
+{{{Convert a function-like template from one that returns a list of encoded strings to one that returns a list of decoded strings.}}}
+str_decode_ifier : {
+	{{{Convert a function-like template from one that returns a list of punycode/IDN ASCII strings to one that returns a list of Unicode strings.}}}
+	punycode : Template From native:utils.str.decode.punycode {
+		base : Used
 		{{{Allow Unicode code points that were not assigned in the Unicode 3.2 specification.}}}
 		allow_unassigned : True
 	}
@@ -679,15 +832,20 @@ str_decode_list : {
 {{{Encode strings.}}}
 str_encode : {
 	{{{Encode a Unicode string as a punycode/IDN ASCII string.}}}
-	punycode : str_concatifier(base : str_encode_list.punycode, delimiter : ".")
+	punycode : str_concatifier(base : str_encode_list.punycode, delimiter : ".") Enforce Template
 }
 
 {{{Encode lists of strings.}}}
 str_encode_list : {
 	{{{Encode a list of Unicode string as a list of punycode/IDN ASCII strings.}}}
-	punycode : Template From interop:utils/str/encode/punycode {
-		{{{A list of strings to transform.}}}
-		args : Used
+	punycode : str_encod_ifier.punycode(base : identity)
+}
+
+{{{Convert a function-like template from one that returns a list of strings to one that returns a list of encoded strings.}}}
+str_encode_ifier : {
+	{{{Convert a function-like template from one that returns a list of Unicode strings to one that returns a list of punycode/IDN ASCII strings.}}}
+	punycode : Template From native:utils.str.encode.punycode {
+		base : Used
 		{{{Allow Unicode code points that were not assigned in the Unicode 3.2 specification.}}}
 		allow_unassigned : True
 		{{{Require ASCII output to have only characters permitted by RFC 1122 and RFC 1123. This includes only the ASCII alphabetical and numerical characters, hypen, and period.}}}
@@ -697,7 +855,7 @@ str_encode_list : {
 
 {{{Escape a string based on the provided transformation. See \{str_escape_list}
 for details.}}}
-str_escape : str_concatifier(base : str_escape_list, delimiter : "")
+str_escape : str_concatifier(base : str_escape_list, delimiter : "") Enforce Template
 
 {{{Escape strings based on the provided transformation. This is less efficient than using \{str_escape_builder} once for the desired transformations.}}}
 str_escape_list : Template {
@@ -708,23 +866,41 @@ str_escape_list : Template {
 }
 
 {{{Create a function-like template that can escape a list of strings the transformations provided as arguments.}}}
-str_escape_builder : Template From interop:utils/str/escape {
+str_escape_builder : Template From native:utils.str.escape {
 	{{{A list of transformations to be done on the string, from \{str_transform}.}}}
 	args : Used
 	arg_values : For arg : args Select (arg).value
 }
 
+{{{A global producer of unique private-use Unicode characters.}}}
+char_maker : counter.unicode()
+
 {{{Transformations that can be done on a string to escape it.}}}
 str_transform : {
 	{{{Transform a single character into an arbitrary escaped form.}}}
-	char_tmpl : Template From interop:utils/str/escape/char {
+	char_tmpl : Template From native:utils.str.escape.char {
 		{{{A single-character string to use as input.}}}
 		char : Required
 		{{{The string to use in the escaped result.}}}
 		replacement : Required
 	}
+	{{{Replace a single character with a string provided as a parameter to the generated escaping function.}}}
+	lookup_tmpl : Template From native:utils.str.escape.lookup {
+		{{{A single-character string to use as input.}}}
+		char : Required
+		{{{The name to be passed as a parameter to the escaping function.}}}
+		name : Required
+	}
+	{{{Create a special transformation that can be used to pass unescaped values through nested transformations.}}}
+	passthrough_tmpl : Template char_tmpl {
+		{{{A magic string that can be placed in the input and will pass through other escaping unchanged.}}}
+		char : char_maker()
+		char_maker : Now char_maker
+		{{{The string to use in the outermost escaped result.}}}
+		replacement : Required
+	}
 	{{{Transform a range of characters into a numeric escape sequence.}}}
-	range_tmpl : Template From interop:utils/str/escape/range {
+	range_tmpl : Template From native:utils.str.escape.range {
 		{{{The inclusive lower bound of the range of characters to escape as a
 		single-character string.}}}
 		start : Required
@@ -738,33 +914,33 @@ str_transform : {
 
 		{{{Encode numbers as padded upper-case hexadecimal.}}}
 		mode_hex_upper : {
-			utf32 : From interop:utils/str/escape/utf32/0/hex_upper
-			utf16_0 : From interop:utils/str/escape/utf16/0/hex_upper
-			utf16_1 : From interop:utils/str/escape/utf16/1/hex_upper
-			utf8_0 : From interop:utils/str/escape/utf8/0/hex_upper
-			utf8_1 : From interop:utils/str/escape/utf8/1/hex_upper
-			utf8_2 : From interop:utils/str/escape/utf8/2/hex_upper
-			utf8_3 : From interop:utils/str/escape/utf8/3/hex_upper
+			utf32 : From native:utils.str.escape.utf32_0.hex_upper
+			utf16_0 : From native:utils.str.escape.utf16_0.hex_upper
+			utf16_1 : From native:utils.str.escape.utf16_1.hex_upper
+			utf8_0 : From native:utils.str.escape.utf8_0.hex_upper
+			utf8_1 : From native:utils.str.escape.utf8_1.hex_upper
+			utf8_2 : From native:utils.str.escape.utf8_2.hex_upper
+			utf8_3 : From native:utils.str.escape.utf8_3.hex_upper
 		}
 		{{{Encode numbers as padded lower-case hexadecimal.}}}
 		mode_hex_lower : {
-			utf32 : From interop:utils/str/escape/utf32/0/hex_lower
-			utf16_0 : From interop:utils/str/escape/utf16/0/hex_lower
-			utf16_1 : From interop:utils/str/escape/utf16/1/hex_lower
-			utf8_0 : From interop:utils/str/escape/utf8/0/hex_lower
-			utf8_1 : From interop:utils/str/escape/utf8/1/hex_lower
-			utf8_2 : From interop:utils/str/escape/utf8/2/hex_lower
-			utf8_3 : From interop:utils/str/escape/utf8/3/hex_lower
+			utf32 : From native:utils.str.escape.utf32_0/hex_lower
+			utf16_0 : From native:utils.str.escape.utf16_0.hex_lower
+			utf16_1 : From native:utils.str.escape.utf16_1.hex_lower
+			utf8_0 : From native:utils.str.escape.utf8_0.hex_lower
+			utf8_1 : From native:utils.str.escape.utf8_1.hex_lower
+			utf8_2 : From native:utils.str.escape.utf8_2.hex_lower
+			utf8_3 : From native:utils.str.escape.utf8_3.hex_lower
 		}
 		{{{Encode numbers as unpadded decimal.}}}
 		mode_decimal : {
-			utf32 : From interop:utils/str/escape/utf32/0/decimal
-			utf16_0 : From interop:utils/str/escape/utf16/0/decimal
-			utf16_1 : From interop:utils/str/escape/utf16/1/decimal
-			utf8_0 : From interop:utils/str/escape/utf8/0/decimal
-			utf8_1 : From interop:utils/str/escape/utf8/1/decimal
-			utf8_2 : From interop:utils/str/escape/utf8/2/decimal
-			utf8_3 : From interop:utils/str/escape/utf8/3/decimal
+			utf32 : From native:utils.str.escape.utf32_0.decimal
+			utf16_0 : From native:utils.str.escape.utf16_0.decimal
+			utf16_1 : From native:utils.str.escape.utf16_1.decimal
+			utf8_0 : From native:utils.str.escape.utf8_0.decimal
+			utf8_1 : From native:utils.str.escape.utf8_1.decimal
+			utf8_2 : From native:utils.str.escape.utf8_2.decimal
+			utf8_3 : From native:utils.str.escape.utf8_3.decimal
 		}
 
 		{{{A single 32-bit number representing the entire Unicode codepoint.}}}
@@ -785,10 +961,10 @@ str_transform : {
 }
 
 {{{Find the position of \{str} in the argument. See \{str_find_list} for details.}}}
-str_find : firstifier(base : str_find_list)
+str_find : firstifier(base : str_find_list) Enforce Template
 
 {{{Find the position of \{str} in the arguments or null if it isn't found.}}}
-str_find_list : Template From interop:utils/str/find {
+str_find_list : Template From native:utils.str.find {
 	{{{The arguments to check (a.k.a., the haystack).}}}
 	args : Used
 	{{{The string to find (a.k.a., the needle).}}}
@@ -800,27 +976,20 @@ str_find_list : Template From interop:utils/str/find {
 	backward : False
 }
 
-{{{Checks if a string is a valid identifier.}}}
-str_is_identifier : allifier(base : str_is_identifier_list)
-
-{{{Checks if strings are valid identifiers.}}}
-str_is_identifier_list : Template From interop:utils/str/identifier {
-	{{{A list of strings to check.}}}
-	args : Used
-}
-
 {{{convert a string to lower case.}}}
-str_lower_case : str_concatifier(base : str_lower_case_list)
+str_lower_case : str_concatifier(base : str_lower_case_list) Enforce Template
 
 {{{convert strings to lower case.}}}
-str_lower_case_list : Template From interop:utils/str/lower_case {
-	# The strings to manipulate.
-	args : Used
+str_lower_case_list : str_lower_case_ifier(base : identity)
+
+{{{convert a function-like template from one that returns strings to one that returns lower case strings.}}}
+str_lower_case_ifier : Template From native:utils.str.lower_case {
+	base : Used
 }
 
 {{{Pad a string to \{length} by adding the string \{padding} to the end. If
 multiple arguments are supplied, they are then concatentated after padding.}}}
-str_pad : str_concatifier(base : str_pad_list)
+str_pad : str_concatifier(base : str_pad_list) Enforce Template
 
 {{{Pad strings to \{length} by adding the string \{padding} to the end. If the
 string is too long, it is unmodified.}}}
@@ -840,20 +1009,20 @@ str_pad_list : Template {
 }
 
 {{{Check if a string starts with \{str}.}}}
-str_prefixed : allifier(base : str_prefixed_list)
+str_prefixed : allifier(base : str_prefixed_list) Enforce Template
 
 {{{Check if a string starts with \{str}.}}}
-str_prefixed_list : Template From interop:utils/str/prefixed {
+str_prefixed_list : Template From native:utils.str.prefixed {
 	{{{A list of strings to check.}}}
 	args : Used
 }
 
 {{{Replace occurrences of string \{str} in a string to \{with}. See
 \{str_replace_list} for details.}}}
-str_replace : firstifier(base : str_replace_list)
+str_replace : firstifier(base : str_replace_list) Enforce Template
 
 {{{Replace occurrences of string \{str} in strings to \{with}.}}}
-str_replace_list : Template From interop:utils/str/replace {
+str_replace_list : Template From native:utils.str.replace {
 	{{{The strings to manipulate (a.k.a., the haystack).}}}
 	args : Used
 	{{{The string for which to search (a.k.a., the needle).}}}
@@ -863,10 +1032,10 @@ str_replace_list : Template From interop:utils/str/replace {
 }
 
 {{{Extract an internal span of a string. See \{str_slice_list}.}}}
-str_slice : str_concatifier(base : str_slice_list)
+str_slice : str_concatifier(base : str_slice_list) Enforce Template
 
 {{{Extract an internal span of strings.}}}
-str_slice_list : Template From interop:utils/str/slice {
+str_slice_list : Template From native:utils.str.slice {
 	{{{The position at which to begin the extraction.}}}
 	start : 0
 	{{{The position at which to end the extraction. If this is beyond the end of
@@ -878,108 +1047,140 @@ str_slice_list : Template From interop:utils/str/slice {
 }
 
 {{{Check if a string ends with \{str}.}}}
-str_suffixed : allifier(base : str_suffixed_list)
+str_suffixed : allifier(base : str_suffixed_list) Enforce Template
 
 {{{Check if strings ends with \{str}.}}}
-str_suffixed_list : Template From interop:utils/str/suffixed {
+str_suffixed_list : Template From native:utils.str.suffixed {
 	{{{A list of strings to check.}}}
 	args : Used
 }
 
 {{{Remove leading and trailing whitespace from a string.}}}
-str_trim : str_concatifier(base : str_trim_list)
+str_trim : str_concatifier(base : str_trim_list) Enforce Template
 
 {{{Remove leading and trailing whitespace from strings.}}}
-str_trim_list : Template From interop:utils/str/trim {
-	{{{A ist of strings to manipulate.}}}
-	args : Used
+str_trim_list : str_trim_ifier(base : identity) Enforce Template
+
+{{{Convert a function-like template that returns a list of string to one that returns a list of strings without leading and trailing whitespace.}}}
+str_trim_ifier : Template From native:utils.str.trim {
+	base : Used
 }
 
 {{{Get the encoded bytes in a string.}}}
 str_to_bin : {
 	{{{Get the UTF-8 bytes in a string.}}}
-	utf8 : firstifier(base : str_to_bin_list.utf8)
+	utf8 : firstifier(base : str_to_bin_list.utf8) Enforce Template
 
 	{{{Get the big-endian UTF-16 bytes in a string.}}}
-	utf16be : firstifier(base : str_to_bin_list.utf16be)
+	utf16be : firstifier(base : str_to_bin_list.utf16be) Enforce Template
 
 	{{{Get the little-endian UTF-16 bytes in a string.}}}
-	utf16le : firstifier(base : str_to_bin_list.utf16le)
+	utf16le : firstifier(base : str_to_bin_list.utf16le) Enforce Template
 
 	{{{Get the big-endian UTF-32 bytes in a string.}}}
-	utf32be : firstifier(base : str_to_bin_list.utf32be)
+	utf32be : firstifier(base : str_to_bin_list.utf32be) Enforce Template
 
 	{{{Get the little-endian UTF-32 bytes in a string.}}}
-	utf32le : firstifier(base : str_to_bin_list.utf32le)
+	utf32le : firstifier(base : str_to_bin_list.utf32le) Enforce Template
 
 	{{{Get the bytes in a Base64 string.}}}
-	base64 : firstifier(base : str_to_bin_list.base64)
+	base64 : firstifier(base : str_to_bin_list.base64) Enforce Template
 }
 
 {{{Get a list of the bytes in a list of strings.}}}
 str_to_bin_list : {
-	{{{Get a list of the UTF-8 bytes in a list of strings.}}}
-	utf8 : Template From interop:utils/str/to/utf8 {
-		{{{A list of strings to convert.}}}
-		args : Used
+	{{{Get a list of the bytes in whatever the Knuth-forsake system charset is from a list of strings.}}}
+	system : str_to_bin_ifier.system(base : identity) Enforce Template
+
+	{{{Get a list of the UTF-8 bytes from a list of strings.}}}
+	utf8 : str_to_bin_ifier.utf8(base : identity) Enforce Template
+
+	{{{Get a list of the big-endian UTF-16 bytes from a list of strings.}}}
+	utf16be : str_to_bin_ifier.utf16be(base : identity) Enforce Template
+
+	{{{Get a list of the little-endian UTF-16 bytes from a list of strings.}}}
+	utf16le : str_to_bin_ifier.utf16le(base : identity) Enforce Template
+
+	{{{Get a list of the little-endian UTF-32 bytes from a list of strings.}}}
+	utf32le : str_to_bin_ifier.utf32le(base : identity) Enforce Template
+
+	{{{Get a list of the big-endian UTF-32 bytes from a list of strings.}}}
+	utf32be : str_to_bin_ifier.utf32be(base : identity) Enforce Template
+
+	{{{Get a list of  bytes from a list of base64-encoded strings.}}}
+	base64 : str_to_bin_ifier.base64(base : identity) Enforce Template
+}
+
+{{{Get a list of the bytes in a list of strings.}}}
+str_to_bin_ifier : {
+	{{{Convert a function-like template from one that returns a list of strings to one that returns bytes in whatever the Knuth-forsaken system charset is.}}}
+	system : Template From native:utils.str.to.system {
+		base : Used
 	}
 
-	{{{Get a list of the big-endian UTF-16 bytes in a list of strings.}}}
-	utf16be : Template From interop:utils/str/to/utf16be {
-		{{{A list of strings to convert.}}}
-		args : Used
+	{{{Convert a function-like template from one that returns a list of strings to one that returns UTF-8 bytes.}}}
+	utf8 : Template From native:utils.str.to.utf8 {
+		base : Used
 	}
 
-	{{{Get a list of the little-endian UTF-16 bytes in a list of strings.}}}
-	utf16le : Template From interop:utils/str/to/utf16le {
-		{{{A list of strings to convert.}}}
-		args : Used
+	{{{Convert a function-like template from one that returns a list of strings to one that returns little-endian UTF-16 bytes.}}}
+	utf16be : Template From native:utils.str.to.utf16be {
+		base : Used
 	}
 
-	{{{Get a list of the little-endian UTF-32 bytes in a list of strings.}}}
-	utf32le : Template From interop:utils/str/to/utf32le {
-		{{{A list of strings to convert.}}}
-		args : Used
+	{{{Convert a function-like template from one that returns a list of strings to one that returns big-endian UTF-16 bytes.}}}
+	utf16le : Template From native:utils.str.to.utf16le {
+		base : Used
 	}
 
-	{{{Get a list of the UTF-32 bytes in a list of strings.}}}
-	utf32be : Template From interop:utils/str/to/utf32be {
-		{{{A list of strings to convert.}}}
-		args : Used
+	{{{Convert a function-like template from one that returns a list of strings to one that returns little-endian UTF-32 bytes.}}}
+	utf32le : Template From native:utils.str.to.utf32le {
+		base : Used
 	}
 
-	{{{Get a list of the UTF-32 bytes in a list of strings.}}}
-	base64 : Template From interop:utils/bin/from/base64 {
-		{{{A list of strings to convert.}}}
-		args : Used
+	{{{Convert a function-like template from one that returns a list of strings to one that returns big-endian UTF-32 bytes.}}}
+	utf32be : Template From native:utils.str.to.utf32be {
+		base : Used
+	}
+
+	{{{Convert a function-like template from one that returns a list of base64-encoded strings to one that returns bytes.}}}
+	base64 : Template From native:utils.bin.from.base64 {
+		base : Used
 	}
 }
 
 {{{Get the UTF-8 length of a string.}}}
-str_utf8_length : sumifier(base : str_utf8_length_list)
+str_utf8_length : sumifier(base : str_utf8_length_list) Enforce Template
 
 {{{Get the UTF-8 length of strings.}}}
-str_utf8_length_list : Template From interop:utils/str/length/utf8 {
+str_utf8_length_list : str_utf8_length_ifier(base : identity)
+
+{{{Convert a function-like template from one that returns strings to one that returns the UTF-8 encoded length of those strings.}}} 
+str_utf8_length_ifier : Template From native:utils.str.length.utf8 {
 	{{{A list of strings to measure.}}}
 	args : Used
 }
 
 {{{Get the UTF-16 length of a string.}}}
-str_utf16_length : sumifier(base : str_utf16_length_list)
+str_utf16_length : sumifier(base : str_utf16_length_list) Enforce Template
 
 {{{Get the UTF-16 length of strings.}}}
-str_utf16_length_list : Template From interop:utils/str/length/utf16 {
-	{{{A list of strings to measure.}}}
-	args : Used
+str_utf16_length_list : str_utf16_length_ifier(base : identity) Enforce Template
+
+{{{Convert a function-like template from one that returns strings to one that returns the UTF-8 encoded length of those strings.}}} 
+str_utf16_length_ifier : Template From native:utils.str.length.utf16 {
+	base : Used
 }
 
 {{{CONVERT A STRING TO UPPER CASE.}}}
-str_upper_case : str_concatifier(base : str_upper_case_list)
+str_upper_case : str_concatifier(base : str_upper_case_list) Enforce Template
 
 {{{CONVERT STRINGS TO UPPER CASE.}}}
-str_upper_case_list : Template From interop:utils/str/upper_case {
-	{{{A list of strings to manipulate.}}}
-	args : Used
+str_upper_case_list : str_upper_case_ifier(base : identity)
+
+{{{CONVERT A FUNCTION-LIKE TEMPLATE FROM ONE THAT RETURNS STRINGS TO ONE THAT RETURNS UPPER CASE STRINGS.}}}
+str_upper_case_ifier : Template From native:utils.str.upper_case {
+	base : Used
 }
 
 {{{Subtracts a constant the values in a frame.}}}
@@ -1004,15 +1205,93 @@ sumifier : Template {
 	}
 }
 
+{{{Templates to render execution traces to be used in conjunction with \{trace_execution}.}}}
+trace_tmpl : Template {
+	{{{Base template used for other trace templates.}}}
+	base_trace : Template {}
+	{{{Reference to a trace entry that has already been instantiated.}}}
+	backreference : Template base_trace {
+	  {{{The previous entry.}}}
+		to : Required
+	}
+	{{{A trace entry where the excution trace bifurcates.}}}
+	junction : Template base_trace {
+		{{{The file name of the source code.}}}
+		filename : Required
+		{{{The first line of the relevant syntax in the source file.}}}
+		start_line : Required
+		{{{The first column of the relevant syntax in the source file.}}}
+		start_column : Required
+		{{{The last line of the relevant syntax in the source file.}}}
+		end_line : Required
+		{{{The last column of the relevant syntax in the source file.}}}
+		end_column : Required
+		{{{Some helpful description of the operation.}}}
+		message : Required
+	}
+	{{{A trace entry for native JVM code where the JVM stack is grafted onto a Flabbergast trace.}}}
+	jvm : Template base_trace {
+		{{{The file name of the source code, if available.}}}
+		filename : Required
+		{{{The line number in the source code, if available.}}}
+		line : Required
+		{{{The binary class name of this stack element.}}}
+		class : Required
+		{{{The method name of this stack element.}}}
+		method : Required
+		{{{The method name of this stack element.}}}
+		method : Required
+		{{{The method type shown as \Link{https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/invoke/MethodType.html#toString()}.}}}
+		method_type : Required
+		{{{The offset of the current instruction in the method's bytecode.}}}
+		bytecode_index : Required
+	}
+	{{{A trace entry for a linear execution.}}}
+	normal : Template base_trace {
+		{{{The secondary execution path.}}}
+		branch : Required
+		{{{The file name of the source code.}}}
+		filename : Required
+		{{{The first line of the relevant syntax in the source file.}}}
+		start_line : Required
+		{{{The first column of the relevant syntax in the source file.}}}
+		start_column : Required
+		{{{The last line of the relevant syntax in the source file.}}}
+		end_line : Required
+		{{{The last column of the relevant syntax in the source file.}}}
+		end_column : Required
+		{{{Some helpful description of the operation.}}}
+		message : Required
+	}
+	{{{A trace entry for a non-Flabbergast operation. This is typically used when a new frame or template is generated by Java code that uses the Flabbergast context.}}}
+	special : Template base_trace {
+		{{{Some helpful description of the operation.}}}
+		message : Required
+	}
+	{{{A trace entry where the excution trace bifurcates in a non-Flabbergast operation. This is typically used when a new frame or template is generated by Java code that uses the Flabbergast context.}}}
+	special_junction : Template base_trace {
+		{{{The secondary execution path.}}}
+		branch : Required
+		{{{Some helpful description of the operation.}}}
+		message : Required
+	}
+}
+
+{{{Extract the execution trace of the instantiator of this template. This can also be used as a function-like template. This will return a list of trace elements in order from the most recently called to the least recently called. The execution trace will exclude the instantiation of this template itself; that is, it begins just before point of instantiation.}}}
+trace_execution : Template (From native:utils.trace) {
+	{{{The instantiator must provide an implementation of \{trace_tmpl} in order to render each of the different types of elements in the trace.}}}
+	trace : Used
+}
+
 {{{Do type directed-lookup on the arguments.}}}
-typeof : typeofifier(base : identity)
+typeof : typeofifier(base : identity) Enforce Template
 
 {{{Convert a function-like template from one that returns a list to one that is
 the result of a type-directed lookup of those items.}}}
 typeofifier : Template {
 	base : Required
 	value : Template base {
-		value +original: For item : original, name : Name Select name : TypeOf item
+		value +original: For item : original, name : Name Select name : Lookup TypeOf(item) Here
 	}
 }
 
@@ -1026,3 +1305,6 @@ unequal : Template {
 			Where arg.enabled
 			Select arg_name : arg != to
 }
+
+{{{Returns a new UUID as a Bin when invoked.}}}
+uuid : From native:bin.uuid Enforce Template
