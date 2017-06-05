@@ -3,13 +3,12 @@ package flabbergast.time;
 import flabbergast.*;
 
 import java.lang.Math;
-
-import org.joda.time.DateTime;
-import org.joda.time.Seconds;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 
 public class Compare extends BaseTime {
-    private DateTime left;
-    private DateTime right;
+    private ZonedDateTime left;
+    private ZonedDateTime right;
     private boolean first = true;
 
     public Compare(TaskMaster task_master, SourceReference source_ref,
@@ -21,22 +20,12 @@ public class Compare extends BaseTime {
         if (first) {
             first = false;
             interlock.set(3);
-            getTime(new ConsumeDateTime() {
-                @Override
-                public void invoke(DateTime x) {
-                    left = x;
-                }
-            }, "arg");
-            getTime(new ConsumeDateTime() {
-                @Override
-                public void invoke(DateTime x) {
-                    right = x;
-                }
-            }, "to");
+            getTime(x -> left = x, "arg");
+            getTime(x -> right = x, "to");
             if (interlock.decrementAndGet() > 0) {
                 return;
             }
         }
-        result = (long) Seconds.secondsBetween(right, left).getSeconds();
+        result = ChronoUnit.SECONDS.between(right, left);
     }
 }

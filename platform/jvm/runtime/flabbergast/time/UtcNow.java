@@ -2,8 +2,8 @@ package flabbergast.time;
 
 import flabbergast.*;
 
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 
 public class UtcNow extends BaseTime {
     public UtcNow(TaskMaster task_master, SourceReference source_ref,
@@ -12,6 +12,6 @@ public class UtcNow extends BaseTime {
     }
     @Override
     protected void run() {
-        result = makeTime(new DateTime(DateTimeZone.UTC));
+        result = makeTime(ZonedDateTime.now(ZoneId.of("Z")));
     }
 }

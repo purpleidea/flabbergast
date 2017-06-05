@@ -53,11 +53,11 @@ or from the command line using:
     nuget install flabbergast
 
 ## Building
-To build Flabbergast, you will need to have an existing copy of Flabbergast or obtain the generated compiler sources directly. You will need GNU AutoTools, Flabbergast, Make, rsync, and the preqrequistes to build one of either the JVM edition or the CLI edition. For the JVM edition, you will need the JVM 1.7 or later, [ObjectWeb ASM](http://asm.ow2.org), [JLine](http://jline.sourceforge.net/), [Commons CLI](https://commons.apache.org/cli/), [Joda Time](http://www.joda.org/joda-time/), and [Android JSON](http://source.android.com/index.html). If you are building the CLI edition, you will need either Mono or the Common Language Runtime, the C# compiler, and either MSBuild or XBuild.
+To build Flabbergast, you will need to have an existing copy of Flabbergast or obtain the generated compiler sources directly. You will need GNU AutoTools, Flabbergast, Make, rsync, and the preqrequistes to build one of either the JVM edition or the CLI edition. For the JVM edition, you will need the JVM 1.7 or later, [ObjectWeb ASM](http://asm.ow2.org), [JLine](http://jline.sourceforge.net/), [Commons CLI](https://commons.apache.org/cli/), and [Android JSON](http://source.android.com/index.html). If you are building the CLI edition, you will need either Mono or the Common Language Runtime, the C# compiler, and either MSBuild or XBuild.
 
 To install all these packages on Ubuntu/Debian, do:
 
-    sudo apt-get install java8-jdk autotools-dev libasm4-java libjline-java libcommons-cli-java libjoda-time-java libandroid-json-org-java libmetainf-services-java mono-xbuild mono-mcs rsync
+    sudo apt-get install java8-jdk autotools-dev libasm4-java libjline-java libcommons-cli-java libandroid-json-org-java libmetainf-services-java mono-xbuild mono-mcs rsync
 
 To build the compiler, if Flabbergast is installed, run the bootstrap step:
 

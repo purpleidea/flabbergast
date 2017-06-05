@@ -3,13 +3,18 @@ package flabbergast.time;
 import flabbergast.*;
 import flabbergast.ReflectedFrame.Transform;
 
+import java.time.Instant;
+import java.time.Year;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoField;
+import java.time.temporal.WeekFields;
 import java.text.DateFormatSymbols;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+import java.util.function.Consumer;
 
 public abstract class BaseTime extends Future {
     private static final DateFormatSymbols symbols = new DateFormatSymbols();
@@ -51,95 +56,25 @@ public abstract class BaseTime extends Future {
         return result;
     }
 
-    private static final Map<String, Transform<DateTime>> time_accessors = new HashMap<String, Transform<DateTime>>();
+    private static final Map<String, Transform<ZonedDateTime>> time_accessors = new HashMap<String, Transform<ZonedDateTime>>();
     static {
-        time_accessors.put("day_of_week", new Transform<DateTime>() {
-            @Override
-            public Object invoke(DateTime d) {
-                return DAYS[d.dayOfWeek().get() % 7];
-            }
-        });
-        time_accessors.put("from_midnight", new Transform<DateTime>() {
-            @Override
-            public Object invoke(DateTime d) {
-                return (long) d.getSecondOfDay();
-            }
-        });
-        time_accessors.put("milliseconds", new Transform<DateTime>() {
-            @Override
-            public Object invoke(DateTime d) {
-                return (long) d.getMillisOfSecond();
-            }
-        });
-        time_accessors.put("second", new Transform<DateTime>() {
-            @Override
-            public Object invoke(DateTime d) {
-                return (long) d.getSecondOfMinute();
-            }
-        });
-        time_accessors.put("minute", new Transform<DateTime>() {
-            @Override
-            public Object invoke(DateTime d) {
-                return (long) d.getMinuteOfHour();
-            }
-        });
-        time_accessors.put("hour", new Transform<DateTime>() {
-            @Override
-            public Object invoke(DateTime d) {
-                return (long) d.getHourOfDay();
-            }
-        });
-        time_accessors.put("day", new Transform<DateTime>() {
-            @Override
-            public Object invoke(DateTime d) {
-                return (long) d.getDayOfMonth();
-            }
-        });
-        time_accessors.put("month", new Transform<DateTime>() {
-            @Override
-            public Object invoke(DateTime d) {
-                return MONTHS[d.getMonthOfYear() - 1];
-            }
-        });
-        time_accessors.put("year", new Transform<DateTime>() {
-            @Override
-            public Object invoke(DateTime d) {
-                return (long) d.getYear();
-            }
-        });
-        time_accessors.put("week", new Transform<DateTime>() {
-            @Override
-            public Object invoke(DateTime d) {
-                return (long) d.getWeekOfWeekyear();
-            }
-        });
-        time_accessors.put("day_of_year", new Transform<DateTime>() {
-            @Override
-            public Object invoke(DateTime d) {
-                return (long) d.getDayOfYear();
-            }
-        });
-        time_accessors.put("epoch", new Transform<DateTime>() {
-            @Override
-            public Object invoke(DateTime d) {
-                return d.getMillis() / 1000;
-            }
-        });
-        time_accessors.put("is_utc", new Transform<DateTime>() {
-            @Override
-            public Object invoke(DateTime d) {
-                return d.getZone() == DateTimeZone.UTC;
-            }
-        });
-        time_accessors.put("is_leap_year", new Transform<DateTime>() {
-            @Override
-            public Object invoke(DateTime d) {
-                return d.year().isLeap();
-            }
-        });
+        time_accessors.put("day_of_week", d -> DAYS[d.getDayOfWeek().getValue() % 7]);
+        time_accessors.put("from_midnight", d -> (long) d.toLocalTime().toSecondOfDay());
+        time_accessors.put("milliseconds", d -> (long) d.get(ChronoField.MILLI_OF_SECOND));
+        time_accessors.put("second", d-> (long) d.getSecond());
+        time_accessors.put("minute", d -> (long) d.getMinute());
+        time_accessors.put("hour", d -> (long) d.getHour());
+        time_accessors.put("day", d -> (long) d.getDayOfMonth());
+        time_accessors.put("month", d -> MONTHS[d.getMonthValue() - 1]);
+        time_accessors.put("year", d -> (long) d.getYear());
+        time_accessors.put("week", d -> (long) d.get(WeekFields.ISO.weekOfWeekBasedYear()));
+        time_accessors.put("day_of_year", d -> (long) d.getDayOfYear());
+        time_accessors.put("epoch", d -> d.toEpochSecond());
+        time_accessors.put("is_utc", d -> d.getOffset().equals(ZoneOffset.UTC));
+        time_accessors.put("is_leap_year", d -> Year.isLeap(d.getYear()));
     }
 
-    public static Frame makeTime(DateTime time, TaskMaster task_master) {
+    public static Frame makeTime(ZonedDateTime time, TaskMaster task_master) {
         return ReflectedFrame.create(task_master, time, time_accessors);
     }
 
@@ -156,17 +91,15 @@ public abstract class BaseTime extends Future {
         this.container = self;
     }
 
-    protected void getUnixTime(final ConsumeDateTime target,
+    protected void getUnixTime(final Consumer<ZonedDateTime> target,
                                final Context context) {
         new Lookup(task_master, source_reference, new String[] {"epoch"},
         context).listen(new ConsumeResult() {
             @Override
             public void consume(final Object epoch) {
                 if (epoch instanceof Long) {
-                    DateTime time = new DateTime(1970, 1, 1, 0, 0, 0,
-                                                 DateTimeZone.UTC);
                     long epochl = (Long) epoch;
-                    target.invoke(time.plusSeconds((int) epochl));
+                    target.accept(ZonedDateTime.ofInstant(Instant.ofEpochSecond(epochl), ZoneId.of("UTC")));
                     if (interlock.decrementAndGet() == 0) {
                         task_master.slot(BaseTime.this);
                     }
@@ -177,15 +110,15 @@ public abstract class BaseTime extends Future {
             }
         });
     }
-    protected void getTime(final ConsumeDateTime target, final String name) {
+    protected void getTime(final Consumer<ZonedDateTime> target, final String name) {
         Future lookup = new Lookup(task_master, source_reference,
                                    new String[] {name}, context);
         lookup.listen(new ConsumeResult() {
             @Override
             public void consume(Object result) {
                 if (result instanceof ReflectedFrame
-                        && ((ReflectedFrame) result).getBacking() instanceof DateTime) {
-                    target.invoke((DateTime)((ReflectedFrame) result)
+                        && ((ReflectedFrame) result).getBacking() instanceof ZonedDateTime) {
+                    target.accept((ZonedDateTime)((ReflectedFrame) result)
                                   .getBacking());
                     if (interlock.decrementAndGet() == 0) {
                         task_master.slot(BaseTime.this);
@@ -200,7 +133,7 @@ public abstract class BaseTime extends Future {
         });
     }
 
-    protected Frame makeTime(DateTime time) {
+    protected Frame makeTime(ZonedDateTime time) {
         return makeTime(time, task_master);
     }
 }

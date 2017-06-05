@@ -2,12 +2,12 @@ package flabbergast.time;
 
 import flabbergast.*;
 
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 
 public class FromParts extends BaseParts {
     private boolean first = true;
-    private DateTimeZone zone;
+    private ZoneId zone;
     public FromParts(TaskMaster task_master, SourceReference source_ref,
                      Context context, Frame self, Frame container) {
         super(task_master, source_ref, context, self, container);
@@ -18,29 +18,27 @@ public class FromParts extends BaseParts {
             first = false;
             interlock.set(2);
             new Lookup(task_master, source_reference, new String[] {"is_utc"},
-            context).listen(new ConsumeResult() {
-                @Override
-                public void consume(Object is_utc) {
-                    if (is_utc instanceof Boolean) {
-                        zone = (Boolean) is_utc
-                               ? DateTimeZone.UTC
-                               : DateTimeZone.getDefault();
-                        if (interlock.decrementAndGet() == 0) {
-                            task_master.slot(FromParts.this);
-                        }
-                    } else {
-                        task_master.reportOtherError(source_reference,
-                                                     "“is_utc” must be an Bool.");
+            context).listen(is_utc -> {
+                if (is_utc instanceof Boolean) {
+                    zone = (Boolean) is_utc
+                    ? ZoneId.of("Z")
+                    : ZoneId.systemDefault();
+                    if (interlock.decrementAndGet() == 0) {
+                        task_master.slot(FromParts.this);
                     }
+                } else {
+                    task_master.reportOtherError(source_reference,
+                    "“is_utc” must be an Bool.");
                 }
-            });
+            }
+                                      );
             lookupParts(false);
             if (interlock.decrementAndGet() > 0) {
                 return;
             }
         }
-        result = makeTime(new DateTime((int) years, (int) months, (int) days,
-                                       (int) hours, (int) minutes, (int) seconds, (int) milliseconds,
-                                       zone));
+        result = makeTime(ZonedDateTime.of((int) years, (int) months, (int) days,
+                                           (int) hours, (int) minutes, (int) seconds, (int) milliseconds * 1000,
+                                           zone));
     }
 }

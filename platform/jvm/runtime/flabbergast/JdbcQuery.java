@@ -9,11 +9,12 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.ZonedDateTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
-import org.joda.time.DateTime;
 
 public class JdbcQuery extends Future {
     private static abstract class NameChooser {
@@ -88,7 +89,8 @@ public class JdbcQuery extends Future {
             Object invoke(ResultSet rs, int position, TaskMaster task_master)
             throws SQLException {
                 return BaseTime.makeTime(
-                           new DateTime(rs.getTimestamp(position)), task_master);
+                           ZonedDateTime.ofInstant(rs.getTimestamp(position).toInstant(), ZoneOffset.UTC)
+                           , task_master);
             }
         }, Types.DATE, Types.TIME, Types.TIMESTAMP);
         addUnpacker(new Unpacker() {

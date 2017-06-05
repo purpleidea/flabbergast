@@ -25,8 +25,6 @@ ASM_JAR="$JAR_PATH/asm4.jar"
 AC_SUBST([ASM_JAR])
 COMMONS_CLI_JAR="$JAR_PATH/commons-cli.jar"
 AC_SUBST([COMMONS_CLI_JAR])
-JODA_TIME_JAR="$JAR_PATH/joda-time.jar"
-AC_SUBST([JODA_TIME_JAR])
 JSON_JAR="$JAR_PATH/json.jar"
 AC_SUBST([JSON_JAR])
 
@@ -38,7 +36,7 @@ if test "$enable_jvm" != no; then
 	if test "$JAVA" = undefined -o "$JAVAC" = undefined -o "$JAR" = undefined; then
 		target_java=no
 	else
-		AC_CHECK_FILES([${ASM_JAR} ${COMMONS_CLI_JAR} ${JLINE_JAR} ${JODA_TIME_JAR} ${JSON_JAR} ${METAINF_JAR}], [ target_java=yes ], [ target_java=no ])
+		AC_CHECK_FILES([${ASM_JAR} ${COMMONS_CLI_JAR} ${JLINE_JAR} ${JSON_JAR} ${METAINF_JAR}], [ target_java=yes ], [ target_java=no ])
 	fi
 else
 	target_java=no

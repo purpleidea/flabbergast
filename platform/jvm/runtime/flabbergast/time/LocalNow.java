@@ -2,7 +2,7 @@ package flabbergast.time;
 
 import flabbergast.*;
 
-import org.joda.time.DateTime;
+import java.time.ZonedDateTime;
 
 public class LocalNow extends BaseTime {
     public LocalNow(TaskMaster task_master, SourceReference source_ref,
@@ -11,6 +11,6 @@ public class LocalNow extends BaseTime {
     }
     @Override
     protected void run() {
-        result = makeTime(new DateTime());
+        result = makeTime(ZonedDateTime.now());
     }
 }
