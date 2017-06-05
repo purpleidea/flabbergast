@@ -22,64 +22,56 @@ public class PrintResult extends Future {
 
     @Override
     protected void run() {
-        source.listen(new ConsumeResult() {
+        source.listen(result -> {
 
-            @Override
-            public void consume(Object result) {
-
-                if (result instanceof Frame) {
-                    Frame frame = (Frame) result;
-                    Lookup lookup = new Lookup(task_master,
-                                               new NativeSourceReference("printer"),
-                                               new String[] {"value"}, frame.getContext());
-                    lookup.listen(new ConsumeResult() {
-
-                        @Override
-                        public void consume(Object result) {
-                            if (result instanceof Stringish
-                                    || result instanceof Long
-                                    || result instanceof Boolean
-                                    || result instanceof Double) {
-                                success = true;
-                                if (output_filename == null) {
-                                    if (result instanceof Stringish) {
-                                        System.out.print(result);
-                                    } else if (result instanceof Boolean) {
-                                        System.out.println((Boolean) result
-                                                           ? "True"
-                                                           : "False");
-                                    } else {
-                                        System.out.println(result);
-                                    }
-                                } else {
-                                    try {
-                                        FileWriter fw = new FileWriter(
-                                            output_filename);
-                                        fw.write(result.toString());
-                                        if (!(result instanceof Stringish)) {
-                                            fw.write("\n");
-                                        }
-                                        fw.close();
-                                    } catch (IOException e) {
-                                        System.err.println(e.getMessage());
-                                        e.printStackTrace(System.err);
-                                    }
-                                }
+            if (result instanceof Frame) {
+                Frame frame = (Frame) result;
+                Lookup lookup = new Lookup(task_master,
+                new NativeSourceReference("printer"),
+                new String[] {"value"}, frame.getContext());
+                lookup.listen(value ->  {
+                    if (value instanceof Stringish
+                    || value instanceof Long
+                    || value instanceof Boolean
+                    || value instanceof Double) {
+                        success = true;
+                        if (output_filename == null) {
+                            if (value instanceof Stringish) {
+                                System.out.print(value);
+                            } else if (value instanceof Boolean) {
+                                System.out.println((Boolean) value
+                                                   ? "True"
+                                                   : "False");
                             } else {
-                                System.err
-                                .printf("Cowardly refusing to print result of type %s.\n",
-                                        SupportFunctions.nameForClass(result
-                                                                      .getClass()));
+                                System.out.println(value);
                             }
-
+                        } else {
+                            try {
+                                FileWriter fw = new FileWriter(
+                                    output_filename);
+                                fw.write(value.toString());
+                                if (!(value instanceof Stringish)) {
+                                    fw.write("\n");
+                                }
+                                fw.close();
+                            } catch (IOException e) {
+                                System.err.println(e.getMessage());
+                                e.printStackTrace(System.err);
+                            }
                         }
-                    });
-                } else {
-                    System.err
-                    .println("File did not contain a frame. That should be impossible.");
-                }
+                    } else {
+                        System.err
+                        .printf("Cowardly refusing to print result of type %s.\n",
+                        SupportFunctions.nameForClass(value
+                        .getClass()));
+                    }
 
+                });
+            } else {
+                System.err
+                .println("File did not contain a frame. That should be impossible.");
             }
+
         });
     }
 }

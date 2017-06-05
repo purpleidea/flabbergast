@@ -173,14 +173,7 @@ public abstract class TaskMaster implements Iterable<Lookup> {
     public void slot(final Future computation) {
         if (computation instanceof Lookup && !inflight.contains(computation)) {
             inflight.add((Lookup) computation);
-            computation.listenDelayed(new ConsumeResult() {
-
-                @Override
-                public void consume(Object result) {
-                    inflight.remove(computation);
-
-                }
-            });
+            computation.listenDelayed(result -> inflight.remove(computation));
         }
         computations.offer(computation);
     }
@@ -190,11 +183,7 @@ public abstract class TaskMaster implements Iterable<Lookup> {
     }
 
     public static boolean verifySymbol(Stringish strish) {
-        return verifySymbol(strish.toString(), new ReportError() {
-            @Override
-            public void invoke(String error_msg) {
-            }
-        });
+        return verifySymbol(strish.toString(), (msg) -> { });
     }
     public boolean verifySymbol(final SourceReference source_reference,
                                 Stringish strish) {

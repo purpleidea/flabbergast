@@ -56,23 +56,20 @@ public class Escape extends Future {
                 int index = 0;
                 for (String name : input) {
                     final String target_name = name;
-                    input.getOrSubscribe(name, new ConsumeResult() {
-                        @Override
-                        public void consume(Object arg) {
-                            if (arg instanceof Stringish) {
-                                Escape.this.input.put(target_name,
-                                                      arg.toString());
-                                if (interlock.decrementAndGet() == 0) {
-                                    task_master.slot(Escape.this);
-                                }
-                            } else {
-                                task_master.reportOtherError(
-                                    source_ref,
-                                    String.format(
-                                        "Expected “args” to contain strings. Got %s instead.",
-                                        SupportFunctions.nameForClass(arg
-                                                                      .getClass())));
+                    input.getOrSubscribe(name,  arg -> {
+                        if (arg instanceof Stringish) {
+                            Escape.this.input.put(target_name,
+                            arg.toString());
+                            if (interlock.decrementAndGet() == 0) {
+                                task_master.slot(Escape.this);
                             }
+                        } else {
+                            task_master.reportOtherError(
+                                source_ref,
+                                String.format(
+                                    "Expected “args” to contain strings. Got %s instead.",
+                                    SupportFunctions.nameForClass(arg
+                            .getClass())));
                         }
                     });
                 }
@@ -88,41 +85,26 @@ public class Escape extends Future {
     }
 
     void handleRange(final Frame spec) {
-        lookupChar(spec, "start", new ConsumeChar() {
-            @Override
-            public void invoke(final int start) {
-                lookupChar(spec, "end", new ConsumeChar() {
-                    @Override
-                    public void invoke(final int end) {
-                        lookupString(spec, "format_str", new ConsumeString() {
-                            @Override
-                            public void invoke(final String replacement) {
-                                ranges.add(new Range(start, end, replacement));
-                                if (interlock.decrementAndGet() == 0) {
-                                    task_master.slot(Escape.this);
-                                }
-                            }
-                        });
+        lookupChar(spec, "start", start -> {
+            lookupChar(spec, "end", end -> {
+                lookupString(spec, "format_str", replacement -> {
+                    ranges.add(new Range(start, end, replacement));
+                    if (interlock.decrementAndGet() == 0) {
+                        task_master.slot(this);
                     }
                 });
-            }
+            });
         });
     }
 
     void handleSubstition(final Frame spec) {
-        lookupChar(spec, "char", new ConsumeChar() {
-            @Override
-            public void invoke(final int c) {
-                lookupString(spec, "replacement", new ConsumeString() {
-                    @Override
-                    public void invoke(final String replacement) {
-                        single_substitutions.put(c, replacement);
-                        if (interlock.decrementAndGet() == 0) {
-                            task_master.slot(Escape.this);
-                        }
-                    }
-                });
-            }
+        lookupChar(spec, "char", c -> {
+            lookupString(spec, "replacement", replacement-> {
+                single_substitutions.put(c, replacement);
+                if (interlock.decrementAndGet() == 0) {
+                    task_master.slot(this);
+                }
+            });
         });
     }
 
@@ -133,23 +115,20 @@ public class Escape extends Future {
                 final Frame frame = (Frame) result;
                 Lookup lookup = new Lookup(task_master, source_ref,
                                            new String[] {"type"}, Context.prepend(frame, null));
-                lookup.listen(new ConsumeResult() {
-                    @Override
-                    public void consume(Object type_result) {
-                        if (type_result instanceof Long) {
-                            long type = (Long) type_result;
-                            switch ((int) type) {
-                            case 0 :
-                                handleSubstition(frame);
-                                return;
-                            case 1 :
-                                handleRange(frame);
-                                return;
-                            }
+                lookup.listen(type_result -> {
+                    if (type_result instanceof Long) {
+                        long type = (Long) type_result;
+                        switch ((int) type) {
+                        case 0 :
+                            handleSubstition(frame);
+                            return;
+                        case 1 :
+                            handleRange(frame);
+                            return;
                         }
-                        task_master.reportOtherError(source_ref,
-                                                     "Illegal transformation specified.");
                     }
+                    task_master.reportOtherError(source_ref,
+                                                 "Illegal transformation specified.");
                 });
             } else {
                 task_master.reportOtherError(source_ref,
@@ -182,16 +161,13 @@ public class Escape extends Future {
     }
 
     void lookupChar(Frame frame, final String name, final ConsumeChar consume) {
-        lookupString(frame, name, new ConsumeString() {
-            @Override
-            public void invoke(String str) {
-                if (str.offsetByCodePoints(0, 1) == str.length()) {
-                    consume.invoke(str.codePointAt(0));
-                } else {
-                    task_master.reportOtherError(source_ref, String.format(
-                                                     "String “%s” for “%s” must be a single codepoint.",
-                                                     str, name));
-                }
+        lookupString(frame, name, str-> {
+            if (str.offsetByCodePoints(0, 1) == str.length()) {
+                consume.invoke(str.codePointAt(0));
+            } else {
+                task_master.reportOtherError(source_ref, String.format(
+                    "String “%s” for “%s” must be a single codepoint.",
+                    str, name));
             }
         });
     }
@@ -200,17 +176,14 @@ public class Escape extends Future {
                       final ConsumeString consume) {
         Lookup lookup = new Lookup(task_master, source_ref, new String[] {name},
                                    Context.prepend(frame, null));
-        lookup.listen(new ConsumeResult() {
-            @Override
-            public void consume(Object result) {
-                if (result instanceof Stringish) {
-                    String str = result.toString();
-                    consume.invoke(str);
-                } else {
-                    task_master.reportOtherError(source_ref, String.format(
-                                                     "Expected “%s” to be a string. Got %s instead.",
-                                                     name, SupportFunctions.nameForClass(result.getClass())));
-                }
+        lookup.listen(result -> {
+            if (result instanceof Stringish) {
+                String str = result.toString();
+                consume.invoke(str);
+            } else {
+                task_master.reportOtherError(source_ref, String.format(
+                    "Expected “%s” to be a string. Got %s instead.",
+                    name, SupportFunctions.nameForClass(result.getClass())));
             }
         });
     }

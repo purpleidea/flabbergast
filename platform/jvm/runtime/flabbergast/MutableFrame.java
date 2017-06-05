@@ -73,12 +73,7 @@ public class MutableFrame extends Frame {
              * When this computation has completed, replace its value in the
              * frame.
              */
-            computation.listenDelayed(new ConsumeResult() {
-                @Override
-                public void consume(Object result) {
-                    attributes.put(name, result);
-                }
-            });
+            computation.listenDelayed(result -> attributes.put(name, result));
             /*
              * If the value is a computation, it cannot be slotted for execution
              * since it might depend on lookups that reference this frame.

@@ -15,56 +15,42 @@ public class JdbcUriHandler implements UriHandler {
 
     private static Map<String, Transform<Connection>> connection_hooks = new HashMap<String, Transform<Connection>>();
     static {
-        connection_hooks.put("database", new Transform<Connection>() {
-            public Object invoke(Connection c) {
-                try {
-                    return c.getCatalog();
-                } catch (SQLException e) {
-                    return Unit.NULL;
-                }
+        connection_hooks.put("database", c -> {
+            try {
+                return c.getCatalog();
+            } catch (SQLException e) {
+                return Unit.NULL;
             }
         });
-        connection_hooks.put("product_name", new Transform<Connection>() {
-            public Object invoke(Connection c) {
-                try {
-                    return c.getMetaData().getDatabaseProductName();
-                } catch (SQLException e) {
-                    return Unit.NULL;
-                }
+        connection_hooks.put("product_name", c-> {
+            try {
+                return c.getMetaData().getDatabaseProductName();
+            } catch (SQLException e) {
+                return Unit.NULL;
             }
         });
-        connection_hooks.put("product_version", new Transform<Connection>() {
-            public Object invoke(Connection c) {
-                try {
-                    return c.getMetaData().getDatabaseProductVersion();
-                } catch (SQLException e) {
-                    return Unit.NULL;
-                }
+        connection_hooks.put("product_version", c-> {
+            try {
+                return c.getMetaData().getDatabaseProductVersion();
+            } catch (SQLException e) {
+                return Unit.NULL;
             }
         });
-        connection_hooks.put("driver_name", new Transform<Connection>() {
-            public Object invoke(Connection c) {
-                try {
-                    return c.getMetaData().getDriverName();
-                } catch (SQLException e) {
-                    return Unit.NULL;
-                }
+        connection_hooks.put("driver_name", c -> {
+            try {
+                return c.getMetaData().getDriverName();
+            } catch (SQLException e) {
+                return Unit.NULL;
             }
         });
-        connection_hooks.put("driver_version", new Transform<Connection>() {
-            public Object invoke(Connection c) {
-                try {
-                    return c.getMetaData().getDriverVersion();
-                } catch (SQLException e) {
-                    return Unit.NULL;
-                }
+        connection_hooks.put("driver_version", c -> {
+            try {
+                return c.getMetaData().getDriverVersion();
+            } catch (SQLException e) {
+                return Unit.NULL;
             }
         });
-        connection_hooks.put("platform", new Transform<Connection>() {
-            public Object invoke(Connection c) {
-                return "JDBC";
-            }
-        });
+        connection_hooks.put("platform",  c-> "JDBC");
     }
     public static String parseUri(String uri_fragment, Properties properties,
                                   String user_param, String password_param, String db_param,
