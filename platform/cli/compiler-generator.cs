@@ -654,7 +654,7 @@ internal abstract class Generator {
         if (++num_fields > 64000) {
             throw new InvalidOperationException("Exceeded the maximum number of fields set by the CLI.");
         }
-        return new FieldValue(TypeBuilder.DefineField(name, type, FieldAttributes.PrivateScope));
+        return new FieldValue(TypeBuilder.DefineField(name + num_fields, type, FieldAttributes.PrivateScope));
     }
     /**
      * Mark the current code position as the entry point for a state.
