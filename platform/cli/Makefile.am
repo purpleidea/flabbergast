@@ -38,7 +38,7 @@ TEST_EXTENSIONS = .exe
 EXE_LOG_COMPILER = cli
 
 $(cli_DATA) $(TEST): $(wildcard *.cs *.sln *.csproj)
-	$(XBUILD) /verbosity:quiet flabbergast.sln
+	$(MSBUILD) /verbosity:quiet flabbergast.sln
 	cp runtime.urlhandler bin/Debug
 
 flabbergast-runtime-cli.pc: Makefile
@@ -74,7 +74,7 @@ nflabbergast-docgen: Makefile
 	@echo 'exec cli $(clidir)/flabbergast-documenter.exe "$$@"' >> $@
 
 clean-local:
-	$(XBUILD) /verbosity:quiet /target:Clean flabbergast.sln
+	$(MSBUILD) /verbosity:quiet /target:Clean flabbergast.sln
 
 CLEANFILES = \
 	cli-build-cache \

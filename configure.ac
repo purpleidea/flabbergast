@@ -43,8 +43,8 @@ else
 fi
 
 if test "$enable_cli" != no; then
-	AC_PATH_TOOL(XBUILD, xbuild, undefined)
-	if test "$XBUILD" = undefined; then
+	AC_PATH_TOOL(MSBUILD, msbuild, undefined)
+	if test "$MSBUILD" = undefined; then
 		target_cli=no
 	else
 		target_cli=yes
