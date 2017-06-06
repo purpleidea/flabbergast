@@ -98,7 +98,7 @@ public abstract class Frame : DynamicObject, IAttributeNames {
         if (end < start)
             return result;
         for (long it = 0; it <= (end - start); it++) {
-            result.Set(SupportFunctions.OrdinalNameStr(it + 1), start + it);
+            result.Set(it + 1, start + it);
         }
         return result;
     }
