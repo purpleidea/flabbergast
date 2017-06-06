@@ -74,7 +74,7 @@ public class CompilationUnit {
      */
     internal MethodInfo CreateDefinition(AstNode node, string syntax_id, DefinitionBlock block, string root_prefix, Dictionary<string, bool> owner_externals) {
         bool used;
-        var name = String.Concat(root_prefix, "Defition", id_gen.GetId(node, out used), syntax_id);
+        var name = String.Concat(root_prefix, "Defintion", id_gen.GetId(node, out used), syntax_id);
         if (functions.ContainsKey(name)) {
             return functions[name];
         }
