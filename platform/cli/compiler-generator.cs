@@ -913,13 +913,13 @@ internal class DefinitionGenerator : Generator {
         init_builder.Emit(OpCodes.Newobj, ctor);
 
         // If overriding, attach the overriding function to the original computation.
-        FieldInfo original_computation = null;
+        FieldInfo original_future = null;
         if (has_original) {
             InitialOriginal = new FieldValue(TypeBuilder.DefineField("original", typeof(object), FieldAttributes.Private));
-            original_computation = TypeBuilder.DefineField("original_computation", typeof(Future), FieldAttributes.Private);
+            original_future = TypeBuilder.DefineField("original_future", typeof(Future), FieldAttributes.Private);
             init_builder.Emit(OpCodes.Dup);
             init_builder.Emit(OpCodes.Ldarg, init_params.Length - 1);
-            init_builder.Emit(OpCodes.Stfld, original_computation);
+            init_builder.Emit(OpCodes.Stfld, original_future);
         }
 
         init_builder.Emit(OpCodes.Ret);
@@ -928,7 +928,7 @@ internal class DefinitionGenerator : Generator {
             var state = DefineState();
             SetState(state);
             Builder.Emit(OpCodes.Ldarg_0);
-            Builder.Emit(OpCodes.Ldfld, original_computation);
+            Builder.Emit(OpCodes.Ldfld, original_future);
             GenerateConsumeResult(InitialOriginal, false);
             Builder.Emit(OpCodes.Callvirt, typeof(Future).GetMethod("Notify", new[] { typeof(ConsumeResult) }));
             Builder.Emit(OpCodes.Ret);

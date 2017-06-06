@@ -2619,7 +2619,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 		}
 		expression +: {
 			rules +: {
-					xcomputation : Template expression_tmpl {
+					xfuture : Template expression_tmpl {
 					level : 19
 					pretty_name : "invoke CLI Flabbergast.Future class"
 					class_extra : "\t\tSystem.Reflection.ConstructorInfo constructor;"
@@ -2677,7 +2677,7 @@ compiler : compiler_lib.language_with_repl_tmpl {
 										"\(indent)\(parameters.self_frame.storage_name).Load(\(generator));" &
 										"\(indent)\(parameters.container_frame.storage_name).Load(\(generator));" &
 										"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Newobj, constructor);" &
-										"\(indent)var \(storage_name) = \(generator).MakeField(\"xcomputation\", typeof(object));" &
+										"\(indent)var \(storage_name) = \(generator).MakeField(\"xfuture\", typeof(object));" &
 										"\(indent)\(generator).GenerateConsumeResult(\(storage_name), true);" &
 										"\(indent)\(generator).Builder.Emit(System.Reflection.Emit.OpCodes.Call, typeof(Future).GetMethod(\"Notify\", new[] { typeof(ConsumeResult) }));" &
 										"\(indent)\(generator).StopInterlock();" &
