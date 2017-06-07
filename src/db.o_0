@@ -98,6 +98,18 @@ driver_config_tmpl : Template {
 					jdbc_value : "\"UTF-8\""
 					ado_net_param : "charset"
 					ado_net_value : "\"utf8\""
+				},
+				fixed_param_tmpl {
+					jdbc_param : "useLegacyDatetimeCode"
+					jdbc_value : "\"false\""
+					ado_net_param : Null
+					ado_net_value : Null
+				},
+				fixed_param_tmpl {
+					jdbc_param : "serverTimezone"
+					jdbc_value : "\"UTC\""
+					ado_net_param : Null
+					ado_net_value : Null
 				}
 			]
 		}
@@ -133,8 +145,8 @@ driver_config_tmpl : Template {
 				fixed_param_tmpl {
 					jdbc_param : "readOnly"
 					jdbc_value : "\"true\""
-					ado_net_param : ""
-					ado_net_value : "\"\""
+					ado_net_param : Null
+					ado_net_value : Null
 				}
 			]
 		}

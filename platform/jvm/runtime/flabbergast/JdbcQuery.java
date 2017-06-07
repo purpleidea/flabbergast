@@ -2,19 +2,21 @@ package flabbergast;
 
 import flabbergast.Lookup.DoLookup;
 import flabbergast.time.BaseTime;
-import java.sql.Types;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-import java.sql.Connection;
-import java.sql.Statement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Types;
-import java.time.ZonedDateTime;
+import java.sql.Types;
 import java.time.ZoneOffset;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 
 public class JdbcQuery extends Future {
     private static abstract class NameChooser {
@@ -53,6 +55,8 @@ public class JdbcQuery extends Future {
                                TaskMaster task_master) throws SQLException;
     }
 
+    private static final Calendar UTC_CALENDAR = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+
     static final Map<Integer, Unpacker> unpackers = new HashMap<Integer, Unpacker>();
     static {
         addUnpacker(new Unpacker() {
@@ -89,7 +93,7 @@ public class JdbcQuery extends Future {
             Object invoke(ResultSet rs, int position, TaskMaster task_master)
             throws SQLException {
                 return BaseTime.makeTime(
-                           ZonedDateTime.ofInstant(rs.getTimestamp(position).toInstant(), ZoneOffset.UTC)
+                           ZonedDateTime.ofInstant(rs.getTimestamp(position, UTC_CALENDAR).toInstant(), ZoneOffset.UTC)
                            , task_master);
             }
         }, Types.DATE, Types.TIME, Types.TIMESTAMP);
