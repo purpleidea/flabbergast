@@ -342,6 +342,13 @@ identity : Template {
 	value : args
 }
 
+{{{Amend a function-like template with the -ifiers provided as arguments.}}}
+ifier_apply : Template {
+	args : Used
+	base : Required
+	value : For arg : args Reduce arg(base : acc) With acc : base
+}
+
 {{{Convert a Unicode codepoint (integer) into a string.}}}
 int_to_char : str_concatifier(base : int_to_char_list, delimiter : "")
 
