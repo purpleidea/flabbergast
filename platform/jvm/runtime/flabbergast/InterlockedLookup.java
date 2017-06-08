@@ -28,9 +28,11 @@ public class InterlockedLookup {
         interlock.incrementAndGet();
         Future input_lookup = new Lookup(task_master, source_reference, names, context);
         input_lookup.listen(input_result -> {
-            if (clazz.isAssignableFrom(input_result.getClass())) {
-                if (writer.test((T) input_result) && interlock.decrementAndGet() == 0) {
-                    task_master.slot(owner);
+            if (clazz.isInstance(input_result)) {
+                if (writer.test((T) input_result)) {
+                    if (interlock.decrementAndGet() == 0) {
+                        task_master.slot(owner);
+                    }
                 }
             } else {
                 task_master.reportOtherError(source_reference, String.format("“%s” has type %s but expected %s.", String.join(".", names), SupportFunctions.nameForClass(input_result.getClass()), SupportFunctions.nameForClass(clazz)));
@@ -39,26 +41,41 @@ public class InterlockedLookup {
     }
 
     public <T> void lookup(Class<T> clazz, Consumer<T> writer, String... names) {
-        lookupHelper(clazz, x -> {
-            writer.accept(x);
-            return true;
-        }, names);
+        if (clazz.equals(String.class)) {
+            lookup(Stringish.class, sish -> writer.accept((T)sish.toString()), names);
+        } else {
+            lookupHelper(clazz, x -> {
+                writer.accept(x);
+                return true;
+            }, names);
+        }
     }
     public void lookupStr(Consumer<String> writer, String... names) {
         lookup(Stringish.class, sish -> writer.accept(sish.toString()), names);
     }
     public <T> void lookupMarshalled(Class<T> clazz, String error, Consumer<T> writer, String... names) {
-        lookupHelper(Frame.class, return_value -> {
-            if (return_value instanceof ReflectedFrame) {
-                Object backing = ((ReflectedFrame) return_value).getBacking();
-                if (clazz.isAssignableFrom(backing.getClass())) {
+        if (isAway) {
+            throw new UnsupportedOperationException("Cannot lookup after finish.");
+        }
+        interlock.incrementAndGet();
+        Future input_lookup = new Lookup(task_master, source_reference, names, context);
+        input_lookup.listen(input_result -> {
+            if (!(input_result instanceof Frame)) {
+                task_master.reportOtherError(source_reference, String.format("“%s” has type %s but expected Frame.", String.join(".", names), SupportFunctions.nameForClass(input_result.getClass())));
+                return;
+            }
+            if (input_result instanceof ReflectedFrame) {
+                Object backing = ((ReflectedFrame) input_result).getBacking();
+                if (clazz.isInstance(backing)) {
                     writer.accept((T) backing);
-                    return true;
+                    if (interlock.decrementAndGet() == 0) {
+                        task_master.slot(owner);
+                    }
+                    return ;
                 }
             }
             task_master.reportOtherError(source_reference, String.format(error, String.join(".", names)));
-            return false;
-        }, names);
+        });
     }
 
     public boolean away() {

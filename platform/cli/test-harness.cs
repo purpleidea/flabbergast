@@ -122,6 +122,7 @@ public class TestHarness {
             all_succeeded &= collector.ParseDirty;
         }
         var task_master = new TestTaskMaster();
+        task_master.AddUriHandler(StandardInterop.INSTANCE);
         task_master.AddUriHandler(lib);
         foreach (var file in GetFiles(root, "errors")) {
             bool success;

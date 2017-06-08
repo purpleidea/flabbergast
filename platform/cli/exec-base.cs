@@ -183,6 +183,7 @@ public abstract class TaskMaster : IEnumerable<Lookup> {
 
         AddUriHandler(new CurrentInformation(rules.HasFlag(LoadRule.Interactive)));
         AddUriHandler(BuiltInLibraries.INSTANCE);
+        AddUriHandler(StandardInterop.INSTANCE);
         if (!rules.HasFlag(LoadRule.Sandboxed)) {
             AddUriHandler(SettingsHandler.INSTANCE);
             AddUriHandler(EnvironmentUriHandler.INSTANCE);

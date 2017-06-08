@@ -5,7 +5,7 @@ utils_lib : From lib:utils
 absolute : utils_lib.firstifier(base : absolute_list)
 
 {{{Compute the absolute value of a list of numbers.}}}
-absolute_list : Template ( From lib:mathinterop ).absolute_list {
+absolute_list : Template From interop:math/abs {
 	{{{A list of numbers.}}}
 	args : Used
 }
@@ -14,19 +14,19 @@ absolute_list : Template ( From lib:mathinterop ).absolute_list {
 angle_unit : angle_unit_radians
 
 {{{The multiplier for trignonmetry in degrees.}}}
-angle_unit_degrees : ( From lib:mathinterop ).angle_unit_degrees
+angle_unit_degrees : 0.0174532925
 {{{The multiplier for trignonmetry in gradians.}}}
-angle_unit_gradians : ( From lib:mathinterop ).angle_unit_gradians
+angle_unit_gradians : 0.01570796326794896696777
 {{{The multiplier for trignonmetry in radians.}}}
-angle_unit_radians : ( From lib:mathinterop ).angle_unit_radians
+angle_unit_radians : 1.0
 {{{The multiplier for trignonmetry in turns.}}}
-angle_unit_turns : ( From lib:mathinterop ).angle_unit_turns
+angle_unit_turns : 6.283185307179586231996
 
 {{{Compute the smallest integral value greater than or equal to the argument.}}}
 ceiling : utils_lib.firstifier(base : ceiling_list)
 
 {{{Compute the smallest integral value greater than or equal to each number in a list.}}}
-ceiling_list : Template ( From lib:mathinterop ).ceiling_list {
+ceiling_list : Template From interop:math/ceiling {
 	{{{A list of numbers.}}}
 	args : Used
 }
@@ -34,32 +34,32 @@ ceiling_list : Template ( From lib:mathinterop ).ceiling_list {
 {{{Trigonometic functions for a circle.}}}
 circle : {
 	arccos : utils_lib.firstifier(base : arccos_list)
-	arccos_list : Template ( From lib:mathinterop ).circle.arccos_list {
+	arccos_list : Template From interop:math/circle/arccos {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	arcsin : utils_lib.firstifier(base : arcsin_list)
-	arcsin_list : Template ( From lib:mathinterop ).circle.arcsin_list {
+	arcsin_list : Template From interop:math/circle/arcsin {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	arctan : utils_lib.firstifier(base : arctan_list)
-	arctan_list : Template ( From lib:mathinterop ).circle.arctan_list {
+	arctan_list : Template From interop:math/circle/arctan {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	cos : utils_lib.firstifier(base : cos_list)
-	cos_list : Template ( From lib:mathinterop ).circle.cos_list {
+	cos_list : Template From interop:math/circle/cos {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	sin : utils_lib.firstifier(base : sin_list)
-	sin_list : Template ( From lib:mathinterop ).circle.sin_list {
+	sin_list : Template From interop:math/circle/sin {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	tan : utils_lib.firstifier(base : tan_list)
-	tan_list : Template ( From lib:mathinterop ).circle.tan_list {
+	tan_list : Template From interop:math/circle/tan {
 		{{{A list of angles.}}}
 		args : Used
 	}
@@ -101,7 +101,7 @@ cumulative_sumifier : Template {
 floor : utils_lib.firstifier(base : floor_list)
 
 {{{Compute the largest integral value less than or equal to the each number in a list.}}}
-floor_list : Template ( From lib:mathinterop ).floor_list {
+floor_list : Template From interop:math/floor {
 	{{{A list of numbers.}}}
 	args : Used
 }
@@ -109,32 +109,32 @@ floor_list : Template ( From lib:mathinterop ).floor_list {
 {{{Trigonometic functions for a hyperbola.}}}
 hyperbola : {
 	arccos : utils_lib.firstifier(base : arccos_list)
-	arccos_list : Template ( From lib:mathinterop ).hyperbola.arccos_list {
+	arccos_list : Template From interop:math/hyperbola/arccos {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	arcsin : utils_lib.firstifier(base : arcsin_list)
-	arcsin_list : Template ( From lib:mathinterop ).hyperbola.arcsin_list {
+	arcsin_list : Template From interop:math/hyperbola/arcsin {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	arctan : utils_lib.firstifier(base : arctan_list)
-	arctan_list : Template ( From lib:mathinterop ).hyperbola.arctan_list {
+	arctan_list : Template From interop:math/hyperbola/arctan {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	cos : utils_lib.firstifier(base : cos_list)
-	cos_list : Template ( From lib:mathinterop ).hyperbola.cos_list {
+	cos_list : Template From interop:math/hyperbola/cos {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	sin : utils_lib.firstifier(base : sin_list)
-	sin_list : Template ( From lib:mathinterop ).hyperbola.sin_list {
+	sin_list : Template From interop:math/hyperbola/sin {
 		{{{A list of angles.}}}
 		args : Used
 	}
 	tan : utils_lib.firstifier(base : tan_list)
-	tan_list : Template ( From lib:mathinterop ).hyperbola.tan_list {
+	tan_list : Template From interop:math/hyperbola/tan {
 		{{{A list of angles.}}}
 		args : Used
 	}
@@ -143,11 +143,12 @@ hyperbola : {
 log : utils_lib.firstifier(base : log_list)
 
 {{{Compute the logarithm of the argument.}}}
-log_list : Template ( From lib:mathinterop ).log_list {
+log_list : Template From interop:math/log {
 	{{{A list of numbers.}}}
 	args : Used
 	{{{The base to use.}}}
 	base : natural
+	real_base : base To Float
 }
 
 {{{The natural number, \Emph{e}.}}}
@@ -160,11 +161,12 @@ pi : 3.14159265358979323846
 power : utils_lib.firstifier(base : power_list)
 
 {{{Compute the argument raised to an exponent.}}}
-power_list : Template ( From lib:mathinterop ).power_list {
+power_list : Template From interop:math/power {
 	{{{A list of numbers.}}}
 	args : Used
 	{{{A number to raise the values.}}}
 	exponent : Required
+	real_exponent : exponent To Float
 }
 
 {{{Rounds the arguments to a specified number of decimal places. See
@@ -172,11 +174,14 @@ power_list : Template ( From lib:mathinterop ).power_list {
 round : utils_lib.firstifier(base : round_list)
 
 {{{Rounds the arguments to a specified number of decimal places.}}}
-round_list : Template ( From lib:mathinterop ).round_list {
+round_list : Template From interop:math/round {
 	{{{A list of numbers.}}}
 	args : Used
 	{{{The number of decimal places. Must be non-negative.}}}
 	places : 0
+	real_places : If places Enforce Int < 0
+		Then Error "The number of decimal places specified, \(places), must be non-negative."
+		Else places
 }
 
 {{{Sum a list of numbers.}}}

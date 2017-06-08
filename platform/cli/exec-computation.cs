@@ -59,15 +59,15 @@ public class InterlockedLookup {
         this.context = context;
     }
 
-    private void Lookup<T>(Predicate<T>writer, params string[] names) {
+    private void LookupRaw<T>(Predicate<object>writer, params string[] names) {
         if (away) {
             throw new InvalidOperationException("Cannot lookup after finish.");
         }
         Interlocked.Increment(ref interlock);
         Future input_lookup = new Lookup(task_master, source_reference, names, context);
         input_lookup.Notify(input_result => {
-            if (input_result is T) {
-                if (writer((T) input_result) && Interlocked.Decrement(ref interlock) == 0) {
+            if (writer(input_result)) {
+                if (Interlocked.Decrement(ref interlock) == 0) {
                     task_master.Slot(owner);
                 }
             } else {
@@ -77,26 +77,75 @@ public class InterlockedLookup {
     }
 
     public void Lookup<T>(Action<T> writer, params string[] names) {
-        Lookup<T>(x => {
-            writer(x);
-            return true;
-        }, names);
+        if (typeof(T) == typeof(string)) {
+            LookupRaw<Stringish>(x => {
+                String str;
+                if (x is Stringish) {
+                    str = x.ToString();
+                } else if (x is bool) {
+                    str = ((bool)x) ?  "True" : "False";
+                } else if (x is long) {
+                    str = ((long)x).ToString();
+                } else if (x is double) {
+                    str = ((double)x).ToString();
+                } else {
+                    return false;
+                }
+                writer((T)(object)str);
+                return true;
+            }, names);
+        } else if (typeof(T) == typeof(double)) {
+            LookupRaw<double>(x => {
+                double d;
+                if (x is double) {
+                    d = (double)x;
+                } else if (x is long) {
+                    d = (long)x;
+                } else {
+                    return false;
+                }
+                writer((T)(object)d);
+                return true;
+            }, names);
+
+
+        } else {
+            LookupRaw<T>(x => {
+                if (x is T) {
+                    writer((T)x);
+                    return true;
+                } else {
+                    return false;
+                }
+            }, names);
+        }
     }
     public void LookupStr(Action<String> writer, params string[] names) {
         Lookup<Stringish>(sish => writer(sish.ToString()), names);
     }
     public void LookupMarshalled<T>(String error, Action<T> writer, params string[] names) {
-        Lookup<Frame>(return_value => {
-            if (return_value is ReflectedFrame) {
-                Object backing = ((ReflectedFrame) return_value).Backing;
+        if (away) {
+            throw new InvalidOperationException("Cannot lookup after finish.");
+        }
+        Interlocked.Increment(ref interlock);
+        Future input_lookup = new Lookup(task_master, source_reference, names, context);
+        input_lookup.Notify(input_result => {
+            if (!(input_result is Frame)) {
+                task_master.ReportOtherError(source_reference, String.Format("“{0}” has type {1} but expected Frame.", String.Join(",", names), SupportFunctions.NameForType(input_result.GetType())));
+                return;
+            }
+            if (input_result is ReflectedFrame) {
+                Object backing = ((ReflectedFrame) input_result).Backing;
                 if (backing is T) {
                     writer((T) backing);
-                    return true;
+                    if (Interlocked.Decrement(ref interlock) == 0) {
+                        task_master.Slot(owner);
+                    }
+                    return ;
                 }
             }
-            task_master .ReportOtherError(source_reference, string.Format(error, string.Join(".", names)));
-            return false;
-        }, names);
+            task_master.ReportOtherError(source_reference, string.Format(error, string.Join(".", names)));
+        });
     }
 
     public bool Away() {

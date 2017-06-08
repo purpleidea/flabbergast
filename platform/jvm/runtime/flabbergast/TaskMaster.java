@@ -59,6 +59,7 @@ public abstract class TaskMaster implements Iterable<Lookup> {
         }
 
         addUriHandler(BuiltInLibraries.INSTANCE);
+        addUriHandler(StandardInterop.INSTANCE);
         addUriHandler(new CurrentInformation(flags.contains(LoadRule.PRECOMPILED)));
         if (flags.contains(LoadRule.PRECOMPILED)) {
             LoadPrecompiledLibraries precomp = new LoadPrecompiledLibraries();

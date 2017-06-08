@@ -59,6 +59,7 @@ public class TestHarness {
         ResourcePathFinder resource_finder = new ResourcePathFinder();
         TaskMaster task_master = new TestTaskMaster();
         task_master.addUriHandler(BuiltInLibraries.INSTANCE);
+        task_master.addUriHandler(StandardInterop.INSTANCE);
         for (File file : alwaysIterable(new File(root, "errors")
                                         .listFiles(new OnlySourceFiles()))) {
             boolean success;

@@ -49,6 +49,7 @@
 		<Compile Include="exec-computation.cs"/>
 		<Compile Include="exec-lookup.cs"/>
 		<Compile Include="rt-console.cs"/>
+		<Compile Include="rt-interop.cs"/>
 		<Compile Include="rt-iterator.cs"/>
 		<Compile Include="rt-misc.cs"/>
 		<Compile Include="sql.cs"/>
@@ -64,6 +65,7 @@
 		<Compile Include="uri-dlopen.cs"/>
 		<Compile Include="uri-environment.cs"/>
 		<Compile Include="uri-file.cs"/>
+		<Compile Include="uri-interop.cs"/>
 		<Compile Include="uri-net.cs"/>
 		<Compile Include="uri-res.cs"/>
 		<Compile Include="uri-settings.cs"/>
