@@ -10,7 +10,7 @@ containing frame, otherwise, the “row” frames will be numbered. A column nam
 can be prefixed by \Mono{$} to allow lookups. In this case, the column value,
 which must be a string, is treated as a lookup, which may contain periods, and
 evaluated with contextual lookup semantics.}}}
-retrieve : Template (From lib:sqlinterop ).retrieve {
+retrieve : Template From interop:sql/query {
 	{{{A connection from a \Mono{From sql:} import}}}
 	connection : Required
 	{{{A string containing the implementation-specific SQL statement.}}}

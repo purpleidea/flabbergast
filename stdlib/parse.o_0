@@ -4,7 +4,7 @@ Introduction{{{Utilities for parsing strings into frames.}}}
 parse_json : (From lib:utils).firstifier(base : parse_json_list)
 
 {{{Parses a list of JSON object-containing strings and converts them to a list of templates. Each template has \{json_root} containing the root element. The contents will be structure to be compatible with the JSON renderer in \From{lib:render}. To manipulate the file, simple provide different templates for \{json.object}, \{json.list}, and \{json.scalar}.}}}
-parse_json_list : Template (From lib:parseinterop).parse_json_list {
+parse_json_list : Template From interop:parse/json {
 	{{{The strings to parse.}}}
 	args : Used
 }

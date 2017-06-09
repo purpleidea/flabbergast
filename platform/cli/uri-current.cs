@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Flabbergast {
 public class CurrentInformation : UriHandler {
@@ -18,12 +19,20 @@ public class CurrentInformation : UriHandler {
 
     public CurrentInformation(bool interactive) {
         information["interactive"] = new Precomputation(interactive);
-        information["login"] = new Precomputation(new SimpleStringish(Environment.UserName));
-        information["directory"] = new Precomputation(new SimpleStringish(Environment.CurrentDirectory));
+        Add("login", Environment.UserName);
+        Add("directory", Environment.CurrentDirectory);
         information["version"] = new Precomputation(Configuration.Version);
-        information["vm/name"] = new Precomputation(new SimpleStringish("CLR"));
-        information["vm/vendor"] = new Precomputation(new SimpleStringish(Type.GetType("Mono.Runtime") != null ? "Mono" : "Microsoft"));
-        information["vm/version"] = new Precomputation(new SimpleStringish(Environment.Version.ToString()));
+        Add("machine/directory_separator", Path.DirectorySeparatorChar.ToString());
+        Add("machine/name", Environment.OSVersion.VersionString);
+        Add("machine/path_separator", Path.PathSeparator.ToString());
+        Add("machine/line_ending", Environment.NewLine);
+        Add("vm/name", "CLR");
+        Add("vm/vendor", Type.GetType("Mono.Runtime") != null ? "Mono" : "Microsoft");
+        Add("vm/version", Environment.Version.ToString());
+    }
+
+    private void Add(string key, string value) {
+        information[key] = new Precomputation(new SimpleStringish(value));
     }
 
     public Future ResolveUri(TaskMaster master, string uri, out LibraryFailure reason) {

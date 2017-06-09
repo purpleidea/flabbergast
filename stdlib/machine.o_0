@@ -29,4 +29,9 @@ unix : machine_tmpl {
 }
 
 {{{The kind of machine currently in use.}}}
-local : From lib:machineinterop
+local : machine_tmpl {
+	directory_separator : From current:machine/directory_separator
+	name : From current:machine/name
+	path_separator : From current:machine/path_separator
+	line_ending : From current:machine/line_ending
+}

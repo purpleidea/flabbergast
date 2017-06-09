@@ -1,50 +1,28 @@
 package flabbergast;
 
-public class ParseInt extends Future {
-
-    private InterlockedLookup interlock;
-    private String input;
+public class ParseInt extends BaseMapFunctionInterop<String, Long> {
     private int radix;
-
-    private SourceReference source_reference;
-    private Context context;
-    private Frame container;
 
     public ParseInt(TaskMaster task_master, SourceReference source_ref,
                     Context context, Frame self, Frame container) {
-        super(task_master);
-        this.source_reference = source_ref;
-        this.context = context;
-        this.container = self;
+        super(Long.class , String.class, task_master, source_ref, context, self, container);
     }
 
     @Override
-    protected void run() {
-        if (interlock == null) {
-            interlock = new InterlockedLookup(this, task_master, source_reference, context);
-            interlock.lookupStr(x->input = x, "arg");
-            interlock.lookup(Long.class, x->radix = x.intValue(), "radix");
-        }
-
-        if (!interlock.away()) return;
+    protected Long computeResult(String input)throws Exception {
         if (radix < Character.MIN_RADIX) {
-            task_master.reportOtherError(source_reference,
-                                         String.format(
-                                             "Radix %s must be at least %s.",
-                                             radix, Character.MIN_RADIX));
-            return;
+            throw new IllegalArgumentException(String.format(
+                                                   "Radix %s must be at least %s.",
+                                                   radix, Character.MIN_RADIX));
         } else if (radix > Character.MAX_RADIX) {
-            task_master.reportOtherError(source_reference,
-                                         String.format(
-                                             "Radix %s must be at most %s.",
-                                             radix, Character.MAX_RADIX));
-            return;
+            throw new IllegalArgumentException(String.format(
+                                                   "Radix %s must be at most %s.",
+                                                   radix, Character.MAX_RADIX));
         }
-        try {
-            result = Long.parseLong(input, radix);
-        } catch (NumberFormatException e) {
-            task_master.reportOtherError(source_reference,
-                                         String.format("Invalid integer “%s”.", input));
-        }
+        return Long.parseLong(input, radix);
+
+    }    protected void prepareLookup(InterlockedLookup interlock) {
+        interlock.lookup(Long.class, x->radix = x.intValue(), "radix");
     }
+
 }

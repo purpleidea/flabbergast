@@ -17,12 +17,20 @@ public class CurrentInformation implements UriHandler {
             currentDirectory = new File(".").getCanonicalPath().toString();
         } catch (IOException e) {}
         information.put("interactive", new Precomputation(interactive));
-        information.put("login", new Precomputation(new SimpleStringish(System.getProperty("user.name"))));
-        information.put("directory", new Precomputation(new SimpleStringish(currentDirectory)));
+        add("login", System.getProperty("user.name"));
+        add("directory", currentDirectory);
         information.put("version", new Precomputation(Configuration.VERSION));
-        information.put("vm/name", new Precomputation(new SimpleStringish("JVM")));
-        information.put("vm/vendor", new Precomputation(new SimpleStringish(System.getProperty("java.vendor"))));
-        information.put("vm/version", new Precomputation(new SimpleStringish(System.getProperty("java.version"))));
+        add("machine/directory_separator", File.separator);
+        add("machine/name", System.getProperty("os.name"));
+        add("machine/path_separator", File.pathSeparator);
+        add("machine/line_ending", String.format("%n"));
+        add("vm/name", "JVM");
+        add("vm/vendor", System.getProperty("java.vendor"));
+        add("vm/version", System.getProperty("java.version"));
+    }
+
+    private void add(String key, String value) {
+        information.put(key, new Precomputation(new SimpleStringish(value)));
     }
 
     public String getUriName() {

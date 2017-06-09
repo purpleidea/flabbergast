@@ -63,22 +63,53 @@ public class StandardInterop : Interop {
     private StandardInterop() {
         AddMap<double, double>("math/abs", Math.Abs);
         AddMap<double, double>("math/ceiling", Math.Ceiling);
-        AddMap<double, double>("math/floor", Math.Floor);
-        AddMap<double, double, double>("math/log", Math.Log, "real_base");
-        AddMap<double, double, double>("math/power", Math.Pow, "real_exponent");
-        AddMap<double, long, double>("math/round", (double x, long places) => Math.Round(x, (int) places), "real_places");
         AddMap("math/circle/arccos", (double x, double angle_unit) => Math.Acos(x) / angle_unit, "angle_unit");
         AddMap("math/circle/arcsin", (double x, double angle_unit) => Math.Asin(x) / angle_unit, "angle_unit");
         AddMap("math/circle/arctan", (double x, double angle_unit) => Math.Atan(x) / angle_unit, "angle_unit");
         AddMap("math/circle/cos", (double x, double angle_unit) => Math.Cos(x * angle_unit), "angle_unit");
         AddMap("math/circle/sin", (double x, double angle_unit) => Math.Sin(x * angle_unit), "angle_unit");
         AddMap("math/circle/tan", (double x, double angle_unit) => Math.Tan(x * angle_unit), "angle_unit");
+        AddMap<double, double>("math/floor", Math.Floor);
         AddMap("math/hyperbola/arccos", (double x, double angle_unit) => Math.Log(x + Math.Sqrt(x * x - 1.0)) / angle_unit, "angle_unit");
         AddMap("math/hyperbola/arcsin", (double x, double angle_unit) =>	Math.Log(x + Math.Sqrt(x * x + 1.0)) / angle_unit, "angle_unit");
         AddMap("math/hyperbola/arctan", (double x, double angle_unit) =>	0.5 * Math.Log((1.0 + x) / (1.0 - x)) / angle_unit, "angle_unit");
         AddMap("math/hyperbola/cos", (double x, double angle_unit) => Math.Cosh(x * angle_unit), "angle_unit");
         AddMap("math/hyperbola/sin", (double x, double angle_unit) => Math.Sinh(x * angle_unit), "angle_unit");
         AddMap("math/hyperbola/tan", (double x, double angle_unit) => Math.Tanh(x * angle_unit), "angle_unit");
+        AddMap<double, double, double>("math/log", Math.Log, "real_base");
+        AddMap<double, double, double>("math/power", Math.Pow, "real_exponent");
+        AddMap<double, long, double>("math/round", (double x, long places) => Math.Round(x, (int) places), "real_places");
+        Add("parse/json", (task_master, soure_ref, context, self, container) => new JsonParser(task_master, soure_ref, context, self, container));
+        Add("sql/query", (task_master, soure_ref, context, self, container) => new DbQuery(task_master, soure_ref, context, self, container));
+        AddMap<byte[], byte[]>("utils/bin/compress/gzip", BinaryFunctions.Compress);
+        AddMap<string, byte[]>("utils/bin/from/base64",  Convert.FromBase64String);
+        AddMap<byte[], byte[]>("utils/bin/hash/md5", BinaryFunctions.ComputeMD5);
+        AddMap<byte[], byte[]>("utils/bin/hash/sha1", BinaryFunctions.ComputeSHA1);
+        AddMap<byte[], byte[]>("utils/bin/hash/sha256", BinaryFunctions.ComputeSHA256);
+        AddMap<byte[], string>("utils/bin/to/base64", Convert.ToBase64String);
+        Add("utils/bin/uncompress/gzip", (task_master, soure_ref, context, self, container) => new Decompress(task_master, soure_ref, context, self, container));
+        AddMap<long, Stringish>("utils/ordinal", SupportFunctions.OrdinalName);
+        Add("utils/parse/float", (task_master, soure_ref, context, self, container) => new ParseDouble(task_master, soure_ref, context, self, container));
+        Add("utils/parse/int", (task_master, soure_ref, context, self, container) => new ParseInt(task_master, soure_ref, context, self, container));
+        AddMap<long, string>("utils/str/from/codepoint", x => Char.ConvertFromUtf32((int) x));
+        AddMap<byte[], string>("utils/str/from/utf16be", new System.Text.UnicodeEncoding(true, false, true).GetString);
+        AddMap<byte[], string>("utils/str/from/utf16le", new System.Text.UnicodeEncoding(false, false, true).GetString);
+        AddMap<byte[], string>("utils/str/from/utf32be",  new System.Text.UTF32Encoding(true, false, true).GetString);
+        AddMap<byte[], string>("utils/str/from/utf32le", new System.Text.UTF32Encoding(false, false, true).GetString);
+        AddMap<byte[], string>("utils/str/from/utf8", new System.Text.UTF8Encoding(false, true).GetString);
+        AddMap<Stringish, bool>("utils/str/identifier", TaskMaster.VerifySymbol);
+        AddMap<Stringish, long>("utils/str/length/utf16", x => x.Utf16Length);
+        AddMap<Stringish, long>("utils/str/length/utf8", x => x.Utf8Length);
+        AddMap<string, string>("utils/str/lower_case", x => x.ToLower());
+        AddMap<string, string, bool>("utils/str/prefixed", (x, str) => x.StartsWith(str), "str");
+        AddMap<string, string, bool>("utils/str/suffixed", (x, str) => x.EndsWith(str), "str");
+        AddMap<Stringish, byte[]>("utils/str/to/utf16be", x => x.ToUtf16(true));
+        AddMap<Stringish, byte[]>("utils/str/to/utf16le", x => x.ToUtf16(false));
+        AddMap<Stringish, byte[]>("utils/str/to/utf32be", x => x.ToUtf32(true));
+        AddMap<Stringish, byte[]>("utils/str/to/utf32le", x => x.ToUtf32(false));
+        AddMap<Stringish, byte[]>("utils/str/to/utf8", x => x.ToUtf8());
+        AddMap<string, string>("utils/str/trim", x => x.Trim());
+        AddMap<string, string>("utils/str/upper_case", x => x.ToUpper());
     }
 }
 }

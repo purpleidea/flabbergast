@@ -1,4 +1,0 @@
-directory_separator : XField java.io.File separator
-name : XInvoke java.lang.System getProperty ("os.name")
-path_separator : XField java.io.File pathSeparator
-line_ending : XField flabbergast.Stringish LINE_SEP

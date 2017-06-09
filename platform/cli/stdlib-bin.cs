@@ -42,113 +42,24 @@ public class BinaryFunctions {
     }
 }
 
-public class StringFromBytes : Future {
-    private System.Text.Encoding[] encodings = new System.Text.Encoding[] {
-        new System.Text.UTF32Encoding(true, false, true),
-        new System.Text.UTF32Encoding(false, false, true),
-        new System.Text.UnicodeEncoding(true, false, true),
-        new System.Text.UnicodeEncoding(false, false, true),
-        new System.Text.UTF8Encoding(false, true)
-    };
-
-    private InterlockedLookup interlock;
-    private byte[] input;
-    private System.Text.Encoding encoding;
-
-    private SourceReference source_reference;
-    private Context context;
-
-    public StringFromBytes(TaskMaster task_master, SourceReference source_ref,
-                           Context context, Frame self, Frame container) : base(task_master) {
-        this.source_reference = source_ref;
-        this.context = context;
-    }
-    protected override void Run() {
-        if (interlock == null) {
-            interlock = new InterlockedLookup(this, task_master, source_reference, context);
-            interlock.Lookup<byte[]>(x => this.input = x, "arg");
-            interlock.Lookup<long>(index => {
-                if (index >= 0 && index < encodings.Length) {
-                    encoding = encodings[index];
-                }
-            }, "encoding");
-        }
-        if (!interlock.Away()) return;
-        if (encoding == null) {
-            task_master.ReportOtherError(source_reference, "Invalid encoding.");
-            return;
-        }
-        try {
-            result = new SimpleStringish(encoding.GetString(input));
-        } catch (DecoderFallbackException e) {
-            task_master.ReportOtherError(source_reference, String.Format("Cannot decode byte {0}.", e.Index));
-        }
-    }
-}
-public class FromBase64 : Future {
-
-    private InterlockedLookup interlock;
-    private String input;
-
-    private SourceReference source_reference;
-    private Context context;
-
-    public FromBase64(TaskMaster task_master, SourceReference source_ref,
-                      Context context, Frame self, Frame container) : base(task_master) {
-        this.source_reference = source_ref;
-        this.context = context;
-    }
-
-    protected override void Run() {
-        if (interlock == null) {
-            interlock = new InterlockedLookup(this, task_master, source_reference, context);
-            interlock.LookupStr(x => input = x, "arg");
-        }
-        if (!interlock.Away()) return;
-
-        try {
-            result = Convert.FromBase64String(input);
-        } catch (Exception e) {
-            task_master.ReportOtherError(source_reference, e.Message);
-        }
-    }
-}
-public class Decompress : Future {
-
-    private InterlockedLookup interlock;
-    private byte[] input;
-
-    private SourceReference source_reference;
-    private Context context;
+public class Decompress : BaseMapFunctionInterop<byte[], byte[]> {
 
     public Decompress(TaskMaster task_master, SourceReference source_ref,
-                      Context context, Frame self, Frame container) : base(task_master) {
-        this.source_reference = source_ref;
-        this.context = context;
+                      Context context, Frame self, Frame container) : base(task_master, source_ref,
+                              context, self, container) {
     }
 
-    protected override void Run() {
-        if (interlock == null) {
-            interlock = new InterlockedLookup(this, task_master, source_reference, context);
-            interlock.Lookup<byte[]>(x => input = x, "arg");
-        }
-        if (!interlock.Away()) return;
-
-        try {
-
-            using(var stream = new GZipStream(new MemoryStream(input),  CompressionMode.Decompress)) using(var memory = new MemoryStream())
+    protected override byte[] ComputeResult(byte[] input) {
+        using(var stream = new GZipStream(new MemoryStream(input),  CompressionMode.Decompress)) using(var memory = new MemoryStream())
+        {
+            byte[] buffer = new byte[4096];
+            int count;
+            while ((count =  stream.Read(buffer, 0, buffer.Length)) > 0)
             {
-                byte[] buffer = new byte[4096];
-                int count;
-                while ((count =  stream.Read(buffer, 0, buffer.Length)) > 0)
-                {
 
-                    memory.Write(buffer, 0, count);
-                }
-                result = memory.ToArray();
+                memory.Write(buffer, 0, count);
             }
-        } catch (Exception e) {
-            task_master.ReportOtherError(source_reference, e.Message);
+            return memory.ToArray();
         }
     }
 }

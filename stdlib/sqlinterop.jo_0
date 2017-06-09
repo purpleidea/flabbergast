@@ -1,3 +1,0 @@
-retrieve : Template {
-	value : XFuture flabbergast.JdbcQuery
-}

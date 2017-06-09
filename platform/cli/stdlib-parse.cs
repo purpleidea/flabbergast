@@ -5,63 +5,29 @@ using System.Text;
 using System.Threading;
 
 namespace Flabbergast {
-public class ParseDouble : Future {
-
-    private InterlockedLookup interlock;
-    private String input;
-
-    private SourceReference source_reference;
-    private Context context;
-
-    public ParseDouble(TaskMaster master, SourceReference source_ref,
-                       Context context, Frame self, Frame container) : base(master) {
-        this.source_reference = source_ref;
-        this.context = context;
+public class ParseDouble : BaseMapFunctionInterop<string, double> {
+    public ParseDouble(TaskMaster task_master, SourceReference source_ref,
+                       Context context, Frame self, Frame container) : base(task_master, source_ref,
+                               context, self, container) {
     }
-
-    protected override void Run() {
-        if (interlock == null) {
-            interlock = new InterlockedLookup(this, task_master, source_reference, context);
-            interlock.LookupStr(x => input = x, "arg");
-        }
-        if (!interlock.Away()) return;
-
-        try {
-            result = Convert.ToDouble(input);
-        } catch (Exception e) {
-            task_master.ReportOtherError(source_reference, e.Message);
-        }
+    protected override double ComputeResult(string input) {
+        return Convert.ToDouble(input);
     }
 }
 
-public class ParseInt : Future {
+public class ParseInt : BaseMapFunctionInterop<string, long> {
 
-    private InterlockedLookup interlock;
-    private String input;
     private int radix;
 
-    private SourceReference source_reference;
-    private Context context;
-
     public ParseInt(TaskMaster task_master, SourceReference source_ref,
-                    Context context, Frame self, Frame container) : base(task_master) {
-        this.source_reference = source_ref;
-        this.context = context;
+                    Context context, Frame self, Frame container) : base(task_master, source_ref,
+                            context, self, container) {
     }
-
-    protected override void Run() {
-        if (interlock == null) {
-            interlock = new InterlockedLookup(this, task_master, source_reference, context);
-            interlock.LookupStr(x => input = x, "arg");
-            interlock.Lookup<long>(x => radix = (int) x, "radix");
-        }
-        if (!interlock.Away()) return;
-
-        try {
-            result = Convert.ToInt64(input, radix);
-        } catch (Exception e) {
-            task_master.ReportOtherError(source_reference, e.Message);
-        }
+    protected override long ComputeResult(string input) {
+        return Convert.ToInt64(input, radix);
+    }
+    protected override void PrepareLookup(InterlockedLookup interlock) {
+        interlock.Lookup<long>(x => radix = (int) x, "radix");
     }
 }
 }

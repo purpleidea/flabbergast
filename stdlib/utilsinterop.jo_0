@@ -1,16 +1,3 @@
-int_to_char_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name :
-				If arg Enforce Int >= 0 && arg < 0xD800 || arg > 0xDFFF && arg < 0x10FFFF
-					Then XInvoke flabbergast.Stringish fromCodepoint (arg To Int)
-					Else Error "Code point \(arg) is out of range."
-}
-int_to_ordinal_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.SupportFunctions ordinalName (arg Enforce Int)
-}
 int_to_str_list : Template {
 	value :
 		If digits < 0
@@ -29,16 +16,7 @@ float_to_str_list : Template {
 				(For arg : args, arg_name : Name
 				Select arg_name : XInvoke flabbergast.Stringish fromDouble (arg To Float, exponential, digits))
 }
-parse_float_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XFuture flabbergast.ParseDouble
-}
-parse_int_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XFuture flabbergast.ParseInt
-}
+
 str_categories_list : Template {
 	value :
 		For arg : args, arg_name : Name
@@ -49,16 +27,7 @@ str_codepoints_list : Template {
 		For arg : args, arg_name : Name
 		Select arg_name : XFuture flabbergast.StringToCodepoints
 }
-str_is_identifier_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.TaskMaster verifySymbol (arg Enforce Str)
-}
-str_lower_case_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke java.lang.String toLowerCase (arg To Str)
-}
+
 str_escape_list : Template {
 	value : XFuture flabbergast.Escape
 }
@@ -106,11 +75,7 @@ str_find_list : Template {
 						In If pos == -1 Then Null Else pos)
 					Else Null)
 }
-str_prefixed_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke java.lang.String startsWith (arg To Str, str To Str)
-}
+
 str_replace_list : Template {
 	value :
 		If Length str == 0
@@ -131,107 +96,14 @@ str_slice_list : Template {
 				Then XInvoke java.lang.String substring (arg.str,  XInvoke java.lang.String offsetByCodePoints (arg.str, 0, arg.real_start), XInvoke java.lang.String offsetByCodePoints (arg.str, 0, arg.real_start + arg.real_length))
 				Else empty
 }
-str_suffixed_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke java.lang.String endsWith (arg To Str, str To Str)
-}
-str_trim_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke java.lang.String trim (arg To Str)
-}
-str_utf8_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.Stringish toUtf8 (arg To Str)
-}
-str_utf16be_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.Stringish toUtf16 (arg To Str, True)
-}
-str_utf16le_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.Stringish toUtf16 (arg To Str, False)
-}
-str_utf32be_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.Stringish toUtf32 (arg To Str, True)
-}
-str_utf32le_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.Stringish toUtf32 (arg To Str, False)
-}
-str_base64_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XFuture flabbergast.FromBase64
-}
-str_utf8_length_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.Stringish getUtf8Length (arg To Str)
-}
-str_utf16_length_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.Stringish getUtf16Length (arg To Str)
-}
-str_upper_case_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke java.lang.String toUpperCase (arg To Str)
-}
 
-bin_to_str_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XFuture flabbergast.StringFromBytes
-}
-bin_to_str_utf8_list : Template bin_to_str_list { encoding : 4 }
-bin_to_str_utf16le_list : Template bin_to_str_list { encoding : 3 }
-bin_to_str_utf16be_list : Template bin_to_str_list { encoding : 2 }
-bin_to_str_utf32le_list : Template bin_to_str_list { encoding : 1 }
-bin_to_str_utf32be_list : Template bin_to_str_list { encoding : 0 }
-bin_to_str_base64_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke javax.xml.bind.DatatypeConverter printBase64Binary (arg)
-}
-bin_hash_list_md5 : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.BinaryFunctions checksum (arg, "MD5")
-}
-bin_hash_list_sha1 : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.BinaryFunctions checksum (arg, "SHA-1")
-}
-bin_hash_list_sha256 : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.BinaryFunctions checksum (arg, "SHA-256")
-}
 bin_to_hex_str_list : Template {
 	value :
 		For arg : args, arg_name : Name
 		Select arg_name : XInvoke flabbergast.BinaryFunctions bytesToHex (arg, delimiter, uppercase)
 }
-bin_gzip_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XInvoke flabbergast.BinaryFunctions compress (arg)
-}
-bin_gunzip_list : Template {
-	value :
-		For arg : args, arg_name : Name
-		Select arg_name : XFuture flabbergast.Decompress
-}
+
+
 str_punycode_list : Template {
 	value :
 		For arg : args, arg_name : Name

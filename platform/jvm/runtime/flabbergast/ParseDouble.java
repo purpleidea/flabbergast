@@ -1,33 +1,12 @@
 package flabbergast;
 
-public class ParseDouble extends Future {
-
-    private InterlockedLookup interlock;
-    private String input;
-
-    private SourceReference source_reference;
-    private Context context;
-
+public class ParseDouble extends BaseMapFunctionInterop<String, Double> {
     public ParseDouble(TaskMaster task_master, SourceReference source_ref,
                        Context context, Frame self, Frame container) {
-        super(task_master);
-        this.source_reference = source_ref;
-        this.context = context;
+        super(Double.class, String.class,  task_master, source_ref, context, self, container);
     }
-
     @Override
-    protected void run() {
-        if (interlock == null) {
-            interlock = new InterlockedLookup(this, task_master, source_reference, context);
-            interlock.lookupStr(x->input = x, "arg");
-        }
-        if (!interlock.away()) return;
-
-        try {
-            result = Double.parseDouble(input);
-        } catch (NumberFormatException e) {
-            task_master.reportOtherError(source_reference,
-                                         String.format("Invalid integer “%s”.", input));
-        }
+    protected Double computeResult(String input)throws Exception {
+        return Double.parseDouble(input);
     }
 }
