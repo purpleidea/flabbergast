@@ -36,6 +36,16 @@ public abstract class Interop implements UriHandler {
             (task_master, source_ref, context, self, container) -> new MapFunctionInterop2<>(returnClass, clazz, func, parameterClass, parameter, task_master, source_ref, context, self, container));
     }
 
+    protected <T1, T2, T3, R>void addMap(Class<R> returnClass, Class<T1> clazz, String name, Func3<T1, T2, T3, R> func, Class<T2> parameter1Class, String parameter1, Class<T3> parameter2Class, String parameter2) {
+        add(name,
+            (task_master, source_ref, context, self, container) -> new MapFunctionInterop3<>(returnClass, clazz, func, parameter1Class, parameter1, parameter2Class, parameter2, task_master, source_ref, context, self, container));
+    }
+
+    protected <T1, T2, T3, T4, R>void addMap(Class<R> returnClass, Class<T1> clazz, String name, Func4<T1, T2, T3, T4, R> func, Class<T2> parameter1Class, String parameter1, Class<T3> parameter2Class, String parameter2, Class<T4> parameter3Class, String parameter3) {
+        add(name,
+            (task_master, source_ref, context, self, container) -> new MapFunctionInterop4<>(returnClass, clazz, func, parameter1Class, parameter1, parameter2Class, parameter2, parameter3Class, parameter3, task_master, source_ref, context, self, container));
+    }
+
     @Override
     public int getPriority() {
         return 0;

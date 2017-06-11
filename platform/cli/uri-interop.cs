@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace Flabbergast {
 public abstract class Interop : UriHandler {
@@ -47,6 +48,16 @@ public abstract class Interop : UriHandler {
             (task_master, source_ref, context, self, container) => new MapFunctionInterop<T1, T2, R>(func, parameter, task_master, source_ref, context, self, container));
     }
 
+    protected void AddMap<T1, T2, T3, R>(string name, Func<T1, T2, T3, R> func, string parameter1, string parameter2) {
+        Add(name,
+            (task_master, source_ref, context, self, container) => new MapFunctionInterop<T1, T2, T3, R>(func, parameter1, parameter2, task_master, source_ref, context, self, container));
+    }
+
+    protected void AddMap<T1, T2, T3, T4, R>(string name, Func<T1, T2, T3, T4, R> func, string parameter1, string parameter2, string parameter3) {
+        Add(name,
+            (task_master, source_ref, context, self, container) => new MapFunctionInterop<T1, T2, T3, T4, R>(func, parameter1, parameter2, parameter3, task_master, source_ref, context, self, container));
+    }
+
     public Future ResolveUri(TaskMaster master, string uri, out LibraryFailure reason) {
         reason = LibraryFailure.Missing;
         if (!uri.StartsWith("interop:"))
@@ -87,10 +98,26 @@ public class StandardInterop : Interop {
         AddMap<byte[], byte[]>("utils/bin/hash/sha1", BinaryFunctions.ComputeSHA1);
         AddMap<byte[], byte[]>("utils/bin/hash/sha256", BinaryFunctions.ComputeSHA256);
         AddMap<byte[], string>("utils/bin/to/base64", Convert.ToBase64String);
+        AddMap<byte[], string, bool, string>("utils/bin/to/hexstr", BinaryFunctions.BytesToHex, "delimiter", "uppercase");
         Add("utils/bin/uncompress/gzip", (task_master, soure_ref, context, self, container) => new Decompress(task_master, soure_ref, context, self, container));
+        AddMap<double, bool, long, string>("utils/float/to/str", (x, exponential, digits) => x.ToString("0." + new string('0', (int)digits) + (exponential ? "E0" : "")) , "exponential", "digits");
+        AddMap<long, bool, long, string>("utils/int/to/str", (x, hex, digits) => x.ToString((hex ? "X" : "D") +  digits) , "hex", "digits");
         AddMap<long, Stringish>("utils/ordinal", SupportFunctions.OrdinalName);
         Add("utils/parse/float", (task_master, soure_ref, context, self, container) => new ParseDouble(task_master, soure_ref, context, self, container));
         Add("utils/parse/int", (task_master, soure_ref, context, self, container) => new ParseInt(task_master, soure_ref, context, self, container));
+        AddMap<string, bool, string>("utils/str/decode/punycode", (x, allow_unassigned) => {
+            IdnMapping mapping = new IdnMapping();
+            mapping.AllowUnassigned = allow_unassigned;
+            return mapping.GetUnicode(x);
+        }, "allow_unassigned");
+        AddMap<string, bool, bool, string>("utils/str/encode/punycode", (x, allow_unassigned, strict_ascii) => {
+            IdnMapping mapping = new IdnMapping();
+            mapping.AllowUnassigned = allow_unassigned;
+            mapping.UseStd3AsciiRules	= strict_ascii;
+            return mapping.GetAscii(x);
+        }, "allow_unassigned", "strict_ascii");
+        Add("utils/str/escape", (task_master, soure_ref, context, self, container) => new Escape(task_master, soure_ref, context, self, container));
+        AddMap < Stringish, string, long, bool, long?>("utils/str/find", (x, str, start, backward) => x.Find(str, start, backward), "str", "start", "backward");
         AddMap<long, string>("utils/str/from/codepoint", x => Char.ConvertFromUtf32((int) x));
         AddMap<byte[], string>("utils/str/from/utf16be", new System.Text.UnicodeEncoding(true, false, true).GetString);
         AddMap<byte[], string>("utils/str/from/utf16le", new System.Text.UnicodeEncoding(false, false, true).GetString);
@@ -102,7 +129,11 @@ public class StandardInterop : Interop {
         AddMap<Stringish, long>("utils/str/length/utf8", x => x.Utf8Length);
         AddMap<string, string>("utils/str/lower_case", x => x.ToLower());
         AddMap<string, string, bool>("utils/str/prefixed", (x, str) => x.StartsWith(str), "str");
+        AddMap<string, string, string, string>("utils/str/replace", (x, str, with) => x.Replace(str, with), "str", "with");
+        AddMap<Stringish, long, Nullable<long>, Nullable<long>, string>("utils/str/slice", (x, start, end, length) => x.Slice(start, end, length), "start", "end", "length");
         AddMap<string, string, bool>("utils/str/suffixed", (x, str) => x.EndsWith(str), "str");
+        Add("utils/str/to/categories", (task_master, soure_ref, context, self, container) => new CharacterCategory(task_master, soure_ref, context, self, container));
+        Add("utils/str/to/codepoints", (task_master, soure_ref, context, self, container) => new StringToCodepoints(task_master, soure_ref, context, self, container));
         AddMap<Stringish, byte[]>("utils/str/to/utf16be", x => x.ToUtf16(true));
         AddMap<Stringish, byte[]>("utils/str/to/utf16le", x => x.ToUtf16(false));
         AddMap<Stringish, byte[]>("utils/str/to/utf32be", x => x.ToUtf32(true));

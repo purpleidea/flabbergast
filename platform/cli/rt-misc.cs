@@ -36,6 +36,7 @@ public static class SupportFunctions {
     }
 
     public static string NameForType(Type t) {
+        if (Nullable.GetUnderlyingType(t) != null) return NameForType(Nullable.GetUnderlyingType(t)) + " or Null";
         if (typeof(Frame).IsAssignableFrom(t)) return "Frame";
         if (typeof(Stringish).IsAssignableFrom(t)) return "Str";
         if (typeof(Template) == t) return "Template";

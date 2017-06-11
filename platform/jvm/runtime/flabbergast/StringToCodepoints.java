@@ -3,36 +3,20 @@ package flabbergast;
 import java.util.HashMap;
 import java.util.Map;
 
-public class StringToCodepoints extends Future {
-    private InterlockedLookup interlock;
-    private String input;
-
-    private SourceReference source_reference;
-    private Context context;
-    private Frame container;
-
+public class StringToCodepoints extends BaseMapFunctionInterop<String, Frame> {
     public StringToCodepoints(TaskMaster task_master,
                               SourceReference source_ref, Context context, Frame self,
                               Frame container) {
-        super(task_master);
-        this.source_reference = source_ref;
-        this.context = context;
-        this.container = self;
+        super(Frame.class, String.class, task_master, source_ref, context, self, container);
     }
-
     @Override
-    protected void run() {
-        if (interlock == null) {
-            interlock = new InterlockedLookup(this, task_master, source_reference, context);
-            interlock.lookupStr(x-> input = x, "arg");
-        }
-        if (!interlock.away()) return;
+    protected Frame computeResult(String input)throws Exception {
         MutableFrame frame = new MutableFrame(task_master, source_reference,
                                               context, container);
         for (int it = 0; it < input.length(); it++) {
             frame.set(SupportFunctions.ordinalNameStr(it + 1),
                       (long) input.codePointAt(it));
         }
-        result = frame;
+        return frame;
     }
 }

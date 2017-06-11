@@ -29,7 +29,7 @@ public abstract class BaseFunctionInterop<R> : Future {
         if (!interlock.Away()) return;
         try {
             R output = ComputeResult();
-            if (!typeof(R).IsValueType && output.Equals(default(R))) {
+            if (!typeof(R).IsValueType && EqualityComparer<R>.Default.Equals(output, default(R))) {
                 result = Unit.NULL;
             } else {
                 result = typeof(R) == typeof(string) ? (object)new SimpleStringish((string)(object) output) : (object) output;
@@ -130,7 +130,7 @@ public abstract class BaseMapFunctionInterop<T, R> : Future {
             if (correct) {
                 try {
                     R output = owner.ComputeResult((T) input_value);
-                    if (!typeof(R).IsValueType && output.Equals(default(R))) {
+                    if ((!typeof(R).IsValueType || Nullable.GetUnderlyingType(typeof(R)) != null) && EqualityComparer<R>.Default.Equals(output, default(R))) {
                         result = Unit.NULL;
                     } else {
                         result = typeof(R) == typeof(string) ? (object)new SimpleStringish((string)(object) output) : (object) output;
@@ -209,6 +209,52 @@ public class MapFunctionInterop<T1, T2, R> : BaseMapFunctionInterop<T1, R> {
     }
     protected override void PrepareLookup(InterlockedLookup interlock) {
         interlock.Lookup<T2>(x => this.reference = x, parameter);
+    }
+}
+public class MapFunctionInterop<T1, T2, T3, R> : BaseMapFunctionInterop<T1, R> {
+    private Func<T1, T2, T3, R> func;
+    private string parameter1;
+    private string parameter2;
+    private T2 reference1;
+    private T3 reference2;
+
+    public MapFunctionInterop(Func<T1, T2, T3, R> func, string parameter1, string parameter2, TaskMaster task_master, SourceReference source_ref,
+                              Context context, Frame self, Frame container) : base(task_master, source_ref, context, self, container) {
+        this.func = func;
+        this.parameter1 = parameter1;
+        this.parameter2 = parameter2;
+    }
+    protected override R ComputeResult(T1 input) {
+        return  func(input, reference1, reference2);
+    }
+    protected override void PrepareLookup(InterlockedLookup interlock) {
+        interlock.Lookup<T2>(x => this.reference1 = x, parameter1);
+        interlock.Lookup<T3>(x => this.reference2 = x, parameter2);
+    }
+}
+public class MapFunctionInterop<T1, T2, T3, T4, R> : BaseMapFunctionInterop<T1, R> {
+    private Func<T1, T2, T3, T4, R> func;
+    private string parameter1;
+    private string parameter2;
+    private string parameter3;
+    private T2 reference1;
+    private T3 reference2;
+    private T4 reference3;
+
+    public MapFunctionInterop(Func<T1, T2, T3, T4, R> func, string parameter1, string parameter2, string parameter3, TaskMaster task_master, SourceReference source_ref,
+                              Context context, Frame self, Frame container) : base(task_master, source_ref, context, self, container) {
+        this.func = func;
+        this.parameter1 = parameter1;
+        this.parameter2 = parameter2;
+        this.parameter3 = parameter3;
+    }
+    protected override R ComputeResult(T1 input) {
+        return  func(input, reference1, reference2, reference3);
+    }
+    protected override void PrepareLookup(InterlockedLookup interlock) {
+        interlock.Lookup<T2>(x => this.reference1 = x, parameter1);
+        interlock.Lookup<T3>(x => this.reference2 = x, parameter2);
+        interlock.Lookup<T4>(x => this.reference3 = x, parameter3);
     }
 }
 }

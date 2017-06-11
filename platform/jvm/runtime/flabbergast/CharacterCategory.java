@@ -3,7 +3,7 @@ package flabbergast;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CharacterCategory extends Future {
+public class CharacterCategory extends BaseMapFunctionInterop<String, Frame> {
     private static final Map<Byte, String> categories;
     static {
         categories = new HashMap<Byte, String>();
@@ -44,39 +44,29 @@ public class CharacterCategory extends Future {
 
     private Map<Byte, Object> mappings = new HashMap<Byte, Object>();
 
-    private InterlockedLookup interlock;
-    private String input;
-
-    private SourceReference source_reference;
-    private Context context;
-    private Frame container;
-
     public CharacterCategory(TaskMaster task_master,
                              SourceReference source_ref, Context context, Frame self,
                              Frame container) {
-        super(task_master);
-        this.source_reference = source_ref;
-        this.context = context;
-        this.container = self;
+        super(Frame.class, String.class, task_master, source_ref, context, self, container);
     }
 
     @Override
-    protected void run() {
-        if (interlock == null) {
-            interlock = new InterlockedLookup(this, task_master, source_reference, context);
-            interlock.lookupStr(x->input = x, "arg");
-            for (Map.Entry<Byte, String> entry : categories.entrySet()) {
-                final Byte key = entry.getKey();
-                interlock.lookup(Object.class, x-> mappings.put(key, x), entry.getValue());
-            }
-        }
-        if (!interlock.away()) return;
+    protected Frame computeResult(String input)throws Exception {
         MutableFrame frame = new MutableFrame(task_master, source_reference,
                                               context, container);
         for (int it = 0; it < input.length(); it++) {
             frame.set(it + 1,
                       mappings.get((byte) Character.getType(input.charAt(it))));
         }
-        result = frame;
+        return frame;
+
+    }
+
+    @Override
+    protected void prepareLookup(InterlockedLookup interlock) {
+        for (Map.Entry<Byte, String> entry : categories.entrySet()) {
+            final Byte key = entry.getKey();
+            interlock.lookup(Object.class, x-> mappings.put(key, x), entry.getValue());
+        }
     }
 }

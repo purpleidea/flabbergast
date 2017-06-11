@@ -3,4 +3,4 @@ utils_lib : From lib:utils
 value :
 	utils_lib.matches(args : utils_lib.str_slice_list("Hello", "Goodbye", length : 3), refs : ["Hel", "Goo"]) &&
 	utils_lib.matches(args : utils_lib.str_slice_list("Hello", "Goodbye", end : 4), refs : ["Hell", "Good"]) &&
-	utils_lib.matches(args : utils_lib.str_slice_list("Hello", "Goodbye", start : 30, length : 5, empty : "Haha"), refs : ["Haha", "Haha"])
+	utils_lib.matches(args : utils_lib.str_slice_list("Hello", "Goodbye", start : 30, length : 5), refs : [Null, Null])

@@ -77,6 +77,7 @@ public class InterlockedLookup {
     }
 
     public void Lookup<T>(Action<T> writer, params string[] names) {
+        var underlying_type = Nullable.GetUnderlyingType(typeof(T));
         if (typeof(T) == typeof(string)) {
             LookupRaw<Stringish>(x => {
                 String str;
@@ -107,8 +108,33 @@ public class InterlockedLookup {
                 writer((T)(object)d);
                 return true;
             }, names);
-
-
+        } else if (underlying_type == typeof(double)) {
+            LookupRaw < double?>(x => {
+                double? d;
+                if (x is double) {
+                    d = (double)x;
+                } else if (x is long) {
+                    d = (long)x;
+                } else if (x == Unit.NULL) {
+                    d = null;
+                } else {
+                    return false;
+                }
+                writer((T)(object)d);
+                return true;
+            }, names);
+        } else if (underlying_type != null) {
+            LookupRaw<T>(x => {
+                if (underlying_type.IsInstanceOfType(x)) {
+                    writer((T)x);
+                    return true;
+                } else if (x == Unit.NULL) {
+                    writer(default(T));
+                    return true;
+                } else {
+                    return false;
+                }
+            }, names);
         } else {
             LookupRaw<T>(x => {
                 if (x is T) {

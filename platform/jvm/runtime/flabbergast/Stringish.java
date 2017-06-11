@@ -96,6 +96,17 @@ public abstract class Stringish
 
     public abstract long getUtf8Length();
 
+    public Long find(String str, long start, boolean backward) {
+        long original_start = (start >= 0) ? start : (start + this.getLength());
+        long real_start = backward ? (this.getLength() - original_start - 1) : original_start;
+        if (real_start < 0 || real_start > this.getLength()) {
+            return null;
+        }
+        String this_str = this.toString();
+        int this_str_start = (int) this_str.offsetByCodePoints(0, (int)real_start);
+        long pos = backward ? this_str.lastIndexOf(str, this_str_start) : this_str.indexOf(str, this_str_start);
+        return pos == -1 ? null : pos;
+    }
     @Override
     public Iterator<String> iterator() {
         return new RamblingIterator<String> (this);
@@ -104,6 +115,32 @@ public abstract class Stringish
     @Override
     public abstract String ramblingNext(
         Stack<RamblingIterator.GetNext<String>> stack);
+
+    public String slice(Long start, Long end, Long length) {
+        if ((end == null) == (length == null)) {
+            throw new IllegalArgumentException("Only one of “length” or “end” maybe specified.");
+        }
+        long original_start = (start >= 0) ? start : (start + this.getLength());
+        if (original_start > this.getLength() || start < 0) {
+            return null;
+        }
+        String this_str = this.toString();
+        int real_start = this_str.offsetByCodePoints(0, (int)original_start);
+        int real_end;
+        if (length != null) {
+            if (length < 0) {
+                throw new IllegalArgumentException("“length” must be non-negative.");
+            }
+            real_end = this_str.offsetByCodePoints(0, (int)(original_start + length));
+        } else {
+            long original_end = (end >= 0) ? end : (this.getLength() + end);
+            if (original_end < original_start) {
+                return null;
+            }
+            real_end =  this_str.offsetByCodePoints(0, (int)original_end);
+        }
+        return this_str.substring(real_start, real_end);
+    }
 
     @Override
     public String toString() {

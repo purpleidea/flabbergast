@@ -250,7 +250,7 @@ uri : {
 		host_str :
 			If host Is Null
 				Then ""
-				Else utils_lib.str_punycode(host) & "/"
+				Else utils_lib.str_encode.punycode(host) & "/"
 		path_str : utils_lib.str_escape(args : path, transformations : uri.escape_form_encoded_transform, delimiter : "/")
 		fragment_str :
 			If fragment Is Null

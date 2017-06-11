@@ -1,6 +1,7 @@
 package flabbergast;
 
 import java.lang.Math;
+import java.net.IDN;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import javax.xml.bind.DatatypeConverter;
@@ -36,10 +37,17 @@ public class StandardInterop extends Interop {
         addMap(byte[].class, byte[].class, "utils/bin/hash/sha1", x -> BinaryFunctions.checksum(x, "SHA-1"));
         addMap(byte[].class, byte[].class, "utils/bin/hash/sha256", x -> BinaryFunctions.checksum(x, "SHA-256"));
         addMap(String.class, byte[].class, "utils/bin/to/base64", DatatypeConverter::printBase64Binary);
+        addMap(String.class, byte[].class, "utils/bin/to/hexstr", BinaryFunctions::bytesToHex, String.class, "delimiter", Boolean.class, "uppercase");
         add("utils/bin/uncompress/gzip", Decompress::new);
+        addMap(Stringish.class, Double.class, "utils/float/to/str", Stringish::fromDouble , Boolean.class, "exponential", Long.class,  "digits");
+        addMap(Stringish.class, Long.class, "utils/int/to/str", Stringish::fromInt , Boolean.class, "hex", Long.class,  "digits");
         addMap(Stringish.class, Long.class, "utils/ordinal", SupportFunctions::ordinalName);
         add("utils/parse/float", ParseDouble::new);
         add("utils/parse/int", ParseInt::new);
+        addMap(String.class, String.class, "utils/str/decode/punycode", (x, allow_unassigned) -> IDN.toUnicode(x, (allow_unassigned ? IDN.ALLOW_UNASSIGNED  : 0)), Boolean.class, "allow_unassigned");
+        addMap(String.class, String.class, "utils/str/encode/punycode", (x, allow_unassigned, strict_ascii) -> IDN.toASCII(x, (allow_unassigned ? IDN.ALLOW_UNASSIGNED  : 0) | (strict_ascii ? IDN.USE_STD3_ASCII_RULES : 0)), Boolean.class, "allow_unassigned", Boolean.class, "strict_ascii");
+        add("utils/str/escape", Escape::new);
+        addMap(Long.class, Stringish.class, "utils/str/find", Stringish::find, String.class, "str", Long.class, "start", Boolean.class, "backward");
         addMap(Stringish.class, Long.class, "utils/str/from/codepoint", Stringish::fromCodepoint);
         addMap(String.class, byte[].class, "utils/str/from/utf16be", x -> new String(x, StandardCharsets.UTF_16BE));
         addMap(String.class, byte[].class, "utils/str/from/utf16le", x -> new String(x, StandardCharsets.UTF_16LE));
@@ -51,7 +59,11 @@ public class StandardInterop extends Interop {
         addMap(Long.class, Stringish.class, "utils/str/length/utf8", Stringish::getUtf8Length);
         addMap(String.class, String.class, "utils/str/lower_case", String::toLowerCase);
         addMap(Boolean.class, String.class, "utils/str/prefixed", String::startsWith, String.class, "str");
+        addMap(String.class, String.class, "utils/str/replace", String::replace, String.class, "str", String.class,  "with");
+        addMap(String.class, Stringish.class, "utils/str/slice", Stringish::slice, Long.class, "start", Long.class, "end", Long.class, "length");
         addMap(Boolean.class, String.class, "utils/str/suffixed", String::endsWith, String.class, "str");
+        add("utils/str/to/categories", CharacterCategory::new);
+        add("utils/str/to/codepoints", StringToCodepoints::new);
         addMap(byte[].class, Stringish.class, "utils/str/to/utf16be", x -> x.toUtf16(true));
         addMap(byte[].class, Stringish.class, "utils/str/to/utf16le", x -> x.toUtf16(false));
         addMap(byte[].class, Stringish.class, "utils/str/to/utf32be", x -> x.toUtf32(true));

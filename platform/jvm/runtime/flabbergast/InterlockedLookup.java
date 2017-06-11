@@ -28,8 +28,9 @@ public class InterlockedLookup {
         interlock.incrementAndGet();
         Future input_lookup = new Lookup(task_master, source_reference, names, context);
         input_lookup.listen(input_result -> {
-            if (clazz.isInstance(input_result)) {
-                if (writer.test((T) input_result)) {
+            boolean isNull = input_result == Unit.NULL;
+            if (isNull || clazz.isInstance(input_result)) {
+                if (writer.test(isNull ? null : (T) input_result)) {
                     if (interlock.decrementAndGet() == 0) {
                         task_master.slot(owner);
                     }
