@@ -19,6 +19,10 @@ public class ReflectedFrame extends Frame {
 
     public static <T> ReflectedFrame create(TaskMaster task_master, T backing,
                                             Map<String, Transform<T>> accessors) {
+        return create(SupportFunctions.ordinalNameStr(task_master.nextId()), backing, accessors);
+    }
+    public static <T> ReflectedFrame create(String id, T backing,
+                                            Map<String, Transform<T>> accessors) {
         TreeMap<String, Object> attributes = new TreeMap<String, Object>();
         for (Entry<String, Transform<T>> entry : accessors.entrySet()) {
             Object result = entry.getValue().invoke(backing);
@@ -37,13 +41,13 @@ public class ReflectedFrame extends Frame {
             }
             attributes.put(entry.getKey(), result);
         }
-        return new ReflectedFrame(task_master, new JavaSourceReference(),
+        return new ReflectedFrame(id, new JavaSourceReference(),
                                   backing, attributes);
     }
 
-    private ReflectedFrame(TaskMaster task_master, SourceReference source_ref,
+    private ReflectedFrame(String id, SourceReference source_ref,
                            Object backing, TreeMap<String, Object> attributes) {
-        super(task_master, source_ref, null, null);
+        super(id, source_ref, null, null);
         this.backing = backing;
         this.attributes = attributes;
     }

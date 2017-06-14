@@ -234,6 +234,10 @@ public class ReflectedFrame : Frame {
 
     public static ReflectedFrame Create<T>(TaskMaster task_master, T backing,
                                            IDictionary<string, Func<T, object>> accessors) {
+        return Create(SupportFunctions.OrdinalNameStr(task_master.NextId()), backing, accessors);
+    }
+    public static ReflectedFrame Create<T>(string id, T backing,
+                                           IDictionary<string, Func<T, object>> accessors) {
         var attributes = accessors.ToDictionary(pair => pair.Key, pair => {
             object result = pair.Value(backing);
             if (result == null) {
@@ -251,12 +255,12 @@ public class ReflectedFrame : Frame {
             }
             return result;
         });
-        return new ReflectedFrame(task_master, new ClrSourceReference(),
+        return new ReflectedFrame(id, new ClrSourceReference(),
                                   backing, attributes);
     }
 
-    private ReflectedFrame(TaskMaster task_master, SourceReference source_ref,
-                           Object backing, IDictionary<string, object> attributes) : base(task_master, source_ref, null, null) {
+    private ReflectedFrame(string id, SourceReference source_ref,
+                           Object backing, IDictionary<string, object> attributes) : base(id, source_ref, null, null) {
         Backing = backing;
         this.attributes = attributes;
     }
