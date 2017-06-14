@@ -68,7 +68,7 @@ str_transform : {
 		{{{A 8-bit number with the second quarter of a UTF-8 quartet.}}}
 		utf8_1 : Now { value : "p(m[M 2], ((c < 127) ? 0 : ((c < 2047) ? (c % 64 + 128) : ((c < 65535) ? ((c % 4096) * 64 + 128) : ((c % 262144) * 4096 + 128)))) % 256);" }
 		{{{A 8-bit number with the third quarter of a UTF-8 quartet.}}}
-		utf8_2 : Now { value : "p(m[M 2], ((c < 2047) ? 0 : ((c < 65535) ? (c % 64 + 128) : ((c % 4096) 64 + 128)))) % 256);" }
+		utf8_2 : Now { value : "p(m[M 2], ((c < 2047) ? 0 : ((c < 65535) ? (c % 64 + 128) : ((c % 4096) * 64 + 128)))) % 256);" }
 		{{{A 8-bit number with the fourth quarter of a UTF-8 quartet.}}}
 		utf8_3 : Now { value : "p(m[M 2], ((c < 65535) ? 0 : (c % 64 + 128)) % 256);" }
 
