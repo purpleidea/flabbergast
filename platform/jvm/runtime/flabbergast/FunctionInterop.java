@@ -2,15 +2,17 @@ package flabbergast;
 
 public class FunctionInterop<T, R> extends BaseFunctionInterop<R> {
     private final Class<T> clazz;
+    private final boolean parameterNullable;
     private final String parameter;
     private final Func<T, R> func;
     private T input;
 
-    public FunctionInterop(Class<R> returnClass, Func<T, R> func, Class<T> clazz, String parameter, TaskMaster task_master, SourceReference source_ref,
+    public FunctionInterop(Class<R> returnClass, Func<T, R> func, Class<T> clazz, boolean parameterNullable, String parameter, TaskMaster task_master, SourceReference source_reference,
                            Context context, Frame self, Frame container)  {
-        super(returnClass, task_master, source_ref, context, self, container);
+        super(task_master, source_reference, context, self, container);
         this.func = func;
         this.clazz = clazz;
+        this.parameterNullable = parameterNullable;
         this.parameter = parameter;
     }
     @Override
@@ -18,8 +20,10 @@ public class FunctionInterop<T, R> extends BaseFunctionInterop<R> {
         return func.invoke(input);
     }
     @Override
-    protected void prepareLookup(InterlockedLookup interlock) {
-        interlock.lookup(clazz, x -> this.input = x, parameter);
+    protected  void setup() {
+        Sink<T> reference_lookup = find(clazz, x -> this.input = x);
+        reference_lookup.allowDefault(parameterNullable, null);
+        reference_lookup.lookup(parameter);
     }
 }
 

@@ -5,7 +5,7 @@ using System.Data.Common;
 using System.Threading;
 
 namespace Flabbergast {
-public class DbQuery : Future {
+public class DbQuery : BaseFunctionInterop<Frame> {
     private delegate string NameChooser(DbDataReader rs, long it);
     private delegate void Retriever(DbDataReader rs, MutableFrame frame, TaskMaster task_master);
     private delegate object Unpacker(DbDataReader rs, int position, TaskMaster task_master);
@@ -24,7 +24,7 @@ public class DbQuery : Future {
         AddUnpacker((rs, position, task_master) => rs.GetInt64(position), typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong));
         AddUnpacker((rs, position, task_master) => rs.GetDouble(position), typeof(float), typeof(double));
         AddUnpacker((rs, position, task_master) => rs.GetBoolean(position), typeof(bool));
-        AddUnpacker((rs, position, task_master) => Time.BaseTime.MakeTime(rs.GetDateTime(position), task_master), typeof(DateTime));
+        AddUnpacker((rs, position, task_master) => ReflectedFrame.Create<DateTime>(task_master, rs.GetDateTime(position), InterlockedLookup.TIME_ACCESSORS), typeof(DateTime));
         AddUnpacker((rs, position, task_master) => {
             var result = new byte[rs.GetBytes(position, 0, null, 0, 0)];
             rs.GetBytes(position, 0, result, 0, result.Length);
@@ -48,7 +48,7 @@ public class DbQuery : Future {
                 return (double)result;
             }
             if (result is DateTime) {
-                return Time.BaseTime.MakeTime(rs.GetDateTime(position), task_master);
+                return ReflectedFrame.Create<DateTime>(task_master, rs.GetDateTime(position), InterlockedLookup.TIME_ACCESSORS);
             }
             if (result is byte[]) {
                 return result;
@@ -63,92 +63,73 @@ public class DbQuery : Future {
         }
     }
 
-    private readonly SourceReference source_ref;
-    private readonly Context context;
-    private readonly Frame self;
-    private InterlockedLookup interlock;
     private DbConnection connection = null;
     private string query = null;
     private Template row_tmpl;
 
-    public DbQuery(TaskMaster task_master, SourceReference source_ref,
-                   Context context, Frame self, Frame container) : base(task_master) {
-        this.source_ref = source_ref;
-        this.context = context;
-        this.self = self;
+    public DbQuery(TaskMaster task_master, SourceReference source_reference,
+                   Context context, Frame self, Frame container) : base(task_master, source_reference, context, self, container) {
     }
 
-    protected override void Run() {
-        if (interlock == null) {
-            interlock = new InterlockedLookup(this, task_master, source_ref, context);
-            interlock.LookupMarshalled<DbConnection>("Expected “{0}” to come from “sql:” import.", x => connection = x,  "connection");
-            interlock.LookupStr(x => query = x, "sql_query");
-            interlock.Lookup<Template>(x => row_tmpl = x, "sql_row_tmpl");
+    protected override void Setup() {
+        var connection_lookup = Find<DbConnection>(x => connection = x);
+        connection_lookup.AllowDefault("Expected “{0}” to come from “sql:” import.");
+        connection_lookup.Lookup("connection");
+        var query_lookup = Find<string>(x => query = x);
+        query_lookup.AllowDefault();
+        query_lookup.Lookup("sql_query");
+        var template_lookup = Find<Template>(x => row_tmpl = x);
+        template_lookup.AllowDefault();
+        template_lookup.Lookup("sql_row_tmpl");
+    }
+    protected override Frame ComputeResult() {
+        var command = connection.CreateCommand();
+        command.CommandType = System.Data.CommandType.Text;
+        command.CommandText = query;
+        var reader = command.ExecuteReader();
+        if (debug) {
+            Console.WriteLine("SQL Query to {0}: {1}", connection, query);
         }
-        if (!interlock.Away()) return;
-        try {
-            var command = connection.CreateCommand();
-            command.CommandType = System.Data.CommandType.Text;
-            command.CommandText = query;
-            var reader = command.ExecuteReader();
-            if (debug) {
-                Console.WriteLine("SQL Query to {0}: {1}", connection, query);
+        NameChooser name_chooser = (rs, it) => SupportFunctions.OrdinalNameStr(it);
+        var retrievers = new List<Retriever>();
+        for (int col = 0; col < reader.FieldCount; col++) {
+            var column = col;
+            if (reader.GetName(col) == "ATTRNAME") {
+                name_chooser = (rs, it) => rs.GetString(column);
+                continue;
             }
-            NameChooser name_chooser = (rs, it) => SupportFunctions.OrdinalNameStr(it);
-            var retrievers = new List<Retriever>();
-            for (int col = 0; col < reader.FieldCount; col++) {
-                var column = col;
-                if (reader.GetName(col) == "ATTRNAME") {
-                    name_chooser = (rs, it) => rs.GetString(column);
-                    continue;
-                }
-                if (reader.GetName(col).StartsWith("$")) {
-                    var attr_name = reader.GetName(col).Substring(1);
-                    if (!task_master.VerifySymbol(source_ref, attr_name)) {
-                        return;
-                    }
-                    retrievers.Add((rs, frame, _task_master) => frame.Set(attr_name, rs.IsDBNull(column) ? Precomputation.Capture(Unit.NULL) : Lookup.Do(rs.GetString(column).Split('.'))));
-                    continue;
-                }
-                Unpacker unpacker;
-                if (!unpackers.TryGetValue(reader.GetFieldType(col), out unpacker)) {
-                    task_master
-                    .ReportOtherError(
-                        source_ref,
-                        string.Format(
-                            "Cannot convert SQL type “{0}” for column “{1}” into Flabbergast type.",
-                            reader.GetFieldType(col),
-                            reader.GetName(col)));
-                }
-                if (!task_master.VerifySymbol(source_ref,
-                                              reader.GetName(col))) {
-                    return;
-                }
-                retrievers.Add(Bind(reader.GetName(col), col, unpacker));
+            if (reader.GetName(col).StartsWith("$")) {
+                var attr_name = reader.GetName(col).Substring(1);
+                TaskMaster.VerifySymbolOrThrow(attr_name) ;
+                retrievers.Add((rs, frame, _task_master) => frame.Set(attr_name, rs.IsDBNull(column) ? Precomputation.Capture(Unit.NULL) : Lookup.Do(rs.GetString(column).Split('.'))));
+                continue;
             }
+            Unpacker unpacker;
+            if (!unpackers.TryGetValue(reader.GetFieldType(col), out unpacker)) {
+                throw new ArgumentException(string.Format(
+                                                "Cannot convert SQL type “{0}” for column “{1}” into Flabbergast type.",
+                                                reader.GetFieldType(col),
+                                                reader.GetName(col)));
+            }
+            TaskMaster.VerifySymbolOrThrow(reader.GetName(col));
+            retrievers.Add(Bind(reader.GetName(col), col, unpacker));
+        }
 
-            var list = new MutableFrame(task_master, source_ref, context, self);
-            for (int it = 1; reader.Read(); it++) {
-                var frame = new MutableFrame(task_master, new JunctionReference(string.Format("SQL template instantiation row {0}", it), "<sql>", 0, 0, 0, 0, source_ref, row_tmpl.SourceReference), Context.Append(list.Context, row_tmpl.Context), list);
-                foreach (var r in retrievers) {
-                    r(reader, frame, task_master);
-                }
-                foreach (var name in row_tmpl.GetAttributeNames()) {
-                    if (!frame.Has(name)) {
-                        frame.Set(name, row_tmpl[name]);
-                    }
-                }
-                list.Set(name_chooser(reader, it), frame);
+        var list = new MutableFrame(task_master, source_reference, context, self);
+        for (int it = 1; reader.Read(); it++) {
+            var frame = new MutableFrame(task_master, new JunctionReference(string.Format("SQL template instantiation row {0}", it), "<sql>", 0, 0, 0, 0, source_reference, row_tmpl.SourceReference), Context.Append(list.Context, row_tmpl.Context), list);
+            foreach (var r in retrievers) {
+                r(reader, frame, task_master);
             }
-            list.Slot();
-            result = list;
-            return;
-        } catch (DataException e) {
-            task_master.ReportOtherError(source_ref, e.Message);
-        } catch (DbException e) {
-            task_master.ReportOtherError(source_ref, e.Message);
-            return;
+            foreach (var name in row_tmpl.GetAttributeNames()) {
+                if (!frame.Has(name)) {
+                    frame.Set(name, row_tmpl[name]);
+                }
+            }
+            list.Set(name_chooser(reader, it), frame);
         }
+        list.Slot();
+        return list;
     }
 }
 

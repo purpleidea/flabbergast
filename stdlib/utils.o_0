@@ -699,24 +699,32 @@ str_encode_list : {
 for details.}}}
 str_escape : str_concatifier(base : str_escape_list, delimiter : "")
 
-{{{Escape strings based on the provided transformation.}}}
-str_escape_list : Template From interop:utils/str/escape {
+{{{Escape strings based on the provided transformation. This is less efficient than using \{str_escape_builder} once for the desired transformations.}}}
+str_escape_list : Template {
 	args : Used
 	{{{A list of transformations to be done on the string, from \{str_transform}.}}}
 	transformations : Required
+	value : (str_escape_builder(args : transformations) {}).value
+}
+
+{{{Create a function-like template that can escape a list of strings the transformations provided as arguments.}}}
+str_escape_builder : Template From interop:utils/str/escape {
+	{{{A list of transformations to be done on the string, from \{str_transform}.}}}
+	args : Used
+	arg_values : For arg : args Select (arg).value
 }
 
 {{{Transformations that can be done on a string to escape it.}}}
 str_transform : {
 	{{{Transform a single character into an arbitrary escaped form.}}}
-	char_tmpl : Template ( From lib:utilsinterop ).str_transform.char_tmpl {
+	char_tmpl : Template From interop:utils/str/escape/char {
 		{{{A single-character string to use as input.}}}
 		char : Required
 		{{{The string to use in the escaped result.}}}
 		replacement : Required
 	}
 	{{{Transform a range of characters into a numeric escape sequence.}}}
-	range_tmpl : Template ( From lib:utilsinterop ).str_transform.range_tmpl {
+	range_tmpl : Template From interop:utils/str/escape/range {
 		{{{The inclusive lower bound of the range of characters to escape as a
 		single-character string.}}}
 		start : Required
@@ -729,26 +737,50 @@ str_transform : {
 		mode : mode_hex_upper
 
 		{{{Encode numbers as padded upper-case hexadecimal.}}}
-		mode_hex_upper : Used
+		mode_hex_upper : {
+			utf32 : From interop:utils/str/escape/utf32/0/hex_upper
+			utf16_0 : From interop:utils/str/escape/utf16/0/hex_upper
+			utf16_1 : From interop:utils/str/escape/utf16/1/hex_upper
+			utf8_0 : From interop:utils/str/escape/utf8/0/hex_upper
+			utf8_1 : From interop:utils/str/escape/utf8/1/hex_upper
+			utf8_2 : From interop:utils/str/escape/utf8/2/hex_upper
+			utf8_3 : From interop:utils/str/escape/utf8/3/hex_upper
+		}
 		{{{Encode numbers as padded lower-case hexadecimal.}}}
-		mode_hex_lower : Used
+		mode_hex_lower : {
+			utf32 : From interop:utils/str/escape/utf32/0/hex_lower
+			utf16_0 : From interop:utils/str/escape/utf16/0/hex_lower
+			utf16_1 : From interop:utils/str/escape/utf16/1/hex_lower
+			utf8_0 : From interop:utils/str/escape/utf8/0/hex_lower
+			utf8_1 : From interop:utils/str/escape/utf8/1/hex_lower
+			utf8_2 : From interop:utils/str/escape/utf8/2/hex_lower
+			utf8_3 : From interop:utils/str/escape/utf8/3/hex_lower
+		}
 		{{{Encode numbers as unpadded decimal.}}}
-		mode_decimal : Used
+		mode_decimal : {
+			utf32 : From interop:utils/str/escape/utf32/0/decimal
+			utf16_0 : From interop:utils/str/escape/utf16/0/decimal
+			utf16_1 : From interop:utils/str/escape/utf16/1/decimal
+			utf8_0 : From interop:utils/str/escape/utf8/0/decimal
+			utf8_1 : From interop:utils/str/escape/utf8/1/decimal
+			utf8_2 : From interop:utils/str/escape/utf8/2/decimal
+			utf8_3 : From interop:utils/str/escape/utf8/3/decimal
+		}
 
 		{{{A single 32-bit number representing the entire Unicode codepoint.}}}
-		utf32 : Used
+		utf32 : mode.utf32
 		{{{A 16-bit number with the first half of a UTF-16 pair.}}}
-		utf16_0 : Used
+		utf16_0 : mode.utf16_0
 		{{{A 16-bit number with the second half of a UTF-16 pair.}}}
-		utf16_1 : Used
+		utf16_1 : mode.utf16_1
 		{{{A 8-bit number with the first quarter of a UTF-8 quartet.}}}
-		utf8_0 : Used
+		utf8_0 : mode.utf8_0
 		{{{A 8-bit number with the second quarter of a UTF-8 quartet.}}}
-		utf8_1 : Used
+		utf8_1 : mode.utf8_1
 		{{{A 8-bit number with the third quarter of a UTF-8 quartet.}}}
-		utf8_2 : Used
+		utf8_2 : mode.utf8_2
 		{{{A 8-bit number with the fourth quarter of a UTF-8 quartet.}}}
-		utf8_3 : Used
+		utf8_3 : mode.utf8_3
 	}
 }
 

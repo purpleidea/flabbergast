@@ -1,257 +1,140 @@
 package flabbergast;
-import java.io.UnsupportedEncodingException;
 import java.lang.Comparable;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Collections;
+import java.util.Map;
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.IntUnaryOperator;
 
-public class Escape extends Future {
-    private interface ConsumeChar {
-        void invoke(int c);
-    }
-    private interface ConsumeString {
-        void invoke(String str);
-    }
+public class Escape extends BaseMapFunctionInterop<String, String> {
 
-    private class Range implements Comparable<Range> {
-        int start;
-        int end;
-        String replacement;
-        public Range(int start, int end, String replacement) {
+    public interface RangeAction extends BiConsumer<StringBuilder, Integer> {}
+
+    interface DefaultConsumer extends BiConsumer<StringBuilder, Integer> {
+        public boolean matches(int codepoint);
+    }
+    static class Range implements DefaultConsumer, Comparable<Range> {
+        private final int start;
+        private final int end;
+        private final List<RangeAction> replacement;
+        public Range(int start, int end, List<RangeAction> replacement) {
             this.start = start;
             this.end = end;
             this.replacement = replacement;
         }
+        public void accept(StringBuilder buffer, Integer codepoint) {
+            for (RangeAction action : replacement) {
+                action.accept(buffer, codepoint);
+            }
+        }
         public int compareTo(Range r) {
             return start - r.start;
         }
+
+        public boolean matches(int codepoint) {
+            return start <= codepoint && codepoint <= end;
+        }
     }
 
-    private Map<Integer, String> single_substitutions = new TreeMap<Integer, String>();
-    private List<Range> ranges = new ArrayList<Range>();
-    private Map<String, String> input = new TreeMap<String, String>();
-    private SourceReference source_ref;
-    private Context context;
-    private Frame self;
-    private AtomicInteger interlock = new AtomicInteger(3);
-    private boolean state = false;
 
-    public Escape(TaskMaster task_master, SourceReference source_ref,
+    enum CharFormat {
+        HEX_LOWER {
+            @Override
+            public String get(int bits) {
+                switch (bits) {
+                case 32:
+                            return "%08x";
+                    case 16:
+                        return "%04x";
+                    case 8:
+                        return "%02x";
+                    default:
+                        throw new IllegalArgumentException();
+                    }
+                }
+
+            },
+            HEX_UPPER {
+            @Override
+            public String get(int bits) {
+                switch (bits) {
+                case 32:
+                    return "%08X";
+                case 16:
+                    return "%04X";
+                case 8:
+                    return "%02X";
+                default:
+                    throw new IllegalArgumentException();
+                }
+            }
+        },  DECIMAL {
+            @Override
+            public String get(int bits) {
+                return "%d";
+            }
+        };
+        public abstract String get(int bits);
+    }
+
+    public static ComputeValue create(Map<Integer, String> single_substitutions, List<Range> ranges) {
+        return (task_master, source_reference, context, self, container) -> new Escape(single_substitutions, ranges, task_master, source_reference, context, self, container);
+    }
+    public static void createUnicodeActions(BiConsumer<String, Frame> consumer) {
+        for (CharFormat format : CharFormat.values()) {
+            add(consumer, 32, 0, format, IntUnaryOperator.identity());
+// http://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=iws-appendixa
+            add(consumer, 16, 0, format, c -> ((c < 65536) ? c : ((c - 65536) % 1024 + 56320) % 65536));
+            add(consumer, 16, 1, format, c -> (c < 65536) ? 0 : ((c - 65536) / 1024 + 55296) % 65536);
+            add(consumer, 8, 0, format,  c -> ((c <= 127) ? c : ((c <= 2047) ? (c / 64 + 192) : ((c <= 65535) ? (c / 4096 + 224) : (c / 262144 + 240)))) % 256);
+            add(consumer, 8, 1, format, c -> ((c <= 127) ? 0 : ((c <= 2047) ? (c % 64 + 128) : ((c <= 65535) ? ((c / 64) % 64 + 128) : ((c % 262144) * 4096 + 128)))) % 256);
+            add(consumer, 8, 2, format, c -> ((c <= 2047) ? 0 : ((c <= 65535) ? (c % 64 + 128) : ((c % 4096) / 64 + 128))) % 256);
+            add(consumer, 8, 3,  format, c -> ((c <= 65535) ? 0 : (c % 64 + 128)) % 256);
+        }
+    }
+    private static void add(BiConsumer<String, Frame> consumer, int bits, int index, CharFormat format, IntUnaryOperator encode) {
+        String path = "utils/str/escape/utf" + bits + "/" + index + "/" + format.name().toLowerCase();
+        String name = "utf" + bits + "_"  + index + "_" + format.name().toLowerCase();
+        RangeAction action = (buffer, codepoint) -> buffer.append(String.format(format.get(bits), encode.applyAsInt(codepoint)));
+
+        consumer.accept(path, ReflectedFrame.create(name, action, Collections.emptyMap()));
+    }
+
+    private static final DefaultConsumer DEFAULT =
+    new DefaultConsumer() {
+        public void accept(StringBuilder builder, Integer codepoint) {
+            builder.appendCodePoint(codepoint);
+        }
+        public boolean matches(int codepoint) {
+            return true;
+        }
+    };
+
+    private final Map<Integer, String> single_substitutions;
+    private final List<DefaultConsumer> ranges = new ArrayList<>();
+    public Escape(Map<Integer, String> single_substitutions, List<Range> ranges, TaskMaster task_master, SourceReference source_reference,
                   Context context, Frame self, Frame container) {
-        super(task_master);
-        this.source_ref = source_ref;
-        this.context = context;
-        this.self = self;
-    }
-
-    private class HandleArgs implements ConsumeResult {
-        @Override
-        public void consume(Object result) {
-            if (result instanceof Frame) {
-                Frame input = (Frame) result;
-                interlock.addAndGet(input.count());
-                int index = 0;
-                for (String name : input) {
-                    final String target_name = name;
-                    input.getOrSubscribe(name,  arg -> {
-                        if (arg instanceof Stringish) {
-                            Escape.this.input.put(target_name,
-                            arg.toString());
-                            if (interlock.decrementAndGet() == 0) {
-                                task_master.slot(Escape.this);
-                            }
-                        } else {
-                            task_master.reportOtherError(
-                                source_ref,
-                                String.format(
-                                    "Expected “args” to contain strings. Got %s instead.",
-                                    SupportFunctions.nameForClass(arg
-                            .getClass())));
-                        }
-                    });
-                }
-                if (interlock.decrementAndGet() == 0) {
-                    task_master.slot(Escape.this);
-                }
-            } else {
-                task_master.reportOtherError(source_ref, String.format(
-                                                 "Expected “args” to be a frame. Got %s instead.",
-                                                 SupportFunctions.nameForClass(result.getClass())));
-            }
-        }
-    }
-
-    void handleRange(final Frame spec) {
-        lookupChar(spec, "start", start -> {
-            lookupChar(spec, "end", end -> {
-                lookupString(spec, "format_str", replacement -> {
-                    ranges.add(new Range(start, end, replacement));
-                    if (interlock.decrementAndGet() == 0) {
-                        task_master.slot(this);
-                    }
-                });
-            });
-        });
-    }
-
-    void handleSubstition(final Frame spec) {
-        lookupChar(spec, "char", c -> {
-            lookupString(spec, "replacement", replacement-> {
-                single_substitutions.put(c, replacement);
-                if (interlock.decrementAndGet() == 0) {
-                    task_master.slot(this);
-                }
-            });
-        });
-    }
-
-    private class HandleTransformation implements ConsumeResult {
-        @Override
-        public void consume(Object result) {
-            if (result instanceof Frame) {
-                final Frame frame = (Frame) result;
-                Lookup lookup = new Lookup(task_master, source_ref,
-                                           new String[] {"type"}, Context.prepend(frame, null));
-                lookup.listen(type_result -> {
-                    if (type_result instanceof Long) {
-                        long type = (Long) type_result;
-                        switch ((int) type) {
-                        case 0 :
-                            handleSubstition(frame);
-                            return;
-                        case 1 :
-                            handleRange(frame);
-                            return;
-                        }
-                    }
-                    task_master.reportOtherError(source_ref,
-                                                 "Illegal transformation specified.");
-                });
-            } else {
-                task_master.reportOtherError(source_ref,
-                                             "Non-frame in transformation list.");
-            }
-        }
-    }
-    private class HandleTransformations implements ConsumeResult {
-        @Override
-        public void consume(Object result) {
-            if (result instanceof Frame) {
-                Frame input = (Frame) result;
-                interlock.addAndGet(input.count());
-                for (String name : input) {
-                    input.getOrSubscribe(name, new HandleTransformation());
-                }
-                if (interlock.decrementAndGet() == 0) {
-                    task_master.slot(Escape.this);
-                }
-            } else {
-                task_master
-                .reportOtherError(
-                    source_ref,
-                    String.format(
-                        "Expected “transformations” to be a frame. Got %s instead.",
-                        SupportFunctions.nameForClass(result
-                                                      .getClass())));
-            }
-        }
-    }
-
-    void lookupChar(Frame frame, final String name, final ConsumeChar consume) {
-        lookupString(frame, name, str-> {
-            if (str.offsetByCodePoints(0, 1) == str.length()) {
-                consume.invoke(str.codePointAt(0));
-            } else {
-                task_master.reportOtherError(source_ref, String.format(
-                    "String “%s” for “%s” must be a single codepoint.",
-                    str, name));
-            }
-        });
-    }
-
-    void lookupString(Frame frame, final String name,
-                      final ConsumeString consume) {
-        Lookup lookup = new Lookup(task_master, source_ref, new String[] {name},
-                                   Context.prepend(frame, null));
-        lookup.listen(result -> {
-            if (result instanceof Stringish) {
-                String str = result.toString();
-                consume.invoke(str);
-            } else {
-                task_master.reportOtherError(source_ref, String.format(
-                    "Expected “%s” to be a string. Got %s instead.",
-                    name, SupportFunctions.nameForClass(result.getClass())));
-            }
-        });
+        super(String.class, String.class, task_master, source_reference, context, self, container);
+        this.single_substitutions = single_substitutions;
+        this.ranges.addAll(ranges);
     }
 
     @Override
-    protected void run() {
-        if (!state) {
-            Lookup input_lookup = new Lookup(task_master, source_ref,
-                                             new String[] {"args"}, context);
-            input_lookup.listen(new HandleArgs());
-            Lookup transformation_lookup = new Lookup(task_master, source_ref,
-                    new String[] {"transformations"}, context);
-            transformation_lookup.listen(new HandleTransformations());
-            state = true;
-            if (interlock.decrementAndGet() > 0) {
-                return;
+    protected void setupExtra() {}
+
+    @Override
+    protected String computeResult(String input) {
+        StringBuilder buffer = new StringBuilder();
+        for (int it = 0; it < input.length(); it = input
+                .offsetByCodePoints(it, 1)) {
+            int c = input.codePointAt(it);
+            if (single_substitutions.containsKey(c)) {
+                buffer.append(single_substitutions.get(c));
+            } else {
+                ranges.stream().filter(r -> r.matches(c)).findFirst().orElse(DEFAULT).accept(buffer, c);
             }
         }
-        try {
-            MutableFrame output_frame = new MutableFrame(task_master,
-                    source_ref, context, self);
-            for (Entry<String, String> entry : input.entrySet()) {
-                StringBuilder buffer = new StringBuilder();
-                String in_str = entry.getValue();
-                for (int it = 0; it < in_str.length(); it = in_str
-                        .offsetByCodePoints(it, 1)) {
-                    int c = in_str.codePointAt(it);
-                    boolean is_surrogate = Character
-                                           .isSupplementaryCodePoint(c);
-                    String replacement = single_substitutions.get(c);
-                    if (replacement != null) {
-                        buffer.append(replacement);
-                    } else {
-                        boolean matched = false;
-                        for (Range range : ranges) {
-                            if (c >= range.start && c <= range.end) {
-                                byte[] utf8 = in_str.substring(it,
-                                                               it + (is_surrogate ? 2 : 1)).getBytes(
-                                                  "UTF-8");
-                                // The bit masks are to avoid sign extension.
-                                buffer.append(String.format(
-                                                  range.replacement,
-                                                  c,
-                                                  0xFFFF & (int) in_str.charAt(it),
-                                                  is_surrogate ? 0xFFFF & (int) in_str
-                                                  .charAt(it + 1) : 0,
-                                                  0xFF & (int) utf8[0], utf8.length > 1
-                                                  ? 0xFF & (int) utf8[1]
-                                                  : 0, utf8.length > 2
-                                                  ? 0xFF & (int) utf8[2]
-                                                  : 0, utf8.length > 3
-                                                  ? 0xFF & (int) utf8[3]
-                                                  : 0));
-                                matched = true;
-                                break;
-                            }
-                        }
-                        if (!matched) {
-                            buffer.appendCodePoint(c);
-                        }
-                    }
-                }
-                output_frame.set(entry.getKey(),
-                                 new SimpleStringish(buffer.toString()));
-            }
-            result = output_frame;
-        } catch (UnsupportedEncodingException e) {
-            task_master.reportOtherError(source_ref, e.getMessage());
-        }
+        return buffer.toString();
     }
 }

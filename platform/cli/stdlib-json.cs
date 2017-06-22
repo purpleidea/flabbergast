@@ -3,17 +3,9 @@ using System.Json;
 using System.Threading;
 
 namespace Flabbergast {
-public class JsonParser : Future {
-    private InterlockedLookup interlock;
-    private string input;
-    private SourceReference source_reference;
-    private Context context;
-    private Frame self;
+public class JsonParser : BaseMapFunctionInterop<string, Template> {
     public JsonParser(TaskMaster task_master, SourceReference source_reference,
-                      Context context, Frame self, Frame container) : base(task_master) {
-        this.source_reference = source_reference;
-        this.context = context;
-        this.self = self;
+                      Context context, Frame self, Frame container) : base(task_master, source_reference, context, self, container) {
     }
 
     internal static ComputeValue Dispatch(object name, JsonValue node) {
@@ -69,20 +61,11 @@ public class JsonParser : Future {
             }
         };
     }
-    protected override void Run() {
-        if (interlock == null) {
-            interlock = new InterlockedLookup(this, task_master, source_reference, context);
-            interlock.LookupStr(x => input = x, "arg");
-        }
-        if (!interlock.Away()) return;
-        try {
-            var json_value = JsonValue.Parse(input);
-            var tmpl = new Template(source_reference,  context, self);
-            tmpl["json_root"] = Dispatch(Unit.NULL, json_value);
-            result = tmpl;
-        } catch (Exception e) {
-            task_master.ReportOtherError(source_reference, e.Message);
-        }
+    protected override Template ComputeResult(string input) {
+        var json_value = JsonValue.Parse(input);
+        var tmpl = new Template(source_reference,  context, self);
+        tmpl["json_root"] = Dispatch(Unit.NULL, json_value);
+        return tmpl;
     }
 }
 }

@@ -45,7 +45,7 @@ public class SupportFunctions {
         if (t == Double.class || t == double.class) {
             return "Float";
         }
-        if (t == Frame.class) {
+        if (Frame.class.isAssignableFrom(t)) {
             return "Frame";
         }
         if (t == Long.class || t == long.class) {

@@ -57,7 +57,6 @@
 		<Compile Include="stdlib-escape.cs"/>
 		<Compile Include="stdlib-instantiate.cs"/>
 		<Compile Include="stdlib-json.cs"/>
-		<Compile Include="stdlib-parse.cs"/>
 		<Compile Include="stdlib-time.cs"/>
 		<Compile Include="stdlib-unicode.cs"/>
 		<Compile Include="uri-base.cs"/>

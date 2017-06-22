@@ -279,7 +279,7 @@ job : Template render_lib.python.object {
 								Then "limit:\(c Enforce Int)"
 								Else Error "Constraint \(c) on \(c_name) seems a bit silly."
 						Else
-							utils_lib.str_escape(args : c, transformations : python.escape_transform, delimiter : ",")) &
+							python.escape(args : c, delimiter : ",")) &
 						"',"
 					With acc : "{") & "}"
 		max_task_failures :
@@ -376,5 +376,5 @@ docker_container : Template {
 	{{{The Docker container to be pulled.}}}
 	image : Required
 
-	python_value : "Docker(image = \"" & utils_lib.str_escape(image, transformations : render_lib.python.escape_transform) & "\")"
+	python_value : "Docker(image = \"" & render_lib.python.escape(image) & "\")"
 }

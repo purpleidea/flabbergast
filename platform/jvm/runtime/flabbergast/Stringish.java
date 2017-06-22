@@ -116,7 +116,7 @@ public abstract class Stringish
     public abstract String ramblingNext(
         Stack<RamblingIterator.GetNext<String>> stack);
 
-    public String slice(Long start, Long end, Long length) {
+    public String slice(long start, Long end, Long length) {
         if ((end == null) == (length == null)) {
             throw new IllegalArgumentException("Only one of “length” or “end” maybe specified.");
         }

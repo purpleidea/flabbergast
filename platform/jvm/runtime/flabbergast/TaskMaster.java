@@ -199,6 +199,9 @@ public abstract class TaskMaster implements Iterable<Lookup> {
             }
         });
     }
+    public static void verifySymbolOrThrow(String str) {
+        verifySymbol(str, (msg) -> { throw new IllegalArgumentException(msg); });
+    }
     private static boolean verifySymbol(String str, ReportError error) {
         if (str.length() < 1) {
             error.invoke("An attribute name cannot be empty.");

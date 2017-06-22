@@ -7,7 +7,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-public class JsonParser extends Future {
+public class JsonParser extends BaseMapFunctionInterop<String, Template> {
     private static class Dispatch implements ComputeValue {
         Object name;
         Object node;
@@ -105,35 +105,18 @@ public class JsonParser extends Future {
             return computation;
         }
     }
-    private String json_text;
-    private SourceReference source_ref;
-    private Context context;
-    private Frame self;
-    private InterlockedLookup interlock;
-
-    public JsonParser(TaskMaster task_master, SourceReference source_ref,
+    public JsonParser(TaskMaster task_master, SourceReference source_reference,
                       Context context, Frame self, Frame container) {
-        super(task_master);
-        this.source_ref = source_ref;
-        this.context = context;
-        this.self = self;
+        super(Template.class, String.class, task_master, source_reference, context, self, container);
     }
 
     @Override
-    protected void run() {
-        if (interlock == null) {
-            interlock = new InterlockedLookup(this, task_master, source_ref, context);
-        }
-        if (!interlock.away()) return;
-        try {
-            JSONTokener json_value = new JSONTokener(json_text);
-            Template tmpl = new Template(source_ref, context,
-                                         self);
-            tmpl.set("json_root",
-                     new Dispatch(Unit.NULL, json_value.nextValue()));
-            result = tmpl;
-        } catch (Exception e) {
-            task_master.reportOtherError(source_ref, e.getMessage());
-        }
+    protected Template computeResult(String input) throws Exception {
+        JSONTokener json_value = new JSONTokener(input);
+        Template tmpl = new Template(source_reference, context,
+                                     self);
+        tmpl.set("json_root",
+                 new Dispatch(Unit.NULL, json_value.nextValue()));
+        return tmpl;
     }
 }

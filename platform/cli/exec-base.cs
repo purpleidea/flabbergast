@@ -311,6 +311,11 @@ public abstract class TaskMaster : IEnumerable<Lookup> {
     public bool VerifySymbol(SourceReference source_reference, string str) {
         return VerifySymbol(str, msg => ReportOtherError(source_reference, msg));
     }
+    public static void VerifySymbolOrThrow(string str) {
+        VerifySymbol(str, error_msg => {
+            throw new ArgumentException(error_msg);
+        });
+    }
     private static bool VerifySymbol(string str, ReportError error) {
         if (str.Length < 1) {
             error("An attribute name cannot be empty.");

@@ -50,10 +50,12 @@ public class CharacterCategory : BaseMapFunctionInterop<string, Frame> {
         }
         return frame;
     }
-    protected override void PrepareLookup(InterlockedLookup interlock) {
+    protected override void SetupExtra() {
         foreach (var entry in categories) {
             var key = entry.Key;
-            interlock.Lookup<object>(x => mappings[key] = x, entry.Value);
+            var lookup = Find<object>(x => mappings[key] = x);
+            lookup.AllowDefault();
+            lookup.Lookup(entry.Value);
         }
     }
 }

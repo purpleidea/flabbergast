@@ -5,17 +5,12 @@ using System.Text;
 using System.Threading;
 
 namespace Flabbergast {
-public class Instantiation : Future, IEnumerable<string> {
+public class Instantiation : InterlockedLookup, IEnumerable<string> {
     private string[] names;
     private Dictionary<string, object> overrides = new Dictionary<string, object>();
-    private Context context;
     private Frame container;
     private Template tmpl;
-    private SourceReference source_reference;
-    private InterlockedLookup interlock;
-    public Instantiation(TaskMaster task_master, SourceReference source_reference, Context context, Frame container, params string[] names) : base(task_master) {
-        this.source_reference = source_reference;
-        this.context = context;
+    public Instantiation(TaskMaster task_master, SourceReference source_reference, Context context, Frame container, params string[] names) : base(task_master, source_reference, context) {
         this.container = container;
         this.names = names;
     }
@@ -32,12 +27,12 @@ public class Instantiation : Future, IEnumerable<string> {
         return this.GetEnumerator();
     }
 
-    protected override void Run() {
-        if (interlock == null) {
-            interlock = new InterlockedLookup(this, task_master, source_reference, context);
-            interlock.Lookup<Template>(x => tmpl = x, names);
-        }
-        if (!interlock.Away()) return;
+    protected override void Setup() {
+        var template_lookup = Find<Template>(x => tmpl = x);
+        template_lookup.AllowDefault();
+        template_lookup.Lookup(names);
+    }
+    protected override void Resolve() {
         var frame = new MutableFrame(task_master, new JunctionReference("instantiation", "<native>", 0, 0, 0, 0, source_reference, tmpl.SourceReference), Context.Append(context, tmpl.Context), container);
         foreach (var entry in overrides) {
             frame.Set(entry.Key, entry.Value);

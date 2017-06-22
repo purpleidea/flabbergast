@@ -45,9 +45,9 @@ public class CharacterCategory extends BaseMapFunctionInterop<String, Frame> {
     private Map<Byte, Object> mappings = new HashMap<Byte, Object>();
 
     public CharacterCategory(TaskMaster task_master,
-                             SourceReference source_ref, Context context, Frame self,
+                             SourceReference source_reference, Context context, Frame self,
                              Frame container) {
-        super(Frame.class, String.class, task_master, source_ref, context, self, container);
+        super(Frame.class, String.class, task_master, source_reference, context, self, container);
     }
 
     @Override
@@ -63,10 +63,12 @@ public class CharacterCategory extends BaseMapFunctionInterop<String, Frame> {
     }
 
     @Override
-    protected void prepareLookup(InterlockedLookup interlock) {
+    protected void setupExtra() {
         for (Map.Entry<Byte, String> entry : categories.entrySet()) {
             final Byte key = entry.getKey();
-            interlock.lookup(Object.class, x-> mappings.put(key, x), entry.getValue());
+            Sink<Object> mapping_lookup = find(Object.class, x-> mappings.put(key, x));
+            mapping_lookup.allowDefault(false, null);
+            mapping_lookup.lookup(entry.getValue());
         }
     }
 }

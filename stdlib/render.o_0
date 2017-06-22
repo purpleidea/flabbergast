@@ -21,8 +21,11 @@ ini : {
 		tab : str_transform.char_tmpl { char : "\t"  replacement : "\\t" }
 	}
 
-	{{{The default escaping transformations, for use with \{utils_lib.str_escape}.}}}
-	escape_transform : escape_transform_tmpl {}
+	{{{Transform a list of strings using default escaping transformations.}}}
+	escape_list : utils_lib.str_escape_builder(args : escape_transform_tmpl {})
+
+	{{{Transform a string using the  default escaping transformations.}}}
+	escape : utils_lib.str_concatifier(base : escape_list, delimiter : "")
 
 	{{{Convert a frame to an INI file. Each attribute name is used as the INI
 	key and any values which are frames are treated as hierarchical sections.}}}
@@ -37,7 +40,7 @@ ini : {
 				Where !(arg Is Frame)
 				Reduce acc & "\n" & arg_name & "=" &
 					(If arg Is Bool Then (If arg Then "true" Else "false")
-					Else If arg Is Str Then "\"" & utils_lib.str_escape(arg, transformations : ini.escape_transform) & "\""
+					Else If arg Is Str Then "\"" & ini.escape(arg) & "\""
 					Else arg To Str)
 				With acc : "") &
 			(For arg : args, arg_name : Name
@@ -61,8 +64,11 @@ json : {
 		nonprint : str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "\\u", utf16_0 ] }
 	}
 
-	{{{The default escaping transformations, for use with \{utils_lib.str_escape}.}}}
-	escape_transform : escape_transform_tmpl {}
+	{{{Transform a list of strings using default escaping transformations.}}}
+	escape_list : utils_lib.str_escape_builder(args : escape_transform_tmpl {})
+
+	{{{Transform a string using the  default escaping transformations.}}}
+	escape : utils_lib.str_concatifier(base : escape_list, delimiter : "")
 
 	{{{Produce a list of other JSON fragments.}}}
 	list : Template {
@@ -98,7 +104,7 @@ json : {
 		{{{The key for the JSON element, or null to use the attribute name.}}}
 		json_name : Null
 		json_value :
-				If arg Is Str Then "\"" & utils_lib.str_escape(arg, transformations : json.escape_transform) & "\""
+				If arg Is Str Then "\"" & json.escape(arg) & "\""
 				Else If arg Is Null Then "null"
 				Else If arg Is Bool Then (If arg Then "true" Else "false")
 				Else If arg Is Int || arg Is Float Then arg To Str
@@ -128,11 +134,18 @@ python : {
 		newline : str_transform.char_tmpl { char : "\n"  replacement : "\n" }
 	}
 
-	{{{The default escaping transformations, for use with \{utils_lib.str_escape}.}}}
-	escape_multiline_transform : escape_multiline_transform_tmpl {}
+	{{{Transform a list of strings using the multi-line escaping transformations.}}}
+	escape_multiline_list : utils_lib.str_escape_builder(args : escape_multiline_transform_tmpl {})
 
-	{{{The multi-line escaping transfromations, for use with \{utils_lib.str_escape}.}}}
-	escape_transform : escape_transform_tmpl {}
+	{{{Transform a string using the multi-line escaping transformations.}}}
+	escape_multiline : utils_lib.str_concatifier(base : escape_multiline_list, delimiter : "")
+
+	{{{Transform a list of strings using default escaping transformations.}}}
+	escape_list : utils_lib.str_escape_builder(args : escape_transform_tmpl {})
+
+	{{{Transform a string using the  default escaping transformations.}}}
+	escape : utils_lib.str_concatifier(base : escape_list, delimiter : "")
+
 
 	{{{Convenience template for generating Pystachio objects}}}
 	object : Template {
@@ -155,11 +168,11 @@ python : {
 		converted_string_attrs :
 			For attr_name : Name, attr : string_attrs
 				Where !(attr Is Null)
-				Select attr_name : "\"" & utils_lib.str_escape(attr, transformations : python.escape_transform) & "\""
+				Select attr_name : "\"" & python.escape(attr) & "\""
 		converted_multiline_string_attrs :
 			For attr_name : Name, attr : multiline_string_attrs
 				Where !(attr Is Null)
-				Select attr_name : "\"\"\"" & utils_lib.str_escape(attr, transformations : python.escape_multiline_transform) & "\"\"\""
+				Select attr_name : "\"\"\"" & pythong.escape_multiline(attr) & "\"\"\""
 
 		python_attrs : For attr_name : Name, literal_attr : converted_literal_attrs, str_attr : converted_string_attrs, ml_str_attr : converted_multiline_string_attrs
 			Select attr_name : {
@@ -213,19 +226,24 @@ uri : {
 		fourbyte : str_transform.range_tmpl { start : "\U00010000"  end : "\U0010FFFF"  replacement : [ "%", utf8_0, "%", utf8_1, "%", utf8_2, "%", utf8_3 ] }
 	}
 
-	{{{The default form escaping transformations, for use with \{utils_lib.str_escape}.}}}
-	escape_form_encoded_transform : escape_form_encoded_transform_tmpl {}
+	{{{Transform a list of strings using form-encoded escaping transformations.}}}
+	escape_form_encoded_list : utils_lib.str_escape_builder(args : escape_form_encoded_transform_tmpl {})
 
-	{{{The default URI escaping transfromations, for use with \{utils_lib.str_escape}.}}}
-	escape_uri_transform : escape_uri_transform_tmpl {}
+	{{{Transform a string using the form-encoded escaping transformations.}}}
+	escape_form_encoded : utils_lib.str_concatifier(base : escape_form_encoded_list, delimiter : "")
+
+	{{{Transform a list of strings using URI escaping transformations.}}}
+	escape_uri_list : utils_lib.str_escape_builder(args : escape_uri_transform_tmpl {})
+
+	{{{Transform a string using the URI escaping transformations.}}}
+	escape_uri : utils_lib.str_concatifier(base : escape_uri_list, delimiter : "/")
 
 	{{{Convert the arguments to a form-encoded string.}}}
-	form_encode : Template utils_lib.str_escape_list {
+	form_encode : Template escape_form_encoded_list {
 		{{{A frame to encode as key-value pairs.}}}
 		args : Used
 		{{{A prefix to prepend to the output if non-empty.}}}
 		prefix : ""
-		transformations : Now uri.escape_form_encoded_transform
 		value +orig:
 			For name : Name, arg : orig, pos : Ordinal
 				Reduce (If pos > 1 Then "\(acc Enforce Str)&" Else prefix) & "\(name)=\(arg)"
@@ -251,11 +269,11 @@ uri : {
 			If host Is Null
 				Then ""
 				Else utils_lib.str_encode.punycode(host) & "/"
-		path_str : utils_lib.str_escape(args : path, transformations : uri.escape_form_encoded_transform, delimiter : "/")
+		path_str : uri.escape_uri(args : path)
 		fragment_str :
 			If fragment Is Null
 				Then ""
-				Else utils_lib.str_escape("", fragment, transformations : uri.escape_form_encoded_transform, delimiter : "#")
+				Else uri.escape_uri("", fragment, delimiter : "#")
 		param_str : uri.form_encode(args : parameters, prefix : "?")
 		value : schema Enforce Str & ":" & (If double_slash Then "//" Else "") & host_str Enforce Str & path_str Enforce Str & param_str Enforce Str & fragment_str Enforce Str
 	}
@@ -275,12 +293,12 @@ xml : {
 
 		xml_attr :
 			(If xml_ns Is Null Then "" Else "\(xml_ns.qname):") &
-			"\(attr_name)=\"\(utils_lib.str_escape(attr_value, transformations : xml.escape_transform))\""
+			"\(attr_name)=\"\(xml.escape(attr_value))\""
 	}
 	{{{A comment in the XML document.}}}
 	comment : Template {
 		content : Required
-		xml_value : "<!-- " & utils_lib.str_escape(content, transformations : xml.escape_transform) & " -->"
+		xml_value : "<!-- " & xml.escape(content) & " -->"
 	}
 	{{{An XML document.}}}
 	document : Template {
@@ -324,14 +342,14 @@ xml : {
 				Reduce
 					acc & " " &
 					(If attr Is Frame Then attr.xml_attr
-					Else "\(attr_name)=\"\(utils_lib.str_escape(attr To Str, transformations : xml.escape_transform))\"")
+					Else "\(attr_name)=\"\(xml.escape(attr To Str))\"")
 			With acc : ""
 		child_values :
 			For child : children
 			Where !(child Is Null)
 			Reduce
 				acc &
-					(If child Is Str Then utils_lib.str_escape(child, transformations : xml.escape_transform)
+					(If child Is Str Then xml.escape(child)
 					Else If child Is Frame Then child.xml_value
 					Else Error "Cannot XMLise value.")
 			With acc : ""
@@ -360,19 +378,23 @@ xml : {
 		nonprint : str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "&#", utf32, ";" ]  mode : mode_decimal }
 	}
 
-	{{{The default escaping transformations, for use with \{str_escape}.}}}
-	escape_transform : escape_transform_tmpl {}
+	{{{Transform a list of strings using default escaping transformations.}}}
+	escape_list : utils_lib.str_escape_builder(args : escape_transform_tmpl {})
+
+	{{{Transform a string using the  default escaping transformations.}}}
+	escape : utils_lib.str_concatifier(base : escape_list, delimiter : "")
+
 
 	{{{A processing instruction. The mysterious unused sauce of XML.}}}
 	processing_instruction : Template {
 		content : Required
 
-		xml_value : "<?\(utils_lib.str_escape(content, transformations : xml.escape_transform))?>"
+		xml_value : "<?\(xml.escape(content))?>"
 	}
 	{{{A text node.}}}
 	text : Template {
 		content : Required
-		xml_value : utils_lib.str_escape(content, transformations : xml.escape_transform)
+		xml_value : xml.escape(content)
 	}
 }
 
@@ -395,8 +417,12 @@ yaml : {
 		nonprint : str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "\\", utf8_0 ] }
 	}
 
-	{{{The default escaping transformations, for use with \{str_escape}.}}}
-	escape_transform : escape_transform_tmpl {}
+	{{{Transform a list of strings using default escaping transformations.}}}
+	escape_list : utils_lib.str_escape_builder(args : escape_transform_tmpl {})
+
+	{{{Transform a string using the default escaping transformations.}}}
+	escape : utils_lib.str_concatifier(base : escape_list, delimiter : "")
+
 
 	{{{Produce a list of other YAML fragments.}}}
 	list : Template {
@@ -430,7 +456,7 @@ yaml : {
 		{{{The value to be converted. Most Flabbergast types will be mapped automatically.}}}
 		arg : Required
 		yaml_value :
-				If arg Is Str Then "\"" & utils_lib.str_escape(arg, transformations : yaml.escape_transform) & "\""
+				If arg Is Str Then "\"" & yaml.escape(arg) & "\""
 				Else If arg Is Null Then "null"
 				Else If arg Is Bool Then (If arg Then "true" Else "false")
 				Else If arg Is Int || arg Is Float Then arg To Str

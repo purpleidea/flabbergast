@@ -238,7 +238,7 @@ sql_marshall_converters : {
 	str :
 		Template {
 			value : provider.expr.base_const_tmpl {
-				sql_expr : provider.quote_start Enforce Str & utils_lib.str_escape(arg, transformations : provider.transformations) Enforce Str & provider.quote_end Enforce Str
+				sql_expr : provider.quote_start Enforce Str & provider.escape(arg) Enforce Str & provider.quote_end Enforce Str
 				sql_type : sql_types.str
 			}
 		}
@@ -1073,6 +1073,7 @@ sql_provider : Template {
 			sql_func : "UPPER"
 		}
 	}
+	escape : utils_lib.str_concatifier(base : utils_lib.str_escape_builder(args : transformations), delimiter : "")
 }
 sql_provider_with_union_literal : Template sql_provider {
 	generate_literal_from : Template {

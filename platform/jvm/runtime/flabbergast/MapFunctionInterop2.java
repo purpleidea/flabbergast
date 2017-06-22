@@ -1,16 +1,18 @@
 package flabbergast;
 
 public class MapFunctionInterop2<T1, T2, R> extends BaseMapFunctionInterop<T1, R> {
-    private Func2<T1, T2, R> func;
-    private Class<T2> parameterClazz;
-    private String parameter;
+    private final Func2<T1, T2, R> func;
+    private final Class<T2> parameterClazz;
+    private final boolean parameterNullable;
+    private final String parameter;
     private T2 reference;
 
-    public MapFunctionInterop2(Class<R> returnClass, Class<T1> clazz, Func2<T1, T2, R> func, Class<T2> parameterClazz, String parameter, TaskMaster task_master, SourceReference source_ref,
+    public MapFunctionInterop2(Class<R> returnClass, Class<T1> clazz, Func2<T1, T2, R> func, Class<T2> parameterClazz, boolean parameterNullable, String parameter, TaskMaster task_master, SourceReference source_ref,
                                Context context, Frame self, Frame container) {
-        super(returnClass, clazz , task_master, source_ref, context, self, container);
+        super(returnClass, clazz, task_master, source_ref, context, self, container);
         this.func = func;
         this.parameterClazz = parameterClazz;
+        this.parameterNullable = parameterNullable;
         this.parameter = parameter;
     }
     @Override
@@ -18,8 +20,10 @@ public class MapFunctionInterop2<T1, T2, R> extends BaseMapFunctionInterop<T1, R
         return  func.invoke(input, reference);
     }
     @Override
-    protected  void prepareLookup(InterlockedLookup interlock) {
-        interlock.lookup(parameterClazz , x -> this.reference = x, parameter);
+    protected void setupExtra() {
+        Sink<T2> reference_lookup = find(parameterClazz , x -> this.reference = x);
+        reference_lookup.allowDefault(parameterNullable, null);
+        reference_lookup.lookup(parameter);
     }
 }
 

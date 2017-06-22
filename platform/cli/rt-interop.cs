@@ -3,40 +3,19 @@ using System.Collections.Generic;
 
 namespace Flabbergast {
 
-public abstract class BaseFunctionInterop<R> : Future {
-    private InterlockedLookup interlock;
-    protected readonly SourceReference source_reference;
-    protected readonly Context context;
+public abstract class BaseFunctionInterop<R> : InterlockedLookup {
     protected readonly Frame self;
     protected readonly Frame container;
-    public BaseFunctionInterop(TaskMaster task_master, SourceReference source_ref,
-                               Context context, Frame self, Frame container) : base(task_master) {
-        this.source_reference = source_ref;
-        this.context = context;
+    public BaseFunctionInterop(TaskMaster task_master, SourceReference source_reference,
+                               Context context, Frame self, Frame container) : base(task_master, source_reference, context) {
         this.self = self;
         this.container = container;
     }
 
     protected abstract R ComputeResult();
 
-    protected abstract void PrepareLookup(InterlockedLookup interlock);
-
-    protected override void Run() {
-        if (interlock == null) {
-            interlock = new InterlockedLookup(this, task_master, source_reference, context);
-            PrepareLookup(interlock);
-        }
-        if (!interlock.Away()) return;
-        try {
-            R output = ComputeResult();
-            if (!typeof(R).IsValueType && EqualityComparer<R>.Default.Equals(output, default(R))) {
-                result = Unit.NULL;
-            } else {
-                result = typeof(R) == typeof(string) ? (object)new SimpleStringish((string)(object) output) : (object) output;
-            }
-        } catch (Exception e) {
-            task_master.ReportOtherError(source_reference, e.Message);
-        }
+    protected sealed override void Resolve() {
+        result = CorrectOutput(ComputeResult);
     }
 }
 
@@ -54,8 +33,10 @@ public class FunctionInterop<T, R> : BaseFunctionInterop<R> {
     protected override R ComputeResult() {
         return func(input);
     }
-    protected override void PrepareLookup(InterlockedLookup interlock) {
-        interlock.Lookup<T>(x => this.input = x, parameter);
+    protected override void Setup() {
+        var input_lookup = Find<T>(x => this.input = x);
+        input_lookup.AllowDefault();
+        input_lookup.Lookup(parameter);
     }
 }
 
@@ -77,109 +58,47 @@ public class FunctionInterop<T1, T2, R> : BaseFunctionInterop<R> {
     }
 
 
-    protected override void PrepareLookup(InterlockedLookup interlock) {
-        interlock.Lookup<T1>(x => this.input1 = x, parameter1);
-        interlock.Lookup<T2>(x => this.input2 = x, parameter2);
+    protected override void Setup() {
+        var input1_lookup = Find<T1>(x => this.input1 = x);
+        input1_lookup.AllowDefault();
+        input1_lookup.Lookup(parameter1);
+        var input2_lookup = Find<T2>(x => this.input2 = x);
+        input2_lookup.AllowDefault();
+        input2_lookup.Lookup(parameter2);
     }
 }
 
-public abstract class BaseMapFunctionInterop<T, R> : Future {
+public abstract class BaseMapFunctionInterop<T, R> : InterlockedLookup {
 
-    private class MapFunction : Future {
-        private readonly BaseMapFunctionInterop<T, R> owner;
-        private readonly string arg_name;
-        public MapFunction(TaskMaster task_master, BaseMapFunctionInterop<T, R> owner, string arg_name): base(task_master) {
-            this.owner = owner;
-            this.arg_name = arg_name;
-        }
-
-        public void Process(object input_value)  {
-            bool correct;
-            if (input_value is T) {
-                correct = true;
-            }
-            else
-
-                if (typeof(T) == typeof(string)) {
-                    if (input_value is Stringish) {
-                        input_value = input_value.ToString();
-                        correct = true;
-                    } else if (input_value is bool) {
-                        input_value = ((bool)input_value) ?  "True" : "False";
-                        correct = true;
-                    } else if (input_value is long) {
-                        input_value = ((long)input_value).ToString();
-                        correct = true;
-                    } else if (input_value is double) {
-                        input_value = ((double)input_value).ToString();
-                        correct = true;
-                    } else {
-                        correct = false;
-                    }
-                } else if (typeof(T) == typeof(double)) {
-                    if (input_value is long) {
-                        double d = (long)input_value;
-                        input_value = d;
-                        correct = true;
-                    } else {
-                        correct = false;
-                    }
-                } else {
-                    correct = false;
-                }
-            if (correct) {
-                try {
-                    R output = owner.ComputeResult((T) input_value);
-                    if ((!typeof(R).IsValueType || Nullable.GetUnderlyingType(typeof(R)) != null) && EqualityComparer<R>.Default.Equals(output, default(R))) {
-                        result = Unit.NULL;
-                    } else {
-                        result = typeof(R) == typeof(string) ? (object)new SimpleStringish((string)(object) output) : (object) output;
-                    }
-                    WakeupListeners();
-                } catch (Exception e) {
-                    task_master.ReportOtherError(owner.source_reference, e.Message);
-                }
-            } else {
-                task_master.ReportOtherError(owner.source_reference, String.Format("“{0}” has type {1} but expected {2}.", arg_name, SupportFunctions.NameForType(input_value.GetType()), SupportFunctions.NameForType(typeof(T))));
-            }
-
-        }
-        protected override void Run() {}
-    }
-    private InterlockedLookup interlock;
-    protected readonly SourceReference source_reference;
-    protected readonly Context context;
     protected readonly Frame self;
     protected readonly Frame container;
-    private Frame input;
+    private SortedDictionary<string, T> input;
 
     public BaseMapFunctionInterop(TaskMaster task_master, SourceReference source_ref,
-                                  Context context, Frame self, Frame container) : base(task_master) {
-        this.source_reference = source_ref;
-        this.context = context;
+                                  Context context, Frame self, Frame container) : base(task_master, source_ref, context) {
         this.self = self;
         this.container = container;
     }
 
-    protected abstract R ComputeResult(T input);
-
-    protected virtual void PrepareLookup(InterlockedLookup interlock) {
-    }
-    protected override void Run() {
-        if (interlock == null) {
-            interlock = new InterlockedLookup(this, task_master, source_reference, context);
-            interlock.Lookup<Frame>(x => this.input = x, "args");
-            PrepareLookup(interlock);
-        }
-        if (!interlock.Away()) return;
+    protected sealed override void Resolve() {
         var output_frame = new MutableFrame(task_master, source_reference, context, self);
-        foreach (var name in input.GetAttributeNames()) {
-            MapFunction arg_value = new MapFunction(task_master, this, name);
-            ComputeValue thunk = (task_master, source_reference, context, self, container) => arg_value;
-            output_frame.Set(name, thunk);
-            input.GetOrSubscribe(name, arg_value.Process);
+        foreach (var entry in input) {
+            var output = CorrectOutput(() => ComputeResult(entry.Value));
+            if (output != null) {
+                output_frame.Set(entry.Key, output);
+            }
         }
         result = output_frame;
+    }
+    protected abstract R ComputeResult(T input);
+
+    protected sealed override void Setup() {
+        var args = FindAll<T>(x => input = x);
+        args.AllowDefault();
+        args.Lookup("args");
+        SetupExtra();
+    }
+    protected virtual void SetupExtra() {
     }
 }
 public class MapFunctionInterop<T, R> : BaseMapFunctionInterop<T, R> {
@@ -205,10 +124,12 @@ public class MapFunctionInterop<T1, T2, R> : BaseMapFunctionInterop<T1, R> {
         this.parameter = parameter;
     }
     protected override R ComputeResult(T1 input) {
-        return  func(input, reference);
+        return func(input, reference);
     }
-    protected override void PrepareLookup(InterlockedLookup interlock) {
-        interlock.Lookup<T2>(x => this.reference = x, parameter);
+    protected override void SetupExtra() {
+        var ref_lookup = Find<T2>(x => this.reference = x);
+        ref_lookup.AllowDefault();
+        ref_lookup.Lookup(parameter);
     }
 }
 public class MapFunctionInterop<T1, T2, T3, R> : BaseMapFunctionInterop<T1, R> {
@@ -227,9 +148,13 @@ public class MapFunctionInterop<T1, T2, T3, R> : BaseMapFunctionInterop<T1, R> {
     protected override R ComputeResult(T1 input) {
         return  func(input, reference1, reference2);
     }
-    protected override void PrepareLookup(InterlockedLookup interlock) {
-        interlock.Lookup<T2>(x => this.reference1 = x, parameter1);
-        interlock.Lookup<T3>(x => this.reference2 = x, parameter2);
+    protected override void SetupExtra() {
+        var ref1_lookup = Find<T2>(x => this.reference1 = x);
+        ref1_lookup.AllowDefault();
+        ref1_lookup.Lookup(parameter1);
+        var ref2_lookup = Find<T3>(x => this.reference2 = x);
+        ref2_lookup.AllowDefault();
+        ref2_lookup.Lookup(parameter2);
     }
 }
 public class MapFunctionInterop<T1, T2, T3, T4, R> : BaseMapFunctionInterop<T1, R> {
@@ -249,12 +174,40 @@ public class MapFunctionInterop<T1, T2, T3, T4, R> : BaseMapFunctionInterop<T1, 
         this.parameter3 = parameter3;
     }
     protected override R ComputeResult(T1 input) {
-        return  func(input, reference1, reference2, reference3);
+        return func(input, reference1, reference2, reference3);
     }
-    protected override void PrepareLookup(InterlockedLookup interlock) {
-        interlock.Lookup<T2>(x => this.reference1 = x, parameter1);
-        interlock.Lookup<T3>(x => this.reference2 = x, parameter2);
-        interlock.Lookup<T4>(x => this.reference3 = x, parameter3);
+    protected override void SetupExtra() {
+        var ref1_lookup = Find<T2>(x => this.reference1 = x);
+        ref1_lookup.AllowDefault();
+        ref1_lookup.Lookup(parameter1);
+        var ref2_lookup = Find<T3>(x => this.reference2 = x);
+        ref2_lookup.AllowDefault();
+        ref2_lookup.Lookup(parameter2);
+        var ref3_lookup = Find<T4>(x => this.reference3 = x);
+        ref3_lookup.AllowDefault();
+        ref3_lookup.Lookup(parameter3);
+    }
+}
+
+public abstract class BaseReflectedInterop<R> : InterlockedLookup {
+    protected readonly Frame self;
+    protected readonly Frame container;
+    public BaseReflectedInterop(TaskMaster task_master, SourceReference source_reference,
+                                Context context, Frame self, Frame container)  : base(task_master, source_reference, context) {
+        this.self = self;
+        this.container = container;
+    }
+
+    protected abstract Dictionary<string, Func<R, object>> GetAccessors();
+
+    protected abstract R ComputeResult();
+
+    protected sealed override void Resolve() {
+        try {
+            result = ReflectedFrame.Create<R>(task_master, ComputeResult(), GetAccessors());
+        } catch (Exception e) {
+            task_master.ReportOtherError(source_reference, e.Message);
+        }
     }
 }
 }

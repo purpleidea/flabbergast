@@ -3,9 +3,9 @@ Introduction{{{Templates for manipulating the worst physical unit: times and dat
 {{{The current time.}}}
 now : {
 	{{{The current time in the timezone specified by the environment.}}}
-	local : (From lib:timeinterop ).now_local
+	local : From interop:time/now/local
 	{{{The current time in the UTC timezone.}}}
-	utc : (From lib:timeinterop ).now_utc
+	utc : From interop:time/now/utc
 }
 
 {{{The template for a time object. Do not instantiate this template! Use \{from_unix} or \{from_parts} to create this.}}}
@@ -41,7 +41,7 @@ time_tmpl : Template {
 }
 
 {{{A function-like template to create a time given a UNIX epoch.}}}
-from_unix : Template (From lib:timeinterop ).from_unix {
+from_unix : Template From interop:time/from/unix {
 	{{{The number of second since the start of the UNIX calendar.}}}
 	epoch : 0
 	{{{Whether the time is in UTC or the local timezone.}}}
@@ -49,7 +49,7 @@ from_unix : Template (From lib:timeinterop ).from_unix {
 }
 
 {{{A function-like template to create a time given some Gregorian information.}}}
-from_parts : Template (From lib:timeinterop ).from_parts {
+from_parts : Template From interop:time/from/parts {
 	{{{The number of milliseconds since the start of the current second.}}}
 	millisecond : 0
 	{{{The number of seconds since the start of the current minute.}}}
@@ -72,7 +72,7 @@ from_parts : Template (From lib:timeinterop ).from_parts {
 compare : utils_lib.firstifier(base : compare_list)
 
 {{{Compare a list of times against a reference time and return a list of the differences, in seconds, between them.}}}
-compare_list : Template (From lib:timeinterop ).compare_list {
+compare_list : Template From interop:time/compare {
 	{{{A list of times to compare.}}}
 	args : Used
 	{{{A reference time to compare against.}}}
@@ -83,7 +83,7 @@ compare_list : Template (From lib:timeinterop ).compare_list {
 modify : utils_lib.firstifier(base : modify_list)
 
 {{{Create a list of new times by adding time spans to a list of times.}}}
-modify_list : Template (From lib:timeinterop ).modify_list {
+modify_list : Template From interop:time/modify {
 	args : Used
 	{{{The number of milliseconds to add to the original times. This can be negative.}}}
 	milliseconds : 0
@@ -105,7 +105,7 @@ modify_list : Template (From lib:timeinterop ).modify_list {
 switch_zone : utils_lib.firstifier(base : switch_zone_list)
 
 {{{Create a list of new times transformed to a different time zone.}}}
-switch_zone_list : Template (From lib:timeinterop ).switch_zone_list {
+switch_zone_list : Template From interop:time/switch_zone {
 	args : Used
 	{{{Convert the provided times to UTC, otherwise local time.}}}
 	to_utc : True
@@ -127,9 +127,9 @@ interval_to_str_list : Template {
 }
 
 {{{All the days, for convience of not remembering them numerically.}}}
-days : (From lib:timeinterop ).days Enforce Frame
+days : From interop:time/days Enforce Frame
 {{{All the months, for convience of not remembering them numerically.}}}
-months : (From lib:timeinterop ).months Enforce Frame
+months : From interop:time/months Enforce Frame
 
 {{{The number of seconds in each time unit.}}}
 parts : [

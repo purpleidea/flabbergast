@@ -2,9 +2,6 @@
 
 set -exu
 
-# Check the source tree is proper
-./check-format
-
 # Prepare the source tree for building
 ./autogen.sh
 
