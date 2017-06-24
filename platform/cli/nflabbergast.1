@@ -31,22 +31,7 @@ Print the traversal of the parser. This is a lot of useless information.
 FLABBERGAST_PATH
 A list of directories to search for included libraries (\fBFrom lib:\fR). If precompiled libraries are found, they are used. If not, the libraries are dynamically compiled. These can be refereshed using
 .BR update-flabbergast (1).
-When searching for libraries, files names ending in both \fB.o_0\fR and \fB.no_0\fR are used, where the latter is for platform-specific libraries (\fIi.e.\fR, those that use \fBXInvoke\fR).
-.SH SPECIAL SYNTAX
-This version of Flabbergast has special syntax for interoperating with other programs.
-
-.TP
-\fBXFuture\fR \fItype\fR
-Calls a class, deriving from \fBFlabbergast.Computation\fR and consume the value. The \fBXInvoke\fR expression is somewhat limited: it cannot block or wait. A computation, can perform any of these tasks, and initiate arbitrary lookups. The class must have a constructor that takes a \fBTaskMaster\fR, \fBSourceReference\fR, \fBContext\fR, and two \fBFrame\fRs, self, and container.
-
-.TP
-\fBXField\fR \fItype field\fR
-Access a static field from a type. The field must be convertible to a Flabbergast type.
-
-.TP
-\fBXInvoke\fR \fItype method\fB(\fIexpr\fB, \fR...\fB)\fR
-Calls a static or virtual method for a type using the supplied expressions as parameters. If the method is an instance method, the first argument must be the instance to use. The method cannot return \fBvoid\fR and cannot throw an exception. \fBout\fR and \fBref\fR arguments are not supported. The instance can be a value type (\fBSystem.Boolean\fR, \fBSystem.Long\fR, or \fBSystem.Double\fR). The return value of the method must be convertible to a Flabbergast type. Overload resolution is done automatically.
-
+When searching for libraries, files names ending in both \fB.o_0\fR and \fB.no_0\fR are used, where the latter is for platform-specific libraries
 .SH SEE ALSO
 .BR flabbergast_language (7),
 .BR jflabbergast (1),

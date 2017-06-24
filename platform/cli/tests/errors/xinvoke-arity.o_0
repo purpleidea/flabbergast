@@ -1,1 +1,0 @@
-value : XInvoke System.String EndsWith ("foo")
