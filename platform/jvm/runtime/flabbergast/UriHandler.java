@@ -3,10 +3,9 @@ package flabbergast;
 import flabbergast.TaskMaster.LibraryFailure;
 
 public interface UriHandler {
-    String getUriName();
+  int getPriority();
 
-    int getPriority();
+  String getUriName();
 
-    Future resolveUri(TaskMaster task_master, String uri,
-                      Ptr<LibraryFailure> reason);
+  Future resolveUri(TaskMaster task_master, String uri, Ptr<LibraryFailure> reason);
 }

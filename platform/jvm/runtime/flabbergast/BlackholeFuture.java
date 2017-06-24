@@ -2,13 +2,12 @@ package flabbergast;
 
 public class BlackholeFuture extends Future {
 
-    public static Future INSTANCE = new BlackholeFuture();
+  public static Future INSTANCE = new BlackholeFuture();
 
-    private BlackholeFuture() {
-        super(null);
-    }
+  private BlackholeFuture() {
+    super(null);
+  }
 
-    @Override
-    protected void run() {
-    }
+  @Override
+  protected void run() {}
 }

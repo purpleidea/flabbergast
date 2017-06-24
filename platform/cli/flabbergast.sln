@@ -11,10 +11,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flabbergast-repl", "flabbergast-repl.csproj", "{10FB14E5-1FA7-4C7E-9028-237B7794C270}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flabbergast-printer", "flabbergast-printer.csproj", "{D1D4485E-9CD6-4E06-B1D3-60BEF67AAB0B}"
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flabbergast-build", "flabbergast-build.csproj", "{1A561574-9CEA-4E88-AC51-7BACE3F27DAB}"
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flabbergast-documenter", "flabbergast-documenter.csproj", "{4F4C287F-F945-487D-84FF-3C2409722008}"
-
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flabbergast-build", "flabbergast-build.csproj", "{1A561574-9CEA-4E88-AC51-7BACE3F27DAB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "flabbergast-documenter", "flabbergast-documenter.csproj", "{4F4C287F-F945-487D-84FF-3C2409722008}"
+EndProject
+
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

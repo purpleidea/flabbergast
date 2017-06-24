@@ -1,8 +1,7 @@
 package flabbergast;
 
 public enum LoadRule {
-    SANDBOXED,
-    INTERACTIVE,
-    PRECOMPILED
+  INTERACTIVE,
+  PRECOMPILED,
+  SANDBOXED
 }
-

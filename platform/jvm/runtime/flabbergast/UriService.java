@@ -4,5 +4,5 @@ import java.util.EnumSet;
 
 public interface UriService {
 
-    UriHandler create(ResourcePathFinder finder, EnumSet<LoadRule> flags);
+  UriHandler create(ResourcePathFinder finder, EnumSet<LoadRule> flags);
 }
