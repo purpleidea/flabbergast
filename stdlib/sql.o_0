@@ -363,42 +363,49 @@ sql_types : {
 		id : 64
 		cast : blob.id
 		coerce : blob.id
+		cast_name : Template { value : provider.cast_name.blob }
 	}
 	bool : {
 		name : "BOOLEAN"
 		id : 1
 		cast : bool.id B| int.id B| str.id
 		coerce : bool.id B| str.id
+		cast_name : Template { value : provider.cast_name.boolean }
 	}
 	float : {
 		name : "DOUBLE"
 		id : 2
 		cast : int.id B| str.id
 		coerce : float.id B| str.id
+		cast_name : Template { value : provider.cast_name.double }
 	}
 	int : {
 		name : "INTEGER"
 		id : 4
 		cast : bool.id B| float.id B| str.id
 		coerce : int.id B| float.id B| str.id
+		cast_name : Template { value : provider.cast_name.int }
 	}
 	interval : {
 		name : "INTERVAL"
 		id : 32
 		cast : 0
 		coerce : interval.id B| str.id
+		cast_name : Template { value : provider.cast_name.interval }
 	}
 	str : {
-		name : "VARCHAR(4096)"
+		name : "TEXT"
 		id : 8
 		cast : bool.id B| int.id B| float.id B| str.id
 		coerce : str.id
+		cast_name : Template { value : provider.cast_name.str }
 	}
 	timestamp : {
 		name : "TIMESTAMP"
 		id : 16
 		cast : 0
 		coerce : str.id B| timestamp.id
+		cast_name : Template { value : provider.cast_name.timestamp }
 	}
 	any : blob.id B| bool.id B| int.id B| interval.id B| float.id B| str.id B| timestamp.id
 	numeric : int.id B| float.id
@@ -422,8 +429,16 @@ sql_provider : Template {
 	blob_start : "X'"
 	{{{The postamble of a blob.}}}
 	blob_end : "'"
-	{{{The type of a blob.}}}
-	blob_type : "BLOB"
+	{{{The names used for casting on this provider.}}}
+	casting_name : Template {
+		blob : "BLOB"
+		bool : "BOOLEAN"
+		float : "DOUBLE"
+		int : "INTEGER"
+		interval : "INTERVAL"
+		str : "TEXT"
+		timestamp : "TIMESTAMP"
+	}
 	{{{The \Mono{FROM} clause to use for a query with no tables.}}}
 	null_from : ""
 	{{{An SQL statement that returns tables and views as a frame of frames with a
@@ -447,6 +462,7 @@ sql_provider : Template {
 			sql_aggregated_tables : {}
 		}
 	}
+	cast_name : casting_name {}
 	{{{List of arithmetic rules this database supports.}}}
 	arithmetic_rules : sql_aritmetic_tmpl {}
 	{{{Generate a FROM clause containing literal data.}}}
@@ -753,7 +769,7 @@ sql_provider : Template {
 			sql_type : Required
 			sql_expr : If sql_type.id B& arg.sql_type.cast == 0
 				Then Error "Cannot perform cast with provided types."
-				Else "(CAST(\(arg.sql_expr Enforce Str) AS \(If sql_type.id Enforce Int == sql_types.blob.id Then provider.blob_type Enforce Str Else sql_type.name Enforce Str)))"
+				Else "(CAST(\(arg.sql_expr Enforce Str) AS \((sql_type.cast_name{}).value Enforce Str)))"
 		}
 		contains : Template base_expr_tmpl {
 			{{{An expression or literal to search for.}}}
@@ -1101,7 +1117,9 @@ sql_providers : {
 		quote_end : "')"
 		symbol_start : "["
 		symbol_end : "]"
-		blob_type : "VARBINARY(MAX)"
+		casting_name +: {
+			blob : "VARBINARY(MAX)"
+		}
 		transformations : {
 			quote : utils_lib.str_transform.char_tmpl { char : "'"  replacement : "''" }
 			nonprint : utils_lib.str_transform.range_tmpl { start : "\x00"  end : "\x1F"  replacement : [ "' + NCHAR(", utf8_0, ") + '" ] }
@@ -1178,6 +1196,10 @@ sql_providers : {
 		}
 		symbol_start : "`"
 		symbol_end : "`"
+		casting_name +: {
+			int : "SIGNED"
+			str : "VARCHAR(4096)"
+		}
 		allowed_expressions +: {
 			interval_const +: {
 				sql_expr : "INTERVAL \(time Enforce Int) SECONDS"
@@ -1234,7 +1256,9 @@ sql_providers : {
 		}
 		quote_start : "E'"
 		blob_start : "E'\\x"
-		blob_type : "bytea"
+		casting_name +: {
+			blob : "bytea"
+		}
 		transformations : {
 			backslash : utils_lib.str_transform.char_tmpl { char : "\\"  replacement : "\\\\" }
 			backspace : utils_lib.str_transform.char_tmpl { char : "\b"  replacement : "\\b" }
