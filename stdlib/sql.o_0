@@ -1080,6 +1080,11 @@ sql_provider : Template {
 			sql_func : "SUM"
 			sql_allowed_arg_type_mask : sql_types.numeric
 		}
+		time_constant : Template base_const_tmpl {
+			{{{The Flabbergast frame containing the time.}}}
+			arg : Required
+			sql_type : sql_types.timestamp
+		}
 		unequal : Template base_compare_op_tmpl {
 			sql_op : "<>"
 		}
@@ -1154,6 +1159,9 @@ sql_providers : {
 			now +: {
 				sql_expr : If utc Then "GETUTCDATE()" Else "CURRENT_TIMESTAMP"
 			}
+			time_constant +: {
+				sql_expr : "DATEADD(SECOND,\(arg.epoch To Int), CONVERT(VARCHAR(30), '1970-01-01 00:00:00 Z') AS 'DATETIMEOFFSET')"
+			}
 		}
 		arithmetic_rules : sql_aritmetic_tmpl {
 			tv : {
@@ -1215,6 +1223,29 @@ sql_providers : {
 				sql_func : "CONCAT"
 				sql_allowed_arg_type_id : sql_types.str.id
 			}
+			time_constant +: {
+				sql_expr : "TIMESTAMPADD(SECOND, \(arg.epoch To Int) + TIME_TO_SEC(TIMEDIFF(TIMESTAMP '1970-01-01 00:00:00',CONVERT_TZ('1970-01-01 00:00:00',@@session.time_zone,'+00:00'))),TIMESTAMP '1970-01-01 00:00:00')"
+			}
+		}
+		arithmetic_rules : sql_aritmetic_tmpl {
+			tt : {
+				ops : sql_arith_ops.sub.id
+				left_type : sql_types.timestamp.id
+				right_type : sql_types.timestamp.id
+				result_type : sql_types.interval
+				render : Template {
+					value : "TIMESTAMPDIFF(SECOND, " & specials.l.sql_expr Enforce Str & ", " & specials.r.sql_expr Enforce Str & ")"
+				}
+			}
+			tv : {
+				ops : sql_arith_ops.add.id B| sql_arith_ops.sub.id
+				left_type : sql_types.timestamp.id
+				right_type : sql_types.interval.id
+				result_type : sql_types.timestamp
+				render : Template {
+					value : "TIMESTAMPADD(SECOND, " & sql_op.symbol Enforce Str & specials.r.sql_expr Enforce Str & ", " & specials.l.sql_expr & ")"
+				}
+			}
 		}
 	}
 	oracle : Template sql_provider_with_union_literal {
@@ -1241,6 +1272,9 @@ sql_providers : {
 			}
 			str_slice +: {
 				sql_substr_syntax : "SUBSTR(" & specials.i.sql_expr & ", " & specials.s.sql_expr & ", " & specials.l.sql_expr & ")"
+			}
+			time_constant +: {
+				sql_expr : "(TIMESTAMP '1970-01-01 00:00:00 UTC' + NUMTODSINTERVAL(\(arg.epoch To Int), 'SECOND'))"
 			}
 		}
 		generate_literal_from +: {
@@ -1280,6 +1314,9 @@ sql_providers : {
 			str_agg +: {
 				sql_func : "STRING_AGG"
 				sql_extra_args : ", " & specials.s.sql_expr
+			}
+			time_constant +: {
+				sql_expr : "TIMESTAMP 'epoch' + \(arg.epoch To Int) * INTERVAL '1 second'"
 			}
 		}
 	}
@@ -1351,6 +1388,9 @@ sql_providers : {
 			}
 			str_slice +: {
 				sql_substr_syntax : "SUBSTR(" & specials.i.sql_expr & ", " & specials.s.sql_expr & ", " & specials.l.sql_expr & ")"
+			}
+			time_constant +: {
+				sql_expr : "DATETIME(\(arg.epoch To Int), 'unixepoch', 'utc')"
 			}
 		}
 		arithmetic_rules : sql_aritmetic_tmpl {
