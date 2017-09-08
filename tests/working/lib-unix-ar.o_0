@@ -23,4 +23,4 @@ value : archive.value ==
 "!<arch>
 somefile.txt    0           1000  1000  755     22        `
 Hello. This is a file.#1/18           0           0     0     644     99        `
-LaRêveUnicode.txtBonjour. Cette ficher est compliqué parce que ils y ont des charactrès Unicode."
+LaRêveUnicode.txtBonjour. Cette ficher est compliqué parce que ils y ont des charactrès Unicode.\n"

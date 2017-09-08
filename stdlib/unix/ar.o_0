@@ -35,6 +35,7 @@ file_tmpl : Template {
 	# If the file name is more than 16 characters, use the BSD `ar` encoding.
 	file_header : If file_name_length > 16 Then "#1/" & file_name_length Else file_name
 	header_suffix : If file_name_length > 16 Then file_name Else ""
+	packed_length : utils_lib.str_utf8_length(contents, header_suffix)
 	header_perms :
 		utils_lib.str_pad(uid Enforce Int, length : 6) &
 		utils_lib.str_pad(gid Enforce Int, length : 6) &
@@ -43,8 +44,8 @@ file_tmpl : Template {
 		utils_lib.str_pad(file_header, length : 16) &
 		utils_lib.str_pad(If mtime Is Int Then mtime Else mtime.epoch To Int, length : 12) &
 		header_perms &
-		utils_lib.str_pad(utils_lib.str_utf8_length(contents, header_suffix), length : 10) &
-		"`\n" & header_suffix & contents
+		utils_lib.str_pad(packed_length, length : 10) &
+		"`\n" & header_suffix & contents & (If packed_length % 2 == 1 Then "\n" Else "")
 }
 
 time_lib : From lib:time
