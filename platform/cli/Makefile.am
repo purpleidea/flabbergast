@@ -4,6 +4,7 @@ bin_SCRIPTS = \
 	nflabbergast \
 	nflabbergast-repl \
 	nflabbergast-docgen \
+	nflabbergast-urihandler \
 	$(NULL)
 
 man1_MANS = \
@@ -12,16 +13,21 @@ man1_MANS = \
 	nflabbergast-docgen.1 \
 	$(NULL)
 
-clidir = $(pkgdatadir)/cli
-cli_DATA = \
+MSBUILD_OUTPUT = \
 	bin/Debug/Flabbergast.Compiler.dll \
 	bin/Debug/Flabbergast.Runtime.dll \
 	bin/Debug/flabbergast-build.exe \
 	bin/Debug/flabbergast-compiler.exe \
 	bin/Debug/flabbergast-documenter.exe \
 	bin/Debug/flabbergast-repl.exe \
+	bin/Debug/flabbergast-urihandler.exe \
 	bin/Debug/flabbergast.exe \
-	runtime.urlhandler \
+	$(NULL)
+
+clidir = $(pkgdatadir)/cli
+cli_DATA = \
+	$(MSBUILD_OUTPUT)
+	Flabbergast.Runtime.urihandler \
 	$(NULL)
 
 compilerdir = $(pkgdatadir)/compiler
@@ -39,7 +45,6 @@ EXE_LOG_COMPILER = cli
 
 $(cli_DATA) $(TEST): $(wildcard *.cs *.sln *.csproj)
 	$(MSBUILD) /verbosity:quiet flabbergast.sln
-	cp runtime.urlhandler bin/Debug
 
 flabbergast-runtime-cli.pc: Makefile
 	@echo Libraries=$(clidir)/Flabbergast.Runtime.dll > $@
@@ -72,6 +77,13 @@ nflabbergast-repl: Makefile
 nflabbergast-docgen: Makefile
 	@echo '#!/bin/sh' > $@
 	@echo 'exec cli $(clidir)/flabbergast-documenter.exe "$$@"' >> $@
+
+nflabbergast-urihandler: Makefile
+	@echo '#!/bin/sh' > $@
+	@echo 'exec cli $(clidir)/flabbergast-urihandler.exe "$$@"' >> $@
+
+Flabbergast.Runtime.urihandler: bin/Debug/flabbergast-urihandler.exe bin/Debug/Flabbergast.Runtime.dll
+	@cli bin/Debug/flabbergast-urihandler.exe bin/Debug/Flabbergast.Runtime.dll > $@
 
 clean-local:
 	$(MSBUILD) /verbosity:quiet /target:Clean flabbergast.sln

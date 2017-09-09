@@ -196,7 +196,7 @@ namespace Flabbergast
         {
             var uri = new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase);
             var directory = Path.GetDirectoryName(uri.LocalPath);
-            handlers.AddRange(Directory.GetFiles(directory).Where(file => file.EndsWith(".urlhandler"))
+            handlers.AddRange(Directory.GetFiles(directory).Where(file => file.EndsWith(".urihandler"))
                 .SelectMany(file => File.ReadLines(file)).Where(line => !line.StartsWith("#")).Select(line =>
                     ((UriService)Activator.CreateInstance(Type.GetType(line))).Create(finder, rules))
                 .Where(u => u != null));

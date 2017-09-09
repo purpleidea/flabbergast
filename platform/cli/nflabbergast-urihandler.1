@@ -1,0 +1,14 @@
+.\" Authors: Andre Masella
+.TH flabbergast 1 "September 2017" "0.0" "USER COMMANDS"
+.SH NAME 
+nflabbergast-urihandler \- Discover Flabbergast URI sources in a CLR assembly
+.SH SYNOPSIS
+.B nflabbergast-urihandler
+.I library.dll
+>
+.I library.urihandler
+.SH DESCRIPTION
+This discovers all URI sources in a CLR DLL file such that they can be loaded by the CLR Flabbergast. The DLL should be in the same directory as the \fBFlabbergast.Runtime.dll\fR or the GAC.
+
+.SH SEE ALSO
+.BR nflabbergast (1).

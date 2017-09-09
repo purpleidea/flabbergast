@@ -5,11 +5,13 @@
 *.nuspec
 *.pc
 *.suo
+*.urihandler
 *.user
 *.userprefs
 bin
 compiler-cli.cs
 db-cli.cs
+nflabbergast-urihandler
 nuget-deploy
 obj
 xdb.s
