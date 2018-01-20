@@ -34,15 +34,27 @@ For efficiency, Flabbergast allows pre-compilation of libraries. This can be don
 
 Maven users can get the Java edition from [The Central Repository](http://search.maven.org/#search|ga|1|g%3A%22com.github.apmasell.flabbergast%22). The dependencies are:
 
-    <dependency><groupId>com.github.apmasell.flabbergast</groupId><artifactId>stdlib</artifactId><version>$VERSION</version><scope>runtime</scope></dependency>
-    <dependency><groupId>com.github.apmasell.flabbergast</groupId><artifactId>compiler</artifactId><version>$VERSION</version><scope>runtime</scope></dependency>
+```xml
+<dependency>
+    <groupId>com.github.apmasell.flabbergast</groupId>
+    <artifactId>stdlib</artifactId>
+    <version>$VERSION</version>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>com.github.apmasell.flabbergast</groupId>
+    <artifactId>compiler</artifactId>
+    <version>$VERSION</version>
+    <scope>runtime</scope>
+</dependency>
+```
 
 or you can download the JARs alone using:
 
     mvn -DgroupId=com.github.apmasell.flabbergast -DartifactId=flabbergst-stdlib -Dversion=$VERSION dependency:get
     mvn -DgroupId=com.github.apmasell.flabbergast -DartifactId=flabbergast-compiler -Dversion=$VERSION dependency:get
 
-substituting `$VESRION` as appropriate. To run it, invoke Java on the JARs and run `flabbergast.MainPrinter` to run the default interface, which simply runs the provided script and dumps the output, or `flabbergast.MainREPL` to access the interactive debugger.
+substituting `$VERSION` as appropriate. To run it, invoke Java on the JARs and run `flabbergast.MainPrinter` to run the default interface, which simply runs the provided script and dumps the output, or `flabbergast.MainREPL` to access the interactive debugger.
 
 NuGet users can install the CLI edition from [NuGET](http://nuget.org/packages/flabbergast/). You can install the package at the package management console using:
 
