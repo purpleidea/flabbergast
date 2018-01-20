@@ -1,6 +1,20 @@
 # The Flabbergast Programming Language
 ![](https://rawgithub.com/flabbergast-config/flabbergast/master/flabbergast.svg)
 
+[![Build Status][travis-shield]][travis-link]
+[![Maven][maven-shield]][maven-link]
+[![flabbergast-compiler Javadoc][compiler-javadoc-shield]][compiler-javadoc-link]
+[![flabbergast-runtime Javadoc][runtime-javadoc-shield]][runtime-javadoc-link]
+
+[travis-shield]: https://travis-ci.org/flabbergast-config/flabbergast.svg?branch=master
+[travis-link]: https://travis-ci.org/flabbergast-config/flabbergast
+[maven-shield]: https://img.shields.io/maven-central/v/com.github.apmasell.flabbergast/flabbergast-stdlib.svg
+[maven-link]: http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.github.apmasell.flabbergast%22
+[compiler-javadoc-shield]: https://javadoc.io/badge/com.github.apmasell.flabbergast/flabbergast-compiler.svg?color=blue&label=compiler-javadoc
+[compiler-javadoc-link]: https://javadoc.io/doc/com.github.apmasell.flabbergast/flabbergast-compiler
+[runtime-javadoc-shield]: https://javadoc.io/badge/com.github.apmasell.flabbergast/flabbergast-runtime.svg?color=blue&label=runtime-javadoc
+[runtime-javadoc-link]: https://javadoc.io/doc/com.github.apmasell.flabbergast/flabbergast-runtime
+
 Flabbergast is a object-oriented macro system that uses contextual lookup (dynamic scope) and inheritance to making writing complex configurations easy.
 
 In most languages, afterthoughts are not appreciated. However, most configurations are nothing but afterthoughts and exceptions. “I want the test version of the webserver to be the same as the production except for the database connection.” “I want the videos SMB share to be the same as the documents SMB share with a few extra users.” Flabbergast is built to service “except”, “and”, and “but”.
@@ -37,13 +51,13 @@ Maven users can get the Java edition from [The Central Repository](http://search
 ```xml
 <dependency>
     <groupId>com.github.apmasell.flabbergast</groupId>
-    <artifactId>stdlib</artifactId>
+    <artifactId>flabbergast-stdlib</artifactId>
     <version>$VERSION</version>
     <scope>runtime</scope>
 </dependency>
 <dependency>
     <groupId>com.github.apmasell.flabbergast</groupId>
-    <artifactId>compiler</artifactId>
+    <artifactId>flabbergast-compiler</artifactId>
     <version>$VERSION</version>
     <scope>runtime</scope>
 </dependency>
