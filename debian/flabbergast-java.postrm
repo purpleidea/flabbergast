@@ -3,6 +3,7 @@ set -e
 case "$1" in
 	remove|purge)
 		find /usr/share/flabbergast/lib /usr/local/share/flabbergast/lib -name '*.class' -exec rm {} \;
+		test ! -d /usr/local/share/flabbergast/lib || find /usr/local/share/flabbergast/lib -name '*.class' -exec rm {} \;
 		update-flabbergast
 		;;
 		upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)

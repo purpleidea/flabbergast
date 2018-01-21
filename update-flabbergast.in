@@ -28,7 +28,7 @@ do
 		true
 	elif [ -d "$DIRECTORY" -a -w "$DIRECTORY" ]
 	then
-		for COMPILER in "${pkgdatadir}/compiler"/*
+		for COMPILER in $(find "${pkgdatadir}/compiler")
 		do
 			"$COMPILER" "$DIRECTORY" || EXIT_CODE="1"
 		done
