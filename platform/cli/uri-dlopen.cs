@@ -104,7 +104,7 @@ namespace Flabbergast
     {
         public override string UriName => "pre-compiled libraries";
 
-        public override int Priority => 0;
+        public override int Priority => -50;
 
         public override Type ResolveUri(string uri, out LibraryFailure reason)
         {

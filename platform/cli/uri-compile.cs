@@ -8,20 +8,9 @@ namespace Flabbergast
 {
     public sealed class DynamicallyCompiledLibraries : LoadLibraries
     {
-        public override string UriName
-        {
-            get
-            {
-                return "dynamically compiled libraries";
-            }
-        }
-        public override int Priority
-        {
-            get
-            {
-                return -50;
-            }
-        }
+        public override string UriName => "dynamically compiled libraries";
+        public override int Priority => 0;
+        
         private readonly CompilationUnit unit;
         private readonly ErrorCollector collector;
         private readonly Dictionary<string, System.Type> cache = new Dictionary<string, System.Type>();
