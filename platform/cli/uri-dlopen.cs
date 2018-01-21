@@ -110,7 +110,7 @@ namespace Flabbergast
         {
             var base_name = uri.Substring(4).Replace('/', '.');
             var type_name = "Flabbergast.Library." + base_name;
-            foreach (var dll_file in Finder.FindAll(type_name, ".dll"))
+            foreach (var dll_file in Finder.FindAll(base_name, ".dll"))
             {
                 var assembly = Assembly.LoadFrom(dll_file);
                 if (assembly == null)
