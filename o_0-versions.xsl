@@ -7,6 +7,7 @@
       <head>
         <meta http-equiv="content-type" content="text/xml; charset=utf-8"/>
         <title>Flabbergast Documentation</title>
+        <link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet"/>
         <link rel="stylesheet" type="text/css" href="o_0.css"/>
         <link rel="stylesheet" type="text/css" href="o_0-index.css"/>
       </head>
