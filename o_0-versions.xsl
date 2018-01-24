@@ -42,7 +42,7 @@
         </a>
       </td>
       <td>
-        <a href="{concat('https://github.com/flabbergast-config/flabbergast/tree/', @name)}">GitHub</a>
+        <a href="{concat('https://github.com/flabbergast-config/flabbergast/tree/', @tag)}">GitHub</a>
       </td>
     </tr>
   </xsl:template>
