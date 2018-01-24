@@ -8,12 +8,12 @@
     <link href="main.css" rel="stylesheet"/>
   </head>
   <body>
-    <h1><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" version="1.1"><path d="m 2.7246094,2.8398438 0,4.40625 15.8686166,0 4.400915,-4.40625 z m 26.4355466,6.28125 -14.533203,14.4960942 11,-10.966797 0,16.511718 3.533203,0 z"/>
+    <h1><a href="index.html"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" version="1.1"><path d="m 2.7246094,2.8398438 0,4.40625 15.8686166,0 4.400915,-4.40625 z m 26.4355466,6.28125 -14.533203,14.4960942 11,-10.966797 0,16.511718 3.533203,0 z"/>
       <path d="m 2.7246094,8.0426083 0,4.2347357 10.9179686,0 4.174189,-4.2347357 z m 22.1038756,5.5538997 -4.234735,4.071461 0,11.49414 4.234735,0 z"/>
       <path d="m 2.7246094,12.872842 0,6.070517 10.2187496,0 0,10.21875 7.056846,0 0,-10.849814 -5.373252,5.304893 0,-6.128907 -6.1289061,0 4.5627051,-4.615439 z"/>
       <path d="m 11.11447,16.61603 13.68324,-13.83636 4.53716,0 0,4.42262 -13.83635,13.79779 0,-4.38405 z"/>
       <path d="m 12.51992,19.36555 0,9.85479 -9.8548,-9.85479 z"/>
-      </svg> Flabbergast <span style="float:right; font-size: 80%;padding-right:2em">Making configuration less o_0</span></h1>
+      </svg> Flabbergast</a><span style="float:right; font-size: 80%;padding-right:2em">Making configuration less o_0</span></h1>
     <div id="container">
       <div id="pane">
         <a href="http://fiddle.flabbergast.org/" title="Flabbergast Fiddle"><svg xmlns="http://www.w3.org/2000/svg" version="1.1" x="0px" y="0px" width="32" height="32" viewBox="0 0 32 32" enable-background="new 0 0 500 500"><path d="M 8.5989173,19.205813 22.877063,4.7678919 l 4.734421,0 0,4.6149016 -14.437912,14.3976745 0,-4.574655 z M 18.565374,5.8659026 c -3.70336,0 -6.891948,2.1359783 -8.387536,5.2213214 -0.725637,-0.553922 -1.6344248,-0.886592 -2.6227792,-0.886592 -2.3692009,0 -4.2888053,1.890946 -4.2888053,4.223747 0,0.438389 0.067291,0.861845 0.193902,1.259087 -1.8469331,1.08173 -3.08839944,3.060257 -3.08839944,5.329753 0,3.393165 2.76623904,6.144982 6.19976014,6.197209 l 0.072714,0.0051 0.025513,0 0.025514,0 18.4410978,0 c 0.112367,0.0055 0.222828,0.01658 0.336777,0.01658 3.399495,0 6.155112,-2.713928 6.155112,-6.061988 0,-2.523507 -1.566597,-4.684465 -3.792569,-5.597644 0.01115,-0.182794 0.02807,-0.364646 0.02807,-0.549815 0,-1.341879 -0.300054,-2.612317 -0.826635,-3.760677 l -15.170278,15.130733 0,-5.880843 -5.8808425,0 L 20.31687,6.0342912 C 19.749012,5.9275826 19.164808,5.8659026 18.565374,5.8659026 Z"/></svg>
@@ -29,15 +29,136 @@ Try on Fiddle</a>
 Connect on Google+</a>
       </div>
       <div id="content">
-        <p>
-Complicated applications, deployed on multiple servers, have complicated configurations. How do you describe the configuration of a single part of that system, and all the layers underneath, and get it right? Once you have that right, now make a testing environment, or migrate to a new cloud provider. To get a background in why configurations are getting complicated, watch <a href="https://www.usenix.org/conference/srecon15europe/program/presentation/masella"> Configuration Pinocchio</a>, presented at SREcon15 Europe.</p>
-        <p> Flabbergast makes this easier: it helps to describe configuration and it can handle the whole stack: from application to metal. Flabbergast provides a flexible template system to compose and recompose configurations and generate an output description, in any format you need. It happily nests systems together: the templates for an application and a container manager can be married with a minimum of fuss and &#x201C;plumbing&#x201D;, copying data from one place to another.</p>
-        <h3 id="what-it-is-and-isnt">What it is and isn't</h3>
-        <p>
-Flabbergast is two things: a programming language geared to generating configurations and a library of templates to help generate correct configurations before they are deployed. Unlike Chef or Puppet, Flabbergast doesn't deploy configurations; it's a system for describing configuration. A way to explain the state of the world to push out, through whatever means suit your application.</p>
-        <p>Bascially, you write a Flabbergast program that generates some complicated output file.</p>
-        <p>As a language, Flabbergast is a little unusual. In most languages, it's your job as the programmer to move data around through parameters, arguments, fields, and closures. For configuration files, you don't want to have to shuttle information around, so Flabbergast does it for you. It uses contextual lookup to find information so you can define things where it makes sense and not worry about copying it to where it gets used.</p>
-        <p style="text-align:center;font-size:120%"><a href="gettingstarted.html">Getting Started</a> · <a href="comparison.html">Comparison</a></p>
+        <h2>Comparison</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Language</th>
+              <th>Flabbergast</th>
+              <th>
+                <a href="https://code.google.com/p/coil/%01">Coil</a>
+              </th>
+              <th>
+                <a href="https://github.com/lightbend/config">HOCON</a>
+              </th>
+              <th>
+                <a href="http://google.github.io/jsonnet/doc/">Jsonnet</a>
+              </th>
+              <th>
+                <a href="http://nixos.org/">NixOS</a>
+              </th>
+              <th>
+                <a href="http://www.quattor.org/">Pan</a>
+              </th>
+              <th>
+                <a href="https://github.com/wickman/pystachio">Pystachio</a>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>Paradigm</th>
+              <td>Functional</td>
+              <td>Functional</td>
+              <td>Imperative&#xB0;</td>
+              <td>Functional</td>
+              <td>Functional</td>
+              <td>Imperative</td>
+              <td>Imperative</td>
+            </tr>
+            <tr>
+              <th>Side-effect Free</th>
+              <td>Yes</td>
+              <td>Yes</td>
+              <td>No</td>
+              <td>Yes</td>
+              <td>Yes</td>
+              <td>No</td>
+              <td>Hybrid&#xB0;</td>
+            </tr>
+            <tr>
+              <th>Inheritance</th>
+              <td>Prototype</td>
+              <td>Prototype</td>
+              <td>Prototype</td>
+              <td>Prototype</td>
+              <td>None</td>
+              <td>Class-based</td>
+              <td>Class-based</td>
+            </tr>
+            <tr>
+              <th>Typing Strength</th>
+              <td>Strong</td>
+              <td>Weak</td>
+              <td>Weak</td>
+              <td>Strong</td>
+              <td>Strong</td>
+              <td>Strong</td>
+              <td>Strong</td>
+            </tr>
+            <tr>
+              <th>Typing Enforcement</th>
+              <td>Dynamic</td>
+              <td>Dynamic</td>
+              <td>Dynamic</td>
+              <td>Dynamic</td>
+              <td>Dynamic</td>
+              <td>Hybrid&#xB0;</td>
+              <td>Dynamic</td>
+            </tr>
+            <tr>
+              <th>Schema Validation</th>
+              <td>None</td>
+              <td>None</td>
+              <td>None</td>
+              <td>None</td>
+              <td>None</td>
+              <td>Assignment</td>
+              <td>Request</td>
+            </tr>
+            <tr>
+              <th>Turing Complete</th>
+              <td>Yes</td>
+              <td>No</td>
+              <td>No</td>
+              <td>Yes</td>
+              <td>Yes</td>
+              <td>Yes</td>
+              <td>No</td>
+            </tr>
+            <tr>
+              <th>Scoping</th>
+              <td>Dynamic</td>
+              <td>Lexical</td>
+              <td>Lexical</td>
+              <td>Lexical</td>
+              <td>Lexical</td>
+              <td>Lexical</td>
+              <td>Hybrid&#xB0;</td>
+            </tr>
+            <tr>
+              <th>Default Propagation</th>
+              <td>Scope, inheritance</td>
+              <td>Inheritance</td>
+              <td>Inheritance</td>
+              <td>Inheritance</td>
+              <td>Operator</td>
+              <td>Inheritance</td>
+              <td>Inheritance</td>
+            </tr>
+            <tr>
+              <th>Output Format</th>
+              <td>Text, Custom</td>
+              <td>Python objects</td>
+              <td>Java, Python, or Ruby objects</td>
+              <td>JSON</td>
+              <td>Java objects</td>
+              <td>JSON, XML</td>
+              <td>Python objects</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>&#xB0; Depends on context. See SREcon15 Europe <a href="http://www.masella.name/%7Eandre/2015-srecon-andre_masella.pdf">Configuration Pinocchio</a> paper for details.</p>
       </div>
     </div>
   </body>

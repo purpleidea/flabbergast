@@ -29,4 +29,4 @@ make -C platform/jvm testingclasspath.sh
 FLABBERGAST="java -XX:MaxPermSize=512m flabbergast.MainPrinter" ./bootstrap genclean all
 make clean all check
 
-./mkwww
+$TRAVIS_PULL_REQUEST || ./mkwww

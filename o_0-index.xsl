@@ -11,39 +11,43 @@
         <link rel="stylesheet" type="text/css" href="o_0-index.css"/>
       </head>
       <body>
-        <h1><a href="http://flabbergast.org/">⌂</a> Flabbergast Documentation</h1>
-        <p>Is Flabbergast making you go o_0? If so, start with <a href="https://github.com/flabbergast-config/flabbergast/blob/master/flabbergast-manual.md">the Flabbergast Manual</a>. If you just want to know the name of that template thing that does the stuff, this the right place.</p>
-        <h2>Libraries</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>URI</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <xsl:apply-templates select="//o_0:ref_link">
-              <xsl:sort select="@name"/>
-            </xsl:apply-templates>
-          </tbody>
-        </table>
-        <h2>Manual Pages</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Section</th>
-              <th>Name</th>
-              <th>Description</th>
-              <th>Download</th>
-            </tr>
-          </thead>
-          <tbody>
-            <xsl:apply-templates select="//o_0:man">
-              <xsl:sort select="@section" data-type="number"/>
-              <xsl:sort select="@name"/>
-            </xsl:apply-templates>
-          </tbody>
-        </table>
+        <h1><a href="http://flabbergast.org/">Flabbergast</a> Flabbergast Documentation</h1>
+        <div id="container">
+          <div id="content">
+            <p>Is Flabbergast making you go o_0? If so, start with <a href="https://github.com/flabbergast-config/flabbergast/blob/master/flabbergast-manual.md">the Flabbergast Manual</a>. If you just want to know the name of that template thing that does the stuff, this the right place.</p>
+            <h2>Libraries</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>URI</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <xsl:apply-templates select="//o_0:ref_link">
+                  <xsl:sort select="@name"/>
+                </xsl:apply-templates>
+              </tbody>
+            </table>
+            <h2>Manual Pages</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Section</th>
+                  <th>Name</th>
+                  <th>Description</th>
+                  <th>Download</th>
+                </tr>
+              </thead>
+              <tbody>
+                <xsl:apply-templates select="//o_0:man">
+                  <xsl:sort select="@section" data-type="number"/>
+                  <xsl:sort select="@name"/>
+                </xsl:apply-templates>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </body>
     </html>
   </xsl:template>

@@ -8,12 +8,12 @@
     <link href="main.css" rel="stylesheet"/>
   </head>
   <body>
-    <h1><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" version="1.1"><path d="m 2.7246094,2.8398438 0,4.40625 15.8686166,0 4.400915,-4.40625 z m 26.4355466,6.28125 -14.533203,14.4960942 11,-10.966797 0,16.511718 3.533203,0 z"/>
+    <h1><a href="index.html"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" version="1.1"><path d="m 2.7246094,2.8398438 0,4.40625 15.8686166,0 4.400915,-4.40625 z m 26.4355466,6.28125 -14.533203,14.4960942 11,-10.966797 0,16.511718 3.533203,0 z"/>
       <path d="m 2.7246094,8.0426083 0,4.2347357 10.9179686,0 4.174189,-4.2347357 z m 22.1038756,5.5538997 -4.234735,4.071461 0,11.49414 4.234735,0 z"/>
       <path d="m 2.7246094,12.872842 0,6.070517 10.2187496,0 0,10.21875 7.056846,0 0,-10.849814 -5.373252,5.304893 0,-6.128907 -6.1289061,0 4.5627051,-4.615439 z"/>
       <path d="m 11.11447,16.61603 13.68324,-13.83636 4.53716,0 0,4.42262 -13.83635,13.79779 0,-4.38405 z"/>
       <path d="m 12.51992,19.36555 0,9.85479 -9.8548,-9.85479 z"/>
-      </svg> Flabbergast <span style="float:right; font-size: 80%;padding-right:2em">Making configuration less o_0</span></h1>
+      </svg> Flabbergast</a><span style="float:right; font-size: 80%;padding-right:2em">Making configuration less o_0</span></h1>
     <div id="container">
       <div id="pane">
         <a href="http://fiddle.flabbergast.org/" title="Flabbergast Fiddle"><svg xmlns="http://www.w3.org/2000/svg" version="1.1" x="0px" y="0px" width="32" height="32" viewBox="0 0 32 32" enable-background="new 0 0 500 500"><path d="M 8.5989173,19.205813 22.877063,4.7678919 l 4.734421,0 0,4.6149016 -14.437912,14.3976745 0,-4.574655 z M 18.565374,5.8659026 c -3.70336,0 -6.891948,2.1359783 -8.387536,5.2213214 -0.725637,-0.553922 -1.6344248,-0.886592 -2.6227792,-0.886592 -2.3692009,0 -4.2888053,1.890946 -4.2888053,4.223747 0,0.438389 0.067291,0.861845 0.193902,1.259087 -1.8469331,1.08173 -3.08839944,3.060257 -3.08839944,5.329753 0,3.393165 2.76623904,6.144982 6.19976014,6.197209 l 0.072714,0.0051 0.025513,0 0.025514,0 18.4410978,0 c 0.112367,0.0055 0.222828,0.01658 0.336777,0.01658 3.399495,0 6.155112,-2.713928 6.155112,-6.061988 0,-2.523507 -1.566597,-4.684465 -3.792569,-5.597644 0.01115,-0.182794 0.02807,-0.364646 0.02807,-0.549815 0,-1.341879 -0.300054,-2.612317 -0.826635,-3.760677 l -15.170278,15.130733 0,-5.880843 -5.8808425,0 L 20.31687,6.0342912 C 19.749012,5.9275826 19.164808,5.8659026 18.565374,5.8659026 Z"/></svg>
@@ -29,15 +29,70 @@ Try on Fiddle</a>
 Connect on Google+</a>
       </div>
       <div id="content">
-        <p>
-Complicated applications, deployed on multiple servers, have complicated configurations. How do you describe the configuration of a single part of that system, and all the layers underneath, and get it right? Once you have that right, now make a testing environment, or migrate to a new cloud provider. To get a background in why configurations are getting complicated, watch <a href="https://www.usenix.org/conference/srecon15europe/program/presentation/masella"> Configuration Pinocchio</a>, presented at SREcon15 Europe.</p>
-        <p> Flabbergast makes this easier: it helps to describe configuration and it can handle the whole stack: from application to metal. Flabbergast provides a flexible template system to compose and recompose configurations and generate an output description, in any format you need. It happily nests systems together: the templates for an application and a container manager can be married with a minimum of fuss and &#x201C;plumbing&#x201D;, copying data from one place to another.</p>
-        <h3 id="what-it-is-and-isnt">What it is and isn't</h3>
-        <p>
-Flabbergast is two things: a programming language geared to generating configurations and a library of templates to help generate correct configurations before they are deployed. Unlike Chef or Puppet, Flabbergast doesn't deploy configurations; it's a system for describing configuration. A way to explain the state of the world to push out, through whatever means suit your application.</p>
-        <p>Bascially, you write a Flabbergast program that generates some complicated output file.</p>
-        <p>As a language, Flabbergast is a little unusual. In most languages, it's your job as the programmer to move data around through parameters, arguments, fields, and closures. For configuration files, you don't want to have to shuttle information around, so Flabbergast does it for you. It uses contextual lookup to find information so you can define things where it makes sense and not worry about copying it to where it gets used.</p>
-        <p style="text-align:center;font-size:120%"><a href="gettingstarted.html">Getting Started</a> · <a href="comparison.html">Comparison</a></p>
+        <h2>Getting Flabbergast</h2>
+        <p>Packages are available for Ubuntu, Maven, NuGet, and MacOS. <a href="https://github.com/flabbergast-config/flabbergast/blob/master/README.md#installation">Installation instructions</a> are available.</p> Once installed, running <code>flabbergast-repl</code> will bring up an interactive command promp. An online <a href="http://fiddle.flabbergast.org/">fiddle</a> is also available to try without installing.</p>
+        <h2>Aurora Example</h2>
+        <p>Here's a small example for generating an Apache Aurora configuration.</p>
+        <pre><span class="def">aurora_lib</span> : <span class="keyword">From</span> lib:apache/aurora <span class="comment"># Import the Aurora library.</span>
+<span class="def">cluster</span> : <span class="str">"cluster1"</span>
+<span class="def">role</span> : <span class="str">"jrhacker"</span> 
+<span class="def">resources</span> : {
+  <span class="def">cpu</span> : 0.1
+  <span class="def">ram</span> : 16Mi
+  <span class="def">disk</span> : 16Mi
+}
+<span class="def">hw_file</span> : aurora_lib.aurora_file { <span class="comment"> # Create an Aurora configuration file</span>
+  <span class="def">jobs</span> : [
+    job { <span class="comment"># Create a job. This could also be <i>aurora_lib.job</i>, but we have nothing else named <i>job</i>.</span>
+      <span class="def">instances</span> : 1 <span class="comment"># One replica of this job should run.</span>
+      <span class="def">job_name</span> : <span class="str">"hello_world"</span> <span class="comment"># Provide a friendly job name.</span> 
+      <span class="def">task</span> : aurora_lib.task {
+        <span class="def">processes</span> : { <span class="comment"># Define the processes &#x22EF;</span>
+          <span class="def">hw</span> : process { <span class="comment"># &#x22EF; using process template</span> 
+            <span class="def">process_name</span> : <span class="str">"hw"</span> <span class="comment"># The name of this process will be <i>hw</i></span> 
+            <span class="def">command_line</span> : [ <span class="str">"echo hello world"</span> ] <span class="comment"># The command line we want to run.</span> 
+          }
+        }
+      }
+    }
+  ]
+}
+<span class="def">value</span> : hw_file.value <span class="comment"># Flabbergast is going to dump this string to the output.</span>
+</pre>
+        <p>One of the things that makes Flabbergast special is it uses contextual lookup, that allows you to define thing where they make sense for your needs, rather than what the original author imagined. So, you can write the above config as:</p>
+        <pre><span class="def">aurora_lib</span> : <span class="keyword">From</span> lib:apache/aurora
+<span class="def">cluster</span> : <span class="str">"cluster1"</span> 
+<span class="def">role</span> : <span class="str">"jrhacker"</span> 
+<span class="def">resources</span> : {
+  <span class="def">cpu</span> : 0.1
+  <span class="def">ram</span> : 16Mi
+  <span class="def">disk</span> : 8Mi
+}
+<span class="def">hw_file</span> : aurora_lib.aurora_file {
+  <span class="def">jobs</span> : [
+    job {
+      <span class="def">resources</span> : {
+        <span class="def">disk</span> : 16Mi <span class="comment">This disk resource will be used since it is &#x201C;closer&#x201D;.</span>
+      }
+      <span class="def">instances</span> : 1
+      <span class="def">job_name</span> : <span class="str">"hello_world"</span> 
+      <span class="def">task</span> : aurora_lib.task {
+        <span class="def">processes</span> : {
+          <span class="def">hw</span> : process {
+            <span class="def">process_name</span> : <span class="str">"hw"</span> 
+            <span class="def">command_line</span> : [ <span class="str">"echo hello world"</span> ]
+          }
+        }
+      }
+    }
+  ]
+}
+<span class="def">value</span> : hw_file.value
+</pre>
+        <p>and get the same result. Flabbbergast's contextual lookup will find the &#x201C;closest&#x201D; match, so you can shuffle your definitions to share things that should be shared without having to copy variables around.</p>
+        <p>Have a look at a <a href="https://github.com/flabbergast-config/flabbergast/tree/master/examples/complex">sophisticated Flabbergast+Aurora example</a> that makes use of Flabbergast's lookup to provide multiple geographic configurations, repeated server configuration, service discovery, and testing configurations.</p>
+        <h2>Where to Go Next</h2>
+        <p>For a quick introduction, have a look at the <a href="https://docs.google.com/presentation/d/10YLdBBC0a2nIxbttvg0jg95rHXa3-UxwyA-ZwiDdq7E/edit?usp=sharing">primer slide deck</a>. To really get started, take a look at <a href="https://github.com/flabbergast-config/flabbergast/blob/master/flabbergast-manual.md">the manual</a>. There are some <a href="https://github.com/flabbergast-config/flabbergast/tree/master/examples">serious examples</a> and some fun <a href="https://github.com/flabbergast-config/flabbergast/tree/master/rosettacode">Rosetta Code examples</a>.</p>
       </div>
     </div>
   </body>

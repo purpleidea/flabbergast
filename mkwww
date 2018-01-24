@@ -3,8 +3,11 @@
 set -eu
 
 TOPDIR=$(dirname "$0")
-TARGET=${TOPDIR}/www/index.xml
+TARGET_DIR=${TOPDIR}/www/${TRAVIS_TAG:-master}
+TARGET=${TARGET_DIR}/index.xml
 HEAD_REV="$(git rev-parse HEAD)"
+
+mkdir -p ${TARGET_DIR}
 
 cat > ${TARGET} <<EOI
 <?xml version="1.0" encoding="utf-8"?>
@@ -17,9 +20,9 @@ lexgrog --whatis ${TOPDIR}/*.7 ${TOPDIR}/*.1 ${TOPDIR}/platform/*/*.1 | sed -e '
 ${TOPDIR}/man2web
 
 . ${TOPDIR}/platform/jvm/testingclasspath.sh
-java flabbergast.MainDocumenter -g "https://github.com/flabbergast-config/flabbergast/blob/${HEAD_REV}/stdlib" -o ${TOPDIR}/www ${TOPDIR}/stdlib
+java flabbergast.MainDocumenter -g "https://github.com/flabbergast-config/flabbergast/blob/${HEAD_REV}/stdlib" -o ${TARGET_DIR} ${TOPDIR}/stdlib
 
-for LIB in $(find ${TOPDIR}/www -name 'doc-*.xml')
+for LIB in $(find ${TARGET_DIR} -name 'doc-*.xml')
 do
 	URI=$(basename $LIB .xml | sed -e 's/^doc-//;s#-#/#g')
 	echo "<o_0:ref_link name=\"${URI}\">" >> ${TARGET}
@@ -28,4 +31,16 @@ do
 done
 echo '</o_0:index>' >> ${TARGET}
 
-cp -u o_0.css o_0.js o_0.xsl o_0-xref.xsl www
+cat > ${TOPDIR}/www/index.xml <<EOI
+<?xml version="1.0" encoding="utf-8"?>
+<?xml-stylesheet href="o_0-versions.xsl" type="text/xsl"?>
+<o_0:versions xmlns:o_0="http://flabbergast.org/api">
+<o_0:version name="Current" tag="master"/>
+EOI
+curl https://api.github.com/repos/flabbergast-config/flabbergast/releases | jq -r '.[] | "<o_0:version name=\"\(.name)\" tag=\"\(.tag_name)\"/>"' - >> ${TOPDIR}/www/index.xml
+echo '</o_0:versions>' >> ${TOPDIR}/www/index.xml
+
+cp -u o_0.css o_0.js o_0.xsl o_0-xref.xsl o_0-index.css o_0-index.xsl ${TARGET_DIR}
+cp -u o_0.css o_0-index.css o_0-versions.xsl ${TOPDIR}/www
+
+inkscape -e ${TOPDIR}/www/nuget-icon.png -w 64 -h 64 flabbergast.svg

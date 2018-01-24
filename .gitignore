@@ -49,8 +49,4 @@ platform/cli/AssemblyInfo.cs
 platform/cli/config.cs
 platform/jvm/runtime/flabbergast/Configuration.java
 update-flabbergast
-www/*.html
-www/*.pdf
-www/*.xml
-www/o_0-xref.*
-www/o_0.*
+www/
