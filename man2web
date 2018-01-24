@@ -1,7 +1,5 @@
 #!/usr/bin/make -f
 
-TRAVIS_TAG ?= master
-
 MANS = $(wildcard ./*.7) $(wildcard ./*.1) $(wildcard platform/*/*.1)
 TARGETS = $(addprefix www/$(TRAVIS_TAG)/, $(notdir $(patsubst %, %.pdf, $(MANS)) $(patsubst %, %.html, $(MANS))))
 

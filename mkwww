@@ -2,8 +2,13 @@
 
 set -eu
 
+if [ "x${TRAVIS_TAG:-}" = "x" ]
+then
+	export TRAVIS_TAG=master
+fi
+
 TOPDIR=$(dirname "$0")
-TARGET_DIR=${TOPDIR}/www/${TRAVIS_TAG:-master}
+TARGET_DIR=${TOPDIR}/www/${TRAVIS_TAG}
 TARGET=${TARGET_DIR}/index.xml
 HEAD_REV="$(git rev-parse HEAD)"
 
