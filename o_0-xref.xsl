@@ -11,7 +11,7 @@
       <a href="{concat('doc-', translate(/o_0:lib/@o_0:name, '/', '-') ,'.xml#', $id)}"><xsl:attribute name="class">external <xsl:for-each select="$uses|$defs"><xsl:value-of select="concat(local-name(), '_', translate(text(), '.', '-'), ' ')"/></xsl:for-each>
         <xsl:if test="not($uses)"> usenone</xsl:if>
         <xsl:if test="not($defs)"> defnone</xsl:if>
-      </xsl:attribute>🔗lib:<xsl:value-of select="/o_0:lib/o_0:name"/> <xsl:for-each select="./ancestor::o_0:attr"><xsl:value-of select="concat(@o_0:name, substring(' .', 1 + count(o_0:type[text() = 'Frame']), 1))"/></xsl:for-each><xsl:value-of select="@o_0:name"/> (<xsl:value-of select="concat(@o_0:startline, ':', @o_0:startcol, '-', @o_0:endline, ':', @o_0:endcol)"/>)</a>
+      </xsl:attribute>🔗lib:<xsl:value-of select="/o_0:lib/@o_0:name"/> <xsl:for-each select="./ancestor::o_0:attr"><xsl:value-of select="concat(@o_0:name, substring(' .', 1 + count(o_0:type[text() = 'Frame']), 1))"/></xsl:for-each><xsl:value-of select="@o_0:name"/> (<xsl:value-of select="concat(@o_0:startline, ':', @o_0:startcol, '-', @o_0:endline, ':', @o_0:endcol)"/>)</a>
     </xsl:for-each>
   </xsl:template>
 </xsl:stylesheet>
