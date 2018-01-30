@@ -11,6 +11,9 @@
         <title>lib:<xsl:value-of select="o_0:lib/@o_0:name"/> – Flabbergast Documentation</title>
         <link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet"/>
         <link rel="stylesheet" type="text/css" href="o_0.css"/>
+        <link rel="icon" href="/icon16.png" type="image/png" sizes="16x16"/>
+        <link rel="icon" href="/icon32.png" type="image/png" sizes="32x32"/>
+        <link rel="icon" href="/icon64.png" type="image/png" sizes="64x64"/>
         <style type="text/css" id="termcss"/>
         <script type="text/javascript" src="o_0.js"/>
         <script type="text/javascript">

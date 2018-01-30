@@ -8,6 +8,9 @@
         <meta http-equiv="content-type" content="text/xml; charset=utf-8"/>
         <title>Flabbergast Documentation</title>
         <link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet"/>
+        <link rel="icon" href="/icon16.png" type="image/png" sizes="16x16"/>
+        <link rel="icon" href="/icon32.png" type="image/png" sizes="32x32"/>
+        <link rel="icon" href="/icon64.png" type="image/png" sizes="64x64"/>
         <link rel="stylesheet" type="text/css" href="o_0.css"/>
         <link rel="stylesheet" type="text/css" href="o_0-index.css"/>
       </head>

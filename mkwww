@@ -49,3 +49,7 @@ cp -u o_0.css o_0.js o_0.xsl o_0-xref.xsl o_0-index.css o_0-index.xsl ${TARGET_D
 cp -u o_0.css o_0-index.css o_0-versions.xsl ${TOPDIR}/www
 
 inkscape -e ${TOPDIR}/www/nuget-icon.png -w 64 -h 64 flabbergast.svg
+for size in 16 32 64
+do
+	inkscape -e ${TOPDIR}/www/icon${size}.png -w ${size} -h ${size} flabbergast.svg
+done
