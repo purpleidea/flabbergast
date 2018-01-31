@@ -19,7 +19,7 @@ function cssForArray(arr, css) {
     if (arr.length == 0) {
         return "";
     }
-    return arr.map(sel => sel + "{" + css + "}").join("\n");
+    return arr.map(sel => `${sel}{${css}}`).join("\n");
 }
 
 function expandAll(id) {
@@ -34,7 +34,7 @@ function expandAll(id) {
 function pageLoad() {
     updateSelection("showPartials");
     updateSelection("hideExternals");
-    openTab('searchtab');
+    openTab("searchtab");
     const showTerm = () => {
         const term = document.location.hash;
         if (term.startsWith("#term-")) {
@@ -52,7 +52,7 @@ function pageLoad() {
     };
     const showLoadError = (context, message) => {
         const p = document.createElement("p");
-        p.appendChild(document.createTextNode(context + ": " + (message || "Unknown error")));
+        p.appendChild(document.createTextNode(`${context}: ${message || "Unknown error"}`));
         const refsTab = document.getElementById("refstab");
         refsTab.insertBefore(p, refsTab.firstChild);
     };
@@ -83,7 +83,7 @@ function pageLoad() {
         });
         sortedLibraries.filter(library => library.links).forEach(library => searchlistdiv.appendChild(library.links));
         sortedLibraries.filter(library => library.error).forEach(library => {
-            const link = document.getElementById("lib-" + library.name);
+            const link = document.getElementById(`lib-${library.name}`);
             if (link) {
                 link.className = "error";
             }
@@ -93,7 +93,7 @@ function pageLoad() {
     };
 
     const termsForExternal = new XSLTProcessor();
-    termsForExternal.setParameter(null, "knownterms", getTerms().map(t => "[" + t + "]").join(""));
+    termsForExternal.setParameter(null, "knownterms", getTerms().map(t => `[${t}]`).join(""));
     const downloadLibrary = info => {
         const request = new XMLHttpRequest();
         request.addEventListener("error", () => {
@@ -115,7 +115,7 @@ function pageLoad() {
             }
             unref();
         });
-        request.open("GET", "doc-" + info.name + ".xml", true);
+        request.open("GET", `doc-${info.name}.xml`, true);
         request.send();
     };
     const xsltRequest = new XMLHttpRequest();
@@ -157,7 +157,7 @@ function openTab(tab) {
         buttons[i].className = "";
     }
     document.getElementById(tab).style.display = null;
-    document.getElementById(tab + "button").className = "selected";
+    document.getElementById(`${tab}button`).className = "selected";
 }
 
 function searchClear() {
@@ -187,8 +187,8 @@ function searchChange() {
         const unmatched = ["#terms a.defnone", "#terms a.usenone"];
 
         for (let known_term of getTerms()) {
-            const def_sel = "#terms a.def_" + known_term;
-            const use_sel = "#terms a.use_" + known_term;
+            const def_sel = `#terms a.def_${known_term}`;
+            const use_sel = `#terms a.use_${known_term}`;
             if (known_term == searchterm) {
                 exact_defs.push(def_sel);
                 exact_uses.push(use_sel);
@@ -263,9 +263,9 @@ function showUse(term) {
 function showTerm(term, prefix) {
     const termcss = document.getElementById("termcss");
     const visible = [];
-    const hidden = ["#terms a." + prefix + "none"];
+    const hidden = [`#terms a.${prefix}none`];
     for (let known_terms of getTerms()) {
-        (known_term == term ? visible : hidden).push("#terms a." + prefix + "_" + known_term);
+        (known_term == term ? visible : hidden).push(`#terms a.${prefix}_${known_term}`);
     }
     termcss.innerHTML = cssForArray(visible, (prefix == "def" ? "color: #4F94CD; " : "") + "font-weight: bold; display: block !important;") + cssForArray(hidden, "display: none;");
     checkNoMatches();
@@ -293,7 +293,7 @@ function toggleSelection(element) {
 }
 
 function updateRefs(term) {
-    const hash_name = term == null ? null : ("term-" + term);
+    const hash_name = term == null ? null : (`term-${term}`);
     const reflist = document.getElementById("references").childNodes;
     for (let it = 0; it < reflist.length; it++) {
         if (reflist[it].tagName == "A") {
