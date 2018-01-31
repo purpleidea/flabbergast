@@ -21,9 +21,9 @@ class ApiGenerator {
         doc.createProcessingInstruction("xml-stylesheet", "href=\"o_0.xsl\" type=\"text/xsl\""));
     Element node = doc.createElementNS("http://flabbergast.org/api", "o_0:lib");
     node.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-    node.setAttributeNS(node.getNamespaceURI(), "name", library_name);
+    node.setAttributeNS(node.getNamespaceURI(), "o_0:name", library_name);
     if (github != null) {
-      node.setAttributeNS(node.getNamespaceURI(), "github", github + "/" + library_name + ".o_0");
+      node.setAttributeNS(node.getNamespaceURI(), "o_0:github", github + "/" + library_name + ".o_0");
     }
     doc.appendChild(node);
     return new ApiGenerator(doc, node, new String[0]);
@@ -67,26 +67,26 @@ class ApiGenerator {
       String name, CodeRegion region, TypeSet type, boolean informative) {
     Element node =
         document.createElementNS(document.getDocumentElement().getNamespaceURI(), "o_0:attr");
-    node.setAttributeNS(document.getDocumentElement().getNamespaceURI(), "name", name);
+    node.setAttributeNS(document.getDocumentElement().getNamespaceURI(), "o_0:name", name);
     node.setAttributeNS(
         document.getDocumentElement().getNamespaceURI(),
-        "startline",
+        "o_0:startline",
         Integer.toString(region.getStartRow()));
     node.setAttributeNS(
         document.getDocumentElement().getNamespaceURI(),
-        "startcol",
+        "o_0:startcol",
         Integer.toString(region.getStartColumn()));
     node.setAttributeNS(
         document.getDocumentElement().getNamespaceURI(),
-        "endline",
+        "o_0:endline",
         Integer.toString(region.getEndRow()));
     node.setAttributeNS(
         document.getDocumentElement().getNamespaceURI(),
-        "endcol",
+        "o_0:endcol",
         Integer.toString(region.getEndColumn()));
     node.setAttributeNS(
         document.getDocumentElement().getNamespaceURI(),
-        "informative",
+        "o_0:informative",
         informative ? "true" : "false");
     this.node.appendChild(node);
 
