@@ -264,7 +264,7 @@ function showTerm(term, prefix) {
     const termcss = document.getElementById("termcss");
     const visible = [];
     const hidden = [`#terms a.${prefix}none`];
-    for (let known_terms of getTerms()) {
+    for (let known_term of getTerms()) {
         (known_term == term ? visible : hidden).push(`#terms a.${prefix}_${known_term}`);
     }
     termcss.innerHTML = cssForArray(visible, (prefix == "def" ? "color: #4F94CD; " : "") + "font-weight: bold; display: block !important;") + cssForArray(hidden, "display: none;");
