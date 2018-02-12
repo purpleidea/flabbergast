@@ -5,10 +5,6 @@ SUBDIRS = \
 	vim \
 	$(NULL)
 
-if BUILD_CLI
-SUBDIRS += platform/cli
-endif
-
 if BUILD_JVM
 SUBDIRS += platform/jvm
 endif

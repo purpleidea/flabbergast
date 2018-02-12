@@ -1,6 +1,0 @@
-usr/bin/nflabbergast*
-usr/lib/pkgconfig/*-cli.pc
-usr/share/flabbergast/cli
-usr/share/flabbergast/compiler/cli-build-cache
-usr/share/flabbergast/lib/*.no_0
-usr/share/man/man1/nflabbergast*.1

@@ -18,15 +18,10 @@ sed -i '1 s/^\xef\xbb\xbf//' platform/jvm/compiler-jvm.a
 ./configure
 make clean all check
 
-# See if we can boostrap using the built CLR Flabbergast
-export FLABBERGAST_PATH=$(pwd)/stdlib
-FLABBERGAST="cli platform/cli/bin/Debug/flabbergast.exe" ./bootstrap genclean all
-make clean all check
-
 # See if we can boostrap using the built JVM Flabbergast
 make -C platform/jvm testingclasspath.sh
 . platform/jvm/testingclasspath.sh
-FLABBERGAST="java -XX:MaxPermSize=512m flabbergast.MainPrinter" ./bootstrap genclean all
+FLABBERGAST="java flabbergast.MainPrinter" ./bootstrap genclean all
 make clean all check
 
 $TRAVIS_PULL_REQUEST || ./mkwww

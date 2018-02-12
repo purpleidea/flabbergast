@@ -1,4 +1,0 @@
-#!/bin/sh
-
-nuget pack flabbergast.nuspec
-nuget push @PACKAGE@.@PACKAGE_VERSION@.nupkg -Source https://www.nuget.org/api/v2/package
