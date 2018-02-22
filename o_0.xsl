@@ -77,7 +77,17 @@ Flabbergast</a> lib:<xsl:value-of select="o_0:lib/@o_0:name"/></h1>
                 </xsl:if>
                 <xsl:for-each select="//o_0:ref/text()[generate-id() = generate-id(key('refs', .)[1])]">
                   <xsl:sort select="."/>
-                  <a href="{concat('doc-', translate(., '/', '-'), '.xml')}" id="{concat('lib-', translate(., '/', '-'))}">lib:<xsl:value-of select="."/></a>
+                  <xsl:choose>
+                    <xsl:when test=". = document('index.xml')//o_0:ref_link/@o_0:name">
+                      <a href="{concat('doc-', translate(., '/', '-'), '.xml')}" id="{concat('lib-', translate(., '/', '-'))}">lib:<xsl:value-of select="."/></a>
+                    </xsl:when>
+                    <xsl:when test="document('index.xml')/o_0:index/@o_0:fallback">
+                      <a href="{concat(document('index.xml')/o_0:index/@o_0:fallback, '/doc-', translate(., '/', '-'), '.xml')}" id="{concat('lib-', translate(., '/', '-'))}">lib:<xsl:value-of select="."/></a>
+                    </xsl:when>
+                    <xsl:otherwise>
+                      <p title="Documentation not available.">lib:<xsl:value-of select="."/></p>
+                    </xsl:otherwise>
+                  </xsl:choose>
                 </xsl:for-each>
               </div>
             </div>
@@ -215,13 +225,6 @@ lib:<xsl:value-of select="@o_0:name"/></a>
       <xsl:value-of select="text()"/>
     </span>
     <xsl:text> </xsl:text>
-  </xsl:template>
-  <xsl:template match="o_0:ref">
-    <a href="{concat('doc-', translate(text(), '/', '_'), '.xml')}">lib:<xsl:value-of select="text()"/></a>
-    <xsl:text> </xsl:text>
-  </xsl:template>
-  <xsl:template match="o_0:ref">
-    <span class="show" title="Documentation not available.">lib:<xsl:value-of select="text()"/></span>
   </xsl:template>
   <xsl:template match="text()|*[namespace-uri() = 'http://www.w3.org/1999/xhtml']">
     <xsl:element name="{local-name()}">
