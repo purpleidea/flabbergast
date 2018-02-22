@@ -14,7 +14,7 @@ transition:color .5s ease-in-out;
 color:#888;
 }
 
-a:visited,a:link,a:hover,a:active,a:focus,.show {
+a:link,a:hover,a:active,a:focus,.show {
 text-decoration:none;
 }
 
@@ -50,11 +50,11 @@ color:#ddd;
 padding-right:.5em;
 }
 
-dt.hidden > span.roll > span:after {
+dt.hidden > span.roll > span:first-child:after {
 content:'▶';
 }
 
-dt > span.roll > span:after {
+dt > span.roll > span:first-child:after {
 content:'▼';
 }
 
@@ -170,11 +170,14 @@ margin:0;
 padding:0 0 0 .5em;
 }
 
-h1 span,h1 a,h1 a:visited,h1 a:link {
+h1 span,h1 a,h1 a:link {
 color:#eee;
 float:right;
 padding-left:.5em;
 padding-right:.5em;
+}
+h1 a:visited {
+color:#eee;
 }
 h1 path{
 fill:#eee;
