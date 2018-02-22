@@ -29,7 +29,7 @@
               </thead>
               <tbody>
                 <xsl:apply-templates select="//o_0:ref_link">
-                  <xsl:sort select="@name"/>
+                  <xsl:sort select="@o_0:name"/>
                 </xsl:apply-templates>
               </tbody>
             </table>
@@ -45,8 +45,8 @@
               </thead>
               <tbody>
                 <xsl:apply-templates select="//o_0:man">
-                  <xsl:sort select="@section" data-type="number"/>
-                  <xsl:sort select="@name"/>
+                  <xsl:sort select="@o_0:section" data-type="number"/>
+                  <xsl:sort select="@o_0:name"/>
                 </xsl:apply-templates>
               </tbody>
             </table>
@@ -60,36 +60,36 @@
       <td>
         <xsl:attribute name="title">
           <xsl:choose>
-            <xsl:when test="@section = 1">General commands</xsl:when>
-            <xsl:when test="@section = 2">System calls</xsl:when>
-            <xsl:when test="@section = 3">Library functions</xsl:when>
-            <xsl:when test="@section = 4">Special files</xsl:when>
-            <xsl:when test="@section = 5">File formats and conventions</xsl:when>
-            <xsl:when test="@section = 6">Games and screensavers</xsl:when>
-            <xsl:when test="@section = 7">Miscellanea</xsl:when>
-            <xsl:when test="@section = 8">System administration commands and daemons</xsl:when>
+            <xsl:when test="@o_0:section = 1">General commands</xsl:when>
+            <xsl:when test="@o_0:section = 2">System calls</xsl:when>
+            <xsl:when test="@o_0:section = 3">Library functions</xsl:when>
+            <xsl:when test="@o_0:section = 4">Special files</xsl:when>
+            <xsl:when test="@o_0:section = 5">File formats and conventions</xsl:when>
+            <xsl:when test="@o_0:section = 6">Games and screensavers</xsl:when>
+            <xsl:when test="@o_0:section = 7">Miscellanea</xsl:when>
+            <xsl:when test="@o_0:section = 8">System administration commands and daemons</xsl:when>
             <xsl:otherwise>Unknown</xsl:otherwise>
           </xsl:choose>
         </xsl:attribute>
-        <xsl:value-of select="@section"/>
+        <xsl:value-of select="@o_0:section"/>
       </td>
       <td>
-        <a href="{concat(@name, '.', @section, '.html')}">
-          <xsl:value-of select="@name"/>
+        <a href="{concat(@o_0:name, '.', @o_0:section, '.html')}">
+          <xsl:value-of select="@o_0:name"/>
         </a>
       </td>
       <td>
-        <xsl:value-of select="@description"/>
+        <xsl:value-of select="@o_0:description"/>
       </td>
       <td>
-        <a href="{concat(@name, '.', @section, '.pdf')}">PDF</a>
+        <a href="{concat(@o_0:name, '.', @o_0:section, '.pdf')}">PDF</a>
       </td>
     </tr>
   </xsl:template>
   <xsl:template match="o_0:ref_link">
     <tr>
       <td>
-        <a href="{concat('doc-', translate(@name, '/', '-'), '.xml')}">lib:<xsl:value-of select="@name"/></a>
+        <a href="{concat('doc-', translate(@o_0:name, '/', '-'), '.xml')}">lib:<xsl:value-of select="@o_0:name"/></a>
       </td>
       <td>
         <xsl:copy-of select="*|text()"/>

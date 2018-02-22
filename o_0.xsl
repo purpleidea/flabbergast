@@ -86,9 +86,9 @@ Flabbergast</a> lib:<xsl:value-of select="o_0:lib/@o_0:name"/></h1>
                 <div id="index">
                   <xsl:variable name="this" select="/o_0:lib/@o_0:name"/>
                   <xsl:for-each select="document('index.xml')//o_0:ref_link">
-                    <xsl:sort select="@name"/>
-                    <a href="{concat('doc-', translate(@name, '/', '-'), '.xml')}" title="{text()}"><xsl:if test="@name = $this"><xsl:attribute name="style">font-weight:bold</xsl:attribute></xsl:if>
-lib:<xsl:value-of select="@name"/></a>
+                    <xsl:sort select="@o_0:name"/>
+                    <a href="{concat('doc-', translate(@o_0:name, '/', '-'), '.xml')}" title="{text()}"><xsl:if test="@o_0:name = $this"><xsl:attribute name="style">font-weight:bold</xsl:attribute></xsl:if>
+lib:<xsl:value-of select="@o_0:name"/></a>
                   </xsl:for-each>
                 </div>
               </div>
@@ -97,9 +97,9 @@ lib:<xsl:value-of select="@name"/></a>
               <div id="mantab" class="tab">
                 <div id="man">
                   <xsl:for-each select="document('index.xml')//o_0:man">
-                    <xsl:sort select="@section"/>
-                    <xsl:sort select="@name"/>
-                    <a href="{concat(@name, '.', @section, '.html')}" title="{@description}"><xsl:value-of select="@name"/> (<xsl:value-of select="@section"/>)</a>
+                    <xsl:sort select="@o_0:section"/>
+                    <xsl:sort select="@o_0:name"/>
+                    <a href="{concat(@o_0:name, '.', @o_0:section, '.html')}" title="{@o_0:description}"><xsl:value-of select="@o_0:name"/> (<xsl:value-of select="@o_0:section"/>)</a>
                   </xsl:for-each>
                 </div>
               </div>

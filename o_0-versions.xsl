@@ -28,7 +28,7 @@
               </thead>
               <tbody>
                 <xsl:apply-templates select="//o_0:versions">
-                  <xsl:sort select="@id"/>
+                  <xsl:sort select="@o_0:id"/>
                 </xsl:apply-templates>
               </tbody>
             </table>
@@ -40,12 +40,12 @@
   <xsl:template match="o_0:version">
     <tr>
       <td>
-        <a href="{@tag}">
-          <xsl:value-of select="@name"/>
+        <a href="{@o_0:tag}">
+          <xsl:value-of select="@o_0:name"/>
         </a>
       </td>
       <td>
-        <a href="{concat('https://github.com/flabbergast-config/flabbergast/tree/', @tag)}">GitHub</a>
+        <a href="{concat('https://github.com/flabbergast-config/flabbergast/tree/', @o_0:tag)}">GitHub</a>
       </td>
     </tr>
   </xsl:template>

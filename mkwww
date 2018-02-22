@@ -20,7 +20,7 @@ cat > ${TARGET} <<EOI
 <o_0:index xmlns:o_0="http://flabbergast.org/api">
 EOI
 
-lexgrog --whatis ${TOPDIR}/*.7 ${TOPDIR}/*.1 ${TOPDIR}/platform/*/*.1 | sed -e 's#^.*/\([a-z_-]*\)\.\([0-9]\): *"[^ ]* - \(.*\)"$#<o_0:man name="\1" section="\2" description="\3" />#' >> ${TARGET}
+lexgrog --whatis ${TOPDIR}/*.7 ${TOPDIR}/*.1 ${TOPDIR}/platform/*/*.1 | sed -e 's#^.*/\([a-z_-]*\)\.\([0-9]\): *"[^ ]* - \(.*\)"$#<o_0:man o_0:name="\1" o_0:section="\2" o_0:description="\3" />#' >> ${TARGET}
 
 ${TOPDIR}/man2web
 
@@ -30,7 +30,7 @@ java flabbergast.MainDocumenter -g "https://github.com/flabbergast-config/flabbe
 for LIB in $(find ${TARGET_DIR} -name 'doc-*.xml')
 do
 	URI=$(basename $LIB .xml | sed -e 's/^doc-//;s#-#/#g')
-	echo "<o_0:ref_link name=\"${URI}\">" >> ${TARGET}
+	echo "<o_0:ref_link o_0:name=\"${URI}\">" >> ${TARGET}
 	xmlstarlet sel -t -m '/o_0:lib[o_0:description]' -c 'o_0:description/*|o_0:description/text()' -t -m '/o_0:lib[not(o_0:description)]' -o "No description available." $LIB >> ${TARGET}
 	echo "</o_0:ref_link>" >> ${TARGET}
 done
@@ -40,9 +40,9 @@ cat > ${TOPDIR}/www/index.xml <<EOI
 <?xml version="1.0" encoding="utf-8"?>
 <?xml-stylesheet href="o_0-versions.xsl" type="text/xsl"?>
 <o_0:versions xmlns:o_0="http://flabbergast.org/api">
-<o_0:version name="Current" tag="master"/>
+<o_0:version o_0:name="Current" o_0:tag="master"/>
 EOI
-curl https://api.github.com/repos/flabbergast-config/flabbergast/releases | jq -r '.[] | if .tag_name | tonumber >= 0.19 then "<o_0:version name=\"\(.name)\" tag=\"\(.tag_name)\"/>" else empty end' - >> ${TOPDIR}/www/index.xml
+curl https://api.github.com/repos/flabbergast-config/flabbergast/releases | jq -r '.[] | if .tag_name | tonumber >= 0.19 then "<o_0:version o_0:name=\"\(.name)\" o_0:tag=\"\(.tag_name)\"/>" else empty end' - >> ${TOPDIR}/www/index.xml
 echo '</o_0:versions>' >> ${TOPDIR}/www/index.xml
 
 cp -u o_0.css o_0.js o_0.xsl o_0-xref.xsl o_0-index.css o_0-index.xsl ${TARGET_DIR}
