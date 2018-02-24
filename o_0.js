@@ -272,8 +272,8 @@ function showTerm(term, prefix) {
 }
 
 function showHide(roller) {
-    const is_hidden = roller.parentNode.className == "hidden";
-    roller.parentNode.className = is_hidden ? "" : "hidden";
+    const is_hidden = roller.parentNode.parentNode.className == "hidden";
+    roller.parentNode.parentNode.className = is_hidden ? "" : "hidden";
 }
 
 function getSelection(name) {

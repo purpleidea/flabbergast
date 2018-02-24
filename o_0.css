@@ -8,6 +8,10 @@ svg {
 vertical-align: middle;
 }
 
+path {
+fill-rule:evenodd;
+}
+
 a,.show {
 outline:0;
 transition:color .5s ease-in-out;
@@ -45,16 +49,16 @@ dt span.def {
 font-style:italic;
 }
 
-dt > span.terminal,dt > span.roll {
+dt > div > span.terminal,dt > div > span.roll {
 color:#ddd;
 padding-right:.5em;
 }
 
-dt.hidden > span.roll > span:first-child:after {
+dt.hidden > div > span.roll > span:first-child:after {
 content:'▶';
 }
 
-dt > span.roll > span:first-child:after {
+dt > div > span.roll > span:first-child:after {
 content:'▼';
 }
 
@@ -66,10 +70,12 @@ dt.hidden + dd {
 display:none;
 }
 
+dt {
+display:flex;
+justify-content:space-between;
+}
+
 .info {
-float:right;
-clear:left;
-text-align:right;
 padding:.2em;
 }
 
@@ -82,12 +88,20 @@ cursor:pointer;
 
 .info .type {
 color:#4F94CD;
-border:1px solid #4F94CD;
-border-radius:.2em;
-font-size:80%;
-box-shadow:.1em .1em .3em 0 rgba(0,0,0,0.45);
 margin:.5em;
 padding:.3em;
+}
+
+.info .type svg {
+vertical-align:middle;
+}
+
+.info .type path {
+fill:#4F94CD;
+}
+
+.info .type path.star {
+fill:#FFCC00;
 }
 
 #references a,#index a,#man a {
