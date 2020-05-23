@@ -1,6 +1,6 @@
 #!/bin/sh
 
-URL="http://docs.flabbergast.org/bootstrap/"
+URL="http://docs.flabbergast.org/bootstrap"
 LIMIT=20
 
 set -eu
